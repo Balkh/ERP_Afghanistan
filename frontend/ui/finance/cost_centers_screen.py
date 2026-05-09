@@ -44,14 +44,14 @@ class CostCentersScreen(BaseScreen):
         self.btn_refresh.setMinimumHeight(35)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_BG_ELEVATED}};
-                border: 1px solid {{COLOR_BORDER_LIGHT}};
+                background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 5px;
                 padding: {SPACING_XS} {SPACING_MD};
-                color: {{COLOR_TEXT_SECONDARY}};
+                color: {COLOR_TEXT_SECONDARY};
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_BG_ELEVATED}};
+                background-color: {COLOR_BG_ELEVATED};
             }}
         """)
         self.btn_refresh.clicked.connect(self.load_data)
@@ -62,14 +62,14 @@ class CostCentersScreen(BaseScreen):
         self.loading_label = QLabel("Loading cost centers...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No cost centers found")
         self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -141,8 +141,8 @@ class CostCentersScreen(BaseScreen):
     def _create_modern_table(self):
         table = QTableWidget()
         table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {{COLOR_TABLE_BORDER_LIGHT}}; }}
-            QHeaderView::section {{ background-color: {{COLOR_TABLE_HEADER_BG_LIGHT}}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {{COLOR_BORDER_LIGHT}}; font-weight: bold; }}
+            QTableWidget {{ border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }}
+            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {COLOR_BORDER_LIGHT}; font-weight: bold; }}
             QTableWidget::item {{ padding: {SPACING_SM}; }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)

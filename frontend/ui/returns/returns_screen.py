@@ -90,14 +90,14 @@ class ReturnsScreen(BaseScreen):
         self.loading_label = QLabel("Loading return orders...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No return orders found")
         self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -174,8 +174,8 @@ class ReturnsScreen(BaseScreen):
     def _create_modern_table(self):
         table = QTableWidget()
         table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {{COLOR_TABLE_GRIDLINE}}; }}
-            QHeaderView::section {{ background-color: {{COLOR_BG_ELEVATED}}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {{COLOR_BORDER_TABLE}}; font-weight: bold; }}
+            QTableWidget {{ border: none; gridline-color: {COLOR_TABLE_GRIDLINE}; }}
+            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {COLOR_BORDER_TABLE}; font-weight: bold; }}
             QTableWidget::item {{ padding: {SPACING_LG}; }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -293,11 +293,11 @@ class ReturnsScreen(BaseScreen):
             status_item = QTableWidgetItem(status)
             status_item.setTextAlignment(Qt.AlignCenter)
             if status == "APPROVED":
-                status_item.setForeground(QColor("COLOR_SUCCESS"))
+                status_item.setForeground(QColor(COLOR_SUCCESS))
             elif status == "PENDING":
-                status_item.setForeground(QColor("COLOR_WARNING"))
+                status_item.setForeground(QColor(COLOR_WARNING))
             elif status == "REJECTED":
-                status_item.setForeground(QColor("COLOR_DANGER"))
+                status_item.setForeground(QColor(COLOR_DANGER))
             self.table.setItem(row, 5, status_item)
             
             reason = item.get("reason", "")
@@ -466,7 +466,7 @@ class ReturnOrderDialog(QDialog):
 
         title = QLabel("Create Return Order")
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        title.setStyleSheet(f"color: {{COLOR_TEXT_TITLE}};")
+        title.setStyleSheet(f"color: {COLOR_TEXT_TITLE};")
         layout.addWidget(title)
 
         form_group = QGroupBox("Return Details")
@@ -509,7 +509,7 @@ class ReturnOrderDialog(QDialog):
         cancel_btn = QPushButton("Cancel")
         cancel_btn.setMinimumHeight(35)
         cancel_btn.setMinimumWidth(100)
-        cancel_btn.setStyleSheet(f"background-color: {{COLOR_BG_BUTTON_SECONDARY}}; color: {{COLOR_TEXT_DIALOG}}; border-radius: 5px;")
+        cancel_btn.setStyleSheet(f"background-color: {COLOR_BG_BUTTON_SECONDARY}; color: {COLOR_TEXT_DIALOG}; border-radius: 5px;")
         cancel_btn.clicked.connect(self.reject)
         
         save_btn = QPushButton("Save Return")

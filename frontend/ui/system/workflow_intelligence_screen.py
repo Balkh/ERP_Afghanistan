@@ -1,5 +1,5 @@
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_PRIMARY_MUTED, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 Workflow Intelligence Screen - Live Decision Tracking System.
 Provides visual analytics and real-time tracking for ERP workflows.
@@ -28,9 +28,9 @@ class WorkflowPipelineWidget(QWidget):
         super().__init__()
         self.setFixedHeight(120)
         self.stages = [
-            {'id': 'DRAFT', 'label': 'Draft', 'color': 'COLOR_TEXT_MUTED'},
+            {'id': 'DRAFT', 'label': 'Draft', 'color': COLOR_TEXT_MUTED},
             {'id': 'PENDING_APPROVAL', 'label': 'Pending', 'color': '#f9e2af'},
-            {'id': 'APPROVED', 'label': 'Approved', 'color': 'COLOR_STATUS_VALID'},
+            {'id': 'APPROVED', 'label': 'Approved', 'color': COLOR_STATUS_VALID},
             {'id': 'REJECTED', 'label': 'Rejected', 'color': '#f38ba8'},
             {'id': 'POSTED', 'label': 'Posted', 'color': '#89b4fa'}
         ]
@@ -56,7 +56,7 @@ class WorkflowPipelineWidget(QWidget):
             
             # Draw line to next node
             if i < len(self.stages) - 1:
-                painter.setPen(QPen(QColor("COLOR_BG_ELEVATED"), 4))
+                painter.setPen(QPen(QColor(COLOR_BG_ELEVATED), 4))
                 painter.drawLine(x + node_r, y + node_r, x + step_w - node_r, y + node_r)
             
             # Draw node
@@ -68,7 +68,7 @@ class WorkflowPipelineWidget(QWidget):
             painter.drawEllipse(QPointF(x + node_r, y + node_r), node_r, node_r)
             
             # Labels
-            painter.setPen(QColor("COLOR_TEXT_PRIMARY"))
+            painter.setPen(QColor(COLOR_TEXT_PRIMARY))
             painter.setFont(QFont("Segoe UI", 9, QFont.Bold))
             painter.drawText(int(x), y + 45, int(step_w), 20, Qt.AlignCenter, stage['label'])
 
@@ -105,7 +105,7 @@ class WorkflowRelationGraph(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         
         # Draw Links
-        painter.setPen(QPen(QColor("COLOR_BORDER"), 2))
+        painter.setPen(QPen(QColor(COLOR_TABLE_BORDER_LIGHT), 2))
         for start, end in self.links:
             n1 = self.nodes[start]
             n2 = self.nodes[end]
@@ -114,14 +114,14 @@ class WorkflowRelationGraph(QWidget):
         # Draw Nodes
         for label, val, x, y in self.nodes:
             painter.setPen(Qt.NoPen)
-            painter.setBrush(QBrush(QColor("COLOR_BG_ELEVATED")))
+            painter.setBrush(QBrush(QColor(COLOR_BG_ELEVATED)))
             painter.drawRoundedRect(x, y, 100, 40, 8, 8)
             
-            painter.setPen(QColor("#89b4fa"))
+            painter.setPen(QColor(COLOR_PRIMARY_MUTED))
             painter.setFont(QFont("Segoe UI", 8))
             painter.drawText(x + 5, y + 15, label)
 
-            painter.setPen(QColor("COLOR_TEXT_PRIMARY"))
+            painter.setPen(QColor(COLOR_TEXT_PRIMARY))
             painter.setFont(QFont("Segoe UI", 9, QFont.Bold))
             painter.drawText(x + 5, y + 32, val)
 

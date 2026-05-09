@@ -71,78 +71,78 @@ Z_INDEX_TOAST = 5
 # =====================================================
 
 # Primary colors
-COLOR_PRIMARY = "#2563eb"           # Primary blue (buttons, links)
-COLOR_PRIMARY_HOVER = "#3b82f6"     # Primary hover state
-COLOR_PRIMARY_ACTIVE = "#1d4ed8"   # Primary active/pressed state
-COLOR_PRIMARY_MUTED = "#93c5fd"    # Primary muted/disabled
+COLOR_PRIMARY = "#89b4fa"           # Primary blue (buttons, links)
+COLOR_PRIMARY_HOVER = "#74c7ec"     # Primary hover state
+COLOR_PRIMARY_ACTIVE = "#89dceb"   # Primary active/pressed state
+COLOR_PRIMARY_MUTED = "#45475a"    # Primary muted/disabled
 
 # Semantic colors
-COLOR_SUCCESS = "#16a34a"          # Success green
-COLOR_SUCCESS_HOVER = "#22c55e"    # Success hover state
-COLOR_SUCCESS_ACTIVE = "#15803d"   # Success active/pressed state
-COLOR_SUCCESS_MUTED = "#86efac"   # Success muted/disabled state
-COLOR_SUCCESS_BG = "#dcfce7"       # Success background
-COLOR_WARNING = "#d97706"          # Warning yellow/orange
-COLOR_WARNING_HOVER = "#f59e0b"    # Warning hover state
-COLOR_WARNING_ACTIVE = "#b45309"   # Warning active state
-COLOR_WARNING_MUTED = "#fde68a"    # Warning muted state
-COLOR_WARNING_BG = "#fef3c7"       # Warning background
-COLOR_DANGER = "#dc2626"           # Danger red
-COLOR_DANGER_HOVER = "#ef4444"     # Danger hover state
-COLOR_DANGER_ACTIVE = "#b91c1c"    # Danger active state
-COLOR_DANGER_MUTED = "#fca5a5"     # Danger muted state
-COLOR_DANGER_BG = "#fee2e2"        # Danger background
-COLOR_INFO = "#2563eb"             # Info blue
-COLOR_INFO_HOVER = "#3b82f6"       # Info hover state
-COLOR_INFO_ACTIVE = "#1d4ed8"      # Info active state
-COLOR_INFO_MUTED = "#93c5fd"       # Info muted state
-COLOR_INFO_BG = "#dbeafe"         # Info background
+COLOR_SUCCESS = "#a6e3a1"          # Success green
+COLOR_SUCCESS_HOVER = "#94e2d5"    # Success hover state
+COLOR_SUCCESS_ACTIVE = "#74c7a0"   # Success active/pressed state
+COLOR_SUCCESS_MUTED = "#45475a"   # Success muted/disabled state
+COLOR_SUCCESS_BG = "#1e3a2f"       # Success background
+COLOR_WARNING = "#f9e2af"          # Warning yellow/orange
+COLOR_WARNING_HOVER = "#fab387"    # Warning hover state
+COLOR_WARNING_ACTIVE = "#f38ba8"   # Warning active state
+COLOR_WARNING_MUTED = "#45475a"    # Warning muted state
+COLOR_WARNING_BG = "#3a3520"       # Warning background
+COLOR_DANGER = "#f38ba8"           # Danger red
+COLOR_DANGER_HOVER = "#eba0ac"     # Danger hover state
+COLOR_DANGER_ACTIVE = "#dc2626"    # Danger active state
+COLOR_DANGER_MUTED = "#45475a"     # Danger muted state
+COLOR_DANGER_BG = "#3a1f2a"        # Danger background
+COLOR_INFO = "#89b4fa"             # Info blue
+COLOR_INFO_HOVER = "#74c7ec"       # Info hover state
+COLOR_INFO_ACTIVE = "#89dceb"      # Info active state
+COLOR_INFO_MUTED = "#45475a"       # Info muted state
+COLOR_INFO_BG = "#1e2a3a"         # Info background
 
-# Background colors (light theme)
-COLOR_BG_MAIN = "#f5f6fa"          # Main background (light base)
-COLOR_BG_SURFACE = "#ffffff"       # Surface/cards
-COLOR_BG_ELEVATED = "#ffffff"       # Elevated elements
-COLOR_BG_INPUT = "#ffffff"         # Input fields background
+# Background colors (dark theme)
+COLOR_BG_MAIN = "#1e1e2e"          # Main background (dark base)
+COLOR_BG_SURFACE = "#282838"       # Surface/cards
+COLOR_BG_ELEVATED = "#313244"       # Elevated elements
+COLOR_BG_INPUT = "#1e1e2e"         # Input fields background
 
 # Text colors
-COLOR_TEXT_PRIMARY = "#1f2937"     # Primary text (high contrast)
-COLOR_TEXT_SECONDARY = "#4b5563"   # Secondary text (medium contrast)
-COLOR_TEXT_MUTED = "#9ca3af"       # Muted/disabled text
-COLOR_TEXT_ON_PRIMARY = "#ffffff"  # Text on primary color
+COLOR_TEXT_PRIMARY = "#cdd6f4"     # Primary text (high contrast)
+COLOR_TEXT_SECONDARY = "#a6adc8"   # Secondary text (medium contrast)
+COLOR_TEXT_MUTED = "#6c7086"       # Muted/disabled text
+COLOR_TEXT_ON_PRIMARY = "#11111b"  # Text on primary color
 
 # Light theme specific (for dialogs/forms on light backgrounds)
-COLOR_BG_LIGHT = "#f5f6fa"         # Light background for dialogs
-COLOR_BG_LIGHT_SURFACE = "#ffffff" # Light surface
-COLOR_TEXT_LIGHT = "#1f2937"       # Text on light backgrounds
-COLOR_TEXT_SECONDARY_LIGHT = "#4b5563"  # Secondary text light
-COLOR_TEXT_DIALOG = "#374151"       # Dialog label text
-COLOR_BORDER_LIGHT_THEME = "#d1d5db"   # Border for light theme
-COLOR_MUTED_LIGHT = "#9ca3af"      # Muted text light
-COLOR_BG_BUTTON_LIGHT = "#6b7280"   # Light theme button background
-COLOR_BG_BUTTON_SECONDARY = "#e5e7eb"  # Secondary/secondary button
+COLOR_BG_LIGHT = "#282838"         # Light background for dialogs
+COLOR_BG_LIGHT_SURFACE = "#313244" # Light surface
+COLOR_TEXT_LIGHT = "#cdd6f4"       # Text on light backgrounds
+COLOR_TEXT_SECONDARY_LIGHT = "#a6adc8"  # Secondary text light
+COLOR_TEXT_DIALOG = "#cdd6f4"       # Dialog label text
+COLOR_BORDER_LIGHT_THEME = "#45475a"   # Border for light theme
+COLOR_MUTED_LIGHT = "#6c7086"      # Muted text light
+COLOR_BG_BUTTON_LIGHT = "#585b70"   # Light theme button background
+COLOR_BG_BUTTON_SECONDARY = "#45475a"  # Secondary/secondary button
 
 # Secondary button system
-COLOR_SECONDARY_BG = "#e5e7eb"       # Secondary button background
-COLOR_SECONDARY_HOVER = "#d1d5db"     # Secondary button hover
-COLOR_SECONDARY_TEXT = "#374151"      # Secondary button text
-COLOR_SECONDARY_ACTIVE = "#9ca3af"    # Secondary button active
+COLOR_SECONDARY_BG = "#45475a"       # Secondary button background
+COLOR_SECONDARY_HOVER = "#585b70"     # Secondary button hover
+COLOR_SECONDARY_TEXT = "#cdd6f4"      # Secondary button text
+COLOR_SECONDARY_ACTIVE = "#6c7086"    # Secondary button active
 
 # Border colors
-COLOR_BORDER = "#d1d5db"           # Default border
-COLOR_BORDER_LIGHT = "#e5e7eb"     # Light border
-COLOR_BORDER_FOCUS = "#2563eb"     # Focus state border
-COLOR_BORDER_LIGHT_THEME = "#d1d5db"  # Light theme border
-COLOR_BORDER_DIALOG = "#e5e7eb"    # Dialog border
-COLOR_BORDER_TABLE = "#e5e7eb"     # Table grid/border
-COLOR_BORDER_INPUT = "#d1d5db"     # Input field border
-COLOR_TABLE_GRIDLINE = "#e5e7eb"  # Table grid lines
-COLOR_TEXT_TITLE = "#1f2937"       # Title text color
-COLOR_HEADER_DARK = "#1e40af"     # Header background dark
+COLOR_BORDER = "#45475a"           # Default border
+COLOR_BORDER_LIGHT = "#38384a"     # Light border
+COLOR_BORDER_FOCUS = "#89b4fa"     # Focus state border
+COLOR_BORDER_LIGHT_THEME = "#45475a"  # Light theme border
+COLOR_BORDER_DIALOG = "#45475a"    # Dialog border
+COLOR_BORDER_TABLE = "#45475a"     # Table grid/border
+COLOR_BORDER_INPUT = "#45475a"     # Input field border
+COLOR_TABLE_GRIDLINE = "#45475a"  # Table grid lines
+COLOR_TEXT_TITLE = "#cdd6f4"       # Title text color
+COLOR_HEADER_DARK = "#11111b"     # Header background dark
 
 # Table colors
-COLOR_TABLE_HEADER = "#f3f4f6"    # Table header background
-COLOR_TABLE_ALT = "#f9fafb"        # Table alternate row
-COLOR_TABLE_GRID = "#e5e7eb"       # Table grid lines
+COLOR_TABLE_HEADER = "#313244"    # Table header background
+COLOR_TABLE_ALT = "#282838"        # Table alternate row
+COLOR_TABLE_GRID = "#45475a"       # Table grid lines
 
 # Status indicator colors
 COLOR_STATUS_VALID = "#a6e3a1"     # Valid/active status
@@ -160,11 +160,11 @@ COLOR_WHATSAPP = "#25D366"
 # modifying existing tokens. Applied selectively to
 # tables, forms, borders, and UI dividers.
 
-COLOR_TABLE_BORDER_LIGHT = "#cbd5e1"       # Clear table gridlines/borders
-COLOR_TABLE_HEADER_BG_LIGHT = "#e2e8f0"    # Distinct table header background
-COLOR_FORM_BORDER_LIGHT = "#94a3b8"        # Visible input/control borders
-COLOR_FORM_TEXT_LIGHT = "#111827"          # High-contrast form input text
-COLOR_UI_DIVIDER_LIGHT = "#cbd5e1"         # Visible section dividers
+COLOR_TABLE_BORDER_LIGHT = "#585b70"       # Clear table gridlines/borders
+COLOR_TABLE_HEADER_BG_LIGHT = "#45475a"    # Distinct table header background
+COLOR_FORM_BORDER_LIGHT = "#585b70"        # Visible input/control borders
+COLOR_FORM_TEXT_LIGHT = "#cdd6f4"          # High-contrast form input text
+COLOR_UI_DIVIDER_LIGHT = "#45475a"         # Visible section dividers
 
 # =====================================================
 # PHASE 2: LAYOUT TOKENIZATION

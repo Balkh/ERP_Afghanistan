@@ -41,14 +41,14 @@ class PaymentScreen(QWidget):
         self.btn_refresh.setMinimumHeight(35)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_PRIMARY}};
+                background-color: {COLOR_PRIMARY};
                 border: none;
                 border-radius: 5px;
                 padding: {SPACING_XS} {SPACING_MD};
                 color: white;
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_PRIMARY_HOVER}};
+                background-color: {COLOR_PRIMARY_HOVER};
             }}
         """)
         self.btn_refresh.clicked.connect(self.load_payments)
@@ -149,28 +149,28 @@ class PaymentScreen(QWidget):
         layout.addLayout(btn_layout)
 
         # Apply dark theme to combo boxes
-        combo_style = """
-            QComboBox {
+        combo_style = f"""
+            QComboBox {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 5px;
                 padding: 5px 10px;
                 color: {COLOR_TEXT_PRIMARY};
-            }
-            QComboBox::drop-down {
+            }}
+            QComboBox::drop-down {{
                 border: none;
-            }
-            QComboBox::down-arrow {
+            }}
+            QComboBox::down-arrow {{
                 image: none;
                 border-left: 5px solid transparent;
                 border-right: 5px solid transparent;
                 border-top: 5px solid {COLOR_TEXT_PRIMARY};
-            }
-            QComboBox QAbstractItemView {
+            }}
+            QComboBox QAbstractItemView {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 color: {COLOR_TEXT_PRIMARY};
                 selection-background-color: {COLOR_BORDER};
-            }
+            }}
         """
         self.type_combo.setStyleSheet(combo_style)
         self.status_combo.setStyleSheet(combo_style)
@@ -194,13 +194,13 @@ class PaymentScreen(QWidget):
         table.setStyleSheet(f"""
             QTableWidget {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                border: 1px solid {COLOR_BORDER};
+                border: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-radius: 5px;
-                gridline-color: {COLOR_BORDER};
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
                 color: {COLOR_TEXT_PRIMARY};
             }}
             QHeaderView::section {{
-                background-color: {COLOR_BORDER};
+                background-color: {COLOR_TABLE_BORDER_LIGHT};
                 padding: 10px;
                 border: none;
                 border-bottom: 2px solid {COLOR_BORDER_LIGHT};

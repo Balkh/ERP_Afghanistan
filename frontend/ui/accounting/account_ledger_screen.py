@@ -264,19 +264,19 @@ class AccountLedgerScreen(QFrame):
             debit_item = QTableWidgetItem(f"{debit:,.2f}")
             debit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             if debit > 0:
-                debit_item.setForeground(QColor("COLOR_SUCCESS"))
+                debit_item.setForeground(QColor(COLOR_SUCCESS))
             self.table.setItem(row, 4, debit_item)
 
             credit_item = QTableWidgetItem(f"{credit:,.2f}")
             credit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             if credit > 0:
-                credit_item.setForeground(QColor("COLOR_DANGER"))
+                credit_item.setForeground(QColor(COLOR_DANGER))
             self.table.setItem(row, 5, credit_item)
 
             balance_item = QTableWidgetItem(f"{balance:,.2f}")
             balance_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
             if balance < 0:
-                balance_item.setForeground(QColor("COLOR_DANGER"))
+                balance_item.setForeground(QColor(COLOR_DANGER))
             self.table.setItem(row, 6, balance_item)
 
     def export_csv(self):

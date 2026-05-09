@@ -135,6 +135,7 @@ class KPICard(QFrame):
         self.value_label = QLabel(value)
         self.value_label.setObjectName("value")
         self.value_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.value_label.setWordWrap(True)
         
         self.sparkline = SparklineWidget(color)
         value_row.addWidget(self.value_label)
@@ -193,7 +194,7 @@ class ControlCenterScreen(BaseScreen):
         scroll.setStyleSheet(f"background-color: transparent;")
         
         content_widget = QWidget()
-        content_widget.setStyleSheet(f"background-color: {{COLOR_BG_INPUT}};")
+        content_widget.setStyleSheet(f"background-color: {COLOR_BG_INPUT};")
         self.content_layout = QVBoxLayout(content_widget)
         self.content_layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self.content_layout.setSpacing(SPACING_XL + SPACING_SM)  # ~25
@@ -202,28 +203,28 @@ class ControlCenterScreen(BaseScreen):
         header_layout = QHBoxLayout()
         self.title_label = QLabel("Enterprise Control Center")
         self.title_label.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        self.title_label.setStyleSheet(f"color: {{COLOR_TEXT_PRIMARY}};")
+        self.title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
 
         self.health_bar = QFrame()
         self.health_bar.setFixedHeight(30)
         self.health_bar.setMinimumWidth(200)
         self.health_bar.setStyleSheet(f"""
-            background-color: {{COLOR_BG_ELEVATED}};
+            background-color: {COLOR_BG_ELEVATED};
             border-radius: 15px;
-            border: 1px solid {{COLOR_BORDER}};
+            border: 1px solid {COLOR_BORDER};
         """)
         health_layout = QHBoxLayout(self.health_bar)
         health_layout.setContentsMargins(SPACING_SM, 0, SPACING_SM, 0)
         self.health_status_label = QLabel("SYSTEM HEALTH: OPTIMAL")
-        self.health_status_label.setStyleSheet(f"color: {{COLOR_STATUS_VALID}}; font-weight: bold; font-size: 11px;")
+        self.health_status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; font-size: 11px;")
         health_layout.addStretch()
         health_layout.addWidget(self.health_status_label)
         health_layout.addStretch()
 
         self.status_badge = QLabel("LIVE MONITORING")
         self.status_badge.setStyleSheet(f"""
-            background-color: {{COLOR_BG_ELEVATED}};
-            color: {{COLOR_STATUS_VALID}};
+            background-color: {COLOR_BG_ELEVATED};
+            color: {COLOR_STATUS_VALID};
             padding: 4px 10px;
             border-radius: 4px;
             font-size: 10px;
@@ -231,7 +232,7 @@ class ControlCenterScreen(BaseScreen):
         """)
         
         self.last_update_label = QLabel("Last update: Never")
-        self.last_update_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; font-size: 11px;")
+        self.last_update_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px;")
         
         self.refresh_btn = QPushButton("Manual Refresh")
         self.refresh_btn.setFixedWidth(120)
@@ -250,13 +251,13 @@ class ControlCenterScreen(BaseScreen):
         self.alerts_panel = QFrame()
         self.alerts_panel.setVisible(False)
         self.alerts_panel.setStyleSheet(f"""
-            background-color: {{COLOR_BORDER}};
+            background-color: {COLOR_BORDER};
             border-radius: 8px;
-            border: 1px solid {{COLOR_DANGER}};
+            border: 1px solid {COLOR_DANGER};
         """)
         alerts_layout = QHBoxLayout(self.alerts_panel)
         self.alerts_label = QLabel("CRITICAL ALERTS: ")
-        self.alerts_label.setStyleSheet(f"color: {{COLOR_DANGER}}; font-weight: bold;")
+        self.alerts_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold;")
         alerts_layout.addWidget(self.alerts_label)
         self.content_layout.addWidget(self.alerts_panel)
 
@@ -270,14 +271,14 @@ class ControlCenterScreen(BaseScreen):
         # Section 2: Real-time Activity Stream (Left)
         self.activity_group = self._create_section_group("Activity Stream", 400)
         self.activity_list = QListWidget()
-        self.activity_list.setStyleSheet(f"background-color: {{COLOR_BG_SURFACE}}; border: none; border-radius: 8px;")
+        self.activity_list.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
         self.activity_group.layout().addWidget(self.activity_list)
         grid_layout.addWidget(self.activity_group, 0, 0)
 
         # Section 3: Operational Intelligence (Right)
         self.intelligence_group = self._create_section_group("Intelligence & Signals", 400)
         self.intelligence_list = QListWidget()
-        self.intelligence_list.setStyleSheet(f"background-color: {{COLOR_BG_SURFACE}}; border: none; border-radius: 8px;")
+        self.intelligence_list.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
         self.intelligence_group.layout().addWidget(self.intelligence_list)
         grid_layout.addWidget(self.intelligence_group, 0, 1)
         
@@ -305,7 +306,7 @@ class ControlCenterScreen(BaseScreen):
         """Setup the top KPI cards section with System and Business metrics."""
         # System Metrics Row
         system_label = QLabel("SYSTEM PERFORMANCE")
-        system_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; font-size: 10px; font-weight: bold;")
+        system_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px; font-weight: bold;")
         self.content_layout.addWidget(system_label)
 
         self.system_kpi_layout = QHBoxLayout()
@@ -435,6 +436,7 @@ class ControlCenterScreen(BaseScreen):
         
         v_label = QLabel(value)
         v_label.setStyleSheet(f"color: {color}; font-size: 18px; font-weight: bold;")
+        v_label.setWordWrap(True)
         
         layout.addWidget(t_label)
         layout.addWidget(v_label)

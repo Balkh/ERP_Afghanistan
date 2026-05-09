@@ -25,11 +25,11 @@ class EcosystemGraphWidget(QWidget):
         self.nodes = [] # List of {id, label, type, status, x, y}
         self.links = [] # List of (from_id, to_id)
         self.colors = {
-            "Invoice": "COLOR_PRIMARY",
+            "Invoice": COLOR_PRIMARY,
             "Workflow": "#f9e2af",
             "Accounting": "#cba6f7",
-            "Finance": "COLOR_STATUS_VALID",
-            "Inventory": "COLOR_STATUS_WARNING"
+            "Finance": COLOR_STATUS_VALID,
+            "Inventory": COLOR_STATUS_WARNING
         }
 
     def set_chain(self, chain):
@@ -60,7 +60,7 @@ class EcosystemGraphWidget(QWidget):
     def paintEvent(self, event):
         if not self.nodes:
             painter = QPainter(self)
-            painter.setPen(QColor("COLOR_TEXT_MUTED"))
+            painter.setPen(QColor(COLOR_TEXT_MUTED))
             painter.drawText(self.rect(), Qt.AlignCenter, "Select an event chain to visualize correlation")
             return
 
@@ -68,7 +68,7 @@ class EcosystemGraphWidget(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         
         # Draw Links (Edges)
-        painter.setPen(QPen(QColor("COLOR_BORDER"), 2, Qt.DashLine))
+        painter.setPen(QPen(QColor(COLOR_TABLE_BORDER_LIGHT), 2, Qt.DashLine))
         node_map = {n['id']: n for n in self.nodes}
         for start_id, end_id in self.links:
             if start_id in node_map and end_id in node_map:
@@ -78,11 +78,11 @@ class EcosystemGraphWidget(QWidget):
         # Draw Nodes
         for n in self.nodes:
             x, y = n['x'], n['y']
-            color = QColor(self.colors.get(n['type'], "COLOR_TEXT_PRIMARY"))
+            color = QColor(self.colors.get(n['type'], COLOR_TEXT_PRIMARY))
             
             # Node Box
             painter.setPen(QPen(color, 1))
-            painter.setBrush(QBrush(QColor("COLOR_BG_MAIN")))
+            painter.setBrush(QBrush(QColor(COLOR_BG_MAIN)))
             painter.drawRoundedRect(x, y, 90, 45, 8, 8)
             
             # Status Indicator Dot
@@ -93,11 +93,11 @@ class EcosystemGraphWidget(QWidget):
             painter.drawEllipse(QPointF(x + 10, y + 10), 4, 4)
             
             # Text
-            painter.setPen(QColor("COLOR_TEXT_SECONDARY"))
+            painter.setPen(QColor(COLOR_TEXT_SECONDARY))
             painter.setFont(QFont("Segoe UI", 7))
             painter.drawText(x + 20, y + 15, n['type'])
 
-            painter.setPen(QColor("COLOR_TEXT_PRIMARY"))
+            painter.setPen(QColor(COLOR_TEXT_PRIMARY))
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
             painter.drawText(x + 10, y + 35, n['label'])
 

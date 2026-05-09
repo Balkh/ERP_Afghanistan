@@ -44,7 +44,7 @@ class LeaveScreen(BaseScreen):
         refresh_btn.setMinimumHeight(38)
         refresh_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_BG_BUTTON_LIGHT}};
+                background-color: {COLOR_BG_BUTTON_LIGHT};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -52,7 +52,7 @@ class LeaveScreen(BaseScreen):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_SECONDARY_BG}};
+                background-color: {COLOR_SECONDARY_BG};
             }}
         """)
         refresh_btn.clicked.connect(self.load_leave)
@@ -143,7 +143,7 @@ class LeaveScreen(BaseScreen):
                 color: {COLOR_TEXT_PRIMARY};
             }}
             QTableWidget::item:selected {{
-                background-color: #3b82f6 !important;
+                background-color: {COLOR_PRIMARY_HOVER} !important;
                 color: white !important;
             }}
             QTableWidget::item:hover:!selected {{

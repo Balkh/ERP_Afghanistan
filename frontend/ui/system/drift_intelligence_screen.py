@@ -40,7 +40,7 @@ class DriftGaugeWidget(QWidget):
         rect = self.rect().adjusted(10, 10, -10, -10)
         
         # Draw Background Circle
-        painter.setPen(QPen(QColor("COLOR_BG_ELEVATED"), 8))
+        painter.setPen(QPen(QColor(COLOR_BG_ELEVATED), 8))
         painter.drawArc(rect, -45 * 16, 270 * 16)
         
         # Draw Score Arc
@@ -49,7 +49,7 @@ class DriftGaugeWidget(QWidget):
         painter.drawArc(rect, 225 * 16, -span_angle)
         
         # Draw Text
-        painter.setPen(QColor("COLOR_TEXT_PRIMARY"))
+        painter.setPen(QColor(COLOR_TEXT_PRIMARY))
         painter.setFont(QFont("Segoe UI", 18, QFont.Bold))
         painter.drawText(rect, Qt.AlignCenter, f"{self.score}%")
 
@@ -80,7 +80,7 @@ class RiskHeatmapWidget(QWidget):
             risk = self.risk_data.get(mod, "LOW")
             color = COLOR_SUCCESS
             if risk == "CRITICAL": color = COLOR_DANGER
-            elif risk == "HIGH": color = "COLOR_STATUS_WARNING" # Orange
+            elif risk == "HIGH": color = COLOR_WARNING
             elif risk == "MEDIUM": color = COLOR_WARNING
             
             x = 10 + i * cell_w
@@ -90,7 +90,7 @@ class RiskHeatmapWidget(QWidget):
             painter.setBrush(QBrush(QColor(color)))
             painter.drawRoundedRect(int(x), 10, int(cell_w - 5), 50, 5, 5)
             
-            painter.setPen(QColor("COLOR_TEXT_PRIMARY"))
+            painter.setPen(QColor(COLOR_TEXT_PRIMARY))
             painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
             painter.drawText(int(x), 75, int(cell_w - 5), 15, Qt.AlignCenter, mod)
 

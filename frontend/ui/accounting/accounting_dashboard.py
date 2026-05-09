@@ -65,14 +65,14 @@ class AccountingDashboard(QWidget):
         ]
 
         for i, (key, title, value, color) in enumerate(card_configs):
-            card = self._create_summary_card(title, value, color)
+            card = self._create_summary_card(key, title, value, color)
             row, col = divmod(i, 4)
             card_layout.addWidget(card, row, col)
             self.card_labels[key] = card.findChild(QLabel, f"value_{key}")
 
         return card_widget
 
-    def _create_summary_card(self, title, value, accent_color):
+    def _create_summary_card(self, key, title, value, accent_color):
         frame = QFrame()
         frame.setFrameShape(QFrame.StyledPanel)
         frame.setMinimumHeight(90)
@@ -86,8 +86,9 @@ class AccountingDashboard(QWidget):
 
         value_label = QLabel(value)
         value_label.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        value_label.setObjectName(f"value_{title.lower().replace(' ', '_').replace('(ytd)', '').replace('(', '').replace(')', '')}")
+        value_label.setObjectName(f"value_{key}")
         value_label.setAlignment(Qt.AlignRight)
+        value_label.setWordWrap(True)
 
         layout.addWidget(title_label)
         layout.addWidget(value_label)

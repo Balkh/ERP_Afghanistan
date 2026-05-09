@@ -42,7 +42,7 @@ class FixedAssetsScreen(BaseScreen):
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid #dee2e6;
+                border: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-radius: 5px;
                 padding: 5px 15px;
                 color: #495057;
@@ -57,9 +57,9 @@ class FixedAssetsScreen(BaseScreen):
         
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: 5px; background: white; }}
+            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: 5px; background: {COLOR_BG_SURFACE}; }}
             QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }}
-            QTabBar::tab:selected {{ background: white; border-bottom-color: white; font-weight: bold; }}
+            QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
         """)
         
         # Assets Tab

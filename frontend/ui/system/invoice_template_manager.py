@@ -124,7 +124,7 @@ class InvoiceTemplateManager(BaseScreen):
         preview_layout = QVBoxLayout(preview_group)
         self.preview_label = QLabel("Preview will reflect your changes after saving.")
         self.preview_label.setAlignment(Qt.AlignCenter)
-        self.preview_label.setStyleSheet("background: #f0f0f0; border: 1px dashed #ccc;")
+        self.preview_label.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: 1px dashed {COLOR_BORDER};")
         preview_layout.addWidget(self.preview_label)
         
         content_layout.addWidget(preview_group, 1)

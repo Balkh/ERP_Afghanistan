@@ -143,11 +143,13 @@ class SalesInvoiceScreen(QWidget):
         self.credit_limit_label = QLabel("N/A")
         self.credit_limit_label.setMinimumHeight(INPUT_HEIGHT_MD)
         self.credit_limit_label.setStyleSheet(f"font-weight: bold;")
+        self.credit_limit_label.setWordWrap(True)
         customer_layout.addRow("Credit Limit:", self.credit_limit_label)
 
         self.balance_label = QLabel("N/A")
         self.balance_label.setMinimumHeight(INPUT_HEIGHT_MD)
         self.balance_label.setStyleSheet("font-weight: bold;")
+        self.balance_label.setWordWrap(True)
         customer_layout.addRow("Current Balance:", self.balance_label)
 
         top_split.addWidget(customer_group)
@@ -779,14 +781,14 @@ class SalesInvoiceScreen(QWidget):
                 
                 # Update workflow status label
                 color_map = {
-                    'DRAFT': 'COLOR_TEXT_MUTED',
-                    'PENDING_APPROVAL': 'COLOR_WARNING',
-                    'APPROVED': 'COLOR_SUCCESS',
-                    'REJECTED': 'COLOR_DANGER',
-                    'POSTED': 'COLOR_INFO',
+                    'DRAFT': COLOR_TEXT_MUTED,
+                    'PENDING_APPROVAL': COLOR_WARNING,
+                    'APPROVED': COLOR_SUCCESS,
+                    'REJECTED': COLOR_DANGER,
+                    'POSTED': COLOR_INFO,
                     'CANCELLED': '#7f8c8d'
                 }
-                color = color_map.get(state, 'COLOR_TEXT_MUTED')
+                color = color_map.get(state, COLOR_TEXT_MUTED)
                 self.workflow_status_label.setText(f"Workflow: {state_display}")
                 self.workflow_status_label.setStyleSheet(f"color: {color}; font-weight: bold; padding: 8px;")
                 

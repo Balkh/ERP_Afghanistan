@@ -27,12 +27,12 @@ class Toast(QFrame):
         
         # Set background color based on type
         colors = {
-            "success": "{COLOR_SUCCESS}",
+            "success": COLOR_SUCCESS,
             "error": "#f44336",
             "warning": "#ff9800",
-            "info": "{COLOR_PRIMARY}"
+            "info": COLOR_PRIMARY
         }
-        bg_color = colors.get(toast_type, "{COLOR_PRIMARY}")
+        bg_color = colors.get(toast_type, COLOR_PRIMARY)
         self.setStyleSheet(self.styleSheet() + f"background-color: {bg_color};")
         
         layout = QHBoxLayout(self)

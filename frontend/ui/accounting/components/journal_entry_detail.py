@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT)
 
 
 class JournalEntryDetailDialog(QDialog):
@@ -23,7 +23,7 @@ class JournalEntryDetailDialog(QDialog):
         self.setMinimumWidth(850)
         self.setMinimumHeight(600)
         self.setStyleSheet(f"""
-            QDialog {{ background-color: #f5f6fa; }}
+            QDialog {{ background-color: {COLOR_BG_MAIN}; }}
             QGroupBox {{ 
                 font-weight: bold; 
                 border: 1px solid {COLOR_BORDER}; 
@@ -32,7 +32,7 @@ class JournalEntryDetailDialog(QDialog):
                 padding-top: 15px;
                 background-color: white;
             }}
-            QLabel {{ color: #2f3640; }}
+            QLabel {{ color: {COLOR_TEXT_PRIMARY}; }}
         """)
 
         layout = QVBoxLayout(self)
@@ -91,7 +91,7 @@ class JournalEntryDetailDialog(QDialog):
         self.lines_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.lines_table.setAlternatingRowColors(True)
         self.lines_table.setStyleSheet(f"""
-            QTableWidget {{ border: 1px solid {COLOR_BORDER}; border-radius: 4px; }}
+            QTableWidget {{ border: 1px solid {COLOR_TABLE_BORDER_LIGHT}; border-radius: 4px; }}
             QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: 5px; font-weight: bold; }}
         """)
         lines_layout.addWidget(self.lines_table)
@@ -113,7 +113,7 @@ class JournalEntryDetailDialog(QDialog):
         totals_layout.addWidget(QLabel("Total Credit:"))
         self.total_credit_label = QLabel("0.00")
         self.total_credit_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        self.total_credit_label.setStyleSheet("color: #c0392b;")
+        self.total_credit_label.setStyleSheet(f"color: {COLOR_DANGER};")
         totals_layout.addWidget(self.total_credit_label)
         
         lines_layout.addLayout(totals_layout)
@@ -181,12 +181,12 @@ class JournalEntryDetailDialog(QDialog):
 
                 debit_item = QTableWidgetItem(f"{debit:,.2f}")
                 debit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                debit_item.setForeground(QColor("COLOR_SUCCESS"))
+                debit_item.setForeground(QColor(COLOR_SUCCESS))
                 self.lines_table.setItem(row, 2, debit_item)
 
                 credit_item = QTableWidgetItem(f"{credit:,.2f}")
                 credit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                credit_item.setForeground(QColor("#c0392b"))
+                credit_item.setForeground(QColor(COLOR_DANGER))
                 self.lines_table.setItem(row, 3, credit_item)
 
             self.total_debit_label.setText(f"{total_debit:,.2f}")

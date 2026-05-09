@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
-                                  QGridLayout, QPushButton, QApplication)
+                                  QGridLayout, QPushButton, QApplication, QScrollArea)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from ui.role_manager import UserRole
@@ -11,9 +11,9 @@ class Dashboard(QWidget):
     """Role-aware Dashboard widget fetching real data from /api/control-center/."""
 
     C = {
-        'blue': 'COLOR_PRIMARY', 'green': 'COLOR_STATUS_VALID', 'red': 'COLOR_DANGER',
-        'yellow': 'COLOR_WARNING', 'peach': 'COLOR_STATUS_WARNING', 'mauve': '#cba6f7',
-        'pink': '#f5c2e7', 'teal': 'COLOR_INFO',
+        'blue': COLOR_PRIMARY, 'green': COLOR_STATUS_VALID, 'red': COLOR_DANGER,
+        'yellow': COLOR_WARNING, 'peach': COLOR_STATUS_WARNING, 'mauve': '#cba6f7',
+        'pink': '#f5c2e7', 'teal': COLOR_INFO,
     }
 
     def __init__(self, role=None, api_client=None):
@@ -62,8 +62,19 @@ class Dashboard(QWidget):
         """)
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(24, 20, 24, 20)
-        root.setSpacing(16)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet(f"QScrollArea {{ background-color: {COLOR_BG_MAIN}; }}")
+
+        content = QWidget()
+        content.setObjectName("dashboardContent")
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(24, 20, 24, 20)
+        layout.setSpacing(16)
 
         # -- Header row --
         hdr = QHBoxLayout()
@@ -84,12 +95,12 @@ class Dashboard(QWidget):
         """)
         refresh_btn.clicked.connect(self.refresh_data)
         hdr.addWidget(refresh_btn)
-        root.addLayout(hdr)
+        layout.addLayout(hdr)
 
         self._subtitle = QLabel("Loading…")
         self._subtitle.setFont(QFont("Segoe UI", 10))
         self._subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
-        root.addWidget(self._subtitle)
+        layout.addWidget(self._subtitle)
 
         # -- KPI grid (2 × 3) --
         kg = QGridLayout()
@@ -106,7 +117,7 @@ class Dashboard(QWidget):
         for r, c, t, ck, key in specs:
             self._kpi_labels[key] = self._add_kpi_card(kg, r, c, t, ck)
 
-        root.addLayout(kg)
+        layout.addLayout(kg)
 
         # -- Middle: role section (left) + alerts (right) --
         mid = QHBoxLayout()
@@ -128,7 +139,7 @@ class Dashboard(QWidget):
         self._alert_stack.setSpacing(SPACING_SM)
         mid.addWidget(self._alert_frame, 2)
 
-        root.addLayout(mid, 1)
+        layout.addLayout(mid, 1)
 
         # -- Quick actions --
         af = QFrame()
@@ -147,14 +158,17 @@ class Dashboard(QWidget):
                           ("Products", 1), ("Reports", 13)]:
             al.addWidget(self._mk_action_btn(text, idx))
         al.addStretch()
-        root.addWidget(af)
+        layout.addWidget(af)
+
+        scroll.setWidget(content)
+        root.addWidget(scroll)
 
     def _add_kpi_card(self, grid, row, col, label, color_key):
         card = QFrame()
-        c = self.C.get(color_key, 'COLOR_PRIMARY')
+        c = self.C.get(color_key, COLOR_PRIMARY)
         card.setStyleSheet(f"""
             QFrame {{
-                background-color: COLOR_BG_ELEVATED;
+                background-color: {COLOR_BG_ELEVATED};
                 border-left: 4px solid {c};
                 border-radius: 8px;
             }}
@@ -172,6 +186,7 @@ class Dashboard(QWidget):
         v = QLabel("—")
         v.setFont(QFont("Segoe UI", 20, QFont.Bold))
         v.setStyleSheet(f"color: {c};")
+        v.setWordWrap(True)
         lay.addWidget(v)
 
         grid.addWidget(card, row, col)
@@ -377,7 +392,7 @@ class Dashboard(QWidget):
         self._role_stack.addLayout(grid)
 
     def _mini_card(self, label, value, color_key, is_currency):
-        c = self.C.get(color_key, 'COLOR_PRIMARY')
+        c = self.C.get(color_key, COLOR_PRIMARY)
         f = QFrame()
         f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: 6px; }}")
         lay = QVBoxLayout(f)
@@ -400,6 +415,7 @@ class Dashboard(QWidget):
         v = QLabel(display)
         v.setFont(QFont("Segoe UI", 12, QFont.Bold))
         v.setStyleSheet(f"color: {c};")
+        v.setWordWrap(True)
         lay.addWidget(v)
 
         return f
@@ -412,7 +428,7 @@ class Dashboard(QWidget):
 
         t = QLabel("Alerts")
         t.setFont(QFont("Segoe UI", 13, QFont.Bold))
-        t.setStyleSheet(f"color: {COLOR_STATUS_WARNING};")
+        t.setStyleSheet(f"color: {COLOR_WARNING};")
         self._alert_stack.addWidget(t)
 
         ops = data.get('operations', {}) or {}
@@ -440,12 +456,12 @@ class Dashboard(QWidget):
         self._alert_stack.addStretch()
 
     def _alert_line(self, label, status, color_key):
-        c = self.C.get(color_key, 'COLOR_PRIMARY')
+        c = self.C.get(color_key, COLOR_PRIMARY)
         box = QFrame()
         box.setStyleSheet(f"""
             QFrame {{
-                background-color: COLOR_BORDER;
-                border: 1px solid COLOR_BORDER_LIGHT;
+                background-color: {COLOR_BORDER};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-left: 3px solid {c};
                 border-radius: 4px;
             }}

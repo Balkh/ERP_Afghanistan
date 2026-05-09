@@ -60,12 +60,12 @@ class TrialBalanceScreen(BaseReportScreen):
 
             debit_item = self._item(f"{debit:,.2f}")
             if debit > 0:
-                debit_item.setForeground(QColor("COLOR_SUCCESS"))
+                debit_item.setForeground(QColor(COLOR_SUCCESS))
             self.table.setItem(row, 3, debit_item)
 
             credit_item = self._item(f"{credit:,.2f}")
             if credit > 0:
-                credit_item.setForeground(QColor("COLOR_DANGER"))
+                credit_item.setForeground(QColor(COLOR_DANGER))
             self.table.setItem(row, 4, credit_item)
 
             self.table.setItem(row, 5, self._item(f"{net:,.2f}"))
@@ -86,9 +86,9 @@ class TrialBalanceScreen(BaseReportScreen):
         status_text = "BALANCED" if is_balanced else f"NOT BALANCED (diff: {diff:,.2f})"
         status_item = self._bold_item(status_text)
         if is_balanced:
-            status_item.setForeground(QColor("COLOR_SUCCESS"))
+            status_item.setForeground(QColor(COLOR_SUCCESS))
         else:
-            status_item.setForeground(QColor("COLOR_DANGER"))
+            status_item.setForeground(QColor(COLOR_DANGER))
         self.table.setItem(last_row, 5, status_item)
         self.table.setItem(last_row, 6, self._bold_item(""))
 

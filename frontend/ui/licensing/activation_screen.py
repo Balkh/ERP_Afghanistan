@@ -185,10 +185,10 @@ class ActivationScreen(QWidget):
             self.selected_license_file = file_path
             file_name = os.path.basename(file_path)
             self.file_label.setText(f"Selected: {file_name}")
-            self.file_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-family: Consolas; font-size: 9px; padding: 8px;")
+            self.file_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-family: Consolas; font-size: 9px; padding: 8px;")
             self.activate_button.setEnabled(True)
             self.status_label.setText("License file selected. Ready to activate.")
-            self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; padding: 8px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: 8px;")
     
     def activate_license(self):
         """Activate the license using the selected file."""
@@ -198,7 +198,7 @@ class ActivationScreen(QWidget):
         
         # Update UI
         self.status_label.setText("Activating license...")
-        self.status_label.setStyleSheet(f"color: {COLOR_STATUS_WARNING}; font-weight: bold; padding: 8px;")
+        self.status_label.setStyleSheet(f"color: {COLOR_WARNING}; font-weight: bold; padding: 8px;")
         self.activate_button.setEnabled(False)
         self.select_button.setEnabled(False)
         
@@ -217,7 +217,7 @@ class ActivationScreen(QWidget):
                 self.license_service.save_license_to_file(license_data, default_license_path)
                 
                 self.status_label.setText("Activation successful!")
-                self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; padding: 8px;")
+                self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: 8px;")
                 
                 QMessageBox.information(
                     self,

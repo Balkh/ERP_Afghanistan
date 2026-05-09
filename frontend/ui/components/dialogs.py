@@ -155,8 +155,8 @@ class EnterpriseDialog(QDialog):
             
         button_area.setStyleSheet(f"""
             QFrame {{
-                background-color: {{{COLOR_BG_MAIN}}};
-                border-top: 1px solid {{{COLOR_BORDER}}};
+                background-color: {COLOR_BG_MAIN};
+                border-top: 1px solid {COLOR_BORDER};
                 border-bottom-left-radius: 8px;
                 border-bottom-right-radius: 8px;
             }}
@@ -166,15 +166,15 @@ class EnterpriseDialog(QDialog):
                 font-weight: 600;
             }}
             QPushButton[text="Save"] {{
-                background-color: {{{COLOR_PRIMARY}}};
+                background-color: {COLOR_PRIMARY};
                 color: white;
             }}
             QPushButton[text="OK"] {{
-                background-color: {{{COLOR_PRIMARY}}};
+                background-color: {COLOR_PRIMARY};
                 color: white;
             }}
             QPushButton[text="Yes"] {{
-                background-color: {{{COLOR_PRIMARY}}};
+                background-color: {COLOR_PRIMARY};
                 color: white;
             }}
         """)

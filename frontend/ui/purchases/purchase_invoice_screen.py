@@ -63,7 +63,7 @@ class PurchaseInvoiceScreen(QWidget):
         # Workflow status label
         self.workflow_status_label = QLabel("")
         self.workflow_status_label.setStyleSheet(f"""
-            color: {{COLOR_TEXT_MUTED}}; 
+            color: {COLOR_TEXT_MUTED}; 
             padding: {SPACING_SM};
             font-size: {FONT_SIZE_MD}pt;
         """)
@@ -131,11 +131,13 @@ class PurchaseInvoiceScreen(QWidget):
         self.credit_limit_label = QLabel("N/A")
         self.credit_limit_label.setMinimumHeight(INPUT_HEIGHT_MD)
         self.credit_limit_label.setStyleSheet(f"font-weight: bold;")
+        self.credit_limit_label.setWordWrap(True)
         supplier_layout.addRow("Credit Limit:", self.credit_limit_label)
 
         self.balance_label = QLabel("N/A")
         self.balance_label.setMinimumHeight(INPUT_HEIGHT_MD)
         self.balance_label.setStyleSheet("font-weight: bold;")
+        self.balance_label.setWordWrap(True)
         supplier_layout.addRow("Current Balance:", self.balance_label)
 
         top_split.addWidget(supplier_group)
@@ -331,17 +333,17 @@ class PurchaseInvoiceScreen(QWidget):
         self.receive_btn.clicked.connect(self.receive_invoice)
         self.receive_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_SUCCESS}};
+                background-color: {COLOR_SUCCESS};
                 color: white;
                 border: none;
                 border-radius: {BORDER_RADIUS_MD}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_SUCCESS_HOVER}};
+                background-color: {COLOR_SUCCESS_HOVER};
             }}
             QPushButton:pressed {{
-                background-color: {{COLOR_SUCCESS_ACTIVE}};
+                background-color: {COLOR_SUCCESS_ACTIVE};
             }}
         """)
         actions_layout.addWidget(self.receive_btn)
@@ -746,14 +748,14 @@ class PurchaseInvoiceScreen(QWidget):
                 state_display = data.get('state_display', state)
                 
                 color_map = {
-                    'DRAFT': 'COLOR_TEXT_MUTED',
-                    'PENDING_APPROVAL': 'COLOR_WARNING',
-                    'APPROVED': 'COLOR_SUCCESS',
-                    'REJECTED': 'COLOR_DANGER',
-                    'POSTED': 'COLOR_INFO',
+                    'DRAFT': COLOR_TEXT_MUTED,
+                    'PENDING_APPROVAL': COLOR_WARNING,
+                    'APPROVED': COLOR_SUCCESS,
+                    'REJECTED': COLOR_DANGER,
+                    'POSTED': COLOR_INFO,
                     'CANCELLED': '#7f8c8d'
                 }
-                color = color_map.get(state, 'COLOR_TEXT_MUTED')
+                color = color_map.get(state, COLOR_TEXT_MUTED)
                 self.workflow_status_label.setText(f"Workflow: {state_display}")
                 self.workflow_status_label.setStyleSheet(f"color: {color}; font-weight: bold; padding: 8px;")
                 

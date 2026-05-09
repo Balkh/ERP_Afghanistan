@@ -25,7 +25,7 @@ class BaseInventoryScreen(QWidget):
     def setup_ui(self):
         """Setup the base UI components."""
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setContentsMargins(MARGIN_PAGE,  MARGIN_PAGE,  MARGIN_PAGE,  MARGIN_PAGE)
         layout.setSpacing(SPACING_SM + SPACING_XS)
         
         # Header

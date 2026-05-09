@@ -101,7 +101,7 @@ class MainWindow(QMainWindow):
         
         # Connection status
         self.conn_label = QLabel("● Connected")
-        self.conn_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; margin-right: 15px; font-weight: bold;")
+        self.conn_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: 15px; font-weight: bold;")
         
         # User info
         user_name = self.user_data.get('full_name', self.user_data.get('username', 'User'))
@@ -170,17 +170,17 @@ class MainWindow(QMainWindow):
 
         # Add device ID label to status bar
         self.device_id_label = QLabel()
-        self.device_id_label.setStyleSheet(f"font-size: 10px; color: #666;")
+        self.device_id_label.setStyleSheet(f"font-size: 10px; color: {COLOR_TEXT_MUTED};")
         self.status_bar.addPermanentWidget(self.device_id_label)
 
         # Add license status label to status bar
         self.license_status_label = QLabel()
-        self.license_status_label.setStyleSheet("font-size: 10px; color: #666; margin-left: 10px;")
+        self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;")
         self.status_bar.addPermanentWidget(self.license_status_label)
         
         # Add connection status label to status bar
         self.connection_status_label = QLabel()
-        self.connection_status_label.setStyleSheet("font-size: 10px; color: #666; margin-left: 10px;")
+        self.connection_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;")
         self.status_bar.addPermanentWidget(self.connection_status_label)
         
         # Connection check timer
@@ -633,10 +633,10 @@ class MainWindow(QMainWindow):
         """Handle license validation change signals."""
         if is_valid:
             self.license_status_label.setText(f"License: Valid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: 10px; color: #008000; margin-left: 10px;")  # Green
+            self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_SUCCESS}; margin-left: 10px;")  # Green
         else:
             self.license_status_label.setText(f"License: Invalid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: 10px; color: {{COLOR_DANGER}}; margin-left: 10px;")  # Red
+            self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_DANGER}; margin-left: 10px;")  # Red
             
             # Show critical error message if validation fails
             if not is_valid and "too many times" in message:

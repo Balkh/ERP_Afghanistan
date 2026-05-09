@@ -68,7 +68,7 @@ class EmployeeScreen(BaseScreen):
         self.add_btn.setCursor(Qt.PointingHandCursor)
         self.add_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_SUCCESS}};
+                background-color: {COLOR_SUCCESS};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -76,10 +76,10 @@ class EmployeeScreen(BaseScreen):
                 padding: 0 {SPACING_MD};
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_SUCCESS}};
+                background-color: {COLOR_SUCCESS};
             }}
             QPushButton:pressed {{
-                background-color: {{COLOR_SUCCESS}};
+                background-color: {COLOR_SUCCESS};
             }}
         """)
         self.add_btn.clicked.connect(self.add_employee)
@@ -172,17 +172,17 @@ class EmployeeScreen(BaseScreen):
                 border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; 
                 font-weight: bold;
                 font-size: 12px;
-            }}}}
-            QTableWidget::item {{{{ 
+            }}
+            QTableWidget::item {{ 
                 padding: {SPACING_SM}; 
-                border-bottom: 1px solid {{{COLOR_TEXT_SECONDARY}}};
+                border-bottom: 1px solid {COLOR_TEXT_SECONDARY};
                 color: {COLOR_TEXT_PRIMARY};
-            }}}}
-            QTableWidget::item:selected {{{{
-                background-color: {{{COLOR_PRIMARY}}} !important;
+            }}
+            QTableWidget::item:selected {{
+                background-color: {COLOR_PRIMARY} !important;
                 color: white !important;
                 font-weight: bold;
-            }}}}
+            }}
             QTableWidget::item:hover:!selected {{
                 background-color: {COLOR_TEXT_SECONDARY};
                 color: white;

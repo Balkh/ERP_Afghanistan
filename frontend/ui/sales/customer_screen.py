@@ -79,7 +79,7 @@ class CustomerScreen(BaseScreen):
         self.error_label.setAlignment(Qt.AlignCenter)
         self.error_label.setStyleSheet(f"""
             QLabel {{
-                color: {{COLOR_DANGER}};
+                color: {COLOR_DANGER};
                 padding: {SPACING_MD};
             }}
         """)
@@ -91,7 +91,7 @@ class CustomerScreen(BaseScreen):
         self.empty_label.setAlignment(Qt.AlignCenter)
         self.empty_label.setStyleSheet(f"""
             QLabel {{
-                color: {{COLOR_TEXT_MUTED}};
+                color: {COLOR_TEXT_MUTED};
                 font-style: italic;
                 padding: {SPACING_MD};
             }}

@@ -11,7 +11,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
     COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_WARNING,
     COLOR_DANGER, COLOR_INFO, COLOR_BG_MAIN, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
     COLOR_BORDER_LIGHT_THEME, COLOR_TEXT_ON_PRIMARY, BORDER_RADIUS_SM, BORDER_RADIUS_MD)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BG_LIGHT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_SUCCESS_BG, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 
 class JournalEntryFormDialog(QDialog):
@@ -185,8 +185,8 @@ class JournalEntryFormDialog(QDialog):
         self.btn_remove_line = QPushButton("- Remove Selected Lines")
         self.btn_remove_line.setStyleSheet(f"""
             QPushButton {{
-                background-color: #f1f2f6;
-                color: #2f3640;
+                background-color: {COLOR_BG_INPUT};
+                color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 padding: 5px 15px;
@@ -344,10 +344,10 @@ class JournalEntryFormDialog(QDialog):
 
         if total_debit == total_credit and total_debit > 0:
             self.balance_label.setText("BALANCED")
-            self.balance_label.setStyleSheet("color: #2ecc71; padding: 5px 15px; border-radius: 4px; background-color: #e8f5e9;")
+            self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: 5px 15px; border-radius: 4px; background-color: {COLOR_SUCCESS_BG};")
         elif total_debit == 0 and total_credit == 0:
             self.balance_label.setText("EMPTY")
-            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 5px 15px; border-radius: 4px; background-color: #f1f2f6;")
+            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 5px 15px; border-radius: 4px; background-color: {COLOR_BG_LIGHT};")
         else:
             diff = abs(total_debit - total_credit)
             self.balance_label.setText(f"UNBALANCED ({diff:,.2f})")

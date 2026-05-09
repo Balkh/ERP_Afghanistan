@@ -78,7 +78,7 @@ class EntityManagementScreen(BaseScreen):
             status = "Active" if ent.get('is_active') else "Inactive"
             status_item = QTableWidgetItem(status)
             if not ent.get('is_active'):
-                status_item.setForeground(QColor("COLOR_DANGER"))
+                status_item.setForeground(QColor(COLOR_DANGER))
             self.table.setItem(row, 4, status_item)
             
             default_item = QTableWidgetItem("Yes" if ent.get('is_default') else "No")

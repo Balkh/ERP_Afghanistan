@@ -51,7 +51,7 @@ class PayrollScreen(BaseScreen):
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #4b5563;
+                background-color: {COLOR_TEXT_SECONDARY};
             }
         """)
         self.btn_refresh.clicked.connect(self.load_data)
@@ -96,12 +96,12 @@ class PayrollScreen(BaseScreen):
                 border-top-right-radius: 6px; 
             }}
             QTabBar::tab:selected {{ 
-                background: #3b82f6; 
+                background: {COLOR_PRIMARY_HOVER}; 
                 color: white; 
                 font-weight: bold; 
             }}
             QTabBar::tab:hover:!selected {{ 
-                background: #4b5563; 
+                background: {COLOR_TEXT_SECONDARY}; 
             }}
         """)
         
@@ -162,9 +162,11 @@ class PayrollScreen(BaseScreen):
         
         filter_bar = QFrame()
         filter_bar.setStyleSheet(f"""
-            background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-            border-radius: 8px;
-            border: 1px solid #4b5563;
+            QFrame {{
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
+                border-radius: 8px;
+                border: 1px solid {COLOR_TEXT_SECONDARY};
+            }}
         """)
         filter_layout = QHBoxLayout(filter_bar)
         
@@ -175,7 +177,7 @@ class PayrollScreen(BaseScreen):
             QComboBox {{
                 background-color: {COLOR_BG_MAIN};
                 color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid #4b5563;
+            border: 1px solid {COLOR_TEXT_SECONDARY};
                 border-radius: 6px;
                 padding: 8px;
             }}
@@ -251,7 +253,7 @@ class PayrollScreen(BaseScreen):
                 color: {COLOR_TEXT_PRIMARY};
             }}
             QTableWidget::item:selected {{
-                background-color: #3b82f6 !important;
+                background-color: {COLOR_PRIMARY_HOVER} !important;
                 color: white !important;
             }}
             QTableWidget::item:hover:!selected {{

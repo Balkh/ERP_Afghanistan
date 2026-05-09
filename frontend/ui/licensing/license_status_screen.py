@@ -201,7 +201,7 @@ class LicenseStatusScreen(QWidget):
         
         # Update status indicator and label
         if status["is_valid"]:
-            self.status_indicator.setStyleSheet(f"color: {COLOR_STATUS_VALID};")  # Green
+            self.status_indicator.setStyleSheet(f"color: {COLOR_SUCCESS};")  # Green
             self.status_label.setText("VALID")
             self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold;")
         else:

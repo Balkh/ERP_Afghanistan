@@ -40,7 +40,7 @@ class AuditScreen(BaseScreen):
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid #dee2e6;
+                border: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-radius: 5px;
                 padding: 5px 15px;
                 color: #495057;
@@ -181,7 +181,7 @@ class AuditScreen(BaseScreen):
                     
                     # Action
                     action_item = QTableWidgetItem(log.get('action_display', log.get('action', '')))
-                    if log.get('is_error'): action_item.setForeground(QColor("COLOR_DANGER"))
+                    if log.get('is_error'): action_item.setForeground(QColor(COLOR_DANGER))
                     self.table.setItem(i, 3, action_item)
                     
                     # Entity

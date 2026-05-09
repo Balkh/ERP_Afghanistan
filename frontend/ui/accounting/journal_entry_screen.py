@@ -44,7 +44,7 @@ class JournalEntryScreen(QFrame):
         self.btn_refresh.setMinimumHeight(38)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_TEXT_MUTED}};
+                background-color: {COLOR_TEXT_MUTED};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -52,7 +52,7 @@ class JournalEntryScreen(QFrame):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_BORDER}};
+                background-color: {COLOR_BORDER};
             }}
         """)
         header_layout.addWidget(self.btn_refresh)
@@ -70,14 +70,14 @@ class JournalEntryScreen(QFrame):
         self.loading_label = QLabel("Loading journal entries...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No journal entries found")
         self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -101,7 +101,7 @@ class JournalEntryScreen(QFrame):
         # Style buttons with modern dark theme colors
         self.btn_new.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_SUCCESS}};
+                background-color: {COLOR_SUCCESS};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -109,67 +109,67 @@ class JournalEntryScreen(QFrame):
                 padding: {SPACING_SM} {SPACING_MD};
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_SUCCESS}};
+                background-color: {COLOR_SUCCESS};
             }}
         """)
         self.btn_view.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_PRIMARY}};
+                background-color: {COLOR_PRIMARY};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: {SPACING_SM} {SPACING_MD};
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_PRIMARY}};
+                background-color: {COLOR_PRIMARY};
             }}
         """)
         self.btn_post.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_WARNING}};
+                background-color: {COLOR_WARNING};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: {SPACING_SM} {SPACING_MD};
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_WARNING}};
+                background-color: {COLOR_WARNING};
             }}
         """)
         self.btn_unpost.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_WARNING}};
+                background-color: {COLOR_WARNING};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: {SPACING_SM} {SPACING_MD};
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_WARNING}};
+                background-color: {COLOR_WARNING};
             }}
         """)
         self.btn_reverse.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_DANGER}};
+                background-color: {COLOR_DANGER};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: {SPACING_SM} {SPACING_MD};
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_DANGER}};
+                background-color: {COLOR_DANGER};
             }}
         """)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_TEXT_MUTED}};
+                background-color: {COLOR_TEXT_MUTED};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: {SPACING_SM} {SPACING_MD};
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_BORDER}};
+                background-color: {COLOR_BORDER};
             }}
         """)
 
@@ -282,15 +282,15 @@ class JournalEntryScreen(QFrame):
         
         table.setStyleSheet(f"""
             QTableWidget {{
-                border: 1px solid {{COLOR_BORDER_LIGHT}};
+                border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: 5px;
-                gridline-color: {{COLOR_TABLE_BORDER_LIGHT}};
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
             }}
             QHeaderView::section {{
-                background-color: {{COLOR_TABLE_HEADER_BG_LIGHT}};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 padding: {SPACING_SM};
                 border: none;
-                border-bottom: 2px solid {{COLOR_BORDER_LIGHT}};
+                border-bottom: 2px solid {COLOR_BORDER_LIGHT};
                 font-weight: bold;
             }}
             QTableWidget::item {{
@@ -410,7 +410,7 @@ class JournalEntryScreen(QFrame):
             debit = self._safe_float(entry.get("total_debit"))
             debit_item = QTableWidgetItem(f"{debit:,.2f}")
             debit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            debit_item.setForeground(QColor("{COLOR_SUCCESS}"))
+            debit_item.setForeground(QColor(COLOR_SUCCESS))
             self.table.setItem(row, 4, debit_item)
 
             # Credit
