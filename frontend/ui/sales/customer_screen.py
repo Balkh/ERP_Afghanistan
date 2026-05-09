@@ -64,7 +64,7 @@ class CustomerScreen(BaseScreen):
         # Loading indicator
         self.loading_label = QLabel("Loading customers...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("""
+        self.loading_label.setStyleSheet(f"""
             QLabel {
                 color: #666;
                 font-style: italic;
@@ -79,7 +79,7 @@ class CustomerScreen(BaseScreen):
         self.error_label.setAlignment(Qt.AlignCenter)
         self.error_label.setStyleSheet(f"""
             QLabel {{
-                color: {COLOR_DANGER};
+                color: {{COLOR_DANGER}};
                 padding: {SPACING_MD};
             }}
         """)
@@ -91,7 +91,7 @@ class CustomerScreen(BaseScreen):
         self.empty_label.setAlignment(Qt.AlignCenter)
         self.empty_label.setStyleSheet(f"""
             QLabel {{
-                color: {COLOR_TEXT_MUTED};
+                color: {{COLOR_TEXT_MUTED}};
                 font-style: italic;
                 padding: {SPACING_MD};
             }}
@@ -278,7 +278,7 @@ class CustomerDialog(QDialog):
         # Scroll area for form
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { border: none; }")
+        scroll.setStyleSheet(f"QScrollArea { border: none; }")
         
         # Form container
         form = QFrame()
@@ -411,18 +411,18 @@ class CustomerDialog(QDialog):
         
         self.btn_cancel = QPushButton("Cancel")
         self.btn_cancel.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.btn_cancel.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_TEXT_MUTED;
+        self.btn_cancel.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_TEXT_MUTED};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: 12px 24px;
                 font-size: 14px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #7f8c8d;
-            }
+            }}
         """)
         self.btn_cancel.clicked.connect(self.reject)
         

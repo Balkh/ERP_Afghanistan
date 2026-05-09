@@ -73,7 +73,7 @@ class SystemIntegrityScreen(BaseScreen):
         header = QHBoxLayout()
         title = QLabel("System Integrity & Validation")
         title.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        title.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         
         self.scan_btn = QPushButton("Run Full System Scan")
         self.scan_btn.setFixedWidth(200)
@@ -89,18 +89,18 @@ class SystemIntegrityScreen(BaseScreen):
         self.progress_container.setVisible(False)
         p_layout = QVBoxLayout(self.progress_container)
         self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet("QProgressBar { background: COLOR_BG_ELEVATED; border-radius: 5px; text-align: center; } QProgressBar::chunk { background: COLOR_PRIMARY; border-radius: 5px; }")
+        self.progress_bar.setStyleSheet(f"QProgressBar { background: {COLOR_BG_ELEVATED}; border-radius: 5px; text-align: center; } QProgressBar::chunk { background: {COLOR_PRIMARY}; border-radius: 5px; }")
         self.progress_label = QLabel("Initializing...")
-        self.progress_label.setStyleSheet("color: COLOR_TEXT_SECONDARY; font-size: 11px;")
+        self.progress_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
         p_layout.addWidget(self.progress_bar)
         p_layout.addWidget(self.progress_label)
         layout.addWidget(self.progress_container)
         
         # Results Summary Cards
         summary_layout = QHBoxLayout()
-        self.pass_card = self._create_summary_card("Passed Tests", "0", COLOR_SUCCESS)
-        self.fail_card = self._create_summary_card("Failed Tests", "0", COLOR_DANGER)
-        self.warn_card = self._create_summary_card("Warnings", "0", COLOR_WARNING)
+        self.pass_card = self._create_summary_card("Passed Tests", "0", {COLOR_SUCCESS})
+        self.fail_card = self._create_summary_card("Failed Tests", "0", {COLOR_DANGER})
+        self.warn_card = self._create_summary_card("Warnings", "0", {COLOR_WARNING})
         summary_layout.addWidget(self.pass_card)
         summary_layout.addWidget(self.fail_card)
         summary_layout.addWidget(self.warn_card)
@@ -108,7 +108,7 @@ class SystemIntegrityScreen(BaseScreen):
         
         # Results Table
         results_group = QGroupBox("Validation Report")
-        results_group.setStyleSheet("QGroupBox { color: COLOR_PRIMARY; font-weight: bold; border: 1px solid COLOR_BG_ELEVATED; border-radius: 12px; margin-top: 15px; background: COLOR_BG_MAIN; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 5px; }")
+        results_group.setStyleSheet(f"QGroupBox { color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 5px; }")
         rg_layout = QVBoxLayout(results_group)
         rg_layout.setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         
@@ -120,7 +120,7 @@ class SystemIntegrityScreen(BaseScreen):
         self.results_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.results_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.results_table.cellClicked.connect(self._show_details)
-        self.results_table.setStyleSheet("QTableWidget { background: COLOR_BG_SURFACE; color: COLOR_TEXT_PRIMARY; border: none; gridline-color: COLOR_BG_ELEVATED; } QHeaderView::section { background: COLOR_BG_ELEVATED; color: COLOR_PRIMARY; border: none; padding: 8px; font-weight: bold; }")
+        self.results_table.setStyleSheet(f"QTableWidget { background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; gridline-color: {COLOR_BG_ELEVATED}; } QHeaderView::section { background: {COLOR_BG_ELEVATED}; color: {COLOR_PRIMARY}; border: none; padding: 8px; font-weight: bold; }")
         rg_layout.addWidget(self.results_table)
         layout.addWidget(results_group)
         
@@ -131,7 +131,7 @@ class SystemIntegrityScreen(BaseScreen):
         dg_layout = QVBoxLayout(self.details_group)
         self.details_text = QTextEdit()
         self.details_text.setReadOnly(True)
-        self.details_text.setStyleSheet("background: COLOR_BG_INPUT; color: COLOR_TEXT_PRIMARY; border: none; font-family: 'Consolas'; font-size: 11px;")
+        self.details_text.setStyleSheet(f"background: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; border: none; font-family: 'Consolas'; font-size: 11px;")
         dg_layout.addWidget(self.details_text)
         layout.addWidget(self.details_group)
         
@@ -142,7 +142,7 @@ class SystemIntegrityScreen(BaseScreen):
         card.setStyleSheet(f"background: COLOR_BG_MAIN; border: 1px solid COLOR_BG_ELEVATED; border-radius: 10px; border-left: 4px solid {color};")
         l = QVBoxLayout(card)
         t_label = QLabel(title)
-        t_label.setStyleSheet("color: COLOR_TEXT_SECONDARY; font-size: 11px;")
+        t_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
         v_label = QLabel(val)
         v_label.setStyleSheet(f"color: {color}; font-size: 24px; font-weight: bold;")
         l.addWidget(t_label)

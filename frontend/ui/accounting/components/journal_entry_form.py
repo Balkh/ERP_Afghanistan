@@ -109,7 +109,7 @@ class JournalEntryFormDialog(QDialog):
 
         title = QLabel("Create Journal Entry")
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        title.setStyleSheet("color: #2c3e50;")
+        title.setStyleSheet(f"color: #2c3e50;")
         layout.addWidget(title)
 
         # Header Information
@@ -165,32 +165,32 @@ class JournalEntryFormDialog(QDialog):
         self.lines_table.setColumnWidth(4, 40)
         
         self.lines_table.setAlternatingRowColors(True)
-        self.lines_table.setStyleSheet("""
-            QTableWidget { border: 1px solid COLOR_BORDER; border-radius: 4px; }
-            QHeaderView::section { background-color: COLOR_BG_ELEVATED; padding: 5px; font-weight: bold; }
+        self.lines_table.setStyleSheet(f"""
+            QTableWidget {{ border: 1px solid {COLOR_BORDER}; border-radius: 4px; }}
+            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: 5px; font-weight: bold; }}
         """)
         lines_layout.addWidget(self.lines_table)
 
         line_buttons = QHBoxLayout()
         self.btn_add_line = QPushButton("+ Add Line")
-        self.btn_add_line.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_PRIMARY;
+        self.btn_add_line.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
                 color: white;
                 border-radius: 4px;
                 padding: 5px 15px;
                 font-weight: bold;
-            }
+            }}
         """)
         self.btn_remove_line = QPushButton("- Remove Selected Lines")
-        self.btn_remove_line.setStyleSheet("""
-            QPushButton {
+        self.btn_remove_line.setStyleSheet(f"""
+            QPushButton {{
                 background-color: #f1f2f6;
                 color: #2f3640;
-                border: 1px solid COLOR_BORDER;
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 padding: 5px 15px;
-            }
+            }}
         """)
         line_buttons.addWidget(self.btn_add_line)
         line_buttons.addWidget(self.btn_remove_line)
@@ -203,13 +203,13 @@ class JournalEntryFormDialog(QDialog):
         bottom_layout = QHBoxLayout()
         
         totals_frame = QFrame()
-        totals_frame.setStyleSheet("background-color: COLOR_BG_SURFACE; border: 1px solid COLOR_BORDER; border-radius: 8px;")
+        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: 8px;")
         totals_layout = QHBoxLayout(totals_frame)
         
         totals_layout.addWidget(QLabel("Total Debit:"))
         self.total_debit_label = QLabel("0.00")
         self.total_debit_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        self.total_debit_label.setStyleSheet("color: COLOR_SUCCESS;")
+        self.total_debit_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
         totals_layout.addWidget(self.total_debit_label)
 
         totals_layout.addSpacing(20)
@@ -305,7 +305,7 @@ class JournalEntryFormDialog(QDialog):
         self.lines_table.setCellWidget(row, 3, credit_spin)
 
         remove_btn = QPushButton("✕")
-        remove_btn.setStyleSheet("color: COLOR_DANGER; font-weight: bold; border: none; background: transparent;")
+        remove_btn.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; border: none; background: transparent;")
         remove_btn.setCursor(Qt.PointingHandCursor)
         remove_btn.clicked.connect(lambda checked, r=row: self._remove_line_at(r))
         self.lines_table.setCellWidget(row, 4, remove_btn)
@@ -347,11 +347,11 @@ class JournalEntryFormDialog(QDialog):
             self.balance_label.setStyleSheet("color: #2ecc71; padding: 5px 15px; border-radius: 4px; background-color: #e8f5e9;")
         elif total_debit == 0 and total_credit == 0:
             self.balance_label.setText("EMPTY")
-            self.balance_label.setStyleSheet("color: COLOR_TEXT_MUTED; padding: 5px 15px; border-radius: 4px; background-color: #f1f2f6;")
+            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 5px 15px; border-radius: 4px; background-color: #f1f2f6;")
         else:
             diff = abs(total_debit - total_credit)
             self.balance_label.setText(f"UNBALANCED ({diff:,.2f})")
-            self.balance_label.setStyleSheet("color: COLOR_DANGER; padding: 5px 15px; border-radius: 4px; background-color: #fdecea;")
+            self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: 5px 15px; border-radius: 4px; background-color: #fdecea;")
 
     def save(self):
         data = self.get_entry_data()

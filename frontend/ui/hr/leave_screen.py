@@ -33,7 +33,7 @@ class LeaveScreen(BaseScreen):
          
         header = QLabel("Leave Management")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.setContentsMargins(0, 0, 0, SPACING_SM)
         layout.addWidget(header)
          
@@ -44,7 +44,7 @@ class LeaveScreen(BaseScreen):
         refresh_btn.setMinimumHeight(38)
         refresh_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_BG_BUTTON_LIGHT};
+                background-color: {{COLOR_BG_BUTTON_LIGHT}};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -52,7 +52,7 @@ class LeaveScreen(BaseScreen):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_SECONDARY_BG};
+                background-color: {{COLOR_SECONDARY_BG}};
             }}
         """)
         refresh_btn.clicked.connect(self.load_leave)
@@ -61,17 +61,17 @@ class LeaveScreen(BaseScreen):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search...")
         self.search_input.setMinimumHeight(35)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: COLOR_TEXT_SECONDARY;
-                color: COLOR_TEXT_PRIMARY;
-                border: 1px solid COLOR_BORDER;
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {COLOR_TEXT_SECONDARY};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 6px;
                 padding: 8px;
-            }
-            QLineEdit:focus {
-                border-color: COLOR_PRIMARY;
-            }
+            }}
+            QLineEdit:focus {{
+                border-color: {COLOR_PRIMARY};
+            }}
         """)
         self.search_input.textChanged.connect(self.filter_leave)
         toolbar.addWidget(self.search_input)
@@ -121,34 +121,34 @@ class LeaveScreen(BaseScreen):
         self.table.setHorizontalHeaderLabels([
             "ID", "Employee", "Type", "Start Date", "End Date", "Days", "Status"
         ])
-        self.table.setStyleSheet("""
-            QTableWidget { 
-                background-color: COLOR_BG_MAIN; 
-                color: COLOR_TEXT_PRIMARY; 
+        self.table.setStyleSheet(f"""
+            QTableWidget {{ 
+                background-color: {COLOR_BG_MAIN}; 
+                color: {COLOR_TEXT_PRIMARY}; 
                 border: none; 
-                gridline-color: COLOR_TEXT_SECONDARY;
-            }
-            QHeaderView::section { 
-                background-color: COLOR_TEXT_SECONDARY; 
-                color: COLOR_TEXT_PRIMARY;
+                gridline-color: {COLOR_TEXT_SECONDARY};
+            }}
+            QHeaderView::section {{ 
+                background-color: {COLOR_TEXT_SECONDARY}; 
+                color: {COLOR_TEXT_PRIMARY};
                 padding: 10px; 
                 border: none; 
                 border-bottom: 2px solid #4b5563; 
                 font-weight: bold;
                 font-size: 12px;
-            }
-            QTableWidget::item { 
+            }}
+            QTableWidget::item {{ 
                 padding: 10px; 
-                border-bottom: 1px solid COLOR_TEXT_SECONDARY;
-                color: COLOR_TEXT_PRIMARY;
-            }
-            QTableWidget::item:selected {
+                border-bottom: 1px solid {COLOR_TEXT_SECONDARY};
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QTableWidget::item:selected {{
                 background-color: #3b82f6 !important;
                 color: white !important;
-            }
-            QTableWidget::item:hover:!selected {
-                background-color: COLOR_TEXT_SECONDARY;
-            }
+            }}
+            QTableWidget::item:hover:!selected {{
+                background-color: {COLOR_TEXT_SECONDARY};
+            }}
         """)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)

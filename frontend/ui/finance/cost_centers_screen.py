@@ -35,7 +35,7 @@ class CostCentersScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("Cost Centers Management")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
@@ -44,14 +44,14 @@ class CostCentersScreen(BaseScreen):
         self.btn_refresh.setMinimumHeight(35)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER_LIGHT};
+                background-color: {{COLOR_BG_ELEVATED}};
+                border: 1px solid {{COLOR_BORDER_LIGHT}};
                 border-radius: 5px;
                 padding: {SPACING_XS} {SPACING_MD};
-                color: {COLOR_TEXT_SECONDARY};
+                color: {{COLOR_TEXT_SECONDARY}};
             }}
             QPushButton:hover {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {{COLOR_BG_ELEVATED}};
             }}
         """)
         self.btn_refresh.clicked.connect(self.load_data)
@@ -62,27 +62,27 @@ class CostCentersScreen(BaseScreen):
         self.loading_label = QLabel("Loading cost centers...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No cost centers found")
         self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading cost centers")
         self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("color: COLOR_DANGER; padding: 40px;")
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: 40px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
         
         filter_bar = QGroupBox("Filters")
         filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet("QGroupBox { border: 1px solid COLOR_BORDER; border-radius: 8px; margin-top: 10px; padding-top: 10px; }")
+        filter_bar.setStyleSheet(f"QGroupBox { border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; }")
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
@@ -113,16 +113,16 @@ class CostCentersScreen(BaseScreen):
         
         self.add_btn = QPushButton("+ Add Cost Center")
         self.add_btn.setMinimumHeight(38)
-        self.add_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        self.add_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
         self.add_btn.clicked.connect(self._add_cost_center)
         
         self.edit_btn = QPushButton("Edit")
         self.edit_btn.setMinimumHeight(38)
-        self.edit_btn.setStyleSheet("background-color: COLOR_PRIMARY; color: white; border-radius: 5px; padding: 0 15px;")
+        self.edit_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; padding: 0 15px;")
         
         self.deactivate_btn = QPushButton("Deactivate")
         self.deactivate_btn.setMinimumHeight(38)
-        self.deactivate_btn.setStyleSheet("background-color: COLOR_DANGER; color: white; border-radius: 5px; padding: 0 15px;")
+        self.deactivate_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: 5px; padding: 0 15px;")
         
         action_layout.addWidget(self.add_btn)
         action_layout.addWidget(self.edit_btn)
@@ -141,8 +141,8 @@ class CostCentersScreen(BaseScreen):
     def _create_modern_table(self):
         table = QTableWidget()
         table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {COLOR_BG_ELEVATED}; }}
-            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {COLOR_BORDER_LIGHT}; font-weight: bold; }}
+            QTableWidget {{ border: none; gridline-color: {{COLOR_BG_ELEVATED}}; }}
+            QHeaderView::section {{ background-color: {{COLOR_BG_ELEVATED}}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {{COLOR_BORDER_LIGHT}}; font-weight: bold; }}
             QTableWidget::item {{ padding: {SPACING_SM}; }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)

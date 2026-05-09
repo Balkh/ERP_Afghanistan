@@ -91,7 +91,7 @@ class LicensingScreen(BaseScreen):
                 if status == 'Active':
                     self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
                 else:
-                    self.status_label.setStyleSheet("color: COLOR_DANGER;")
+                    self.status_label.setStyleSheet(f"color: {COLOR_DANGER};")
                     
                 self.expiry_label.setText(data.get('expiry_date', 'Lifetime'))
         except Exception as e:

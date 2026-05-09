@@ -26,7 +26,7 @@ class BackupScreen(QWidget):
         
         header = QLabel("Backup & Restore")
         header.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(header)
         
         toolbar = QHBoxLayout()

@@ -53,7 +53,7 @@ class ProductSelectionDialog(QDialog):
         
         self.select_btn = QPushButton("Select")
         self.select_btn.clicked.connect(self.accept_selection)
-        self.select_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; font-weight: bold;")
+        self.select_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
         btns.addWidget(self.select_btn)
         
         self.cancel_btn = QPushButton("Cancel")

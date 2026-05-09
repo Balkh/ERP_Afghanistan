@@ -32,7 +32,7 @@ class PaymentScreen(QWidget):
         header_layout = QHBoxLayout()
         header = QLabel("Payment Transactions")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
@@ -41,14 +41,14 @@ class PaymentScreen(QWidget):
         self.btn_refresh.setMinimumHeight(35)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_PRIMARY};
+                background-color: {{COLOR_PRIMARY}};
                 border: none;
                 border-radius: 5px;
                 padding: {SPACING_XS} {SPACING_MD};
                 color: white;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_PRIMARY_HOVER};
+                background-color: {{COLOR_PRIMARY_HOVER}};
             }}
         """)
         self.btn_refresh.clicked.connect(self.load_payments)
@@ -63,14 +63,14 @@ class PaymentScreen(QWidget):
         self.loading_label = QLabel("Loading payments...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("color: COLOR_TEXT_SECONDARY; padding: 40px;")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: 40px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No payments found")
         self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("color: COLOR_TEXT_SECONDARY; padding: 40px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: 40px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -81,7 +81,7 @@ class PaymentScreen(QWidget):
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
         bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        bar.setStyleSheet("QGroupBox { border: 1px solid COLOR_BORDER; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: COLOR_TEXT_PRIMARY; }")
+        bar.setStyleSheet(f"QGroupBox { border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -117,20 +117,20 @@ class PaymentScreen(QWidget):
         self.search_input.setPlaceholderText("Ref # or description...")
         self.search_input.setMinimumWidth(200)
         self.search_input.setMinimumHeight(30)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: COLOR_BG_ELEVATED;
-                border: 1px solid COLOR_BORDER;
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 5px;
                 padding: 5px 10px;
-                color: COLOR_TEXT_PRIMARY;
-            }
-            QLineEdit::placeholder {
-                color: COLOR_TEXT_MUTED;
-            }
-            QLineEdit:focus {
-                border: 1px solid COLOR_PRIMARY;
-            }
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QLineEdit::placeholder {{
+                color: {COLOR_TEXT_MUTED};
+            }}
+            QLineEdit:focus {{
+                border: 1px solid {COLOR_PRIMARY};
+            }}
         """)
         search_layout.addWidget(self.search_input)
         layout.addLayout(search_layout)
@@ -139,7 +139,7 @@ class PaymentScreen(QWidget):
         self.btn_apply = QPushButton("Apply Filters")
         self.btn_apply.setMinimumHeight(35)
         self.btn_apply.setMinimumWidth(100)
-        self.btn_apply.setStyleSheet("background-color: COLOR_PRIMARY; color: white; border-radius: 5px; border: none; padding: 5px 15px;")
+        self.btn_apply.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; border: none; padding: 5px 15px;")
         self.btn_apply.setCursor(Qt.PointingHandCursor)
         self.btn_apply.clicked.connect(self.load_payments)
         
@@ -151,11 +151,11 @@ class PaymentScreen(QWidget):
         # Apply dark theme to combo boxes
         combo_style = """
             QComboBox {
-                background-color: COLOR_BG_ELEVATED;
-                border: 1px solid COLOR_BORDER;
+                background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 5px;
                 padding: 5px 10px;
-                color: COLOR_TEXT_PRIMARY;
+                color: {COLOR_TEXT_PRIMARY};
             }
             QComboBox::drop-down {
                 border: none;
@@ -164,12 +164,12 @@ class PaymentScreen(QWidget):
                 image: none;
                 border-left: 5px solid transparent;
                 border-right: 5px solid transparent;
-                border-top: 5px solid COLOR_TEXT_PRIMARY;
+                border-top: 5px solid {COLOR_TEXT_PRIMARY};
             }
             QComboBox QAbstractItemView {
-                background-color: COLOR_BG_ELEVATED;
-                color: COLOR_TEXT_PRIMARY;
-                selection-background-color: COLOR_BORDER;
+                background-color: {COLOR_BG_ELEVATED};
+                color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_BORDER};
             }
         """
         self.type_combo.setStyleSheet(combo_style)
@@ -191,41 +191,41 @@ class PaymentScreen(QWidget):
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(7, QHeaderView.ResizeToContents)
         
-        table.setStyleSheet("""
-            QTableWidget {
-                background-color: COLOR_BG_ELEVATED;
-                border: 1px solid COLOR_BORDER;
+        table.setStyleSheet(f"""
+            QTableWidget {{
+                background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 5px;
-                gridline-color: COLOR_BORDER;
-                color: COLOR_TEXT_PRIMARY;
-            }
-            QHeaderView::section {
-                background-color: COLOR_BORDER;
+                gridline-color: {COLOR_BORDER};
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_BORDER};
                 padding: 10px;
                 border: none;
-                border-bottom: 2px solid COLOR_BORDER_LIGHT;
+                border-bottom: 2px solid {COLOR_BORDER_LIGHT};
                 font-weight: bold;
-                color: COLOR_TEXT_PRIMARY;
-            }
-            QTableWidget::item {
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QTableWidget::item {{
                 padding: 10px;
-                color: COLOR_TEXT_PRIMARY;
-                background-color: COLOR_BG_ELEVATED;
-            }
-            QTableWidget::item:selected {
-                background-color: COLOR_BORDER;
+                color: {COLOR_TEXT_PRIMARY};
+                background-color: {COLOR_BG_ELEVATED};
+            }}
+            QTableWidget::item:selected {{
+                background-color: {COLOR_BORDER};
                 color: white;
-            }
-            QTableWidget alternatingRowColors {
-                background-color: COLOR_BG_ELEVATED;
-            }
-            QScrollBar:vertical {
-                background: COLOR_BG_ELEVATED;
-            }
-            QScrollBar::handle:vertical {
-                background: COLOR_BORDER;
+            }}
+            QTableWidget alternatingRowColors {{
+                background-color: {COLOR_BG_ELEVATED};
+            }}
+            QScrollBar:vertical {{
+                background: {COLOR_BG_ELEVATED};
+            }}
+            QScrollBar::handle:vertical {{
+                background: {COLOR_BORDER};
                 border-radius: 4px;
-            }
+            }}
         """)
         
         table.setSelectionBehavior(QAbstractItemView.SelectRows)

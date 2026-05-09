@@ -34,25 +34,25 @@ class ReturnsScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("Returns Management")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
         self.btn_refresh = QPushButton(" Refresh")
         self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_BG_BUTTON_LIGHT;
+        self.btn_refresh.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_BUTTON_LIGHT};
                 border: none;
                 border-radius: 6px;
                 padding: 8px 16px;
                 color: white;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: COLOR_TEXT_SECONDARY_LIGHT;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_TEXT_SECONDARY_LIGHT};
+            }}
         """)
         self.btn_refresh.clicked.connect(self._load_returns)
         header_layout.addWidget(self.btn_refresh)
@@ -67,17 +67,17 @@ class ReturnsScreen(BaseScreen):
         
         self.add_button = QPushButton("+ New Return")
         self.add_button.setMinimumHeight(38)
-        self.add_button.setStyleSheet("background-color: COLOR_SUCCESS; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        self.add_button.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
         self.add_button.clicked.connect(self._show_add_dialog)
         
         self.approve_button = QPushButton("Approve")
         self.approve_button.setMinimumHeight(38)
-        self.approve_button.setStyleSheet("background-color: COLOR_PRIMARY; color: white; border-radius: 5px; padding: 0 15px;")
+        self.approve_button.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; padding: 0 15px;")
         self.approve_button.clicked.connect(self._approve_return)
         
         self.reject_button = QPushButton("Reject")
         self.reject_button.setMinimumHeight(38)
-        self.reject_button.setStyleSheet("background-color: COLOR_DANGER; color: white; border-radius: 5px; padding: 0 15px;")
+        self.reject_button.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: 5px; padding: 0 15px;")
         self.reject_button.clicked.connect(self._reject_return)
         
         action_layout.addWidget(self.add_button)
@@ -90,14 +90,14 @@ class ReturnsScreen(BaseScreen):
         self.loading_label = QLabel("Loading return orders...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No return orders found")
         self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -133,7 +133,7 @@ class ReturnsScreen(BaseScreen):
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
         bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        bar.setStyleSheet("QGroupBox { border: 1px solid COLOR_BORDER; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: COLOR_TEXT_PRIMARY; }")
+        bar.setStyleSheet(f"QGroupBox { border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -174,8 +174,8 @@ class ReturnsScreen(BaseScreen):
     def _create_modern_table(self):
         table = QTableWidget()
         table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {COLOR_TABLE_GRIDLINE}; }}
-            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {COLOR_BORDER_TABLE}; font-weight: bold; }}
+            QTableWidget {{ border: none; gridline-color: {{COLOR_TABLE_GRIDLINE}}; }}
+            QHeaderView::section {{ background-color: {{COLOR_BG_ELEVATED}}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {{COLOR_BORDER_TABLE}}; font-weight: bold; }}
             QTableWidget::item {{ padding: {SPACING_LG}; }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -447,17 +447,17 @@ class ReturnOrderDialog(QDialog):
         self._setup_ui()
     
     def _setup_ui(self):
-        self.setStyleSheet("""
-            QDialog { background-color: COLOR_BG_LIGHT; }
+        self.setStyleSheet(f"""
+            QDialog { background-color: {COLOR_BG_LIGHT}; }
             QGroupBox { 
                 font-weight: bold; 
-                border: 1px solid COLOR_BORDER_DIALOG; 
+                border: 1px solid {COLOR_BORDER_DIALOG}; 
                 border-radius: 8px; 
                 margin-top: 15px;
                 padding-top: 15px;
                 background-color: white;
             }
-            QLabel { color: COLOR_TEXT_DIALOG; }
+            QLabel { color: {COLOR_TEXT_DIALOG}; }
         """)
 
         layout = QVBoxLayout(self)
@@ -466,7 +466,7 @@ class ReturnOrderDialog(QDialog):
 
         title = QLabel("Create Return Order")
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        title.setStyleSheet(f"color: {COLOR_TEXT_TITLE};")
+        title.setStyleSheet(f"color: {{COLOR_TEXT_TITLE}};")
         layout.addWidget(title)
 
         form_group = QGroupBox("Return Details")
@@ -509,13 +509,13 @@ class ReturnOrderDialog(QDialog):
         cancel_btn = QPushButton("Cancel")
         cancel_btn.setMinimumHeight(35)
         cancel_btn.setMinimumWidth(100)
-        cancel_btn.setStyleSheet(f"background-color: {COLOR_BG_BUTTON_SECONDARY}; color: {COLOR_TEXT_DIALOG}; border-radius: 5px;")
+        cancel_btn.setStyleSheet(f"background-color: {{COLOR_BG_BUTTON_SECONDARY}}; color: {{COLOR_TEXT_DIALOG}}; border-radius: 5px;")
         cancel_btn.clicked.connect(self.reject)
         
         save_btn = QPushButton("Save Return")
         save_btn.setMinimumHeight(35)
         save_btn.setMinimumWidth(120)
-        save_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; border-radius: 5px; font-weight: bold;")
+        save_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold;")
         save_btn.clicked.connect(self.save)
         
         buttons.addWidget(cancel_btn)

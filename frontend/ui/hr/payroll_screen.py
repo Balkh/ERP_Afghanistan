@@ -34,7 +34,7 @@ class PayrollScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("Payroll Management")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
@@ -76,33 +76,33 @@ class PayrollScreen(BaseScreen):
         self.error_label = QLabel("Error loading payroll data")
         self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("color: COLOR_DANGER; padding: 40px;")
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: 40px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane { 
-                border: 1px solid COLOR_TEXT_SECONDARY; 
+        self.tabs.setStyleSheet(f"""
+            QTabWidget::pane {{ 
+                border: 1px solid {COLOR_TEXT_SECONDARY}; 
                 border-radius: 8px; 
-                background: COLOR_BG_MAIN; 
-            }
-            QTabBar::tab { 
-                background: COLOR_TEXT_SECONDARY; 
-                color: COLOR_TEXT_PRIMARY;
+                background: {COLOR_BG_MAIN}; 
+            }}
+            QTabBar::tab {{ 
+                background: {COLOR_TEXT_SECONDARY}; 
+                color: {COLOR_TEXT_PRIMARY};
                 border: none; 
                 padding: 12px 24px; 
                 border-top-left-radius: 6px; 
                 border-top-right-radius: 6px; 
-            }
-            QTabBar::tab:selected { 
+            }}
+            QTabBar::tab:selected {{ 
                 background: #3b82f6; 
                 color: white; 
                 font-weight: bold; 
-            }
-            QTabBar::tab:hover:!selected { 
+            }}
+            QTabBar::tab:hover:!selected {{ 
                 background: #4b5563; 
-            }
+            }}
         """)
         
         # Salary Structures Tab
@@ -161,8 +161,8 @@ class PayrollScreen(BaseScreen):
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_bar = QFrame()
-        filter_bar.setStyleSheet("""
-            background-color: COLOR_TEXT_SECONDARY;
+        filter_bar.setStyleSheet(f"""
+            background-color: {COLOR_TEXT_SECONDARY};
             border-radius: 8px;
             border: 1px solid #4b5563;
         """)
@@ -171,14 +171,14 @@ class PayrollScreen(BaseScreen):
         self.cycle_status_filter = QComboBox()
         self.cycle_status_filter.addItems(["All Status", "Draft", "Generated", "Approved", "Paid"])
         self.cycle_status_filter.setMinimumWidth(150)
-        self.cycle_status_filter.setStyleSheet("""
-            QComboBox {
-                background-color: COLOR_BG_MAIN;
-                color: COLOR_TEXT_PRIMARY;
+        self.cycle_status_filter.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {COLOR_BG_MAIN};
+                color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid #4b5563;
                 border-radius: 6px;
                 padding: 8px;
-            }
+            }}
         """)
         
         filter_layout.addWidget(QLabel("Status:"))
@@ -189,11 +189,11 @@ class PayrollScreen(BaseScreen):
         action_layout = QHBoxLayout()
         generate_btn = QPushButton("Generate Payroll")
         generate_btn.setMinimumHeight(38)
-        generate_btn.setStyleSheet("background-color: COLOR_PRIMARY; color: white; border-radius: 5px; padding: 0 15px;")
+        generate_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; padding: 0 15px;")
         
         approve_btn = QPushButton("Approve")
         approve_btn.setMinimumHeight(38)
-        approve_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; border-radius: 5px; padding: 0 15px;")
+        approve_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; padding: 0 15px;")
         
         action_layout.addWidget(generate_btn)
         action_layout.addWidget(approve_btn)
@@ -229,34 +229,34 @@ class PayrollScreen(BaseScreen):
 
     def _create_modern_table(self):
         table = QTableWidget()
-        table.setStyleSheet("""
-            QTableWidget { 
-                background-color: COLOR_BG_MAIN; 
-                color: COLOR_TEXT_PRIMARY; 
+        table.setStyleSheet(f"""
+            QTableWidget {{ 
+                background-color: {COLOR_BG_MAIN}; 
+                color: {COLOR_TEXT_PRIMARY}; 
                 border: none; 
-                gridline-color: COLOR_TEXT_SECONDARY;
-            }
-            QHeaderView::section { 
-                background-color: COLOR_TEXT_SECONDARY; 
-                color: COLOR_TEXT_PRIMARY;
+                gridline-color: {COLOR_TEXT_SECONDARY};
+            }}
+            QHeaderView::section {{ 
+                background-color: {COLOR_TEXT_SECONDARY}; 
+                color: {COLOR_TEXT_PRIMARY};
                 padding: 10px; 
                 border: none; 
                 border-bottom: 2px solid #4b5563; 
                 font-weight: bold;
                 font-size: 12px;
-            }
-            QTableWidget::item { 
+            }}
+            QTableWidget::item {{ 
                 padding: 10px; 
-                border-bottom: 1px solid COLOR_TEXT_SECONDARY;
-                color: COLOR_TEXT_PRIMARY;
-            }
-            QTableWidget::item:selected {
+                border-bottom: 1px solid {COLOR_TEXT_SECONDARY};
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QTableWidget::item:selected {{
                 background-color: #3b82f6 !important;
                 color: white !important;
-            }
-            QTableWidget::item:hover:!selected {
-                background-color: COLOR_TEXT_SECONDARY;
-            }
+            }}
+            QTableWidget::item:hover:!selected {{
+                background-color: {COLOR_TEXT_SECONDARY};
+            }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)

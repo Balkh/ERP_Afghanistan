@@ -39,7 +39,7 @@ class InvoiceTemplateManager(BaseScreen):
         
         self.save_btn = QPushButton("Save Changes")
         self.save_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.save_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; font-weight: bold;")
+        self.save_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
         self.save_btn.clicked.connect(self._save_template)
         header_layout.addWidget(self.save_btn)
         

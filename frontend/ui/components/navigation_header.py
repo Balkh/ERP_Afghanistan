@@ -28,30 +28,30 @@ class NavigationHeader(QWidget):
     
     def _setup_ui(self):
         """Setup the navigation header UI."""
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             QWidget { background-color: transparent; }
             QPushButton {
                 background-color: transparent;
-                color: COLOR_TEXT_PRIMARY;
-                border: 1px solid COLOR_BORDER;
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 padding: 6px 10px;
                 font-size: 14px;
             }
             QPushButton:hover {
-                background-color: COLOR_BG_ELEVATED;
-                border: 1px solid COLOR_PRIMARY;
+                background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_PRIMARY};
             }
             QPushButton:pressed {
-                background-color: COLOR_BORDER;
+                background-color: {COLOR_BORDER};
             }
             QPushButton:disabled {
-                color: COLOR_BORDER_LIGHT;
-                border: 1px solid COLOR_BG_ELEVATED;
+                color: {COLOR_BORDER_LIGHT};
+                border: 1px solid {COLOR_BG_ELEVATED};
             }
             QLabel {
                 background-color: transparent;
-                color: COLOR_TEXT_PRIMARY;
+                color: {COLOR_TEXT_PRIMARY};
             }
         """)
         
@@ -86,12 +86,12 @@ class NavigationHeader(QWidget):
         
         self.title_label = QLabel("")
         self.title_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        self.title_label.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        self.title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         center_layout.addWidget(self.title_label)
         
         self.breadcrumb_label = QLabel("")
         self.breadcrumb_label.setFont(QFont("Segoe UI", 10))
-        self.breadcrumb_label.setStyleSheet("color: COLOR_TEXT_SECONDARY;")
+        self.breadcrumb_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
         center_layout.addWidget(self.breadcrumb_label)
         
         main_layout.addLayout(center_layout, 1)  # Stretch to fill center

@@ -93,17 +93,17 @@ class Sidebar(QWidget):
         # Use scroll area for scrolling support
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("""
+        scroll.setStyleSheet(f"""
             QScrollArea { 
                 border: none; 
-                background-color: COLOR_BG_MAIN; 
+                background-color: {COLOR_BG_MAIN}; 
             }
             QScrollArea>QWidget>QScrollBar:vertical {
-                background: COLOR_BG_MAIN;
+                background: {COLOR_BG_MAIN};
                 width: 8px;
             }
             QScrollArea>QWidget>QScrollBar::handle:vertical {
-                background: COLOR_BORDER;
+                background: {COLOR_BORDER};
                 border-radius: 4px;
             }
             QScrollArea>QWidget>QScrollBar::add-line:vertical, 
@@ -113,7 +113,7 @@ class Sidebar(QWidget):
         """)
         
         scroll_content = QWidget()
-        scroll_content.setStyleSheet("background-color: COLOR_BG_MAIN;")
+        scroll_content.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
         
         layout = QVBoxLayout(scroll_content)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -122,20 +122,20 @@ class Sidebar(QWidget):
         # Brand/logo area
         brand_frame = QFrame()
         brand_frame.setFixedHeight(80)
-        brand_frame.setStyleSheet("background-color: COLOR_PRIMARY;")
+        brand_frame.setStyleSheet(f"background-color: {COLOR_PRIMARY};")
         brand_layout = QVBoxLayout(brand_frame)
         brand_layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         
         brand_label = QLabel("💊 Pharmacy ERP")
         brand_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        brand_label.setStyleSheet("color: COLOR_BG_MAIN;")
+        brand_label.setStyleSheet(f"color: {COLOR_BG_MAIN};")
         brand_layout.addWidget(brand_label)
         
         layout.addWidget(brand_frame)
         
         # Navigation section with proper spacing
         nav_section = QWidget()
-        nav_section.setStyleSheet("background-color: COLOR_BG_MAIN;")
+        nav_section.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
         nav_layout = QVBoxLayout(nav_section)
         nav_layout.setContentsMargins(SPACING_SM,  SPACING_MD,  SPACING_SM,  SPACING_MD)
         nav_layout.setSpacing(SPACING_SM)
@@ -219,7 +219,7 @@ class Sidebar(QWidget):
         # Bottom section
         bottom_frame = QFrame()
         bottom_frame.setFixedHeight(60)
-        bottom_frame.setStyleSheet("background-color: COLOR_BG_SURFACE;")
+        bottom_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE};")
         bottom_layout = QVBoxLayout(bottom_frame)
         bottom_layout.setContentsMargins(MARGIN_PAGE,  SPACING_SM,  MARGIN_PAGE,  SPACING_SM)
         
@@ -228,14 +228,14 @@ class Sidebar(QWidget):
         self.logout_btn.setFixedHeight(40)
         self.logout_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_DANGER};
-                color: {COLOR_BG_MAIN};
+                background-color: {{COLOR_DANGER}};
+                color: {{COLOR_BG_MAIN}};
                 border: none;
                 border-radius: 8px;
                 padding: 10px;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_PRIMARY};
+                background-color: {{COLOR_PRIMARY}};
             }}
         """)
         bottom_layout.addWidget(self.logout_btn)
@@ -257,21 +257,21 @@ class Sidebar(QWidget):
         btn.setFont(QFont("Segoe UI", 12))
         btn.setFixedHeight(40)
         btn.setCursor(Qt.PointingHandCursor)
-        btn.setStyleSheet("""
-            QPushButton {
+        btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: transparent;
-                color: COLOR_TEXT_PRIMARY;
+                color: {COLOR_TEXT_PRIMARY};
                 border: none;
                 border-radius: 6px;
                 text-align: left;
                 padding-left: 15px;
-            }
-            QPushButton:hover {
-                background-color: COLOR_BORDER;
-            }
-            QPushButton:pressed {
-                background-color: COLOR_BORDER_LIGHT;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BORDER};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLOR_BORDER_LIGHT};
+            }}
         """)
         btn.setProperty("page_id", page_id)
         btn.setProperty("page_index", page_index)
@@ -296,19 +296,19 @@ class Sidebar(QWidget):
         header_btn = QPushButton()
         header_btn.setCursor(Qt.PointingHandCursor)
         header_btn.setFixedHeight(40)
-        header_btn.setStyleSheet("""
-            QPushButton {
+        header_btn.setStyleSheet(f"""
+            QPushButton {{
                 background-color: transparent;
                 border: none;
                 text-align: left;
                 padding-left: 10px;
-                color: COLOR_TEXT_PRIMARY;
+                color: {COLOR_TEXT_PRIMARY};
                 font-weight: bold;
                 font-size: 13px;
-            }
-            QPushButton:hover {
-                background-color: COLOR_BG_ELEVATED;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BG_ELEVATED};
+            }}
         """)
 
         # Header layout
@@ -318,12 +318,12 @@ class Sidebar(QWidget):
         # Arrow indicator
         arrow_label = QLabel("▶")
         arrow_label.setFixedWidth(20)
-        arrow_label.setStyleSheet("color: COLOR_PRIMARY; font-size: 12px;")
+        arrow_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: 12px;")
 
         # Title
         title_label = QLabel(title)
         title_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        title_label.setStyleSheet("color: COLOR_PRIMARY;")
+        title_label.setStyleSheet(f"color: {COLOR_PRIMARY};")
 
         header_layout.addWidget(arrow_label)
         header_layout.addWidget(title_label)
@@ -339,7 +339,7 @@ class Sidebar(QWidget):
 
         # Child items container
         items_widget = QWidget()
-        items_widget.setStyleSheet("background-color: COLOR_BG_MAIN;")
+        items_widget.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
         items_layout = QVBoxLayout(items_widget)
         items_layout.setContentsMargins(SPACING_XL + SPACING_SM,  SPACING_XS,  SPACING_SM,  SPACING_SM)
         items_layout.setSpacing(SPACING_XS)
@@ -364,19 +364,19 @@ class Sidebar(QWidget):
             items_widget.setMaximumHeight(0)
             arrow_label.setText("▶")
             if header_btn:
-                header_btn.setStyleSheet("""
-                    QPushButton {
+                header_btn.setStyleSheet(f"""
+                    QPushButton {{
                         background-color: transparent;
                         border: none;
                         text-align: left;
                         padding-left: 10px;
-                        color: COLOR_TEXT_PRIMARY;
+                        color: {COLOR_TEXT_PRIMARY};
                         font-weight: bold;
                         font-size: 13px;
-                    }
-                    QPushButton:hover {
-                        background-color: COLOR_BG_ELEVATED;
-                    }
+                    }}
+                    QPushButton:hover {{
+                        background-color: {COLOR_BG_ELEVATED};
+                    }}
                 """)
             group_widget.setMaximumHeight(50)
         else:

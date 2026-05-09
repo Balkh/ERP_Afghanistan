@@ -101,16 +101,16 @@ class MainWindow(QMainWindow):
         
         # Connection status
         self.conn_label = QLabel("● Connected")
-        self.conn_label.setStyleSheet("color: COLOR_STATUS_VALID; margin-right: 15px; font-weight: bold;")
+        self.conn_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; margin-right: 15px; font-weight: bold;")
         
         # User info
         user_name = self.user_data.get('full_name', self.user_data.get('username', 'User'))
         self.user_label = QLabel(f"👤 User: {user_name} ({self.user_role.name})")
-        self.user_label.setStyleSheet("color: COLOR_TEXT_SECONDARY; margin-right: 15px;")
+        self.user_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: 15px;")
         
         # System time
         self.time_label = QLabel()
-        self.time_label.setStyleSheet("color: COLOR_TEXT_SECONDARY; margin-right: 15px;")
+        self.time_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: 15px;")
         
         # Timer to update time
         self.status_timer = QTimer(self)
@@ -170,7 +170,7 @@ class MainWindow(QMainWindow):
 
         # Add device ID label to status bar
         self.device_id_label = QLabel()
-        self.device_id_label.setStyleSheet("font-size: 10px; color: #666;")
+        self.device_id_label.setStyleSheet(f"font-size: 10px; color: #666;")
         self.status_bar.addPermanentWidget(self.device_id_label)
 
         # Add license status label to status bar
@@ -206,66 +206,66 @@ class MainWindow(QMainWindow):
 
         content_frame = QFrame()
         content_frame.setFrameStyle(QFrame.NoFrame)
-        content_frame.setStyleSheet("""
-            QFrame {
-                background-color: COLOR_BG_MAIN;
-            }
-            QLabel {
-                color: COLOR_TEXT_PRIMARY;
-            }
-            QGroupBox {
-                color: COLOR_TEXT_PRIMARY;
+        content_frame.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLOR_BG_MAIN};
+            }}
+            QLabel {{
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QGroupBox {{
+                color: {COLOR_TEXT_PRIMARY};
                 font-weight: bold;
-                border: 1px solid COLOR_BORDER;
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 8px;
                 margin-top: 10px;
                 padding-top: 10px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 5px;
-            }
-            QTableWidget {
-                background-color: COLOR_BG_SURFACE;
-                color: COLOR_TEXT_PRIMARY;
-                gridline-color: COLOR_BG_ELEVATED;
-                border: 1px solid COLOR_BORDER;
-            }
-            QTableWidget::item {
+            }}
+            QTableWidget {{
+                background-color: {COLOR_BG_SURFACE};
+                color: {COLOR_TEXT_PRIMARY};
+                gridline-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_BORDER};
+            }}
+            QTableWidget::item {{
                 padding: 8px;
-            }
-            QHeaderView::section {
-                background-color: COLOR_BG_ELEVATED;
-                color: COLOR_TEXT_PRIMARY;
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_BG_ELEVATED};
+                color: {COLOR_TEXT_PRIMARY};
                 padding: 8px;
                 border: none;
                 font-weight: bold;
-            }
-            QPushButton {
-                background-color: COLOR_PRIMARY;
-                color: COLOR_BG_MAIN;
+            }}
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_BG_MAIN};
                 border: none;
                 border-radius: 6px;
                 padding: 8px 16px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: COLOR_PRIMARY_HOVER;
-            }
-            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {
-                background-color: COLOR_BG_SURFACE;
-                color: COLOR_TEXT_PRIMARY;
-                border: 1px solid COLOR_BORDER;
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_HOVER};
+            }}
+            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
+                background-color: {COLOR_BG_SURFACE};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 6px;
                 padding: 8px;
-            }
-            QLineEdit:focus, QComboBox:focus {
-                border: 1px solid COLOR_PRIMARY;
-            }
-            QScrollArea {
+            }}
+            QLineEdit:focus, QComboBox:focus {{
+                border: 1px solid {COLOR_PRIMARY};
+            }}
+            QScrollArea {{
                 background-color: transparent;
-            }
+            }}
         """)
         content_layout = QVBoxLayout(content_frame)
         content_layout.setContentsMargins(MARGIN_PAGE, SPACING_SM, MARGIN_PAGE, SPACING_MD)
@@ -276,11 +276,11 @@ class MainWindow(QMainWindow):
         self.header.setFont(QFont("Segoe UI", 20, QFont.Bold))
         self.header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.header.setFixedHeight(60)
-        self.header.setStyleSheet("""
-            QLabel {
-                color: COLOR_TEXT_PRIMARY;
+        self.header.setStyleSheet(f"""
+            QLabel {{
+                color: {COLOR_TEXT_PRIMARY};
                 padding-left: 10px;
-            }
+            }}
         """)
         content_layout.addWidget(self.header)
         
@@ -633,10 +633,10 @@ class MainWindow(QMainWindow):
         """Handle license validation change signals."""
         if is_valid:
             self.license_status_label.setText(f"License: Valid ({message})")
-            self.license_status_label.setStyleSheet("font-size: 10px; color: #008000; margin-left: 10px;")  # Green
+            self.license_status_label.setStyleSheet(f"font-size: 10px; color: #008000; margin-left: 10px;")  # Green
         else:
             self.license_status_label.setText(f"License: Invalid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_DANGER}; margin-left: 10px;")  # Red
+            self.license_status_label.setStyleSheet(f"font-size: 10px; color: {{COLOR_DANGER}}; margin-left: 10px;")  # Red
             
             # Show critical error message if validation fails
             if not is_valid and "too many times" in message:

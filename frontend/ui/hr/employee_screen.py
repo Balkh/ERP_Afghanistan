@@ -37,25 +37,25 @@ class EmployeeScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("Employee Directory")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
         self.btn_refresh = QPushButton("⟳ Refresh")
         self.btn_refresh.setMinimumHeight(38)
-        self.btn_refresh.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_BG_BUTTON_LIGHT;
+        self.btn_refresh.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_BUTTON_LIGHT};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: 8px 16px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: COLOR_SECONDARY_BG;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_SECONDARY_BG};
+            }}
         """)
         self.btn_refresh.clicked.connect(self.load_employees)
         header_layout.addWidget(self.btn_refresh)
@@ -68,7 +68,7 @@ class EmployeeScreen(BaseScreen):
         self.add_btn.setCursor(Qt.PointingHandCursor)
         self.add_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_SUCCESS};
+                background-color: {{COLOR_SUCCESS}};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -76,10 +76,10 @@ class EmployeeScreen(BaseScreen):
                 padding: 0 {SPACING_MD};
             }}
             QPushButton:hover {{
-                background-color: {COLOR_SUCCESS};
+                background-color: {{COLOR_SUCCESS}};
             }}
             QPushButton:pressed {{
-                background-color: {COLOR_SUCCESS};
+                background-color: {{COLOR_SUCCESS}};
             }}
         """)
         self.add_btn.clicked.connect(self.add_employee)
@@ -90,15 +90,15 @@ class EmployeeScreen(BaseScreen):
         # Filters
         filter_bar = QGroupBox("Filter Employees")
         filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid COLOR_TEXT_SECONDARY;
+        filter_bar.setStyleSheet(f"""
+            QGroupBox {{
+                border: 1px solid {COLOR_TEXT_SECONDARY};
                 border-radius: 8px;
                 margin-top: 10px;
                 padding-top: 10px;
-                background-color: COLOR_BG_MAIN;
-                color: COLOR_TEXT_PRIMARY;
-            }
+                background-color: {COLOR_BG_MAIN};
+                color: {COLOR_TEXT_PRIMARY};
+            }}
         """)
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
@@ -106,17 +106,17 @@ class EmployeeScreen(BaseScreen):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search by name, position, or department...")
         self.search_input.setMinimumHeight(35)
-        self.search_input.setStyleSheet("""
-            QLineEdit {
-                background-color: COLOR_TEXT_SECONDARY;
-                color: COLOR_TEXT_PRIMARY;
-                border: 1px solid COLOR_BORDER;
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {COLOR_TEXT_SECONDARY};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 6px;
                 padding: 8px;
-            }
-            QLineEdit:focus {
-                border-color: COLOR_PRIMARY;
-            }
+            }}
+            QLineEdit:focus {{
+                border-color: {COLOR_PRIMARY};
+            }}
         """)
         self.search_input.setMinimumWidth(300)
         self.search_input.textChanged.connect(self.load_employees)
@@ -157,36 +157,36 @@ class EmployeeScreen(BaseScreen):
 
     def _create_modern_table(self):
         table = QTableWidget()
-        table.setStyleSheet("""
-            QTableWidget { 
-                background-color: COLOR_BG_MAIN; 
-                color: COLOR_TEXT_PRIMARY; 
+        table.setStyleSheet(f"""
+            QTableWidget {{ 
+                background-color: {COLOR_BG_MAIN}; 
+                color: {COLOR_TEXT_PRIMARY}; 
                 border: none; 
-                gridline-color: COLOR_TEXT_SECONDARY;
-            }
-            QHeaderView::section { 
-                background-color: {COLOR_TEXT_SECONDARY}; 
-                color: {COLOR_TEXT_PRIMARY};
-                padding: {SPACING_SM}; 
+                gridline-color: {COLOR_TEXT_SECONDARY};
+            }}
+            QHeaderView::section {{ 
+                background-color: {{{COLOR_TEXT_SECONDARY}}}; 
+                color: {{{COLOR_TEXT_PRIMARY}}};
+                padding: {{SPACING_SM}}; 
                 border: none; 
-                border-bottom: 2px solid {COLOR_BORDER}; 
+                border-bottom: 2px solid {{{COLOR_BORDER}}}; 
                 font-weight: bold;
                 font-size: 12px;
-            }}
-            QTableWidget::item {{ 
-                padding: {SPACING_SM}; 
-                border-bottom: 1px solid {COLOR_TEXT_SECONDARY};
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QTableWidget::item:selected {{
-                background-color: {COLOR_PRIMARY} !important;
+            }}}}
+            QTableWidget::item {{{{ 
+                padding: {{SPACING_SM}}; 
+                border-bottom: 1px solid {{{COLOR_TEXT_SECONDARY}}};
+                color: {{{COLOR_TEXT_PRIMARY}}};
+            }}}}
+            QTableWidget::item:selected {{{{
+                background-color: {{{COLOR_PRIMARY}}} !important;
                 color: white !important;
                 font-weight: bold;
-            }}
-            QTableWidget::item:hover:!selected {
-                background-color: COLOR_TEXT_SECONDARY;
+            }}}}
+            QTableWidget::item:hover:!selected {{
+                background-color: {COLOR_TEXT_SECONDARY};
                 color: white;
-            }
+            }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)

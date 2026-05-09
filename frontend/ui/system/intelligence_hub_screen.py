@@ -48,10 +48,10 @@ class IntelligenceHubScreen(BaseScreen):
         self.header_layout = QHBoxLayout()
         self.title_label = QLabel("ERP Intelligence Hub")
         self.title_label.setFont(QFont("Segoe UI", FONT_SIZE_XL, QFont.Bold))
-        self.title_label.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        self.title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         
         self.health_indicator = QLabel("ERP HEALTH: 100%")
-        self.health_indicator.setStyleSheet(f"background: COLOR_BG_ELEVATED; color: COLOR_STATUS_VALID; padding: 6px 15px; border-radius: 15px; font-weight: bold; font-size: 11px; border: 1px solid COLOR_STATUS_VALID;")
+        self.health_indicator.setStyleSheet(f"background: {COLOR_BG_ELEVATED}; color: {COLOR_STATUS_VALID}; padding: 6px 15px; border-radius: 15px; font-weight: bold; font-size: 11px; border: 1px solid {COLOR_STATUS_VALID};")
         
         self.header_layout.addWidget(self.title_label)
         self.header_layout.addStretch()
@@ -61,7 +61,7 @@ class IntelligenceHubScreen(BaseScreen):
         # Alert Banner (Global)
         self.alert_banner = QFrame()
         self.alert_banner.setFixedHeight(40)
-        self.alert_banner.setStyleSheet("background: COLOR_BG_MAIN; border: 1px solid #f38ba8; border-radius: 8px;")
+        self.alert_banner.setStyleSheet(f"background: {COLOR_BG_MAIN}; border: 1px solid #f38ba8; border-radius: 8px;")
         ab_layout = QHBoxLayout(self.alert_banner)
         self.alert_text = QLabel("🚨 NO CRITICAL INCIDENTS DETECTED")
         self.alert_text.setStyleSheet("color: #f38ba8; font-weight: bold; font-size: 11px;")
@@ -71,11 +71,11 @@ class IntelligenceHubScreen(BaseScreen):
         # Tabs for Intelligence Layers
         self.tabs = QTabWidget()
         self.tabs.currentChanged.connect(self._on_tab_changed)
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid COLOR_BG_ELEVATED; border-radius: 12px; background: COLOR_BG_MAIN; top: -1px; }
-            QTabBar::tab { background: COLOR_BG_SURFACE; color: COLOR_TEXT_SECONDARY; padding: 12px 25px; border-top-left-radius: 8px; border-top-right-radius: 8px; margin-right: 5px; font-weight: bold; }
-            QTabBar::tab:selected { background: COLOR_BG_MAIN; color: COLOR_PRIMARY; border-bottom: 2px solid COLOR_PRIMARY; }
-            QTabBar::tab:hover { background: COLOR_BG_ELEVATED; }
+        self.tabs.setStyleSheet(f"""
+            QTabWidget::pane {{ border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; background: {COLOR_BG_MAIN}; top: -1px; }}
+            QTabBar::tab {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_SECONDARY}; padding: 12px 25px; border-top-left-radius: 8px; border-top-right-radius: 8px; margin-right: 5px; font-weight: bold; }}
+            QTabBar::tab:selected {{ background: {COLOR_BG_MAIN}; color: {COLOR_PRIMARY}; border-bottom: 2px solid {COLOR_PRIMARY}; }}
+            QTabBar::tab:hover {{ background: {COLOR_BG_ELEVATED}; }}
         """)
         
         # 1. Overview Tab (Aggregated)
@@ -123,7 +123,7 @@ class IntelligenceHubScreen(BaseScreen):
         
         # System Status
         status_box = QGroupBox("Operational Status")
-        status_box.setStyleSheet("QGroupBox { color: COLOR_PRIMARY; font-weight: bold; border: 1px solid COLOR_BG_ELEVATED; border-radius: 12px; margin-top: 10px; }")
+        status_box.setStyleSheet(f"QGroupBox { color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 10px; }")
         QVBoxLayout(status_box).addWidget(QLabel("All systems operational. No critical drift detected."))
         grid.addWidget(status_box, 0, 0)
         
@@ -141,7 +141,7 @@ class IntelligenceHubScreen(BaseScreen):
 
     def _create_mini_card(self, title, val, color):
         card = QFrame()
-        card.setStyleSheet(f"background: COLOR_BG_SURFACE; border-radius: 10px; border-left: 3px solid {color};")
+        card.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border-radius: 10px; border-left: 3px solid {color};")
         l = QVBoxLayout(card)
         l.addWidget(QLabel(title))
         v = QLabel(val)

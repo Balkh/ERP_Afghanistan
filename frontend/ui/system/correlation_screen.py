@@ -119,14 +119,14 @@ class SystemCorrelationScreen(BaseScreen):
         header = QHBoxLayout()
         title = QLabel("Cross-System Correlation")
         title.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        title.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         
         self.consistency_card = QFrame()
         self.consistency_card.setFixedWidth(220)
-        self.consistency_card.setStyleSheet("background: COLOR_BG_ELEVATED; border-radius: 15px; border: 1px solid COLOR_PRIMARY;")
+        self.consistency_card.setStyleSheet(f"background: {COLOR_BG_ELEVATED}; border-radius: 15px; border: 1px solid {COLOR_PRIMARY};")
         cc_layout = QHBoxLayout(self.consistency_card)
         self.score_label = QLabel("ERP CONSISTENCY: 100%")
-        self.score_label.setStyleSheet("color: COLOR_PRIMARY; font-weight: bold; font-size: 11px;")
+        self.score_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-weight: bold; font-size: 11px;")
         cc_layout.addStretch()
         cc_layout.addWidget(self.score_label)
         cc_layout.addStretch()
@@ -154,7 +154,7 @@ class SystemCorrelationScreen(BaseScreen):
         self.chains_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.chains_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.chains_table.cellClicked.connect(self._on_chain_selected)
-        self.chains_table.setStyleSheet("QTableWidget { background: COLOR_BG_SURFACE; color: COLOR_TEXT_PRIMARY; border: none; } QHeaderView::section { background: COLOR_BG_ELEVATED; color: COLOR_PRIMARY; border: none; padding: 6px; font-weight: bold; }")
+        self.chains_table.setStyleSheet(f"QTableWidget { background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; } QHeaderView::section { background: {COLOR_BG_ELEVATED}; color: {COLOR_PRIMARY}; border: none; padding: 6px; font-weight: bold; }")
         chains_group.layout().addWidget(self.chains_table)
         grid.addWidget(chains_group, 0, 0)
         
@@ -167,7 +167,7 @@ class SystemCorrelationScreen(BaseScreen):
         # 3. Impact Analysis (Bottom)
         impact_group = self._create_group("Impact Propagation & Root Cause Analysis", 250)
         self.impact_list = QListWidget()
-        self.impact_list.setStyleSheet("background: COLOR_BG_SURFACE; border: none; border-radius: 8px;")
+        self.impact_list.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
         impact_group.layout().addWidget(self.impact_list)
         grid.addWidget(impact_group, 1, 0, 1, 2)
         
@@ -176,7 +176,7 @@ class SystemCorrelationScreen(BaseScreen):
     def _create_group(self, title, min_h):
         group = QGroupBox(title)
         group.setMinimumHeight(min_h)
-        group.setStyleSheet("QGroupBox { color: COLOR_PRIMARY; font-weight: bold; border: 1px solid COLOR_BG_ELEVATED; border-radius: 12px; margin-top: 15px; background: COLOR_BG_MAIN; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 5px; }")
+        group.setStyleSheet(f"QGroupBox { color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 5px; }")
         QVBoxLayout(group)
         group.layout().setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         return group

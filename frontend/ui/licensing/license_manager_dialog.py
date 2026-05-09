@@ -31,16 +31,16 @@ class LicenseManagerDialog(QDialog):
     def setup_ui(self):
         """Set up the user interface."""
         # Set dark theme stylesheet
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             QDialog {
-                background-color: COLOR_BG_MAIN;
+                background-color: {COLOR_BG_MAIN};
             }
             QLabel {
-                color: COLOR_TEXT_PRIMARY;
+                color: {COLOR_TEXT_PRIMARY};
             }
             QGroupBox {
-                color: COLOR_PRIMARY;
-                border: 1px solid COLOR_BORDER;
+                color: {COLOR_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 12px;
@@ -51,28 +51,28 @@ class LicenseManagerDialog(QDialog):
                 padding: 0 5px;
             }
             QTabWidget::pane {
-                border: 1px solid COLOR_BORDER;
-                background-color: COLOR_BG_MAIN;
+                border: 1px solid {COLOR_BORDER};
+                background-color: {COLOR_BG_MAIN};
             }
             QTabBar::tab {
-                background-color: COLOR_BG_ELEVATED;
-                color: COLOR_TEXT_PRIMARY;
+                background-color: {COLOR_BG_ELEVATED};
+                color: {COLOR_TEXT_PRIMARY};
                 padding: 8px 16px;
                 border: none;
             }
             QTabBar::tab:selected {
-                background-color: COLOR_BORDER;
+                background-color: {COLOR_BORDER};
             }
             QPushButton {
-                background-color: COLOR_PRIMARY;
-                color: COLOR_BG_MAIN;
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_BG_MAIN};
                 border: none;
                 border-radius: 6px;
                 padding: 8px 16px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: COLOR_PRIMARY_HOVER;
+                background-color: {COLOR_PRIMARY_HOVER};
             }
         """)
         

@@ -22,11 +22,11 @@ class JournalEntryDetailDialog(QDialog):
     def setup_ui(self):
         self.setMinimumWidth(850)
         self.setMinimumHeight(600)
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             QDialog { background-color: #f5f6fa; }
             QGroupBox { 
                 font-weight: bold; 
-                border: 1px solid COLOR_BORDER; 
+                border: 1px solid {COLOR_BORDER}; 
                 border-radius: 8px; 
                 margin-top: 15px;
                 padding-top: 15px;
@@ -41,7 +41,7 @@ class JournalEntryDetailDialog(QDialog):
 
         title = QLabel("Journal Entry Details")
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        title.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title)
 
         # Entry Information
@@ -90,22 +90,22 @@ class JournalEntryDetailDialog(QDialog):
         self.lines_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.lines_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.lines_table.setAlternatingRowColors(True)
-        self.lines_table.setStyleSheet("""
-            QTableWidget { border: 1px solid COLOR_BORDER; border-radius: 4px; }
-            QHeaderView::section { background-color: COLOR_BG_ELEVATED; padding: 5px; font-weight: bold; }
+        self.lines_table.setStyleSheet(f"""
+            QTableWidget {{ border: 1px solid {COLOR_BORDER}; border-radius: 4px; }}
+            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: 5px; font-weight: bold; }}
         """)
         lines_layout.addWidget(self.lines_table)
 
         # Totals
         totals_frame = QFrame()
-        totals_frame.setStyleSheet("background-color: COLOR_BG_ELEVATED; border-radius: 4px; padding: 5px;")
+        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: 4px; padding: 5px;")
         totals_layout = QHBoxLayout(totals_frame)
         totals_layout.addStretch()
         
         totals_layout.addWidget(QLabel("Total Debit:"))
         self.total_debit_label = QLabel("0.00")
         self.total_debit_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        self.total_debit_label.setStyleSheet("color: COLOR_SUCCESS;")
+        self.total_debit_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
         totals_layout.addWidget(self.total_debit_label)
         
         totals_layout.addSpacing(20)
@@ -125,15 +125,15 @@ class JournalEntryDetailDialog(QDialog):
         close_btn = QPushButton("Close")
         close_btn.setMinimumHeight(35)
         close_btn.setMinimumWidth(100)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_TEXT_SECONDARY;
+        close_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_TEXT_SECONDARY};
                 color: white;
                 border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: COLOR_TEXT_PRIMARY;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_TEXT_PRIMARY};
+            }}
         """)
         close_btn.clicked.connect(self.reject)
         buttons.addWidget(close_btn)
@@ -151,7 +151,7 @@ class JournalEntryDetailDialog(QDialog):
         if posted:
             self.is_posted.setStyleSheet("color: #2ecc71;")
         else:
-            self.is_posted.setStyleSheet("color: COLOR_WARNING;")
+            self.is_posted.setStyleSheet(f"color: {COLOR_WARNING};")
 
         self._load_lines()
 

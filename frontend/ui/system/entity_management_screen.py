@@ -37,7 +37,7 @@ class EntityManagementScreen(BaseScreen):
         
         self.add_btn = QPushButton("+ Add Entity")
         self.add_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.add_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; font-weight: bold;")
+        self.add_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
         self.add_btn.clicked.connect(self.show_add_entity_dialog)
         header_layout.addWidget(self.add_btn)
         

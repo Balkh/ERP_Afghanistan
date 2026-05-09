@@ -35,7 +35,7 @@ class LicenseStatusScreen(QWidget):
         self.license_service = LicenseService()
         self.license_validator = LicenseValidator()
         self.device_id = generate_device_id()
-        self.setStyleSheet("background-color: COLOR_BG_MAIN;")
+        self.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
         self.setup_ui()
         self.update_license_info()
         
@@ -54,7 +54,7 @@ class LicenseStatusScreen(QWidget):
         title_label = QLabel("Pharmacy ERP License Status")
         title_label.setFont(QFont("Segoe UI", 24, QFont.Bold))
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title_label)
 
         # Device Information Group
@@ -64,7 +64,7 @@ class LicenseStatusScreen(QWidget):
 
         device_id_label = QLabel(f"Device ID: {self.device_id}")
         device_id_label.setFont(QFont("Consolas", 11))
-        device_id_label.setStyleSheet("background-color: COLOR_BG_ELEVATED; color: COLOR_TEXT_PRIMARY; padding: 12px; border-radius: 6px; border: 1px solid COLOR_BORDER;")
+        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: 12px; border-radius: 6px; border: 1px solid {COLOR_BORDER};")
         device_layout.addWidget(device_id_label)
         
         device_group.setLayout(device_layout)
@@ -84,7 +84,7 @@ class LicenseStatusScreen(QWidget):
 
         self.status_label = QLabel("Checking license status...")
         self.status_label.setFont(QFont("Segoe UI", 12))
-        self.status_label.setStyleSheet("font-weight: bold; color: COLOR_TEXT_PRIMARY;")
+        self.status_label.setStyleSheet(f"font-weight: bold; color: {COLOR_TEXT_PRIMARY};")
         status_indicator_layout.addWidget(self.status_label)
         status_indicator_layout.addStretch()
 
@@ -93,14 +93,14 @@ class LicenseStatusScreen(QWidget):
         # Status details
         self.status_details = QLabel("Initializing license validation...")
         self.status_details.setFont(QFont("Segoe UI", 10))
-        self.status_details.setStyleSheet("color: COLOR_TEXT_SECONDARY; padding: 8px 0px;")
+        self.status_details.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: 8px 0px;")
         self.status_details.setWordWrap(True)
         status_layout.addWidget(self.status_details)
 
         # Last checked time
         self.last_checked_label = QLabel("Last checked: --")
         self.last_checked_label.setFont(QFont("Segoe UI", 9))
-        self.last_checked_label.setStyleSheet("color: COLOR_TEXT_MUTED;")
+        self.last_checked_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         status_layout.addWidget(self.last_checked_label)
         
         status_group.setLayout(status_layout)
@@ -116,14 +116,14 @@ class LicenseStatusScreen(QWidget):
         self.details_text.setMaximumHeight(200)
         self.details_text.setReadOnly(True)
         self.details_text.setFont(QFont("Consolas", 9))
-        self.details_text.setStyleSheet("""
-            QTextEdit {
-                background-color: COLOR_BG_ELEVATED;
-                color: COLOR_TEXT_PRIMARY;
-                border: 1px solid COLOR_BORDER;
+        self.details_text.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {COLOR_BG_ELEVATED};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 padding: 12px;
-            }
+            }}
         """)
         details_layout.addWidget(self.details_text)
         
@@ -136,20 +136,20 @@ class LicenseStatusScreen(QWidget):
         self.refresh_button = QPushButton("Refresh Status")
         self.refresh_button.setMinimumHeight(36)
         self.refresh_button.setFont(QFont("Segoe UI", 10))
-        self.refresh_button.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_BORDER;
-                color: COLOR_TEXT_PRIMARY;
+        self.refresh_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BORDER};
+                color: {COLOR_TEXT_PRIMARY};
                 border: none;
                 border-radius: 6px;
                 padding: 8px 16px;
-            }
-            QPushButton:hover {
-                background-color: COLOR_BORDER_LIGHT;
-            }
-            QPushButton:pressed {
-                background-color: COLOR_BG_ELEVATED;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BORDER_LIGHT};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLOR_BG_ELEVATED};
+            }}
         """)
         self.refresh_button.clicked.connect(self.refresh_license_status)
         button_layout.addWidget(self.refresh_button)
@@ -159,25 +159,25 @@ class LicenseStatusScreen(QWidget):
         self.view_license_button = QPushButton("View License File")
         self.view_license_button.setMinimumHeight(36)
         self.view_license_button.setFont(QFont("Segoe UI", 10))
-        self.view_license_button.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_PRIMARY;
-                color: COLOR_BG_MAIN;
+        self.view_license_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_BG_MAIN};
                 border: none;
                 border-radius: 6px;
                 padding: 8px 16px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: COLOR_PRIMARY_HOVER;
-            }
-            QPushButton:pressed {
-                background-color: COLOR_PRIMARY_ACTIVE;
-            }
-            QPushButton:disabled {
-                background-color: COLOR_BG_ELEVATED;
-                color: COLOR_TEXT_MUTED;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_HOVER};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLOR_PRIMARY_ACTIVE};
+            }}
+            QPushButton:disabled {{
+                background-color: {COLOR_BG_ELEVATED};
+                color: {COLOR_TEXT_MUTED};
+            }}
         """)
         self.view_license_button.clicked.connect(self.view_license_file)
         self.view_license_button.setEnabled(False)
@@ -201,13 +201,13 @@ class LicenseStatusScreen(QWidget):
         
         # Update status indicator and label
         if status["is_valid"]:
-            self.status_indicator.setStyleSheet("color: COLOR_STATUS_VALID;")  # Green
+            self.status_indicator.setStyleSheet(f"color: {COLOR_STATUS_VALID};")  # Green
             self.status_label.setText("VALID")
-            self.status_label.setStyleSheet("color: COLOR_STATUS_VALID; font-weight: bold;")
+            self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold;")
         else:
-            self.status_indicator.setStyleSheet("color: COLOR_DANGER;")  # Red
+            self.status_indicator.setStyleSheet(f"color: {COLOR_DANGER};")  # Red
             self.status_label.setText("INVALID")
-            self.status_label.setStyleSheet("color: COLOR_DANGER; font-weight: bold;")
+            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold;")
         
         # Update status details
         self.status_details.setText(status["message"])
@@ -333,27 +333,27 @@ class LicenseDetailsDialog(QWidget):
     def setup_ui(self):
         """Set up the dialog UI."""
         layout = QVBoxLayout(self)
-        self.setStyleSheet("background-color: COLOR_BG_MAIN;")
+        self.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
 
         # Title
         title = QLabel("License Details")
         title.setFont(QFont("Segoe UI", 16, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title)
 
         # Details text
         details_text = QTextEdit()
         details_text.setReadOnly(True)
         details_text.setFont(QFont("Consolas", 10))
-        details_text.setStyleSheet("""
-            QTextEdit {
-                background-color: COLOR_BG_ELEVATED;
-                color: COLOR_TEXT_PRIMARY;
-                border: 1px solid COLOR_BORDER;
+        details_text.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {COLOR_BG_ELEVATED};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 padding: 12px;
-            }
+            }}
         """)
 
         # Format the license data nicely
@@ -366,17 +366,17 @@ class LicenseDetailsDialog(QWidget):
         # Close button
         close_button = QPushButton("Close")
         close_button.setFont(QFont("Segoe UI", 10))
-        close_button.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_BORDER;
-                color: COLOR_TEXT_PRIMARY;
+        close_button.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BORDER};
+                color: {COLOR_TEXT_PRIMARY};
                 border: none;
                 border-radius: 6px;
                 padding: 8px 20px;
-            }
-            QPushButton:hover {
-                background-color: COLOR_BORDER_LIGHT;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BORDER_LIGHT};
+            }}
         """)
         close_button.clicked.connect(self.close)
         layout.addWidget(close_button)

@@ -463,7 +463,7 @@ class UserDialog(QDialog):
             
         self.is_active = QCheckBox("User is Active")
         self.is_active.setChecked(True)
-        self.is_active.setStyleSheet("margin-top: 10px;")
+        self.is_active.setStyleSheet(f"margin-top: 10px;")
         
         form_layout.addRow("Username:", self.username)
         if not self.user_data:
@@ -487,7 +487,7 @@ class UserDialog(QDialog):
         cancel_btn.setMinimumWidth(130)
         cancel_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_BORDER};
+                background-color: {{COLOR_BORDER}};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -495,7 +495,7 @@ class UserDialog(QDialog):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_TEXT_MUTED};
+                background-color: {{COLOR_TEXT_MUTED}};
             }}
         """)
         cancel_btn.clicked.connect(self.reject)
@@ -505,7 +505,7 @@ class UserDialog(QDialog):
         save_btn.setMinimumWidth(130)
         save_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_SUCCESS};
+                background-color: {{COLOR_SUCCESS}};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -513,7 +513,7 @@ class UserDialog(QDialog):
                 padding: {SPACING_SM} 20px;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_SUCCESS};
+                background-color: {{COLOR_SUCCESS}};
             }}
         """)
         save_btn.clicked.connect(self.accept)

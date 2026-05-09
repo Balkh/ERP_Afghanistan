@@ -91,14 +91,14 @@ class AccountLedgerScreen(QFrame):
         self.loading_label = QLabel("Loading ledger...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("color: COLOR_TEXT_MUTED; padding: 20px;")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 20px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("Select an account and click Load Ledger")
         self.empty_label.setFont(QFont("Segoe UI", 11))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("color: COLOR_TEXT_MUTED; padding: 20px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 20px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -148,19 +148,19 @@ class AccountLedgerScreen(QFrame):
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         table.setAlternatingRowColors(True)
-        table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid COLOR_BORDER;
+        table.setStyleSheet(f"""
+            QTableWidget {{
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
-                background-color: COLOR_BG_SURFACE;
-                gridline-color: COLOR_BG_ELEVATED;
-            }
-            QHeaderView::section {
-                background-color: COLOR_BG_ELEVATED;
+                background-color: {COLOR_BG_SURFACE};
+                gridline-color: {COLOR_BG_ELEVATED};
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_BG_ELEVATED};
                 padding: 8px;
                 font-weight: bold;
                 border: none;
-            }
+            }}
         """)
 
         return table

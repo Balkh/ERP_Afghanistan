@@ -37,14 +37,14 @@ class BaseReportScreen(QFrame):
         self.loading_label = QLabel("Loading...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("color: COLOR_TEXT_MUTED; padding: 20px;")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 20px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No data available. Run the report to generate data.")
         self.empty_label.setFont(QFont("Segoe UI", 11))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("color: COLOR_TEXT_MUTED; padding: 20px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 20px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 

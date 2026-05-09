@@ -57,8 +57,8 @@ class Dashboard(QWidget):
                     item.widget().deleteLater()
 
         self.setObjectName("dashboard")
-        self.setStyleSheet("""
-            QWidget#dashboard { background-color: COLOR_BG_MAIN; }
+        self.setStyleSheet(f"""
+            QWidget#dashboard { background-color: {COLOR_BG_MAIN}; }
         """)
 
         root = QVBoxLayout(self)
@@ -69,18 +69,18 @@ class Dashboard(QWidget):
         hdr = QHBoxLayout()
         title = QLabel("Dashboard")
         title.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        title.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         hdr.addWidget(title)
         hdr.addStretch()
         refresh_btn = QPushButton("Refresh")
         refresh_btn.setFixedWidth(100)
-        refresh_btn.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_BORDER; color: COLOR_TEXT_PRIMARY;
-                border: 1px solid COLOR_BORDER_LIGHT; border-radius: 6px;
+        refresh_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BORDER}; color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: 6px;
                 padding: 8px 16px; font-weight: bold;
-            }
-            QPushButton:hover { background-color: COLOR_BORDER_LIGHT; }
+            }}
+            QPushButton:hover {{ background-color: {COLOR_BORDER_LIGHT}; }}
         """)
         refresh_btn.clicked.connect(self.refresh_data)
         hdr.addWidget(refresh_btn)
@@ -88,7 +88,7 @@ class Dashboard(QWidget):
 
         self._subtitle = QLabel("Loading…")
         self._subtitle.setFont(QFont("Segoe UI", 10))
-        self._subtitle.setStyleSheet("color: COLOR_TEXT_MUTED;")
+        self._subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         root.addWidget(self._subtitle)
 
         # -- KPI grid (2 × 3) --
@@ -114,7 +114,7 @@ class Dashboard(QWidget):
 
         self._role_frame = QFrame()
         self._role_frame.setObjectName("roleCard")
-        self._role_frame.setStyleSheet("QFrame#roleCard { background: COLOR_BG_ELEVATED; border-radius: 10px; }")
+        self._role_frame.setStyleSheet(f"QFrame#roleCard { background: {COLOR_BG_ELEVATED}; border-radius: 10px; }")
         self._role_stack = QVBoxLayout(self._role_frame)
         self._role_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self._role_stack.setSpacing(SPACING_SM + SPACING_XS)
@@ -122,7 +122,7 @@ class Dashboard(QWidget):
 
         self._alert_frame = QFrame()
         self._alert_frame.setObjectName("alertCard")
-        self._alert_frame.setStyleSheet("QFrame#alertCard { background: COLOR_BG_ELEVATED; border-radius: 10px; }")
+        self._alert_frame.setStyleSheet(f"QFrame#alertCard { background: {COLOR_BG_ELEVATED}; border-radius: 10px; }")
         self._alert_stack = QVBoxLayout(self._alert_frame)
         self._alert_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self._alert_stack.setSpacing(SPACING_SM)
@@ -133,14 +133,14 @@ class Dashboard(QWidget):
         # -- Quick actions --
         af = QFrame()
         af.setObjectName("actionsCard")
-        af.setStyleSheet("QFrame#actionsCard { background: COLOR_BG_ELEVATED; border-radius: 10px; }")
+        af.setStyleSheet(f"QFrame#actionsCard { background: {COLOR_BG_ELEVATED}; border-radius: 10px; }")
         al = QHBoxLayout(af)
         al.setContentsMargins(20, 12, 20, 12)
         al.setSpacing(SPACING_MD)
 
         al_title = QLabel("Quick Actions")
         al_title.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        al_title.setStyleSheet("color: COLOR_PRIMARY;")
+        al_title.setStyleSheet(f"color: {COLOR_PRIMARY};")
         al.addWidget(al_title)
 
         for text, idx in [("New Sale", 5), ("New Purchase", 6),
@@ -166,7 +166,7 @@ class Dashboard(QWidget):
 
         t = QLabel(label)
         t.setFont(QFont("Segoe UI", 9))
-        t.setStyleSheet("color: COLOR_TEXT_MUTED;")
+        t.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         lay.addWidget(t)
 
         v = QLabel("—")
@@ -181,15 +181,15 @@ class Dashboard(QWidget):
         btn = QPushButton(text)
         btn.setCursor(Qt.PointingHandCursor)
         btn.setMinimumHeight(36)
-        btn.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_BORDER; color: COLOR_TEXT_PRIMARY;
-                border: 1px solid COLOR_BORDER_LIGHT; border-radius: 6px;
+        btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BORDER}; color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: 6px;
                 padding: 8px 18px; font-weight: bold; font-size: 10pt;
-            }
-            QPushButton:hover {
-                background-color: COLOR_BORDER_LIGHT; border: 1px solid COLOR_PRIMARY;
-            }
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BORDER_LIGHT}; border: 1px solid {COLOR_PRIMARY};
+            }}
         """)
         btn.clicked.connect(lambda checked, x=page_index: self._navigate_to(x))
         return btn
@@ -302,7 +302,7 @@ class Dashboard(QWidget):
         }
         t = QLabel(titles.get(self._role, "Overview"))
         t.setFont(QFont("Segoe UI", 13, QFont.Bold))
-        t.setStyleSheet("color: COLOR_PRIMARY;")
+        t.setStyleSheet(f"color: {COLOR_PRIMARY};")
         self._role_stack.addWidget(t)
 
         if self._role in (UserRole.ADMIN, UserRole.ACCOUNTANT):
@@ -386,7 +386,7 @@ class Dashboard(QWidget):
 
         lbl = QLabel(label)
         lbl.setFont(QFont("Segoe UI", 8))
-        lbl.setStyleSheet("color: COLOR_TEXT_MUTED;")
+        lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         lay.addWidget(lbl)
 
         if is_currency:
@@ -412,7 +412,7 @@ class Dashboard(QWidget):
 
         t = QLabel("Alerts")
         t.setFont(QFont("Segoe UI", 13, QFont.Bold))
-        t.setStyleSheet("color: COLOR_STATUS_WARNING;")
+        t.setStyleSheet(f"color: {COLOR_STATUS_WARNING};")
         self._alert_stack.addWidget(t)
 
         ops = data.get('operations', {}) or {}
@@ -462,7 +462,7 @@ class Dashboard(QWidget):
         txt = f"{label}: {status}" if label else status
         lbl = QLabel(txt)
         lbl.setFont(QFont("Segoe UI", 9))
-        lbl.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        lbl.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         row.addWidget(lbl)
         row.addStretch()
         return box

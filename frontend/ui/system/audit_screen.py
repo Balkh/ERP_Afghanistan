@@ -30,24 +30,24 @@ class AuditScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("System Audit Logs")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
         self.btn_refresh = QPushButton(" Refresh")
         self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_BG_ELEVATED;
+        self.btn_refresh.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid #dee2e6;
                 border-radius: 5px;
                 padding: 5px 15px;
                 color: #495057;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #e9ecef;
-            }
+            }}
         """)
         self.btn_refresh.clicked.connect(self._load_audit_logs)
         header_layout.addWidget(self.btn_refresh)
@@ -55,7 +55,7 @@ class AuditScreen(BaseScreen):
         
         filter_bar = QGroupBox("Filter Logs")
         filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet("QGroupBox { border: 1px solid COLOR_BORDER; border-radius: 8px; margin-top: 10px; padding-top: 10px; }")
+        filter_bar.setStyleSheet(f"QGroupBox { border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; }")
         filter_layout = QGridLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
@@ -94,7 +94,7 @@ class AuditScreen(BaseScreen):
         filter_layout.addWidget(self.date_to, 1, 3)
         
         self.clear_btn = QPushButton("Clear Filters")
-        self.clear_btn.setStyleSheet("background-color: COLOR_TEXT_SECONDARY; color: white; border-radius: 5px; padding: 5px 15px;")
+        self.clear_btn.setStyleSheet(f"background-color: {COLOR_TEXT_SECONDARY}; color: white; border-radius: 5px; padding: 5px 15px;")
         self.clear_btn.clicked.connect(self._clear_filters)
         filter_layout.addWidget(self.clear_btn, 1, 5)
         
@@ -103,7 +103,7 @@ class AuditScreen(BaseScreen):
         action_layout = QHBoxLayout()
         self.export_btn = QPushButton("Export CSV")
         self.export_btn.setMinimumHeight(38)
-        self.export_btn.setStyleSheet("background-color: COLOR_PRIMARY; color: white; border-radius: 5px; padding: 0 15px;")
+        self.export_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; padding: 0 15px;")
         action_layout.addWidget(self.export_btn)
         action_layout.addStretch()
         layout.addLayout(action_layout)
@@ -120,10 +120,10 @@ class AuditScreen(BaseScreen):
 
     def _create_modern_table(self):
         table = QTableWidget()
-        table.setStyleSheet("""
-            QTableWidget { border: none; gridline-color: #f1f2f6; }
-            QHeaderView::section { background-color: COLOR_BG_ELEVATED; padding: 8px; border: none; border-bottom: 2px solid #dee2e6; font-weight: bold; }
-            QTableWidget::item { padding: 10px; }
+        table.setStyleSheet(f"""
+            QTableWidget {{ border: none; gridline-color: #f1f2f6; }}
+            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: 8px; border: none; border-bottom: 2px solid #dee2e6; font-weight: bold; }}
+            QTableWidget::item {{ padding: 10px; }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         table.horizontalHeader().setSectionResizeMode(7, QHeaderView.Stretch)

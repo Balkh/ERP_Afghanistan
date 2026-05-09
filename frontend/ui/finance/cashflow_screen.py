@@ -36,7 +36,7 @@ class CashflowScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("Cash Flow Management")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
@@ -45,14 +45,14 @@ class CashflowScreen(BaseScreen):
         self.btn_refresh.setMinimumHeight(35)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER_LIGHT};
+                background-color: {{COLOR_BG_ELEVATED}};
+                border: 1px solid {{COLOR_BORDER_LIGHT}};
                 border-radius: 5px;
                 padding: {SPACING_XS} {SPACING_MD};
-                color: {COLOR_TEXT_SECONDARY};
+                color: {{COLOR_TEXT_SECONDARY}};
             }}
             QPushButton:hover {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {{COLOR_BG_ELEVATED}};
             }}
         """)
         self.btn_refresh.clicked.connect(self.load_data)
@@ -63,9 +63,9 @@ class CashflowScreen(BaseScreen):
         summary_layout = QHBoxLayout()
         summary_layout.setSpacing(SPACING_MD + SPACING_XS)
 
-        self.inflow_card = self._create_summary_card("Cash Inflow", "0.00 AFN", "COLOR_SUCCESS")
-        self.outflow_card = self._create_summary_card("Cash Outflow", "0.00 AFN", "COLOR_DANGER")
-        self.net_card = self._create_summary_card("Net Cash Flow", "0.00 AFN", "COLOR_PRIMARY")
+        self.inflow_card = self._create_summary_card("Cash Inflow", "0.00 AFN", "{COLOR_SUCCESS}")
+        self.outflow_card = self._create_summary_card("Cash Outflow", "0.00 AFN", "{COLOR_DANGER}")
+        self.net_card = self._create_summary_card("Net Cash Flow", "0.00 AFN", "{COLOR_PRIMARY}")
 
         summary_layout.addWidget(self.inflow_card)
         summary_layout.addWidget(self.outflow_card)
@@ -86,10 +86,10 @@ class CashflowScreen(BaseScreen):
         layout.addWidget(self.empty_label)
 
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid COLOR_BORDER; border-radius: 5px; background: white; }
-            QTabBar::tab { background: COLOR_BG_ELEVATED; border: 1px solid COLOR_BORDER; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }
-            QTabBar::tab:selected { background: white; border-bottom-color: white; font-weight: bold; }
+        self.tabs.setStyleSheet(f"""
+            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: 5px; background: white; }}
+            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }}
+            QTabBar::tab:selected {{ background: white; border-bottom-color: white; font-weight: bold; }}
         """)
 
         # Cash Flow Statement Tab
@@ -126,7 +126,7 @@ class CashflowScreen(BaseScreen):
         layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
         
         title_label = QLabel(title)
-        title_label.setStyleSheet("color: COLOR_TEXT_MUTED; font-weight: bold; font-size: 10pt;")
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-weight: bold; font-size: 10pt;")
         
         value_label = QLabel(value)
         value_label.setObjectName("value_label")
@@ -145,10 +145,10 @@ class CashflowScreen(BaseScreen):
 
     def _create_modern_table(self):
         table = QTableWidget()
-        table.setStyleSheet("""
-            QTableWidget { border: none; gridline-color: #f1f2f6; }
-            QHeaderView::section { background-color: COLOR_BG_ELEVATED; padding: 8px; border: none; border-bottom: 2px solid #dee2e6; font-weight: bold; }
-            QTableWidget::item { padding: 10px; }
+        table.setStyleSheet(f"""
+            QTableWidget {{ border: none; gridline-color: #f1f2f6; }}
+            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: 8px; border: none; border-bottom: 2px solid #dee2e6; font-weight: bold; }}
+            QTableWidget::item {{ padding: 10px; }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)

@@ -33,7 +33,7 @@ class ExpenseScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("Pharmacy Expenses")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
@@ -42,7 +42,7 @@ class ExpenseScreen(BaseScreen):
         self.btn_refresh.setMinimumHeight(35)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_TEXT_MUTED};
+                background-color: {{COLOR_TEXT_MUTED}};
                 border: none;
                 border-radius: 6px;
                 padding: {SPACING_SM} {SPACING_MD};
@@ -50,7 +50,7 @@ class ExpenseScreen(BaseScreen):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_BORDER};
+                background-color: {{COLOR_BORDER}};
             }}
         """)
         self.btn_refresh.clicked.connect(self.load_expenses)
@@ -61,7 +61,7 @@ class ExpenseScreen(BaseScreen):
         action_layout = QHBoxLayout()
         self.add_btn = QPushButton("+ Record Expense")
         self.add_btn.setMinimumHeight(38)
-        self.add_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: 5px; font-weight: bold; padding: 0 {SPACING_MD};")
+        self.add_btn.setStyleSheet(f"background-color: {{COLOR_DANGER}}; color: white; border-radius: 5px; font-weight: bold; padding: 0 {SPACING_MD};")
         self.add_btn.clicked.connect(self.show_add_expense_dialog)
         action_layout.addWidget(self.add_btn)
         action_layout.addStretch()
@@ -70,7 +70,7 @@ class ExpenseScreen(BaseScreen):
         # Filters
         filter_bar = QGroupBox("Filter Expenses")
         filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet("QGroupBox { border: 1px solid COLOR_BORDER; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: COLOR_TEXT_PRIMARY; }")
+        filter_bar.setStyleSheet(f"QGroupBox { border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }")
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
@@ -102,21 +102,21 @@ class ExpenseScreen(BaseScreen):
         self.loading_label = QLabel("Loading expenses...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No expenses found")
         self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading expenses")
         self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: {SPACING_XL + SPACING_MD};")
+        self.error_label.setStyleSheet(f"color: {{COLOR_DANGER}}; padding: {SPACING_XL + SPACING_MD};")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 
@@ -130,11 +130,11 @@ class ExpenseScreen(BaseScreen):
 
     def _create_modern_table(self):
         table = QTableWidget()
-        table.setStyleSheet("""
-            QTableWidget { background-color: COLOR_BG_MAIN; border: 1px solid COLOR_BORDER; border-radius: 6px; gridline-color: COLOR_BG_ELEVATED; color: COLOR_TEXT_PRIMARY; }
-            QHeaderView::section { background-color: COLOR_BG_ELEVATED; color: COLOR_TEXT_PRIMARY; padding: 8px; border: none; border-bottom: 2px solid COLOR_BORDER; font-weight: bold; }
-            QTableWidget::item { padding: 10px; border-bottom: 1px solid COLOR_BG_ELEVATED; color: COLOR_TEXT_PRIMARY; }
-            QTableWidget::item:selected { background-color: COLOR_PRIMARY; color: white; }
+        table.setStyleSheet(f"""
+            QTableWidget {{ background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-radius: 6px; gridline-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; }}
+            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: 8px; border: none; border-bottom: 2px solid {COLOR_BORDER}; font-weight: bold; }}
+            QTableWidget::item {{ padding: 10px; border-bottom: 1px solid {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; }}
+            QTableWidget::item:selected {{ background-color: {COLOR_PRIMARY}; color: white; }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)

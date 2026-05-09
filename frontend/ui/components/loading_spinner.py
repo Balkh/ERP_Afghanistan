@@ -66,12 +66,12 @@ class LoadingOverlay(QWidget):
         
         self.label = QLabel("Loading...")
         self.label.setAlignment(Qt.AlignCenter)
-        self.label.setStyleSheet("""
-            QLabel {
-                color: COLOR_PRIMARY;
+        self.label.setStyleSheet(f"""
+            QLabel {{
+                color: {COLOR_PRIMARY};
                 font-size: 14px;
                 margin-top: 10px;
-            }
+            }}
         """)
         layout.addWidget(self.label)
         

@@ -268,7 +268,7 @@ class SupplierDialog(QDialog):
         # Scroll area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet("QScrollArea { border: none; }")
+        scroll.setStyleSheet(f"QScrollArea { border: none; }")
         
         form = QFrame()
         form.setStyleSheet("QFrame { background-color: transparent; }")
@@ -446,18 +446,18 @@ class SupplierDialog(QDialog):
         
         self.btn_cancel = QPushButton("Cancel")
         self.btn_cancel.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.btn_cancel.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_TEXT_MUTED;
+        self.btn_cancel.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_TEXT_MUTED};
                 color: white;
                 border: none;
                 border-radius: 6px;
                 padding: 12px 24px;
                 font-size: 14px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #7f8c8d;
-            }
+            }}
         """)
         self.btn_cancel.clicked.connect(self.reject)
         

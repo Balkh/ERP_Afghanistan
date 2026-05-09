@@ -35,7 +35,7 @@ class AttendanceScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("Attendance Log")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
@@ -44,7 +44,7 @@ class AttendanceScreen(BaseScreen):
         self.btn_refresh.setMinimumHeight(38)
         self.btn_refresh.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_TEXT_MUTED};
+                background-color: {{COLOR_TEXT_MUTED}};
                 color: white;
                 border: none;
                 border-radius: 6px;
@@ -52,7 +52,7 @@ class AttendanceScreen(BaseScreen):
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_BORDER};
+                background-color: {{COLOR_BORDER}};
             }}
         """)
         self.btn_refresh.clicked.connect(self.load_attendance)
@@ -62,15 +62,15 @@ class AttendanceScreen(BaseScreen):
         # Filters
         filter_bar = QGroupBox("Filter by Date")
         filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet("""
-            QGroupBox {
-                border: 1px solid COLOR_TEXT_SECONDARY;
+        filter_bar.setStyleSheet(f"""
+            QGroupBox {{
+                border: 1px solid {COLOR_TEXT_SECONDARY};
                 border-radius: 8px;
                 margin-top: 10px;
                 padding-top: 10px;
-                background-color: COLOR_BG_MAIN;
-                color: COLOR_TEXT_PRIMARY;
-            }
+                background-color: {COLOR_BG_MAIN};
+                color: {COLOR_TEXT_PRIMARY};
+            }}
         """)
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
@@ -82,9 +82,9 @@ class AttendanceScreen(BaseScreen):
         self.date_edit.setCalendarPopup(True)
         self.date_edit.setStyleSheet(f"""
             QDateEdit {{
-                background-color: {COLOR_TEXT_SECONDARY};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
+                background-color: {{COLOR_TEXT_SECONDARY}};
+                color: {{COLOR_TEXT_PRIMARY}};
+                border: 1px solid {{COLOR_BORDER}};
                 border-radius: 6px;
                 padding: {SPACING_SM};
             }}
@@ -98,20 +98,20 @@ class AttendanceScreen(BaseScreen):
         self.loading_label = QLabel("Loading attendance records...")
         self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
         self.loading_label.setVisible(False)
 
         self.empty_label = QLabel("No attendance records found")
         self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {{COLOR_TEXT_MUTED}}; padding: {SPACING_XL + SPACING_MD};")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading attendance records")
         self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("color: COLOR_DANGER; padding: 40px;")
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: 40px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 
@@ -127,32 +127,32 @@ class AttendanceScreen(BaseScreen):
         table = QTableWidget()
         table.setStyleSheet(f"""
             QTableWidget {{ 
-                background-color: {COLOR_BG_MAIN}; 
-                color: {COLOR_TEXT_PRIMARY}; 
+                background-color: {{COLOR_BG_MAIN}}; 
+                color: {{COLOR_TEXT_PRIMARY}}; 
                 border: none; 
-                gridline-color: {COLOR_TEXT_SECONDARY};
+                gridline-color: {{COLOR_TEXT_SECONDARY}};
             }}
             QHeaderView::section {{ 
-                background-color: {COLOR_TEXT_SECONDARY}; 
-                color: {COLOR_TEXT_PRIMARY};
+                background-color: {{COLOR_TEXT_SECONDARY}}; 
+                color: {{COLOR_TEXT_PRIMARY}};
                 padding: {SPACING_SM}; 
                 border: none; 
-                border-bottom: 2px solid {COLOR_BORDER}; 
+                border-bottom: 2px solid {{COLOR_BORDER}}; 
                 font-weight: bold;
                 font-size: 12px;
             }}
             QTableWidget::item {{ 
                 padding: {SPACING_SM}; 
-                border-bottom: 1px solid {COLOR_TEXT_SECONDARY};
-                color: {COLOR_TEXT_PRIMARY};
+                border-bottom: 1px solid {{COLOR_TEXT_SECONDARY}};
+                color: {{COLOR_TEXT_PRIMARY}};
             }}
             QTableWidget::item:selected {{
-                background-color: {COLOR_PRIMARY} !important;
+                background-color: {{COLOR_PRIMARY}} !important;
                 color: white !important;
                 font-weight: bold;
             }}
             QTableWidget::item:hover:!selected {{
-                background-color: {COLOR_TEXT_SECONDARY};
+                background-color: {{COLOR_TEXT_SECONDARY}};
                 color: white;
             }}
         """)

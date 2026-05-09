@@ -50,8 +50,8 @@ class PurchaseInvoiceScreen(QWidget):
         header_layout.addStretch()
 
         self.status_label = QLabel("DRAFT")
-        self.status_label.setStyleSheet("""
-            background-color: COLOR_TEXT_MUTED; 
+        self.status_label.setStyleSheet(f"""
+            background-color: {COLOR_TEXT_MUTED}; 
             color: white; 
             padding: 8px 16px; 
             border-radius: 4px;
@@ -63,7 +63,7 @@ class PurchaseInvoiceScreen(QWidget):
         # Workflow status label
         self.workflow_status_label = QLabel("")
         self.workflow_status_label.setStyleSheet(f"""
-            color: {COLOR_TEXT_MUTED}; 
+            color: {{COLOR_TEXT_MUTED}}; 
             padding: {SPACING_SM};
             font-size: {FONT_SIZE_MD}pt;
         """)
@@ -72,27 +72,27 @@ class PurchaseInvoiceScreen(QWidget):
         # Workflow action buttons
         self.submit_wf_btn = QPushButton("Submit for Approval")
         self.submit_wf_btn.setMaximumHeight(BUTTON_HEIGHT_MD)
-        self.submit_wf_btn.setStyleSheet("background-color: COLOR_PRIMARY; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
+        self.submit_wf_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
         self.submit_wf_btn.clicked.connect(lambda: self.perform_workflow_action('submit'))
         header_layout.addWidget(self.submit_wf_btn)
         
         self.approve_wf_btn = QPushButton("Approve")
         self.approve_wf_btn.setMaximumHeight(BUTTON_HEIGHT_MD)
-        self.approve_wf_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
+        self.approve_wf_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
         self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
         self.approve_wf_btn.setVisible(False)
         header_layout.addWidget(self.approve_wf_btn)
         
         self.reject_wf_btn = QPushButton("Reject")
         self.reject_wf_btn.setMaximumHeight(BUTTON_HEIGHT_MD)
-        self.reject_wf_btn.setStyleSheet("background-color: COLOR_DANGER; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
+        self.reject_wf_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
         self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
         self.reject_wf_btn.setVisible(False)
         header_layout.addWidget(self.reject_wf_btn)
         
         self.post_wf_btn = QPushButton("Post")
         self.post_wf_btn.setMaximumHeight(BUTTON_HEIGHT_MD)
-        self.post_wf_btn.setStyleSheet("background-color: COLOR_INFO; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
+        self.post_wf_btn.setStyleSheet(f"background-color: {COLOR_INFO}; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
         self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
         self.post_wf_btn.setVisible(False)
         header_layout.addWidget(self.post_wf_btn)
@@ -130,7 +130,7 @@ class PurchaseInvoiceScreen(QWidget):
 
         self.credit_limit_label = QLabel("N/A")
         self.credit_limit_label.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.credit_limit_label.setStyleSheet("font-weight: bold;")
+        self.credit_limit_label.setStyleSheet(f"font-weight: bold;")
         supplier_layout.addRow("Credit Limit:", self.credit_limit_label)
 
         self.balance_label = QLabel("N/A")
@@ -223,19 +223,19 @@ class PurchaseInvoiceScreen(QWidget):
         self.items_table.setMinimumHeight(TABLE_ROW_HEIGHT_LG * 8)
         self.items_table.verticalHeader().setDefaultSectionSize(TABLE_ROW_HEIGHT_MD)
         self.items_table.setAlternatingRowColors(True)
-        self.items_table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid COLOR_BORDER;
+        self.items_table.setStyleSheet(f"""
+            QTableWidget {{
+                border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
-                background-color: COLOR_BG_SURFACE;
-                gridline-color: COLOR_BG_ELEVATED;
-            }
-            QHeaderView::section {
-                background-color: COLOR_BG_ELEVATED;
+                background-color: {COLOR_BG_SURFACE};
+                gridline-color: {COLOR_BG_ELEVATED};
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_BG_ELEVATED};
                 padding: 8px;
                 font-weight: bold;
                 border: none;
-            }
+            }}
         """)
 
         # Bottom section: Totals and actions
@@ -278,7 +278,7 @@ class PurchaseInvoiceScreen(QWidget):
         self.total_label = QLabel("0.00")
         self.total_label.setMinimumHeight(INPUT_HEIGHT_MD)
         self.total_label.setFont(QFont("Segoe UI", FONT_SIZE_XL, QFont.Bold))
-        self.total_label.setStyleSheet("color: COLOR_SUCCESS;")
+        self.total_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
         totals_layout.addRow("Total:", self.total_label)
 
         self.paid_input = QDoubleSpinBox()
@@ -291,7 +291,7 @@ class PurchaseInvoiceScreen(QWidget):
         self.balance_label = QLabel("0.00")
         self.balance_label.setMinimumHeight(INPUT_HEIGHT_MD)
         self.balance_label.setFont(QFont("Segoe UI", FONT_SIZE_LG))
-        self.balance_label.setStyleSheet("color: COLOR_DANGER;")
+        self.balance_label.setStyleSheet(f"color: {COLOR_DANGER};")
         totals_layout.addRow("Balance Due:", self.balance_label)
 
         bottom_layout.addWidget(totals_group, 1)
@@ -309,19 +309,19 @@ class PurchaseInvoiceScreen(QWidget):
         self.confirm_btn = QPushButton("Confirm Invoice (Ctrl+Enter)")
         self.confirm_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
         self.confirm_btn.clicked.connect(self.confirm_invoice)
-        self.confirm_btn.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_PRIMARY; 
+        self.confirm_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY}; 
                 color: white; 
                 border: none;
                 border-radius: """ + str(BORDER_RADIUS_MD) + """px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: COLOR_PRIMARY_HOVER;
+                background-color: {COLOR_PRIMARY_HOVER};
             }
             QPushButton:pressed {
-                background-color: COLOR_PRIMARY_ACTIVE;
+                background-color: {COLOR_PRIMARY_ACTIVE};
             }
         """)
         actions_layout.addWidget(self.confirm_btn)
@@ -331,17 +331,17 @@ class PurchaseInvoiceScreen(QWidget):
         self.receive_btn.clicked.connect(self.receive_invoice)
         self.receive_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {COLOR_SUCCESS};
+                background-color: {{COLOR_SUCCESS}};
                 color: white;
                 border: none;
                 border-radius: {BORDER_RADIUS_MD}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_SUCCESS_HOVER};
+                background-color: {{COLOR_SUCCESS_HOVER}};
             }}
             QPushButton:pressed {{
-                background-color: {COLOR_SUCCESS_ACTIVE};
+                background-color: {{COLOR_SUCCESS_ACTIVE}};
             }}
         """)
         actions_layout.addWidget(self.receive_btn)
@@ -433,9 +433,9 @@ class PurchaseInvoiceScreen(QWidget):
             self.balance_label.setText(f"${supplier.get('balance', 0):,.2f}")
 
             if supplier.get("balance", 0) > supplier.get("credit_limit", 0):
-                self.balance_label.setStyleSheet("color: COLOR_DANGER; font-weight: bold;")
+                self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold;")
             else:
-                self.balance_label.setStyleSheet("color: COLOR_SUCCESS;")
+                self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
 
     def show_product_selector(self):
         """Show product selection dialog for purchase."""
@@ -510,7 +510,7 @@ class PurchaseInvoiceScreen(QWidget):
 
         # Actions
         remove_btn = QPushButton("Remove")
-        remove_btn.setStyleSheet("color: COLOR_DANGER;")
+        remove_btn.setStyleSheet(f"color: {COLOR_DANGER};")
         remove_btn.clicked.connect(lambda checked, r=row: self.items_table.removeRow(r))
         self.items_table.setCellWidget(row, 9, remove_btn)
 
@@ -599,10 +599,10 @@ class PurchaseInvoiceScreen(QWidget):
         
         if is_received:
             self.receive_btn.setText("RECEIVED")
-            self.receive_btn.setStyleSheet("background-color: COLOR_TEXT_MUTED; color: white; border: none; border-radius: 4px;")
+            self.receive_btn.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: white; border: none; border-radius: 4px;")
         else:
             self.receive_btn.setText("Receive & Add Stock (Ctrl+R)")
-            self.receive_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; font-weight: bold; border: none; border-radius: 4px;")
+            self.receive_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold; border: none; border-radius: 4px;")
 
     def save_draft(self):
         """Save purchase invoice as draft."""
@@ -637,7 +637,7 @@ class PurchaseInvoiceScreen(QWidget):
 
         if reply == QMessageBox.Yes:
             self.status_label.setText("CONFIRMED")
-            self.status_label.setStyleSheet("background-color: COLOR_PRIMARY; color: white; padding: 5px 15px; border-radius: 3px;")
+            self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; padding: 5px 15px; border-radius: 3px;")
             QMessageBox.information(self, "Success", "Purchase invoice confirmed successfully.")
 
     def receive_invoice(self):
@@ -662,7 +662,7 @@ class PurchaseInvoiceScreen(QWidget):
 
         if reply == QMessageBox.Yes:
             self.status_label.setText("RECEIVED")
-            self.status_label.setStyleSheet("background-color: COLOR_SUCCESS; color: white; padding: 5px 15px; border-radius: 3px;")
+            self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; padding: 5px 15px; border-radius: 3px;")
             QMessageBox.information(self, "Success", "Purchase received and stock added to inventory.")
 
     def print_invoice(self):
@@ -720,7 +720,7 @@ class PurchaseInvoiceScreen(QWidget):
         self.items_table.setRowCount(0)
         self.recalculate_totals()
         self.status_label.setText("DRAFT")
-        self.status_label.setStyleSheet("background-color: COLOR_TEXT_MUTED; color: white; padding: 5px 15px; border-radius: 3px;")
+        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: white; padding: 5px 15px; border-radius: 3px;")
         self.current_invoice_id = None
         self.workflow_status_label.setText("")
         self.submit_wf_btn.setVisible(True)

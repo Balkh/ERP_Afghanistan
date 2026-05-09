@@ -94,7 +94,7 @@ def show_license_file_not_found(parent=None):
     )
 
 
-def show_license_device_mismatch(parent=None, expected_device_id, actual_device_id):
+def show_license_device_mismatch(expected_device_id, actual_device_id, parent=None):
     """Show dialog indicating license device mismatch."""
     QMessageBox.warning(
         parent,
@@ -107,7 +107,7 @@ def show_license_device_mismatch(parent=None, expected_device_id, actual_device_
     )
 
 
-def show_license_expired(parent=None, expiration_date):
+def show_license_expired(expiration_date, parent=None):
     """Show dialog indicating license has expired."""
     QMessageBox.warning(
         parent,

@@ -104,9 +104,9 @@ class EnterpriseDialog(QDialog):
         
         layout.addStretch()
         
-        header.setStyleSheet("""
+        header.setStyleSheet(f"""
             QFrame {
-                background-color: COLOR_HEADER_DARK;
+                background-color: {COLOR_HEADER_DARK};
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
             }
@@ -153,30 +153,30 @@ class EnterpriseDialog(QDialog):
             layout.addWidget(self._cancel_btn)
             layout.addWidget(self._save_btn)
             
-        button_area.setStyleSheet("""
-            QFrame {
-                background-color: {COLOR_BG_MAIN};
-                border-top: 1px solid {COLOR_BORDER};
+        button_area.setStyleSheet(f"""
+            QFrame {{
+                background-color: {{{COLOR_BG_MAIN}}};
+                border-top: 1px solid {{{COLOR_BORDER}}};
                 border-bottom-left-radius: 8px;
                 border-bottom-right-radius: 8px;
-            }
-            QPushButton {
+            }}
+            QPushButton {{
                 padding: 8px 20px;
                 border-radius: 4px;
                 font-weight: 600;
-            }
-            QPushButton[text="Save"] {
-                background-color: {COLOR_PRIMARY};
+            }}
+            QPushButton[text="Save"] {{
+                background-color: {{{COLOR_PRIMARY}}};
                 color: white;
-            }
-            QPushButton[text="OK"] {
-                background-color: {COLOR_PRIMARY};
+            }}
+            QPushButton[text="OK"] {{
+                background-color: {{{COLOR_PRIMARY}}};
                 color: white;
-            }
-            QPushButton[text="Yes"] {
-                background-color: {COLOR_PRIMARY};
+            }}
+            QPushButton[text="Yes"] {{
+                background-color: {{{COLOR_PRIMARY}}};
                 color: white;
-            }
+            }}
         """)
         
         return button_area

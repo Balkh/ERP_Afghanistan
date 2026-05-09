@@ -112,10 +112,10 @@ class DriftIntelligenceScreen(BaseScreen):
         header = QHBoxLayout()
         title = QLabel("System Drift Intelligence")
         title.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        title.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         
         self.status_badge = QLabel("PREDICTIVE ANALYSIS ACTIVE")
-        self.status_badge.setStyleSheet("color: COLOR_STATUS_VALID; font-weight: bold; font-size: 11px; background: COLOR_BG_ELEVATED; padding: 4px 10px; border-radius: 4px;")
+        self.status_badge.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; font-size: 11px; background: {COLOR_BG_ELEVATED}; padding: 4px 10px; border-radius: 4px;")
         
         header.addWidget(title)
         header.addWidget(self.status_badge)
@@ -141,7 +141,7 @@ class DriftIntelligenceScreen(BaseScreen):
         # 3. Early Warning Panel (Bottom Left)
         warning_group = self._create_group("Early Warnings & Drift Patterns", 400)
         self.warning_list = QListWidget()
-        self.warning_list.setStyleSheet("background: COLOR_BG_SURFACE; border: none; border-radius: 8px;")
+        self.warning_list.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
         warning_group.layout().addWidget(self.warning_list)
         grid.addWidget(warning_group, 1, 0)
         
@@ -157,7 +157,7 @@ class DriftIntelligenceScreen(BaseScreen):
     def _create_group(self, title, min_h):
         group = QGroupBox(title)
         group.setMinimumHeight(min_h)
-        group.setStyleSheet("QGroupBox { color: COLOR_PRIMARY; font-weight: bold; border: 1px solid COLOR_BG_ELEVATED; border-radius: 12px; margin-top: 15px; background: COLOR_BG_MAIN; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 5px; }")
+        group.setStyleSheet(f"QGroupBox { color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 5px; }")
         QVBoxLayout(group)
         group.layout().setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         return group

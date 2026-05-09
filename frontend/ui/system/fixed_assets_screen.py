@@ -32,34 +32,34 @@ class FixedAssetsScreen(BaseScreen):
         header_layout = QHBoxLayout()
         header = QLabel("Fixed Assets Management")
         header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
         self.btn_refresh = QPushButton(" Refresh")
         self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet("""
-            QPushButton {
-                background-color: COLOR_BG_ELEVATED;
+        self.btn_refresh.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid #dee2e6;
                 border-radius: 5px;
                 padding: 5px 15px;
                 color: #495057;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: #e9ecef;
-            }
+            }}
         """)
         self.btn_refresh.clicked.connect(self.on_show)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
-            QTabWidget::pane { border: 1px solid COLOR_BORDER; border-radius: 5px; background: white; }
-            QTabBar::tab { background: COLOR_BG_ELEVATED; border: 1px solid COLOR_BORDER; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }
-            QTabBar::tab:selected { background: white; border-bottom-color: white; font-weight: bold; }
+        self.tabs.setStyleSheet(f"""
+            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: 5px; background: white; }}
+            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }}
+            QTabBar::tab:selected {{ background: white; border-bottom-color: white; font-weight: bold; }}
         """)
         
         # Assets Tab
@@ -85,7 +85,7 @@ class FixedAssetsScreen(BaseScreen):
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_bar = QFrame()
-        filter_bar.setStyleSheet("background-color: COLOR_BG_ELEVATED; border-radius: 8px; border: 1px solid #dee2e6;")
+        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: 8px; border: 1px solid #dee2e6;")
         filter_layout = QHBoxLayout(filter_bar)
         
         self.category_filter = QComboBox()
@@ -106,12 +106,12 @@ class FixedAssetsScreen(BaseScreen):
         action_layout = QHBoxLayout()
         add_btn = QPushButton("+ Add Asset")
         add_btn.setMinimumHeight(38)
-        add_btn.setStyleSheet("background-color: COLOR_SUCCESS; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        add_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
         add_btn.clicked.connect(self._add_asset)
         
         dispose_btn = QPushButton("Dispose")
         dispose_btn.setMinimumHeight(38)
-        dispose_btn.setStyleSheet("background-color: COLOR_DANGER; color: white; border-radius: 5px; padding: 0 15px;")
+        dispose_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: 5px; padding: 0 15px;")
         
         action_layout.addWidget(add_btn)
         action_layout.addWidget(dispose_btn)
@@ -127,10 +127,10 @@ class FixedAssetsScreen(BaseScreen):
 
     def _create_modern_table(self):
         table = QTableWidget()
-        table.setStyleSheet("""
-            QTableWidget { border: none; gridline-color: #f1f2f6; }
-            QHeaderView::section { background-color: COLOR_BG_ELEVATED; padding: 8px; border: none; border-bottom: 2px solid #dee2e6; font-weight: bold; }
-            QTableWidget::item { padding: 10px; }
+        table.setStyleSheet(f"""
+            QTableWidget {{ border: none; gridline-color: #f1f2f6; }}
+            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: 8px; border: none; border-bottom: 2px solid #dee2e6; font-weight: bold; }}
+            QTableWidget::item {{ padding: 10px; }}
         """)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
