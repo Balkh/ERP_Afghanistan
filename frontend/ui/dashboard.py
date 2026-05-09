@@ -114,7 +114,7 @@ class Dashboard(QWidget):
 
         self._role_frame = QFrame()
         self._role_frame.setObjectName("roleCard")
-        self._role_frame.setStyleSheet(f"QFrame#roleCard { background: {COLOR_BG_ELEVATED}; border-radius: 10px; }")
+        self._role_frame.setStyleSheet(f"QFrame#roleCard {{ background: {COLOR_BG_ELEVATED}; border-radius: 10px; }}")
         self._role_stack = QVBoxLayout(self._role_frame)
         self._role_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self._role_stack.setSpacing(SPACING_SM + SPACING_XS)
@@ -122,7 +122,7 @@ class Dashboard(QWidget):
 
         self._alert_frame = QFrame()
         self._alert_frame.setObjectName("alertCard")
-        self._alert_frame.setStyleSheet(f"QFrame#alertCard { background: {COLOR_BG_ELEVATED}; border-radius: 10px; }")
+        self._alert_frame.setStyleSheet(f"QFrame#alertCard {{ background: {COLOR_BG_ELEVATED}; border-radius: 10px; }}")
         self._alert_stack = QVBoxLayout(self._alert_frame)
         self._alert_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self._alert_stack.setSpacing(SPACING_SM)
@@ -133,7 +133,7 @@ class Dashboard(QWidget):
         # -- Quick actions --
         af = QFrame()
         af.setObjectName("actionsCard")
-        af.setStyleSheet(f"QFrame#actionsCard { background: {COLOR_BG_ELEVATED}; border-radius: 10px; }")
+        af.setStyleSheet(f"QFrame#actionsCard {{ background: {COLOR_BG_ELEVATED}; border-radius: 10px; }}")
         al = QHBoxLayout(af)
         al.setContentsMargins(20, 12, 20, 12)
         al.setSpacing(SPACING_MD)
