@@ -1,0 +1,332 @@
+{
+  "files": {
+    "E:\\Pharmacy_ERP\\frontend\\ui\\constants.py": {
+      "count": 14,
+      "types": [
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\dashboard.py": {
+      "count": 9,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\main_window.py": {
+      "count": 21,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\sidebar.py": {
+      "count": 6,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\accounting\\accounting_dashboard.py": {
+      "count": 13,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\accounting\\account_ledger_screen.py": {
+      "count": 3,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\accounting\\base_report_screen.py": {
+      "count": 2,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\accounting\\chart_of_accounts_screen.py": {
+      "count": 1,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\accounting\\journal_entry_screen.py": {
+      "count": 1,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\auth\\login_screen.py": {
+      "count": 3,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\components\\dialogs.py": {
+      "count": 17,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\components\\forms.py": {
+      "count": 4,
+      "types": [
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\components\\navigation_header.py": {
+      "count": 1,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\components\\notifications.py": {
+      "count": 11,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\components\\tables.py": {
+      "count": 1,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\components\\toast.py": {
+      "count": 8,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\finance\\budgeting_screen.py": {
+      "count": 19,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\finance\\cashflow_screen.py": {
+      "count": 22,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\finance\\cost_centers_screen.py": {
+      "count": 18,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\finance\\expense_screen.py": {
+      "count": 18,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\finance\\payment_screen.py": {
+      "count": 10,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\finance\\tax_screen.py": {
+      "count": 21,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\hr\\attendance_screen.py": {
+      "count": 21,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\hr\\employee_screen.py": {
+      "count": 31,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\hr\\leave_screen.py": {
+      "count": 24,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\hr\\payroll_screen.py": {
+      "count": 34,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\inventory\\base_screen.py": {
+      "count": 1,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\licensing\\activation_screen.py": {
+      "count": 12,
+      "types": [
+        "SPACING",
+        "FONT"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\licensing\\license_manager_dialog.py": {
+      "count": 2,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\licensing\\license_status_screen.py": {
+      "count": 7,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\purchases\\purchase_invoice_screen.py": {
+      "count": 22,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\purchases\\supplier_screen.py": {
+      "count": 22,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\returns\\returns_screen.py": {
+      "count": 27,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\sales\\customer_screen.py": {
+      "count": 26,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\sales\\sales_invoice_screen.py": {
+      "count": 22,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\audit_screen.py": {
+      "count": 12,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\control_center_screen.py": {
+      "count": 38,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\correlation_screen.py": {
+      "count": 5,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\drift_intelligence_screen.py": {
+      "count": 1,
+      "types": [
+        "SPACING"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\fixed_assets_screen.py": {
+      "count": 12,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\integrity_screen.py": {
+      "count": 3,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\intelligence_hub_screen.py": {
+      "count": 5,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\invoice_template_manager.py": {
+      "count": 3,
+      "types": [
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\production_screen.py": {
+      "count": 2,
+      "types": [
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\user_management_screen.py": {
+      "count": 8,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\system\\workflow_intelligence_screen.py": {
+      "count": 10,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\accounting\\components\\journal_entry_detail.py": {
+      "count": 14,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\accounting\\components\\journal_entry_form.py": {
+      "count": 47,
+      "types": [
+        "SPACING",
+        "COLOR"
+      ]
+    },
+    "E:\\Pharmacy_ERP\\frontend\\ui\\accounting\\components\\report_preview_dialog.py": {
+      "count": 2,
+      "types": [
+        "COLOR"
+      ]
+    }
+  },
+  "generated_at": "2026-05-08T04:42:52.173910",
+  "total_count": 636
+}

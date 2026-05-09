@@ -1,0 +1,167 @@
+from api.client import APIClient
+from api.endpoints import get_endpoint
+from PySide6.QtCore import Slot
+
+from PySide6.QtWidgets import QHeaderView, QAbstractItemView, QTableWidgetItem
+from .base_screen import BaseInventoryScreen
+
+class BatchScreen(BaseInventoryScreen):
+    """Screen for managing batches."""
+
+    def __init__(self, api_client=None):
+        super().__init__("Batch Management")
+        self.api_client = api_client or APIClient()
+        self.batches = []  # Cache of batches
+        self.setup_table()
+        
+        # Connect signals to slots
+        self.add_requested.connect(self.on_add_requested)
+        self.edit_requested.connect(self.on_edit_requested)
+        self.delete_requested.connect(self.on_delete_requested)
+        self.refresh_requested.connect(self.on_refresh_requested)
+        self.search_text_changed.connect(self.on_search_text_changed)
+        self.filter_changed.connect(self.on_filter_changed)
+        
+        self.load_batches()
+
+    def setup_table(self):
+        """Setup the batches table."""
+        from PySide6.QtWidgets import QTableWidget
+
+        self.table = QTableWidget()
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels([
+            "ID", "Product", "Batch No", "Expiry", "Qty", "Warehouse", "Status"
+        ])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.table.itemSelectionChanged.connect(self.on_selection_changed)
+
+        self.set_table_widget(self.table)
+
+    def populate_filter_options(self):
+        """Populate filter options for batches."""
+        self.filter_combo.addItem("All", "")
+        self.filter_combo.addItem("Active Only", "active")
+        self.filter_combo.addItem("Expired", "expired")
+        self.filter_combo.addItem("Expiring Soon", "expiring_soon")
+
+    @Slot()
+    def load_batches(self):
+        """Load batches from the API."""
+        try:
+            endpoint = get_endpoint("batches")
+            params = {}
+            filter_value = self.filter_combo.currentData()
+            if filter_value == "active":
+                params["is_active"] = "true"
+            elif filter_value == "expired":
+                params["is_expired"] = "true"
+            elif filter_value == "expiring_soon":
+                params["is_expiring_soon"] = "true"
+
+            search_text = self.search_input.text().strip()
+            if search_text:
+                params["search"] = search_text
+
+            response = self.api_client.get(endpoint, params=params)
+            self.batches = []
+            if isinstance(response, list):
+                self.batches = [b for b in response if isinstance(b, dict)]
+            elif isinstance(response, dict):
+                if response.get('success'):
+                    data = response.get('data', [])
+                    if isinstance(data, list):
+                        self.batches = [b for b in data if isinstance(b, dict)]
+                    elif isinstance(data, dict):
+                        if 'results' in data:
+                            self.batches = [b for b in data.get('results', []) if isinstance(b, dict)]
+                        elif 'id' in data:
+                            self.batches = [data]
+
+            self.update_table()
+        except Exception as e:
+            print(f"Error loading batches: {e}")
+            self.batches = []
+            self.update_table()
+
+    def update_table(self):
+        """Update the table with current batches."""
+        if not self.batches:
+            self.table.setRowCount(0)
+            return
+        self.table.setRowCount(len(self.batches))
+        for row, batch in enumerate(self.batches):
+            if not isinstance(batch, dict):
+                continue
+            self.table.setItem(row, 0, QTableWidgetItem(str(batch.get("id") or "")))
+            self.table.setItem(row, 1, QTableWidgetItem(batch.get("product_name") or ""))
+            self.table.setItem(row, 2, QTableWidgetItem(batch.get("batch_number") or ""))
+            self.table.setItem(row, 3, QTableWidgetItem(batch.get("expiry_date") or ""))
+            self.table.setItem(row, 4, QTableWidgetItem(str(batch.get("quantity") or "")))
+            self.table.setItem(row, 5, QTableWidgetItem(batch.get("warehouse_name") or ""))
+            status = batch.get("status") or "unknown"
+            self.table.setItem(row, 6, QTableWidgetItem(status.capitalize()))
+
+    @Slot()
+    def on_selection_changed(self):
+        """Handle table selection change."""
+        selected_rows = self.table.selectionModel().selectedRows()
+        self.set_selection_enabled(len(selected_rows) > 0)
+
+    # Implement the slots for the signals from base class
+    @Slot()
+    def on_add_requested(self):
+        """Handle add request."""
+        self.show_batch_form()
+
+    @Slot(object)
+    def on_edit_requested(self, batch_id):
+        """Handle edit request."""
+        if batch_id:
+            self.show_batch_form(batch_id)
+
+    @Slot(object)
+    def on_delete_requested(self, batch_id):
+        """Handle delete request."""
+        if batch_id:
+            from PySide6.QtWidgets import QMessageBox
+            reply = QMessageBox.question(
+                self, "Confirm Delete",
+                f"Are you sure you want to delete batch ID {batch_id}?",
+                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.delete_batch(batch_id)
+
+    @Slot()
+    def on_refresh_requested(self):
+        """Handle refresh request."""
+        self.load_batches()
+
+    @Slot(str)
+    def on_search_text_changed(self, text):
+        """Handle search text change."""
+        self.load_batches()
+
+    @Slot(str)
+    def on_filter_changed(self, filter_value):
+        """Handle filter change."""
+        self.load_batches()
+
+    def show_batch_form(self, batch_id=None):
+        """Show the batch form dialog."""
+        from .components.batch_form_dialog import BatchFormDialog
+        dialog = BatchFormDialog(self, batch_id=batch_id, api_client=self.api_client)
+        if dialog.exec():
+            self.load_batches()
+
+    def delete_batch(self, batch_id):
+        """Delete a batch."""
+        try:
+            self.api_client.delete(f"/api/inventory/batches/{batch_id}/")
+            self.load_batches()
+        except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
+            QMessageBox.critical(self, "Error", f"Failed to delete batch: {e}")

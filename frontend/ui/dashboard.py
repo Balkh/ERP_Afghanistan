@@ -1,0 +1,484 @@
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
+                                  QGridLayout, QPushButton, QApplication)
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QFont
+from ui.role_manager import UserRole
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+
+
+class Dashboard(QWidget):
+    """Role-aware Dashboard widget fetching real data from /api/control-center/."""
+
+    C = {
+        'blue': 'COLOR_PRIMARY', 'green': 'COLOR_STATUS_VALID', 'red': 'COLOR_DANGER',
+        'yellow': 'COLOR_WARNING', 'peach': 'COLOR_STATUS_WARNING', 'mauve': '#cba6f7',
+        'pink': '#f5c2e7', 'teal': 'COLOR_INFO',
+    }
+
+    def __init__(self, role=None, api_client=None):
+        super().__init__()
+        self._role = role or UserRole.ADMIN
+        self._api_client = api_client
+        self._dashboard_data = {}
+        self._extra_counts = {}
+        self._kpi_labels = {}
+
+        self._build_static_ui()
+
+        self._refresh_timer = QTimer(self)
+        self._refresh_timer.timeout.connect(self.refresh_data)
+        self._refresh_timer.start(60000)
+
+        if self._api_client:
+            QTimer.singleShot(200, self.refresh_data)
+
+    def set_api_client(self, api_client):
+        self._api_client = api_client
+        self.refresh_data()
+
+    def set_role(self, role):
+        self._role = role
+        self._rebuild_role_section()
+        self.refresh_data()
+
+    def cleanup(self):
+        if self._refresh_timer:
+            self._refresh_timer.stop()
+
+    # ------------------------------------------------------------------
+    # Static UI  (built once, never fully rebuilt)
+    # ------------------------------------------------------------------
+    def _build_static_ui(self):
+        if self.layout():
+            while self.layout().count():
+                item = self.layout().takeAt(0)
+                if item.widget():
+                    item.widget().deleteLater()
+
+        self.setObjectName("dashboard")
+        self.setStyleSheet("""
+            QWidget#dashboard { background-color: COLOR_BG_MAIN; }
+        """)
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(24, 20, 24, 20)
+        root.setSpacing(16)
+
+        # -- Header row --
+        hdr = QHBoxLayout()
+        title = QLabel("Dashboard")
+        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        title.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        hdr.addWidget(title)
+        hdr.addStretch()
+        refresh_btn = QPushButton("Refresh")
+        refresh_btn.setFixedWidth(100)
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background-color: COLOR_BORDER; color: COLOR_TEXT_PRIMARY;
+                border: 1px solid COLOR_BORDER_LIGHT; border-radius: 6px;
+                padding: 8px 16px; font-weight: bold;
+            }
+            QPushButton:hover { background-color: COLOR_BORDER_LIGHT; }
+        """)
+        refresh_btn.clicked.connect(self.refresh_data)
+        hdr.addWidget(refresh_btn)
+        root.addLayout(hdr)
+
+        self._subtitle = QLabel("Loading…")
+        self._subtitle.setFont(QFont("Segoe UI", 10))
+        self._subtitle.setStyleSheet("color: COLOR_TEXT_MUTED;")
+        root.addWidget(self._subtitle)
+
+        # -- KPI grid (2 × 3) --
+        kg = QGridLayout()
+        kg.setSpacing(SPACING_MD)
+
+        specs = [
+            (0, 0, "Products",       'blue',  'kpi_products'),
+            (0, 1, "Customers",       'green', 'kpi_customers'),
+            (0, 2, "Suppliers",       'mauve', 'kpi_suppliers'),
+            (1, 0, "Cash Balance",    'green', 'kpi_cash'),
+            (1, 1, "Revenue (MTD)",   'teal',  'kpi_revenue'),
+            (1, 2, "Working Capital", 'peach', 'kpi_wc'),
+        ]
+        for r, c, t, ck, key in specs:
+            self._kpi_labels[key] = self._add_kpi_card(kg, r, c, t, ck)
+
+        root.addLayout(kg)
+
+        # -- Middle: role section (left) + alerts (right) --
+        mid = QHBoxLayout()
+        mid.setSpacing(16)
+
+        self._role_frame = QFrame()
+        self._role_frame.setObjectName("roleCard")
+        self._role_frame.setStyleSheet("QFrame#roleCard { background: COLOR_BG_ELEVATED; border-radius: 10px; }")
+        self._role_stack = QVBoxLayout(self._role_frame)
+        self._role_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
+        self._role_stack.setSpacing(SPACING_SM + SPACING_XS)
+        mid.addWidget(self._role_frame, 3)
+
+        self._alert_frame = QFrame()
+        self._alert_frame.setObjectName("alertCard")
+        self._alert_frame.setStyleSheet("QFrame#alertCard { background: COLOR_BG_ELEVATED; border-radius: 10px; }")
+        self._alert_stack = QVBoxLayout(self._alert_frame)
+        self._alert_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
+        self._alert_stack.setSpacing(SPACING_SM)
+        mid.addWidget(self._alert_frame, 2)
+
+        root.addLayout(mid, 1)
+
+        # -- Quick actions --
+        af = QFrame()
+        af.setObjectName("actionsCard")
+        af.setStyleSheet("QFrame#actionsCard { background: COLOR_BG_ELEVATED; border-radius: 10px; }")
+        al = QHBoxLayout(af)
+        al.setContentsMargins(20, 12, 20, 12)
+        al.setSpacing(SPACING_MD)
+
+        al_title = QLabel("Quick Actions")
+        al_title.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        al_title.setStyleSheet("color: COLOR_PRIMARY;")
+        al.addWidget(al_title)
+
+        for text, idx in [("New Sale", 5), ("New Purchase", 6),
+                          ("Products", 1), ("Reports", 13)]:
+            al.addWidget(self._mk_action_btn(text, idx))
+        al.addStretch()
+        root.addWidget(af)
+
+    def _add_kpi_card(self, grid, row, col, label, color_key):
+        card = QFrame()
+        c = self.C.get(color_key, 'COLOR_PRIMARY')
+        card.setStyleSheet(f"""
+            QFrame {{
+                background-color: COLOR_BG_ELEVATED;
+                border-left: 4px solid {c};
+                border-radius: 8px;
+            }}
+        """)
+        card.setMinimumHeight(82)
+        lay = QVBoxLayout(card)
+        lay.setContentsMargins(16, 10, 16, 10)
+        lay.setSpacing(SPACING_XS)
+
+        t = QLabel(label)
+        t.setFont(QFont("Segoe UI", 9))
+        t.setStyleSheet("color: COLOR_TEXT_MUTED;")
+        lay.addWidget(t)
+
+        v = QLabel("—")
+        v.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        v.setStyleSheet(f"color: {c};")
+        lay.addWidget(v)
+
+        grid.addWidget(card, row, col)
+        return (t, v)
+
+    def _mk_action_btn(self, text, page_index):
+        btn = QPushButton(text)
+        btn.setCursor(Qt.PointingHandCursor)
+        btn.setMinimumHeight(36)
+        btn.setStyleSheet("""
+            QPushButton {
+                background-color: COLOR_BORDER; color: COLOR_TEXT_PRIMARY;
+                border: 1px solid COLOR_BORDER_LIGHT; border-radius: 6px;
+                padding: 8px 18px; font-weight: bold; font-size: 10pt;
+            }
+            QPushButton:hover {
+                background-color: COLOR_BORDER_LIGHT; border: 1px solid COLOR_PRIMARY;
+            }
+        """)
+        btn.clicked.connect(lambda checked, x=page_index: self._navigate_to(x))
+        return btn
+
+    # ------------------------------------------------------------------
+    # Data refresh  (updates labels, never rebuilds UI)
+    # ------------------------------------------------------------------
+    def refresh_data(self):
+        if not self._api_client:
+            return
+        self._subtitle.setText("Refreshing…")
+        try:
+            raw = self._api_client.get("/api/control-center/")
+            if raw and isinstance(raw, dict):
+                d = raw.get('data', {})
+                self._dashboard_data = d if isinstance(d, dict) else raw
+            else:
+                self._dashboard_data = raw if isinstance(raw, dict) else {}
+            self._fetch_extra_counts()
+            self._sync_ui()
+            self._subtitle.setText("Up to date")
+        except Exception as e:
+            print(f"Dashboard refresh error: {e}")
+            self._subtitle.setText("Refresh failed")
+
+    def _fetch_extra_counts(self):
+        for key, url in [('customers', '/api/sales/customers/?limit=1'),
+                         ('suppliers', '/api/purchases/suppliers/?limit=1')]:
+            try:
+                r = self._api_client.get(url)
+                if r and isinstance(r, dict):
+                    d = r.get('data', r)
+                    if isinstance(d, dict):
+                        self._extra_counts[key] = d.get('count', 0)
+                    elif isinstance(d, list):
+                        self._extra_counts[key] = len(d)
+            except Exception:
+                pass
+
+    # ------------------------------------------------------------------
+    # Sync UI with data  (label updates only)
+    # ------------------------------------------------------------------
+    def _sync_ui(self):
+        data = self._dashboard_data
+        fin = data.get('financial', {}) or {}
+        inv = data.get('inventory', {}) or {}
+        hr = data.get('hr', {}) or {}
+
+        # KPI labels
+        inv_ov = inv.get('overview', {}) or {}
+        bal = fin.get('balance_summary', {}) or {}
+        today = fin.get('today_activity', {}) or {}
+
+        self._set_kpi('kpi_products', inv_ov.get('total_products', '—'))
+        self._set_kpi('kpi_customers', self._extra_counts.get('customers', '—'))
+        self._set_kpi('kpi_suppliers', self._extra_counts.get('suppliers', '—'))
+
+        assets = bal.get('total_assets', 0)
+        self._set_kpi('kpi_cash', float(assets or 0), currency=True)
+
+        sales = today.get('sales', 0)
+        self._set_kpi('kpi_revenue', float(sales or 0), currency=True)
+
+        liab = bal.get('total_liabilities', 0)
+        wc = float(assets or 0) - float(liab or 0)
+        self._set_kpi('kpi_wc', wc, currency=True)
+
+        self._rebuild_role_section(data)
+        self._rebuild_alerts(data)
+
+    def _set_kpi(self, key, value, currency=False):
+        pair = self._kpi_labels.get(key)
+        if not pair:
+            return
+        _, v_lbl = pair
+        if currency:
+            try:
+                v_lbl.setText(f"AFN {float(value):,.2f}")
+            except (ValueError, TypeError):
+                v_lbl.setText("AFN 0.00")
+        else:
+            v_lbl.setText(str(value))
+
+    # ------------------------------------------------------------------
+    # Role section
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _clear_layout(layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            w = item.widget()
+            if w:
+                w.deleteLater()
+            elif item.layout():
+                Dashboard._clear_layout(item.layout())
+
+    def _rebuild_role_section(self, data=None):
+        self._clear_layout(self._role_stack)
+
+        data = data or self._dashboard_data
+        fin = data.get('financial', {}) or {}
+        inv = data.get('inventory', {}) or {}
+        hr = data.get('hr', {}) or {}
+
+        titles = {
+            UserRole.ADMIN: "Financial Overview",
+            UserRole.ACCOUNTANT: "Accounting Overview",
+            UserRole.WAREHOUSE: "Inventory Overview",
+            UserRole.HR: "HR Overview",
+        }
+        t = QLabel(titles.get(self._role, "Overview"))
+        t.setFont(QFont("Segoe UI", 13, QFont.Bold))
+        t.setStyleSheet("color: COLOR_PRIMARY;")
+        self._role_stack.addWidget(t)
+
+        if self._role in (UserRole.ADMIN, UserRole.ACCOUNTANT):
+            self._build_financial_section(fin)
+        elif self._role == UserRole.WAREHOUSE:
+            self._build_inventory_section(inv)
+        elif self._role == UserRole.HR:
+            self._build_hr_section(hr)
+        else:
+            self._build_inventory_section(inv)
+
+        self._role_stack.addStretch()
+
+    def _build_financial_section(self, fin):
+        bal = fin.get('balance_summary', {}) or {}
+        pend = fin.get('pending_counts', {}) or {}
+        jour = fin.get('journal_status', {}) or {}
+        today = fin.get('today_activity', {}) or {}
+
+        items = [
+            ("Total Assets",     bal.get('total_assets', 0),     'green',  True),
+            ("Total Liabilities", bal.get('total_liabilities', 0),'red',    True),
+            ("Equity",           bal.get('total_equity', 0),     'blue',   True),
+            ("Sales Today",      today.get('sales', 0),          'green',  True),
+            ("Purchases Today",  today.get('purchases', 0),      'red',    True),
+            ("Pending Sales",    pend.get('sales_invoices', 0),  'peach',  False),
+            ("Pending Purchases",pend.get('purchase_bills', 0),  'peach',  False),
+            ("Posted JE",        jour.get('posted', 0),          'teal',   False),
+            ("Unposted JE",      jour.get('unposted', 0),        'red',    False),
+        ]
+        grid = QGridLayout()
+        grid.setSpacing(SPACING_SM)
+        for i, (lbl, val, ck, is_cur) in enumerate(items):
+            grid.addWidget(self._mini_card(lbl, val, ck, is_cur), i // 3, i % 3)
+        self._role_stack.addLayout(grid)
+
+    def _build_inventory_section(self, inv):
+        ov = inv.get('overview', {}) or {}
+        al = inv.get('stock_alerts', {}) or {}
+        act = inv.get('activity', {}) or {}
+
+        items = [
+            ("Products",    ov.get('total_products', 0),     'blue',   False),
+            ("Batches",     ov.get('total_batches', 0),      'mauve',  False),
+            ("Warehouses",  ov.get('active_warehouses', 0),  'teal',   False),
+            ("Out of Stock",al.get('out_of_stock', 0),       'red',    False),
+            ("Low Stock",   al.get('low_stock', 0),          'peach',  False),
+            ("Expiring",    al.get('expiring_soon', 0),      'yellow', False),
+            ("Movements Today", act.get('movements_today', 0), 'green', False),
+        ]
+        grid = QGridLayout()
+        grid.setSpacing(SPACING_SM)
+        for i, (lbl, val, ck, _) in enumerate(items):
+            grid.addWidget(self._mini_card(lbl, val, ck, False), i // 3, i % 3)
+        self._role_stack.addLayout(grid)
+
+    def _build_hr_section(self, hr):
+        ov = hr.get('overview', {}) or {}
+        att = hr.get('today_attendance', {}) or {}
+
+        items = [
+            ("Active Employees", ov.get('active_employees', 0),'blue',  False),
+            ("Departments",      ov.get('departments', 0),     'mauve', False),
+            ("Present Today",    att.get('present', 0),        'green', False),
+            ("Absent Today",     att.get('absent', 0),         'red',   False),
+            ("On Leave",         att.get('on_leave', 0),       'peach', False),
+        ]
+        grid = QGridLayout()
+        grid.setSpacing(SPACING_SM)
+        for i, (lbl, val, ck, _) in enumerate(items):
+            grid.addWidget(self._mini_card(lbl, val, ck, False), i // 3, i % 3)
+        self._role_stack.addLayout(grid)
+
+    def _mini_card(self, label, value, color_key, is_currency):
+        c = self.C.get(color_key, 'COLOR_PRIMARY')
+        f = QFrame()
+        f.setStyleSheet(f"QFrame {{ background: COLOR_BORDER; border-radius: 6px; }}")
+        lay = QVBoxLayout(f)
+        lay.setContentsMargins(12, 8, 12, 8)
+        lay.setSpacing(SPACING_XS)
+
+        lbl = QLabel(label)
+        lbl.setFont(QFont("Segoe UI", 8))
+        lbl.setStyleSheet("color: COLOR_TEXT_MUTED;")
+        lay.addWidget(lbl)
+
+        if is_currency:
+            try:
+                display = f"AFN {float(value):,.2f}"
+            except (ValueError, TypeError):
+                display = "AFN 0.00"
+        else:
+            display = str(value)
+
+        v = QLabel(display)
+        v.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        v.setStyleSheet(f"color: {c};")
+        lay.addWidget(v)
+
+        return f
+
+    # ------------------------------------------------------------------
+    # Alerts
+    # ------------------------------------------------------------------
+    def _rebuild_alerts(self, data):
+        self._clear_layout(self._alert_stack)
+
+        t = QLabel("Alerts")
+        t.setFont(QFont("Segoe UI", 13, QFont.Bold))
+        t.setStyleSheet("color: COLOR_STATUS_WARNING;")
+        self._alert_stack.addWidget(t)
+
+        ops = data.get('operations', {}) or {}
+        al_data = ops.get('alerts', {}) or {}
+        recent = al_data.get('recent', []) if isinstance(al_data, dict) else []
+        rcount = al_data.get('recent_count', 0) if isinstance(al_data, dict) else 0
+
+        health = data.get('health', {}) or {}
+        db = health.get('database', {}) or {}
+        db_ok = db.get('status', '') == 'ok'
+
+        self._alert_stack.addWidget(self._alert_line("API", "Connected", 'green'))
+        self._alert_stack.addWidget(
+            self._alert_line("Database", "Healthy" if db_ok else "Issue", 'green' if db_ok else 'red'))
+
+        if rcount > 0 and isinstance(recent, list):
+            for a in recent[:3]:
+                msg = a.get('message', '') if isinstance(a, dict) else str(a)
+                sev = a.get('severity', 'info') if isinstance(a, dict) else 'info'
+                ck = 'red' if sev == 'critical' else 'peach' if sev == 'warning' else 'blue'
+                self._alert_stack.addWidget(self._alert_line("", msg, ck))
+        else:
+            self._alert_stack.addWidget(self._alert_line("System", "No current alerts", 'blue'))
+
+        self._alert_stack.addStretch()
+
+    def _alert_line(self, label, status, color_key):
+        c = self.C.get(color_key, 'COLOR_PRIMARY')
+        box = QFrame()
+        box.setStyleSheet(f"""
+            QFrame {{
+                background-color: COLOR_BORDER;
+                border: 1px solid COLOR_BORDER_LIGHT;
+                border-left: 3px solid {c};
+                border-radius: 4px;
+            }}
+        """)
+        row = QHBoxLayout(box)
+        row.setContentsMargins(10, 6, 10, 6)
+        row.setSpacing(SPACING_SM)
+
+        dot = QLabel("●")
+        dot.setFont(QFont("Segoe UI", 10))
+        dot.setStyleSheet(f"color: {c};")
+        row.addWidget(dot)
+
+        txt = f"{label}: {status}" if label else status
+        lbl = QLabel(txt)
+        lbl.setFont(QFont("Segoe UI", 9))
+        lbl.setStyleSheet("color: COLOR_TEXT_PRIMARY;")
+        row.addWidget(lbl)
+        row.addStretch()
+        return box
+
+    # ------------------------------------------------------------------
+    # Navigation
+    # ------------------------------------------------------------------
+    def _navigate_to(self, index):
+        from ui.main_window import MainWindow
+        app = QApplication.instance()
+        if not app:
+            return
+        titles = {1: "Products", 5: "Sales Invoice", 6: "Purchase Invoice", 13: "Trial Balance"}
+        for w in app.topLevelWidgets():
+            if isinstance(w, MainWindow):
+                w.change_page(index, titles.get(index, "Dashboard"))
+                break
+
+

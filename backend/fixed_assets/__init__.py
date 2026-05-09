@@ -1,0 +1,1 @@
+default_app_config = 'fixed_assets.apps.FixedAssetsConfig'

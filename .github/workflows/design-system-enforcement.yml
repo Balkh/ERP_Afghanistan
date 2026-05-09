@@ -1,0 +1,106 @@
+# Design System CI Pipeline
+# ==========================
+# Strict enforcement: FAIL on ANY design system violation
+# Blocks merge if violations detected
+
+name: Design System Enforcement
+
+on:
+  pull_request:
+    paths:
+      - 'ui/**/*.py'
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'ui/**/*.py'
+
+jobs:
+  design-system-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for changed files
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -q PySide6
+      
+      - name: Run Design System Enforcer (Staged Files)
+        if: github.event_name == 'pull_request'
+        run: |
+          cd frontend
+          python scripts/pre_commit_enforcer.py --staged-only
+        continue-on-error: false
+      
+      - name: Run Design System Enforcer (Full Scan)
+        if: github.event_name == 'push'
+        run: |
+          cd frontend
+          python scripts/pre_commit_enforcer.py --full-scan
+        continue-on-error: false
+      
+      - name: Generate Violation Report
+        if: failure()
+        run: |
+          echo "## Design System Violations Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The following design system violations were detected:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please fix these issues before merging." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Required Actions:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Replace hardcoded colors with `COLOR_*` tokens from `ui/constants.py`" >> $GITHUB_STEP_SUMMARY
+          echo "2. Replace hardcoded spacing with `SPACING_*` constants" >> $GITHUB_STEP_SUMMARY
+          echo "3. Replace forbidden fonts (Arial, Times New Roman, etc.) with Segoe UI" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See governance scanner for full violation details." >> $GITHUB_STEP_SUMMARY
+      
+      - name: Fail Build on Violations
+        if: failure()
+        run: |
+          echo "::error::Design system violations detected. Build blocked."
+          echo "Please fix all violations and retry."
+          exit 1
+
+  # Optional: Detailed governance report
+  governance-report:
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -q PySide6
+      
+      - name: Generate Full Governance Report
+        run: |
+          cd frontend
+          python scripts/design_system_governance.py --json > governance_report.json 2>&1 || true
+      
+      - name: Upload Governance Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: governance-report
+          path: frontend/governance_report.json
+          retention-days: 30

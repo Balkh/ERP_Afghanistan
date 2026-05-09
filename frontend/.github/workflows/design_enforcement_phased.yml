@@ -1,0 +1,115 @@
+name: Design System CI Enforcement
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'CI Phase (1=Observability, 2=Soft, 3=Hard)'
+        required: false
+        default: '2'
+      generate_baseline:
+        description: 'Generate new baseline'
+        required: false
+        default: 'false'
+
+jobs:
+  design-system-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          pip install PySide6
+
+      - name: Determine CI Phase
+        id: phase
+        run: |
+          # Default to Phase 2 (Soft Enforcement)
+          PHASE=${{ github.event.inputs.phase }}
+          if [ -z "$PHASE" ]; then
+            # Check if we're on main (hard) or develop (soft)
+            if [ "${{ github.base_ref }}" == "main" ] || [ "${{ github.ref }}" == "refs/heads/main" ]; then
+              PHASE=2
+            else
+              PHASE=2
+            fi
+          fi
+          echo "phase=$PHASE" >> $GITHUB_OUTPUT
+          echo "Running Phase $PHASE CI enforcement"
+
+      - name: Run Design System Enforcement (Phase 1 - Observability)
+        if: steps.phase.outputs.phase == '1'
+        run: |
+          cd frontend
+          python scripts/phased_ci_enforcement.py --phase 1 --check
+        continue-on-error: true
+
+      - name: Run Design System Enforcement (Phase 2 - Soft)
+        if: steps.phase.outputs.phase == '2'
+        run: |
+          cd frontend
+          python scripts/phased_ci_enforcement.py --phase 2 --check
+
+      - name: Run Design System Enforcement (Phase 3 - Hard)
+        if: steps.phase.outputs.phase == '3'
+        run: |
+          cd frontend
+          python scripts/phased_ci_enforcement.py --phase 3 --check
+
+      - name: Generate Baseline (Manual Trigger)
+        if: github.event.inputs.generate_baseline == 'true'
+        run: |
+          cd frontend
+          python scripts/phased_ci_enforcement.py --baseline
+
+      - name: Upload Violation Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: design-system-report
+          path: frontend/scripts/violation_*.json
+          retention-days: 30
+
+      - name: Post Results to PR
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            // Try to read violation report
+            const reportPath = path.join(process.cwd(), 'frontend', 'scripts', 'violation_baseline.json');
+            let report = 'Design System Check Completed';
+            
+            try {
+              if (fs.existsSync(reportPath)) {
+                const data = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+                report = `**Design System Report**
+                
+- Total Violations: ${data.total_count || 0}
+- Files Tracked: ${Object.keys(data.files || {}).length}
+- Baseline Generated: ${data.generated_at || 'N/A'}`;
+              }
+            } catch (e) {
+              console.log('No report found');
+            }
+            
+            // Post comment
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            })

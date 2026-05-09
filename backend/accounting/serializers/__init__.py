@@ -1,0 +1,170 @@
+from decimal import Decimal
+from rest_framework import serializers
+from accounting.models import Account, JournalEntry, JournalEntryLine
+
+
+class AccountSerializer(serializers.ModelSerializer):
+    parent_code = serializers.CharField(source='parent.code', read_only=True)
+    parent_name = serializers.CharField(source='parent.name', read_only=True)
+    level = serializers.IntegerField(read_only=True)
+    full_path = serializers.CharField(read_only=True)
+    is_leaf = serializers.BooleanField(read_only=True)
+    has_children = serializers.BooleanField(read_only=True)
+    total_balance = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
+    children_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Account
+        fields = [
+            'id', 'code', 'name', 'account_type', 'account_category',
+            'parent', 'parent_code', 'parent_name', 'description',
+            'is_active', 'is_system', 'balance', 'total_balance',
+            'level', 'full_path', 'is_leaf', 'has_children', 'children_count',
+            'currency', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'balance', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'code': {'required': True},
+            'name': {'required': True},
+            'account_type': {'required': True},
+        }
+
+    def get_children_count(self, obj):
+        return obj.children.filter(is_active=True).count()
+
+    def validate_code(self, value):
+        """Ensure account code is unique and numeric."""
+        if not value.isdigit():
+            raise serializers.ValidationError('Account code must contain only digits.')
+        
+        instance = self.instance
+        if Account.objects.filter(code=value).exclude(id=instance.id if instance else None).exists():
+            raise serializers.ValidationError('Account with this code already exists.')
+        return value
+
+    def validate_parent(self, value):
+        """Validate parent account."""
+        instance = self.instance
+        if value and instance:
+            if value.id == instance.id:
+                raise serializers.ValidationError('An account cannot be its own parent.')
+            
+            current = value
+            visited = set()
+            while current is not None:
+                if current.id in visited:
+                    raise serializers.ValidationError('Circular reference detected.')
+                visited.add(current.id)
+                if current.id == instance.id:
+                    raise serializers.ValidationError('Circular reference detected.')
+                current = current.parent
+        return value
+
+
+class AccountTreeSerializer(serializers.Serializer):
+    id = serializers.UUIDField()
+    code = serializers.CharField()
+    name = serializers.CharField()
+    account_type = serializers.CharField()
+    account_category = serializers.CharField()
+    balance = serializers.DecimalField(max_digits=15, decimal_places=2)
+    level = serializers.IntegerField()
+    is_leaf = serializers.BooleanField()
+    is_system = serializers.BooleanField()
+    children = serializers.ListField()
+
+
+class JournalEntryLineSerializer(serializers.ModelSerializer):
+    account_code = serializers.CharField(source='account.code', read_only=True)
+    account_name = serializers.CharField(source='account.name', read_only=True)
+
+    class Meta:
+        model = JournalEntryLine
+        fields = [
+            'id', 'account', 'account_code', 'account_name',
+            'debit', 'credit', 'description', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'account': {'required': True},
+        }
+
+    def validate(self, data):
+        """Validate debit/credit rules."""
+        debit = data.get('debit', Decimal('0.00'))
+        credit = data.get('credit', Decimal('0.00'))
+        
+        if debit < 0 or credit < 0:
+            raise serializers.ValidationError('Debit and credit amounts cannot be negative.')
+        if debit == 0 and credit == 0:
+            raise serializers.ValidationError('Either debit or credit must be positive.')
+        if debit > 0 and credit > 0:
+            raise serializers.ValidationError('Cannot have both debit and credit on the same line.')
+        
+        return data
+
+
+class JournalEntrySerializer(serializers.ModelSerializer):
+    lines = JournalEntryLineSerializer(many=True, read_only=True)
+    writable_lines = JournalEntryLineSerializer(many=True, write_only=True)
+    total_debit = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
+    total_credit = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
+    is_balanced = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = JournalEntry
+        fields = [
+            'id', 'entry_number', 'entry_date', 'entry_type', 'description',
+            'reference', 'is_posted', 'is_active',
+            'total_debit', 'total_credit', 'is_balanced',
+            'lines', 'writable_lines',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+        extra_kwargs = {
+            'entry_number': {'required': True},
+            'entry_date': {'required': True},
+            'entry_type': {'required': True},
+            'description': {'required': True},
+        }
+
+    def create(self, validated_data):
+        """Create journal entry with lines."""
+        lines_data = validated_data.pop('writable_lines', [])
+        entry = JournalEntry.objects.create(**validated_data)
+        
+        for line_data in lines_data:
+            JournalEntryLine.objects.create(entry=entry, **line_data)
+        
+        return entry
+
+    def update(self, instance, validated_data):
+        """Update journal entry with lines."""
+        if instance.is_posted:
+            raise serializers.ValidationError('Posted journal entries cannot be modified.')
+        
+        lines_data = validated_data.pop('writable_lines', None)
+        instance = super().update(instance, validated_data)
+        
+        if lines_data is not None:
+            instance.lines.all().delete()
+            for line_data in lines_data:
+                JournalEntryLine.objects.create(entry=instance, **line_data)
+        
+        return instance
+
+    def validate(self, data):
+        """Validate journal entry is balanced."""
+        instance = self.instance
+        lines = data.get('writable_lines', [])
+        
+        if lines:
+            total_debit = sum(line.get('debit', Decimal('0')) for line in lines)
+            total_credit = sum(line.get('credit', Decimal('0')) for line in lines)
+            
+            if total_debit != total_credit:
+                raise serializers.ValidationError(
+                    f'Journal entry must be balanced. Debits: {total_debit}, Credits: {total_credit}'
+                )
+        
+        return data
