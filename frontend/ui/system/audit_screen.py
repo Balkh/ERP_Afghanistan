@@ -55,7 +55,7 @@ class AuditScreen(BaseScreen):
         
         filter_bar = QGroupBox("Filter Logs")
         filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet(f"QGroupBox { border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; }")
+        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; }}")
         filter_layout = QGridLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         

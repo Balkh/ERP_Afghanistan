@@ -268,7 +268,7 @@ class SupplierDialog(QDialog):
         # Scroll area
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet(f"QScrollArea { border: none; }")
+        scroll.setStyleSheet(f"QScrollArea {{ border: none; }}")
         
         form = QFrame()
         form.setStyleSheet("QFrame { background-color: transparent; }")

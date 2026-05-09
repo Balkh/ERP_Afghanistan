@@ -123,7 +123,7 @@ class IntelligenceHubScreen(BaseScreen):
         
         # System Status
         status_box = QGroupBox("Operational Status")
-        status_box.setStyleSheet(f"QGroupBox { color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 10px; }")
+        status_box.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 10px; }}")
         QVBoxLayout(status_box).addWidget(QLabel("All systems operational. No critical drift detected."))
         grid.addWidget(status_box, 0, 0)
         

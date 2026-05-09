@@ -278,7 +278,7 @@ class CustomerDialog(QDialog):
         # Scroll area for form
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet(f"QScrollArea { border: none; }")
+        scroll.setStyleSheet(f"QScrollArea {{ border: none; }}")
         
         # Form container
         form = QFrame()

@@ -154,7 +154,7 @@ class SystemCorrelationScreen(BaseScreen):
         self.chains_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.chains_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.chains_table.cellClicked.connect(self._on_chain_selected)
-        self.chains_table.setStyleSheet(f"QTableWidget { background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; } QHeaderView::section { background: {COLOR_BG_ELEVATED}; color: {COLOR_PRIMARY}; border: none; padding: 6px; font-weight: bold; }")
+        self.chains_table.setStyleSheet(f"QTableWidget {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; }} QHeaderView::section {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_PRIMARY}; border: none; padding: 6px; font-weight: bold; }}")
         chains_group.layout().addWidget(self.chains_table)
         grid.addWidget(chains_group, 0, 0)
         
@@ -176,7 +176,7 @@ class SystemCorrelationScreen(BaseScreen):
     def _create_group(self, title, min_h):
         group = QGroupBox(title)
         group.setMinimumHeight(min_h)
-        group.setStyleSheet(f"QGroupBox { color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; } QGroupBox::title { subcontrol-origin: margin; left: 15px; padding: 0 5px; }")
+        group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
         QVBoxLayout(group)
         group.layout().setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         return group
