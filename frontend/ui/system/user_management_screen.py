@@ -1,5 +1,5 @@
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """User Management Screen for ERP."""
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                   QLabel, QTableWidget, QTableWidgetItem, QHeaderView,
@@ -172,10 +172,10 @@ class UserManagementScreen(BaseScreen):
                 background-color: {COLOR_BG_MAIN}; 
                 color: {COLOR_TEXT_PRIMARY}; 
                 border: none; 
-                gridline-color: {COLOR_BG_ELEVATED};
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
             }}
             QHeaderView::section {{ 
-                background-color: {COLOR_BG_ELEVATED}; 
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; 
                 color: {COLOR_TEXT_PRIMARY};
                 padding: {SPACING_SM}; 
                 border: none; 
@@ -187,7 +187,7 @@ class UserManagementScreen(BaseScreen):
                 padding: {SPACING_SM}; 
             }}
             QTableWidget::item:selected {{ 
-                background-color: {COLOR_BG_ELEVATED}; 
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; 
                 color: {COLOR_TEXT_PRIMARY};
             }}
             QTableWidget::item:hover {{ 
@@ -346,7 +346,7 @@ class UserDialog(QDialog):
                 margin-top: {SPACING_MD}; 
                 padding-top: {SPACING_MD}; 
                 padding-bottom: {SPACING_MD};
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 color: {COLOR_TEXT_PRIMARY};
             }}
             QLabel {{
@@ -428,7 +428,7 @@ class UserDialog(QDialog):
             QGroupBox {{
                 border: 1px solid {COLOR_BG_ELEVATED};
                 border-radius: 8px;
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 padding: {SPACING_SM};
             }}
         """)

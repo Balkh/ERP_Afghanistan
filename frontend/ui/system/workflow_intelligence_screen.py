@@ -1,5 +1,5 @@
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 Workflow Intelligence Screen - Live Decision Tracking System.
 Provides visual analytics and real-time tracking for ERP workflows.
@@ -148,7 +148,7 @@ class WorkflowIntelligenceScreen(BaseScreen):
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         
         self.status_label = QLabel("LIVE TRACKING ACTIVE")
-        self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; font-size: 11px; background: {COLOR_BG_ELEVATED}; padding: 4px 10px; border-radius: 4px;")
+        self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; font-size: 11px; background: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: 4px 10px; border-radius: 4px;")
         
         header.addWidget(title)
         header.addWidget(self.status_label)
@@ -197,7 +197,7 @@ class WorkflowIntelligenceScreen(BaseScreen):
     def _create_group(self, title, min_h):
         group = QGroupBox(title)
         group.setMinimumHeight(min_h)
-        group.setStyleSheet(f"QGroupBox {{ color: #89b4fa; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
+        group.setStyleSheet(f"QGroupBox {{ color: #89b4fa; font-weight: bold; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
         QVBoxLayout(group)
         group.layout().setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         return group
@@ -210,7 +210,7 @@ class WorkflowIntelligenceScreen(BaseScreen):
         table.verticalHeader().setVisible(False)
         table.setEditTriggers(QTableWidget.NoEditTriggers)
         table.setAlternatingRowColors(True)
-        table.setStyleSheet(f"QTableWidget {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; gridline-color: {COLOR_BG_ELEVATED}; }} QHeaderView::section {{ background: {COLOR_BG_ELEVATED}; color: #89b4fa; border: none; padding: 6px; font-weight: bold; }}")
+        table.setStyleSheet(f"QTableWidget {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }} QHeaderView::section {{ background: {COLOR_TABLE_HEADER_BG_LIGHT}; color: #89b4fa; border: none; padding: 6px; font-weight: bold; }}")
         return table
 
     def _on_screen_shown(self):
@@ -305,7 +305,7 @@ class WorkflowIntelligenceScreen(BaseScreen):
             progress = QProgressBar()
             progress.setRange(0, 10)
             progress.setValue(count)
-            progress.setStyleSheet(f"QProgressBar {{ border: none; background: {COLOR_BG_ELEVATED}; height: 10px; border-radius: 5px; }} QProgressBar::chunk {{ background: #f9e2af; border-radius: 5px; }}")
+            progress.setStyleSheet(f"QProgressBar {{ border: none; background: {COLOR_TABLE_HEADER_BG_LIGHT}; height: 10px; border-radius: 5px; }} QProgressBar::chunk {{ background: #f9e2af; border-radius: 5px; }}")
             self.load_table.setCellWidget(i, 3, progress)
             
         # Select first for graph

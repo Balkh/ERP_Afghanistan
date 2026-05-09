@@ -1,5 +1,5 @@
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_BG_BUTTON_LIGHT, COLOR_SECONDARY_BG)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_BG_BUTTON_LIGHT, COLOR_SECONDARY_BG)
 """Leave management screen for ERP."""
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
@@ -63,7 +63,7 @@ class LeaveScreen(BaseScreen):
         self.search_input.setMinimumHeight(35)
         self.search_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {COLOR_TEXT_SECONDARY};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 6px;
@@ -126,14 +126,14 @@ class LeaveScreen(BaseScreen):
                 background-color: {COLOR_BG_MAIN}; 
                 color: {COLOR_TEXT_PRIMARY}; 
                 border: none; 
-                gridline-color: {COLOR_TEXT_SECONDARY};
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
             }}
             QHeaderView::section {{ 
-                background-color: {COLOR_TEXT_SECONDARY}; 
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; 
                 color: {COLOR_TEXT_PRIMARY};
                 padding: 10px; 
                 border: none; 
-                border-bottom: 2px solid #4b5563; 
+                border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; 
                 font-weight: bold;
                 font-size: 12px;
             }}
@@ -147,7 +147,7 @@ class LeaveScreen(BaseScreen):
                 color: white !important;
             }}
             QTableWidget::item:hover:!selected {{
-                background-color: {COLOR_TEXT_SECONDARY};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
             }}
         """)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)

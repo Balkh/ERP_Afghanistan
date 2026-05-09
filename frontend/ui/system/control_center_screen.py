@@ -1,5 +1,5 @@
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 Control Center Screen - Real-time ERP Monitoring Dashboard.
 Provides centralized operational visibility and system intelligence.
@@ -403,18 +403,18 @@ class ControlCenterScreen(BaseScreen):
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};
                 border: none;
-                gridline-color: {COLOR_BG_ELEVATED};
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
             }}
             QTableWidget::item {{
                 padding: 8px;
                 border-bottom: 1px solid {COLOR_BG_ELEVATED};
             }}
             QTableWidget::item:selected {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 color: {COLOR_PRIMARY};
             }}
             QHeaderView::section {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 color: {COLOR_PRIMARY};
                 padding: 8px;
                 border: none;

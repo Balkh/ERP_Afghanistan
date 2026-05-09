@@ -154,6 +154,19 @@ COLOR_STATUS_PENDING = "#f9e2af"  # Pending status
 COLOR_WHATSAPP = "#25D366"
 
 # =====================================================
+# PHASE 3: LIGHT THEME READABILITY TOKENS (SAFE EXTENSION)
+# =====================================================
+# These tokens improve Light Theme readability without
+# modifying existing tokens. Applied selectively to
+# tables, forms, borders, and UI dividers.
+
+COLOR_TABLE_BORDER_LIGHT = "#cbd5e1"       # Clear table gridlines/borders
+COLOR_TABLE_HEADER_BG_LIGHT = "#e2e8f0"    # Distinct table header background
+COLOR_FORM_BORDER_LIGHT = "#94a3b8"        # Visible input/control borders
+COLOR_FORM_TEXT_LIGHT = "#111827"          # High-contrast form input text
+COLOR_UI_DIVIDER_LIGHT = "#cbd5e1"         # Visible section dividers
+
+# =====================================================
 # PHASE 2: LAYOUT TOKENIZATION
 # =====================================================
 

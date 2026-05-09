@@ -12,7 +12,7 @@ from ui.common.barcode_search import BarcodeSearchLineEdit
 from ui.common.printable_invoice import PrintableInvoiceDialog
 from api.endpoints import get_endpoint
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
                           FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL, FONT_SIZE_TITLE,
                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, INPUT_HEIGHT_LG, 
@@ -228,10 +228,10 @@ class PurchaseInvoiceScreen(QWidget):
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 background-color: {COLOR_BG_SURFACE};
-                gridline-color: {COLOR_BG_ELEVATED};
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
             }}
             QHeaderView::section {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 padding: 8px;
                 font-weight: bold;
                 border: none;

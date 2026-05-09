@@ -7,7 +7,7 @@ from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QFont, QColor
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from ui.constants import (SPACING_MD, SPACING_LG, FONT_SIZE_LG, FONT_SIZE_XL,
                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD)
 from api.client import APIClient
@@ -131,8 +131,8 @@ class ExpenseScreen(BaseScreen):
     def _create_modern_table(self):
         table = QTableWidget()
         table.setStyleSheet(f"""
-            QTableWidget {{ background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-radius: 6px; gridline-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; }}
-            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: 8px; border: none; border-bottom: 2px solid {COLOR_BORDER}; font-weight: bold; }}
+            QTableWidget {{ background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-radius: 6px; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; color: {COLOR_TEXT_PRIMARY}; }}
+            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; color: {COLOR_TEXT_PRIMARY}; padding: 8px; border: none; border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; font-weight: bold; }}
             QTableWidget::item {{ padding: 10px; border-bottom: 1px solid {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; }}
             QTableWidget::item:selected {{ background-color: {COLOR_PRIMARY}; color: white; }}
         """)

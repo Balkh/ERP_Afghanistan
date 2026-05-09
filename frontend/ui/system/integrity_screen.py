@@ -1,5 +1,5 @@
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 System Integrity Screen - ERP-wide Validation Dashboard.
 Executes cross-module consistency tests and displays results.
@@ -89,7 +89,7 @@ class SystemIntegrityScreen(BaseScreen):
         self.progress_container.setVisible(False)
         p_layout = QVBoxLayout(self.progress_container)
         self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet(f"QProgressBar {{ background: {COLOR_BG_ELEVATED}; border-radius: 5px; text-align: center; }} QProgressBar::chunk {{ background: {COLOR_PRIMARY}; border-radius: 5px; }}")
+        self.progress_bar.setStyleSheet(f"QProgressBar {{ background: {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 5px; text-align: center; }} QProgressBar::chunk {{ background: {COLOR_PRIMARY}; border-radius: 5px; }}")
         self.progress_label = QLabel("Initializing...")
         self.progress_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
         p_layout.addWidget(self.progress_bar)
@@ -108,7 +108,7 @@ class SystemIntegrityScreen(BaseScreen):
         
         # Results Table
         results_group = QGroupBox("Validation Report")
-        results_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
+        results_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
         rg_layout = QVBoxLayout(results_group)
         rg_layout.setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         
@@ -120,7 +120,7 @@ class SystemIntegrityScreen(BaseScreen):
         self.results_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.results_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.results_table.cellClicked.connect(self._show_details)
-        self.results_table.setStyleSheet(f"QTableWidget {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; gridline-color: {COLOR_BG_ELEVATED}; }} QHeaderView::section {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_PRIMARY}; border: none; padding: 8px; font-weight: bold; }}")
+        self.results_table.setStyleSheet(f"QTableWidget {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }} QHeaderView::section {{ background: {COLOR_TABLE_HEADER_BG_LIGHT}; color: {COLOR_PRIMARY}; border: none; padding: 8px; font-weight: bold; }}")
         rg_layout.addWidget(self.results_table)
         layout.addWidget(results_group)
         
@@ -139,7 +139,7 @@ class SystemIntegrityScreen(BaseScreen):
 
     def _create_summary_card(self, title, val, color):
         card = QFrame()
-        card.setStyleSheet(f"background: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 10px; border-left: 4px solid {color};")
+        card.setStyleSheet(f"background: {COLOR_BG_MAIN}; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 10px; border-left: 4px solid {color};")
         l = QVBoxLayout(card)
         t_label = QLabel(title)
         t_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")

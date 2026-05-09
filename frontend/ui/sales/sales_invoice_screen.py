@@ -20,7 +20,7 @@ from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
                           TABLE_ROW_HEIGHT_MD, TABLE_ROW_HEIGHT_LG,
                           BORDER_RADIUS_MD,
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                          COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY,
+                          COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY,
                           COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
                           COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE,
@@ -242,10 +242,10 @@ class SalesInvoiceScreen(QWidget):
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 background-color: {COLOR_BG_SURFACE};
-                gridline-color: {COLOR_BG_ELEVATED};
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
             }}
             QHeaderView::section {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 padding: 8px;
                 font-weight: bold;
                 border: none;

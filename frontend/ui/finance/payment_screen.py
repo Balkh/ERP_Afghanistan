@@ -119,7 +119,7 @@ class PaymentScreen(QWidget):
         self.search_input.setMinimumHeight(30)
         self.search_input.setStyleSheet(f"""
             QLineEdit {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 5px;
                 padding: 5px 10px;
@@ -151,7 +151,7 @@ class PaymentScreen(QWidget):
         # Apply dark theme to combo boxes
         combo_style = """
             QComboBox {
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 5px;
                 padding: 5px 10px;
@@ -167,7 +167,7 @@ class PaymentScreen(QWidget):
                 border-top: 5px solid {COLOR_TEXT_PRIMARY};
             }
             QComboBox QAbstractItemView {
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 color: {COLOR_TEXT_PRIMARY};
                 selection-background-color: {COLOR_BORDER};
             }
@@ -193,7 +193,7 @@ class PaymentScreen(QWidget):
         
         table.setStyleSheet(f"""
             QTableWidget {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 5px;
                 gridline-color: {COLOR_BORDER};
@@ -210,14 +210,14 @@ class PaymentScreen(QWidget):
             QTableWidget::item {{
                 padding: 10px;
                 color: {COLOR_TEXT_PRIMARY};
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
             }}
             QTableWidget::item:selected {{
                 background-color: {COLOR_BORDER};
                 color: white;
             }}
             QTableWidget alternatingRowColors {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
             }}
             QScrollBar:vertical {{
                 background: {COLOR_BG_ELEVATED};
