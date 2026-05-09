@@ -379,7 +379,7 @@ class Dashboard(QWidget):
     def _mini_card(self, label, value, color_key, is_currency):
         c = self.C.get(color_key, 'COLOR_PRIMARY')
         f = QFrame()
-        f.setStyleSheet(f"QFrame {{ background: COLOR_BORDER; border-radius: 6px; }}")
+        f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: 6px; }}")
         lay = QVBoxLayout(f)
         lay.setContentsMargins(12, 8, 12, 8)
         lay.setSpacing(SPACING_XS)

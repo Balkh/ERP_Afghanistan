@@ -139,7 +139,7 @@ class SystemIntegrityScreen(BaseScreen):
 
     def _create_summary_card(self, title, val, color):
         card = QFrame()
-        card.setStyleSheet(f"background: COLOR_BG_MAIN; border: 1px solid COLOR_BG_ELEVATED; border-radius: 10px; border-left: 4px solid {color};")
+        card.setStyleSheet(f"background: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 10px; border-left: 4px solid {color};")
         l = QVBoxLayout(card)
         t_label = QLabel(title)
         t_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
