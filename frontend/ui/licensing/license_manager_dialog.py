@@ -32,48 +32,48 @@ class LicenseManagerDialog(QDialog):
         """Set up the user interface."""
         # Set dark theme stylesheet
         self.setStyleSheet(f"""
-            QDialog {
+            QDialog {{
                 background-color: {COLOR_BG_MAIN};
-            }
-            QLabel {
+            }}
+            QLabel {{
                 color: {COLOR_TEXT_PRIMARY};
-            }
-            QGroupBox {
+            }}
+            QGroupBox {{
                 color: {COLOR_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 8px;
                 margin-top: 12px;
                 padding-top: 12px;
-            }
-            QGroupBox::title {
+            }}
+            QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
                 padding: 0 5px;
-            }
-            QTabWidget::pane {
+            }}
+            QTabWidget::pane {{
                 border: 1px solid {COLOR_BORDER};
                 background-color: {COLOR_BG_MAIN};
-            }
-            QTabBar::tab {
+            }}
+            QTabBar::tab {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
                 padding: 8px 16px;
                 border: none;
-            }
-            QTabBar::tab:selected {
+            }}
+            QTabBar::tab:selected {{
                 background-color: {COLOR_BORDER};
-            }
-            QPushButton {
+            }}
+            QPushButton {{
                 background-color: {COLOR_PRIMARY};
                 color: {COLOR_BG_MAIN};
                 border: none;
                 border-radius: 6px;
                 padding: 8px 16px;
                 font-weight: bold;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: {COLOR_PRIMARY_HOVER};
-            }
+            }}
         """)
         
         layout = QVBoxLayout(self)

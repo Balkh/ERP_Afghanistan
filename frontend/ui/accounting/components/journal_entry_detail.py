@@ -23,16 +23,16 @@ class JournalEntryDetailDialog(QDialog):
         self.setMinimumWidth(850)
         self.setMinimumHeight(600)
         self.setStyleSheet(f"""
-            QDialog { background-color: #f5f6fa; }
-            QGroupBox { 
+            QDialog {{ background-color: #f5f6fa; }}
+            QGroupBox {{ 
                 font-weight: bold; 
                 border: 1px solid {COLOR_BORDER}; 
                 border-radius: 8px; 
                 margin-top: 15px;
                 padding-top: 15px;
                 background-color: white;
-            }
-            QLabel { color: #2f3640; }
+            }}
+            QLabel {{ color: #2f3640; }}
         """)
 
         layout = QVBoxLayout(self)

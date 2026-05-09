@@ -14,15 +14,15 @@ class Toast(QFrame):
         super().__init__(parent)
         self.setFixedHeight(50)
         self.setStyleSheet(f"""
-            QFrame {
+            QFrame {{
                 border-radius: 8px;
                 padding: 10px;
                 margin: 5px;
-            }
-            QLabel {
+            }}
+            QLabel {{
                 color: white;
                 font-size: 13px;
-            }
+            }}
         """)
         
         # Set background color based on type

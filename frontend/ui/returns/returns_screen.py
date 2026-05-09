@@ -133,7 +133,7 @@ class ReturnsScreen(BaseScreen):
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
         bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        bar.setStyleSheet(f"QGroupBox { border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }")
+        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -448,16 +448,16 @@ class ReturnOrderDialog(QDialog):
     
     def _setup_ui(self):
         self.setStyleSheet(f"""
-            QDialog { background-color: {COLOR_BG_LIGHT}; }
-            QGroupBox { 
+            QDialog {{ background-color: {COLOR_BG_LIGHT}; }}
+            QGroupBox {{ 
                 font-weight: bold; 
                 border: 1px solid {COLOR_BORDER_DIALOG}; 
                 border-radius: 8px; 
                 margin-top: 15px;
                 padding-top: 15px;
                 background-color: white;
-            }
-            QLabel { color: {COLOR_TEXT_DIALOG}; }
+            }}
+            QLabel {{ color: {COLOR_TEXT_DIALOG}; }}
         """)
 
         layout = QVBoxLayout(self)

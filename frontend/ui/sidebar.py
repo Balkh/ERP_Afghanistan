@@ -94,22 +94,22 @@ class Sidebar(QWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet(f"""
-            QScrollArea { 
+            QScrollArea {{ 
                 border: none; 
                 background-color: {COLOR_BG_MAIN}; 
-            }
-            QScrollArea>QWidget>QScrollBar:vertical {
+            }}
+            QScrollArea>QWidget>QScrollBar:vertical {{
                 background: {COLOR_BG_MAIN};
                 width: 8px;
-            }
-            QScrollArea>QWidget>QScrollBar::handle:vertical {
+            }}
+            QScrollArea>QWidget>QScrollBar::handle:vertical {{
                 background: {COLOR_BORDER};
                 border-radius: 4px;
-            }
+            }}
             QScrollArea>QWidget>QScrollBar::add-line:vertical, 
-            QScrollArea>QWidget>QScrollBar::sub-line:vertical {
+            QScrollArea>QWidget>QScrollBar::sub-line:vertical {{
                 height: 0px;
-            }
+            }}
         """)
         
         scroll_content = QWidget()

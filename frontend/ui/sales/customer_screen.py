@@ -65,11 +65,11 @@ class CustomerScreen(BaseScreen):
         self.loading_label = QLabel("Loading customers...")
         self.loading_label.setAlignment(Qt.AlignCenter)
         self.loading_label.setStyleSheet(f"""
-            QLabel {
+            QLabel {{
                 color: #666;
                 font-style: italic;
                 padding: 12px;
-            }
+            }}
         """)
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)

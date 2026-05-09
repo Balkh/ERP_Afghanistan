@@ -58,7 +58,7 @@ class Dashboard(QWidget):
 
         self.setObjectName("dashboard")
         self.setStyleSheet(f"""
-            QWidget#dashboard { background-color: {COLOR_BG_MAIN}; }
+            QWidget#dashboard {{ background-color: {COLOR_BG_MAIN}; }}
         """)
 
         root = QVBoxLayout(self)

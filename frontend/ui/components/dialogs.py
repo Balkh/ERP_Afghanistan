@@ -105,14 +105,14 @@ class EnterpriseDialog(QDialog):
         layout.addStretch()
         
         header.setStyleSheet(f"""
-            QFrame {
+            QFrame {{
                 background-color: {COLOR_HEADER_DARK};
                 border-top-left-radius: 8px;
                 border-top-right-radius: 8px;
-            }
-            QLabel {
+            }}
+            QLabel {{
                 color: white;
-            }
+            }}
         """)
         
         return header

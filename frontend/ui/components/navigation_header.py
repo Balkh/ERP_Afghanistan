@@ -29,30 +29,30 @@ class NavigationHeader(QWidget):
     def _setup_ui(self):
         """Setup the navigation header UI."""
         self.setStyleSheet(f"""
-            QWidget { background-color: transparent; }
-            QPushButton {
+            QWidget {{ background-color: transparent; }}
+            QPushButton {{
                 background-color: transparent;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: 4px;
                 padding: 6px 10px;
                 font-size: 14px;
-            }
-            QPushButton:hover {
+            }}
+            QPushButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_PRIMARY};
-            }
-            QPushButton:pressed {
+            }}
+            QPushButton:pressed {{
                 background-color: {COLOR_BORDER};
-            }
-            QPushButton:disabled {
+            }}
+            QPushButton:disabled {{
                 color: {COLOR_BORDER_LIGHT};
                 border: 1px solid {COLOR_BG_ELEVATED};
-            }
-            QLabel {
+            }}
+            QLabel {{
                 background-color: transparent;
                 color: {COLOR_TEXT_PRIMARY};
-            }
+            }}
         """)
         
         main_layout = QHBoxLayout(self)
