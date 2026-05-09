@@ -56,7 +56,7 @@ class ThemeManager(QObject):
         palette.setColor(QPalette.WindowText, theme["foreground"])
         palette.setColor(QPalette.Base, theme["input_background"])
         palette.setColor(QPalette.AlternateBase, theme["background"])
-        palette.setColor(QPalette.ToolTipBase, theme["foreground"])
+        palette.setColor(QPalette.ToolTipBase, theme["input_background"])
         palette.setColor(QPalette.ToolTipText, theme["foreground"])
         palette.setColor(QPalette.Text, theme["foreground"])
         palette.setColor(QPalette.Button, theme["input_background"])
@@ -72,14 +72,29 @@ class ThemeManager(QObject):
         app.setStyleSheet(self._generate_stylesheet(theme))
 
     def _generate_stylesheet(self, theme):
-        """Generate a stylesheet based on the theme colors."""
+        """Generate a stylesheet based on the theme colors.
+        
+        NOTE: No QWidget wildcard — per-widget explicit styling only.
+        Light/dark themes both use the same selectors with different tokens.
+        """
+        bg = theme["background"].name()
+        fg = theme["foreground"].name()
+        primary = theme["primary"].name()
+        secondary = theme["secondary"].name()
+        inp_bg = theme["input_background"].name()
+        inp_fg = theme["input_foreground"].name()
+        border = theme["border"].name()
+
         return f"""
-            QWidget {{
-                background-color: {theme["background"].name()};
-                color: {theme["foreground"].name()};
+            /* Root container only — never use QWidget wildcard */
+            QMainWindow {{
+                background-color: {bg};
+                color: {fg};
             }}
+
+            /* --- BUTTONS --- */
             QPushButton {{
-                background-color: {theme["primary"].name()};
+                background-color: {primary};
                 color: white;
                 border: none;
                 padding: 8px 16px;
@@ -93,63 +108,262 @@ class ThemeManager(QObject):
                 background-color: {theme["primary"].darker(120).name()};
             }}
             QPushButton:disabled {{
-                background-color: {theme["border"].name()};
-                color: {theme["foreground"].name()};
+                background-color: {border};
+                color: {fg};
             }}
-            QLineEdit, QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
-                background-color: {theme["input_background"].name()};
-                color: {theme["input_foreground"].name()};
-                border: 1px solid {theme["border"].name()};
+            QToolButton {{
+                background-color: transparent;
+                color: {fg};
+                border: none;
+                padding: 4px 8px;
+                border-radius: 4px;
+            }}
+            QToolButton:hover {{
+                background-color: {inp_bg};
+            }}
+            QToolButton:pressed {{
+                background-color: {border};
+            }}
+
+            /* --- INPUTS --- */
+            QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {{
+                background-color: {inp_bg};
+                color: {inp_fg};
+                border: 1px solid {border};
                 border-radius: 4px;
                 padding: 6px;
             }}
-            QLineEdit:focus, QTextEdit:focus, QComboBox:focus {{
-                border: 2px solid {theme["primary"].name()};
+            QLineEdit:focus, QTextEdit:focus, QPlainTextEdit:focus {{
+                border: 2px solid {primary};
             }}
-            QTableWidget {{
-                background-color: {theme["background"].name()};
-                alternate-background-color: {theme["input_background"].name()};
-                gridline-color: {theme["border"].name()};
+            QComboBox {{
+                background-color: {inp_bg};
+                color: {inp_fg};
+                border: 1px solid {border};
+                border-radius: 4px;
+                padding: 6px;
+            }}
+            QComboBox:focus {{
+                border: 2px solid {primary};
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {inp_bg};
+                color: {inp_fg};
+                selection-background-color: {primary};
+                selection-color: white;
+                border: 1px solid {border};
+            }}
+            QComboBox::drop-down {{
+                border: none;
+                width: 24px;
+            }}
+            QComboBox::down-arrow {{
+                image: none;
+                width: 0;
+            }}
+
+            /* --- LABELS --- */
+            QLabel {{
+                background-color: transparent;
+                color: {fg};
+            }}
+
+            /* --- DIALOGS --- */
+            QDialog {{
+                background-color: {bg};
+                color: {fg};
+                border: 1px solid {border};
+            }}
+
+            /* --- GROUP BOX --- */
+            QGroupBox {{
+                background-color: transparent;
+                color: {fg};
+                border: 1px solid {border};
+                border-radius: 4px;
+                margin-top: 12px;
+                padding: 12px 8px 8px 8px;
+                font-weight: bold;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                padding: 0 6px;
+                color: {fg};
+            }}
+
+            /* --- CHECKBOX / RADIO --- */
+            QCheckBox, QRadioButton {{
+                color: {fg};
+                spacing: 6px;
+            }}
+            QCheckBox::indicator, QRadioButton::indicator {{
+                width: 16px;
+                height: 16px;
+            }}
+
+            /* --- SCROLL AREA / FRAME --- */
+            QScrollArea {{
+                border: none;
+                background-color: transparent;
+            }}
+            QFrame {{
+                background-color: transparent;
+                color: {fg};
+            }}
+
+            /* --- TABLES --- */
+            QTableWidget, QTableView, QTreeView {{
+                background-color: {bg};
+                alternate-background-color: {inp_bg};
+                color: {fg};
+                gridline-color: {border};
+                selection-background-color: {primary};
+                selection-color: white;
+                border: 1px solid {border};
             }}
             QHeaderView::section {{
-                background-color: {theme["secondary"].name()};
+                background-color: {secondary};
                 color: white;
                 padding: 6px;
                 border: none;
+                font-weight: bold;
             }}
+
+            /* --- LISTS --- */
+            QListWidget, QListView {{
+                background-color: {bg};
+                color: {fg};
+                border: 1px solid {border};
+            }}
+            QListWidget::item:selected, QListView::item:selected {{
+                background-color: {primary};
+                color: white;
+            }}
+
+            /* --- MENU --- */
             QMenuBar {{
-                background-color: {theme["background"].name()};
-                color: {theme["foreground"].name()};
+                background-color: {bg};
+                color: {fg};
+                border-bottom: 1px solid {border};
             }}
             QMenuBar::item:selected {{
-                background-color: {theme["primary"].name()};
+                background-color: {primary};
+                color: white;
             }}
             QMenu {{
-                background-color: {theme["background"].name()};
-                color: {theme["foreground"].name()};
-                border: 1px solid {theme["border"].name()};
+                background-color: {bg};
+                color: {fg};
+                border: 1px solid {border};
             }}
             QMenu::item:selected {{
-                background-color: {theme["primary"].name()};
+                background-color: {primary};
+                color: white;
             }}
+
+            /* --- TOOLBAR --- */
+            QToolBar {{
+                background-color: {bg};
+                color: {fg};
+                border: none;
+                spacing: 4px;
+                padding: 2px;
+            }}
+            QToolBar::separator {{
+                width: 1px;
+                background-color: {border};
+                margin: 2px 4px;
+            }}
+
+            /* --- STATUS BAR --- */
+            QStatusBar {{
+                background-color: {bg};
+                color: {fg};
+                border-top: 1px solid {border};
+            }}
+            QStatusBar::item {{
+                border: none;
+            }}
+            QStatusBar QLabel {{
+                color: {fg};
+            }}
+
+            /* --- TABS --- */
             QTabWidget::pane {{
-                border: 1px solid {theme["border"].name()};
+                border: 1px solid {border};
                 border-radius: 4px;
+                background-color: {bg};
             }}
             QTabBar::tab {{
-                background-color: {theme["input_background"].name()};
-                color: {theme["foreground"].name()};
+                background-color: {inp_bg};
+                color: {fg};
                 padding: 8px 12px;
                 margin-right: 2px;
                 border-top-left-radius: 4px;
                 border-top-right-radius: 4px;
             }}
             QTabBar::tab:selected {{
-                background-color: {theme["primary"].name()};
+                background-color: {primary};
                 color: white;
             }}
             QTabBar::tab:!selected {{
                 margin-top: 2px;
+            }}
+
+            /* --- SCROLLBAR --- */
+            QScrollBar:vertical {{
+                background-color: {inp_bg};
+                width: 10px;
+                margin: 0;
+                border: none;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {border};
+                min-height: 30px;
+                border-radius: 5px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {primary};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0;
+            }}
+            QScrollBar:horizontal {{
+                background-color: {inp_bg};
+                height: 10px;
+                margin: 0;
+                border: none;
+            }}
+            QScrollBar::handle:horizontal {{
+                background-color: {border};
+                min-width: 30px;
+                border-radius: 5px;
+            }}
+            QScrollBar::handle:horizontal:hover {{
+                background-color: {primary};
+            }}
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                width: 0;
+            }}
+
+            /* --- PROGRESS BAR --- */
+            QProgressBar {{
+                background-color: {inp_bg};
+                color: {fg};
+                border: 1px solid {border};
+                border-radius: 4px;
+                text-align: center;
+                height: 20px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {primary};
+                border-radius: 3px;
+            }}
+
+            /* --- SPLITTER --- */
+            QSplitter::handle {{
+                background-color: {border};
+                width: 2px;
+                height: 2px;
             }}
         """
 
