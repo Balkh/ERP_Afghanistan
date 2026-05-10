@@ -20,6 +20,7 @@ from ui.returns.returns_screen import ReturnsScreen
 from ui.accounting.accounting_dashboard import AccountingDashboard
 from ui.accounting.chart_of_accounts_screen import ChartOfAccountsScreen
 from api.client import APIClient
+from security.session_store import clear_session as encrypted_clear_session
 from ui.accounting.journal_entry_screen import JournalEntryScreen
 from ui.accounting.account_ledger_screen import AccountLedgerScreen
 from ui.accounting.trial_balance_screen import TrialBalanceScreen
@@ -52,7 +53,11 @@ from ui.components.toast import get_toast_manager
 from ui.components.loading_spinner import LoadingOverlay
 from ui.components.navigation_header import NavigationHeader
 from ui.theme.theme_manager import ThemeManager
+from theme.theme_engine import ThemeEngine
+from utils.logger import get_logger, set_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+
+log = get_logger('ui')
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 class MainWindow(QMainWindow):
@@ -86,13 +91,19 @@ class MainWindow(QMainWindow):
             self.license_validator.license_valid.connect(self.on_license_validation_changed)
             self.license_validator.license_status_changed.connect(self.on_license_status_changed)
         
-        # Print role info for debugging
-        print(f"[DEBUG] User role determined: {self.user_role}")
+        log.debug(f"User role: {self.user_role}",
+                   extra={'extra_fields': {'tags': ['auth', 'startup']}})
         
         # Build the UI
         self._build_ui()
         self._setup_status_bar()
         self._load_company_settings()
+        try:
+            hs = capture_health_snapshot()
+            log.debug(f"MainWindow health snapshot: {hs}",
+                       extra={'extra_fields': {'tags': ['ui', 'startup', 'diagnostic']}})
+        except Exception:
+            pass
 
     def _setup_status_bar(self):
         """Setup the professional status bar."""
@@ -118,9 +129,54 @@ class MainWindow(QMainWindow):
         self.status_timer.start(1000)
         self._update_status_bar_time()
         
+        self.health_label = QLabel("● Checking...")
+        self.health_label.setStyleSheet(f"color: {COLOR_WARNING}; margin-right: 15px; font-weight: bold;")
+        self.health_label.setToolTip("Backend health status")
+
         self.status_bar.addPermanentWidget(self.user_label)
+        self.status_bar.addPermanentWidget(self.health_label)
         self.status_bar.addPermanentWidget(self.conn_label)
         self.status_bar.addPermanentWidget(self.time_label)
+
+        QTimer.singleShot(2000, self._check_startup_health)
+
+    def _check_startup_health(self):
+        """Run startup health check and update status bar."""
+        try:
+            is_reachable = self.api_client.health_check()
+            if is_reachable:
+                health_data = self.api_client.get("/api/health/")
+                if isinstance(health_data, dict):
+                    data = health_data.get('data', health_data)
+                    db = data.get('database', {})
+                    db_status = db.get('status', 'unknown')
+                    if db_status == 'healthy':
+                        self.health_label.setText("● DB OK")
+                        self.health_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: 15px; font-weight: bold;")
+                        self.status_bar.showMessage("Startup: all systems healthy", 3000)
+                        log.info("Startup health: all systems healthy",
+                                 extra={'extra_fields': {'tags': ['system', 'startup']}})
+                    else:
+                        self.health_label.setText(f"● DB {db_status.upper()}")
+                        self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: 15px; font-weight: bold;")
+                        self.status_bar.showMessage(f"Startup: DB status {db_status}", 5000)
+                        log.warning(f"Startup health: DB status {db_status}",
+                                     extra={'extra_fields': {'tags': ['system', 'startup', 'warning']}})
+                else:
+                    self.health_label.setText("● Online")
+                    self.health_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: 15px; font-weight: bold;")
+                    log.info("Startup health: backend online",
+                             extra={'extra_fields': {'tags': ['system', 'startup']}})
+            else:
+                self.health_label.setText("● Offline")
+                self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: 15px; font-weight: bold;")
+                log.warning("Startup health: backend unreachable",
+                             extra={'extra_fields': {'tags': ['system', 'startup', 'warning']}})
+        except Exception as e:
+            self.health_label.setText("● Error")
+            self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: 15px; font-weight: bold;")
+            log.warning(f"Startup health check error: {e}",
+                         extra={'extra_fields': {'tags': ['system', 'startup', 'error']}})
 
     def _update_status_bar_time(self):
         from datetime import datetime
@@ -137,8 +193,9 @@ class MainWindow(QMainWindow):
                     company = settings.get("company_name")
                     if company:
                         self.setWindowTitle(f"{company} - Pharmacy ERP")
-            except:
-                pass
+            except Exception as e:
+                log.debug(f"Could not load company settings: {e}",
+                           extra={'extra_fields': {'tags': ['ui', 'startup']}})
     
     def _determine_role(self):
         """Determine user role from user_data."""
@@ -463,6 +520,9 @@ class MainWindow(QMainWindow):
 
     def change_page(self, index, page_title):
         """Change the current page based on sidebar selection."""
+        log.debug(f"Navigate to page {index}: {page_title.strip()}",
+                   extra={'extra_fields': {'tags': ['ui', 'navigation']}})
+        set_active_screen(page_title.strip())
 # --- Navigation History (Phase 4) ---
         if not self._disable_history:
             current = self.pages.currentIndex()
@@ -483,29 +543,41 @@ class MainWindow(QMainWindow):
         # Update navigation header (show except on dashboard)
         self._update_nav_header(index, page_title)
 
-        # Trigger data loading for specific pages
+        # Trigger data loading for specific pages (with safe boundaries)
+        corr_id = generate_correlation_id("nav")
         if index == 1: # Products
-            self.product_screen.load_products()
+            safe_execute(self.product_screen.load_products,
+                         log_context="change_page:products", tags=['ui', 'navigation', corr_id])
         elif index == 2: # Categories
-            self.category_screen.load_categories()
+            safe_execute(self.category_screen.load_categories,
+                         log_context="change_page:categories", tags=['ui', 'navigation', corr_id])
         elif index == 3: # Warehouses
-            self.warehouse_screen.load_warehouses()
+            safe_execute(self.warehouse_screen.load_warehouses,
+                         log_context="change_page:warehouses", tags=['ui', 'navigation', corr_id])
         elif index == 4: # Batches
-            self.batch_screen.load_batches()
+            safe_execute(self.batch_screen.load_batches,
+                         log_context="change_page:batches", tags=['ui', 'navigation', corr_id])
         elif index == 7: # Customers
-            self.customer_screen.load_customers()
+            safe_execute(self.customer_screen.load_customers,
+                         log_context="change_page:customers", tags=['ui', 'navigation', corr_id])
         elif index == 8: # Suppliers
-            self.supplier_screen.load_suppliers()
+            safe_execute(self.supplier_screen.load_suppliers,
+                         log_context="change_page:suppliers", tags=['ui', 'navigation', corr_id])
         elif index == 11: # Journal Entries
-            self.journal_entries.load_entries()
+            safe_execute(self.journal_entries.load_entries,
+                         log_context="change_page:journal_entries", tags=['ui', 'navigation', corr_id])
         elif index == 12: # Account Ledger
-            self.account_ledger.load_accounts()
+            safe_execute(self.account_ledger.load_accounts,
+                         log_context="change_page:account_ledger", tags=['ui', 'navigation', corr_id])
         elif index == 34: # Expenses
-            self.expense_screen.load_expenses()
+            safe_execute(self.expense_screen.load_expenses,
+                         log_context="change_page:expenses", tags=['ui', 'navigation', corr_id])
         elif index == 35: # Entities
-            self.entity_screen.load_entities()
+            safe_execute(self.entity_screen.load_entities,
+                         log_context="change_page:entities", tags=['ui', 'navigation', corr_id])
         elif index == 36: # Licensing
-            self.licensing_screen.load_license_info()
+            safe_execute(self.licensing_screen.load_license_info,
+                         log_context="change_page:licensing", tags=['ui', 'navigation', corr_id])
 
     # --- Navigation Methods (Phase 5-6) ---
     def _update_nav_header(self, index: int, page_title: str):
@@ -626,8 +698,9 @@ class MainWindow(QMainWindow):
             else:
                 self.connection_status_label.setText("Disconnected")
                 self.connection_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_DANGER}; margin-left: 10px;")
-        except (RuntimeError, AttributeError):
-            pass
+        except (RuntimeError, AttributeError) as e:
+            log.debug(f"Connection check failed (expected during shutdown): {e}",
+                       extra={'extra_fields': {'tags': ['ui', 'connection']}})
 
     def on_license_validation_changed(self, is_valid: bool, message: str):
         """Handle license validation change signals."""
@@ -660,10 +733,144 @@ class MainWindow(QMainWindow):
         self.theme_manager.toggle_theme()
 
     def on_theme_changed(self, theme_name):
-        """Handle theme change."""
-        # Update theme-specific styling if needed
-        # The theme manager handles the palette change automatically
+        """Handle theme change — update constants and re-apply stylesheets."""
+        engine = ThemeEngine.instance()
+        if engine.current_theme() != theme_name:
+            engine.apply_theme(theme_name)
+        self._refresh_window_styles()
         self.status_bar.showMessage(f"Switched to {theme_name} mode", 2000)
+        try:
+            hs = capture_health_snapshot()
+            log.info(f"Theme switched to {theme_name} | snapshot: {hs}",
+                      extra={'extra_fields': {'tags': ['ui', 'theme', 'diagnostic']}})
+        except Exception:
+            log.info(f"Theme switched to {theme_name}",
+                      extra={'extra_fields': {'tags': ['ui', 'theme']}})
+
+    def _refresh_window_styles(self):
+        """Re-apply the content-frame stylesheet after a theme switch."""
+        with SafeBoundary(log_context="refresh_window_styles", tags=['ui', 'theme']):
+            self._do_refresh_window_styles()
+
+    def _do_refresh_window_styles(self):
+        """Inner implementation of stylesheet refresh with safe boundary."""
+        if not hasattr(self, 'pages'):
+            return
+        content_frame = self.sidebar.parent() if hasattr(self, 'sidebar') else None
+        for child in self.findChildren(QFrame):
+            if child.parent() is self.centralWidget():
+                content_frame = child
+                break
+        if content_frame:
+            content_frame.setStyleSheet(f"""
+                QFrame {{
+                    background-color: {COLOR_BG_MAIN};
+                }}
+                QLabel {{
+                    color: {COLOR_TEXT_PRIMARY};
+                }}
+                QGroupBox {{
+                    color: {COLOR_TEXT_PRIMARY};
+                    font-weight: bold;
+                    border: 1px solid {COLOR_BORDER};
+                    border-radius: 8px;
+                    margin-top: 10px;
+                    padding-top: 10px;
+                }}
+                QGroupBox::title {{
+                    subcontrol-origin: margin;
+                    subcontrol-position: top left;
+                    padding: 0 5px;
+                }}
+                QTableWidget {{
+                    background-color: {COLOR_BG_SURFACE};
+                    color: {COLOR_TEXT_PRIMARY};
+                    gridline-color: {COLOR_BG_ELEVATED};
+                    border: 1px solid {COLOR_BORDER};
+                }}
+                QTableWidget::item {{
+                    padding: 8px;
+                }}
+                QHeaderView::section {{
+                    background-color: {COLOR_BG_ELEVATED};
+                    color: {COLOR_TEXT_PRIMARY};
+                    padding: 8px;
+                    border: none;
+                    font-weight: bold;
+                }}
+                QPushButton {{
+                    background-color: {COLOR_PRIMARY};
+                    color: {COLOR_TEXT_ON_PRIMARY};
+                    border: none;
+                    border-radius: 6px;
+                    padding: 8px 16px;
+                    font-weight: bold;
+                }}
+                QPushButton:hover {{
+                    background-color: {COLOR_PRIMARY_HOVER};
+                }}
+                QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
+                    background-color: {COLOR_BG_SURFACE};
+                    color: {COLOR_TEXT_PRIMARY};
+                    border: 1px solid {COLOR_BORDER};
+                    border-radius: 6px;
+                    padding: 8px;
+                }}
+                QLineEdit:focus, QComboBox:focus {{
+                    border: 1px solid {COLOR_PRIMARY};
+                }}
+                QScrollArea {{
+                    background-color: transparent;
+                }}
+            """)
+        self._refresh_status_bar()
+
+    def _refresh_status_bar(self):
+        """Re-apply status bar label colors on theme change."""
+        self.user_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: 15px;")
+        self.conn_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; margin-right: 15px; font-weight: bold;")
+        self.time_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: 15px;")
+        self.device_id_label.setStyleSheet(f"font-size: 10px; color: {COLOR_TEXT_MUTED};")
+        self.license_status_label.setStyleSheet(
+            f"font-size: 10px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;"
+        )
+        self.connection_status_label.setStyleSheet(
+            f"font-size: 10px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;"
+        )
+        self.header.setStyleSheet(f"""
+            QLabel {{
+                color: {COLOR_TEXT_PRIMARY};
+                padding-left: 10px;
+            }}
+        """)
+        self.nav_header.setStyleSheet(f"""
+            QWidget {{ background-color: transparent; }}
+            QPushButton {{
+                background-color: transparent;
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: 4px;
+                padding: 6px 10px;
+                font-size: 14px;
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_PRIMARY};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLOR_BORDER};
+            }}
+            QPushButton:disabled {{
+                color: {COLOR_BORDER_LIGHT};
+                border: 1px solid {COLOR_BG_ELEVATED};
+            }}
+            QLabel {{
+                background-color: transparent;
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+        """)
+        self.nav_header.title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        self.nav_header.breadcrumb_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
 
     def create_menu_bar(self):
         """Create the application menu bar."""
@@ -930,15 +1137,15 @@ class MainWindow(QMainWindow):
         )
         
         if reply == QMessageBox.Yes:
-            # Clear session
+            username = self.user_data.get('username', 'unknown')
             try:
-                session_file = os.path.join(os.path.dirname(__file__), "..", "session.dat")
-                if os.path.exists(session_file):
-                    os.remove(session_file)
-            except:
-                pass
-            
-            # Clear API token
+                hs = capture_health_snapshot()
+                log.info(f"User logout: {username} | snapshot: {hs}",
+                          extra={'extra_fields': {'tags': ['auth', 'logout', 'diagnostic']}})
+            except Exception:
+                log.info(f"User logout: {username}",
+                          extra={'extra_fields': {'tags': ['auth', 'logout']}})
+            encrypted_clear_session()
             self.api_client.clear_auth_token()
             
             # Close main window and show login
