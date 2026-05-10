@@ -27,6 +27,7 @@ from core.operations.control_center import (
     operational_intelligence, signal_summary, active_signals, register_signal,
     jobs_dashboard
 )
+from core.operations.decision_engine import get_active_decisions, get_decision_summary, evaluate_event_decisions
 
 
 @csrf_exempt
@@ -75,6 +76,9 @@ urlpatterns = [
     path('api/control-center/signals/', signal_summary, name='signal-summary'),
     path('api/control-center/signals/active/', active_signals, name='active-signals'),
     path('api/control-center/signals/register/', register_signal, name='register-signal'),
+    path('api/control-center/decisions/', decisions_list, name='decisions-list'),
+    path('api/control-center/decisions/detail/', decisions_detail, name='decisions-detail'),
+    path('api/control-center/decisions/evaluate/', decisions_evaluate_event, name='decisions-evaluate'),
     path('api/control-center/jobs/', jobs_dashboard, name='control-jobs'),
     path('api/auth/', include('security.urls')),
     path('api/inventory/', include('inventory.urls')),

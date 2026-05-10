@@ -7,8 +7,8 @@ into a single, high-performance cockpit.
 """
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
-                               QLabel, QFrame, QScrollArea, QListWidget, 
-                               QListWidgetItem, QSizePolicy, QPushButton, QStackedWidget, QGroupBox, QGridLayout)
+                                QLabel, QFrame, QScrollArea, QListWidget,
+                                QListWidgetItem, QSizePolicy, QPushButton, QStackedWidget, QGroupBox, QGridLayout)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QColor
 
@@ -22,6 +22,17 @@ from ui.system.workflow_intelligence_screen import WorkflowIntelligenceScreen
 from ui.system.integrity_screen import SystemIntegrityScreen
 from ui.system.drift_intelligence_screen import DriftIntelligenceScreen
 from ui.system.correlation_screen import SystemCorrelationScreen
+
+# Import observability layer
+from utils.logger import (
+    generate_operational_dashboard_data,
+    get_event_summary,
+    detect_anomalies,
+    get_trace,
+    generate_correlation_id,
+    emit_event,
+    evaluate_decisions,
+)
 
 
 class IntelligenceHubScreen(BaseScreen):
@@ -89,13 +100,19 @@ class IntelligenceHubScreen(BaseScreen):
             2: {"class": WorkflowIntelligenceScreen, "instance": None, "label": "Workflows"},
             3: {"class": SystemIntegrityScreen, "instance": None, "label": "Integrity"},
             4: {"class": DriftIntelligenceScreen, "instance": None, "label": "Drift Intel"},
-            5: {"class": SystemCorrelationScreen, "instance": None, "label": "Correlation"}
+            5: {"class": SystemCorrelationScreen, "instance": None, "label": "Correlation"},
+            6: {"class": None, "instance": None, "label": "Decisions"},  # Built-in, not lazy-loaded
         }
-        
+
         for i in range(1, 6):
             placeholder = QWidget()
             QVBoxLayout(placeholder).addWidget(QLabel(f"Loading {self.tab_instances[i]['label']}..."))
             self.tabs.addTab(placeholder, self.tab_instances[i]['label'])
+
+        # Add Decisions tab (built-in, always available)
+        self.decisions_tab = QWidget()
+        self._setup_decisions_tab()
+        self.tabs.addTab(self.decisions_tab, "Decisions")
         
         content_layout.addWidget(self.tabs)
         main_layout.addWidget(content_frame, 3)
@@ -105,7 +122,7 @@ class IntelligenceHubScreen(BaseScreen):
         layout = QVBoxLayout(self.overview_tab)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG + SPACING_XS)
-        
+
         # KPI Row
         kpi_layout = QHBoxLayout()
         self.kpis = {
@@ -116,17 +133,18 @@ class IntelligenceHubScreen(BaseScreen):
         }
         for card in self.kpis.values(): kpi_layout.addWidget(card)
         layout.addLayout(kpi_layout)
-        
+
         # Summary Grid
         grid = QGridLayout()
         grid.setSpacing(SPACING_MD + SPACING_XS)
-        
+
         # System Status
         status_box = QGroupBox("Operational Status")
         status_box.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 10px; }}")
-        QVBoxLayout(status_box).addWidget(QLabel("All systems operational. No critical drift detected."))
+        self.status_label = QLabel("Loading system status...")
+        QVBoxLayout(status_box).addWidget(self.status_label)
         grid.addWidget(status_box, 0, 0)
-        
+
         # Recent Anomalies
         anomaly_box = QGroupBox("Recent Intelligence Signals")
         anomaly_box.setStyleSheet(status_box.styleSheet())
@@ -135,9 +153,129 @@ class IntelligenceHubScreen(BaseScreen):
         self.event_list.addItem("Checking for signals...")
         QVBoxLayout(anomaly_box).addWidget(self.event_list)
         grid.addWidget(anomaly_box, 0, 1)
-        
+
+        # Error Overview
+        error_box = QGroupBox("Error Overview")
+        error_box.setStyleSheet(status_box.styleSheet())
+        self.error_label = QLabel("Loading error data...")
+        self.error_label.setWordWrap(True)
+        QVBoxLayout(error_box).addWidget(self.error_label)
+        grid.addWidget(error_box, 1, 0)
+
+        # Performance Overview
+        perf_box = QGroupBox("Performance Overview")
+        perf_box.setStyleSheet(status_box.styleSheet())
+        self.perf_label = QLabel("Loading performance data...")
+        self.perf_label.setWordWrap(True)
+        QVBoxLayout(perf_box).addWidget(self.perf_label)
+        grid.addWidget(perf_box, 1, 1)
+
         layout.addLayout(grid)
+
+        # Active Decisions section (in overview tab)
+        self.decisions_box = QGroupBox("Active Decisions")
+        self.decisions_box.setStyleSheet(status_box.styleSheet())
+        self.decisions_list = QListWidget()
+        self.decisions_list.setStyleSheet("background: transparent; border: none;")
+        self.decisions_list.addItem("Loading decisions...")
+        QVBoxLayout(self.decisions_box).addWidget(self.decisions_list)
+        layout.addWidget(self.decisions_box)
+
         layout.addStretch()
+
+    def _setup_decisions_tab(self):
+        """Build the Decisions Intelligence tab."""
+        layout = QVBoxLayout(self.decisions_tab)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
+        layout.setSpacing(SPACING_LG)
+
+        header = QLabel("Decision Intelligence Engine")
+        header.setFont(QFont("Segoe UI", FONT_SIZE_LG, QFont.Bold))
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        layout.addWidget(header)
+
+        # Risk overview cards
+        risk_layout = QHBoxLayout()
+        self.risk_cards = {}
+        for level, color in [('low', COLOR_SUCCESS), ('medium', COLOR_WARNING), ('high', '#fab729'), ('critical', COLOR_DANGER)]:
+            card = self._create_mini_card(f"{level.upper()} Risk", "0", color)
+            self.risk_cards[level] = card
+            risk_layout.addWidget(card)
+        layout.addLayout(risk_layout)
+
+        # Active decisions list
+        decisions_group = QGroupBox("System Decisions")
+        decisions_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 10px; }}")
+        self.decisions_list_detail = QListWidget()
+        self.decisions_list_detail.setStyleSheet("background: transparent; border: none;")
+        self.decisions_list_detail.addItem("Pulling live decisions...")
+        vbox = QVBoxLayout(decisions_group)
+        vbox.addWidget(self.decisions_list_detail)
+        layout.addWidget(decisions_group)
+
+        # Actions section
+        actions_group = QGroupBox("Recommended Actions")
+        actions_group.setStyleSheet(decisions_group.styleSheet())
+        self.actions_label = QLabel("No active decisions requiring action.")
+        self.actions_label.setWordWrap(True)
+        self.actions_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
+        vbox2 = QVBoxLayout(actions_group)
+        vbox2.addWidget(self.actions_label)
+        layout.addWidget(actions_group)
+
+        layout.addStretch()
+
+    def _refresh_decisions_tab(self):
+        """Refresh decisions tab with live data."""
+        try:
+            decisions = evaluate_decisions()
+            active = decisions.get('active_decisions', [])
+            summary = decisions.get('summary', {})
+
+            # Update risk cards
+            by_cat = summary.get('by_category', {})
+            risk_order = {'security': 'critical', 'system': 'critical', 'performance': 'high', 'ui': 'high', 'financial': 'critical', 'inventory': 'medium'}
+
+            # Count by risk level
+            critical_count = sum(1 for d in active if d.get('risk_level') == 'critical')
+            high_count = sum(1 for d in active if d.get('risk_level') == 'high')
+            medium_count = sum(1 for d in active if d.get('risk_level') == 'medium')
+            low_count = sum(1 for d in active if d.get('risk_level') == 'low')
+
+            self.risk_cards['critical'].findChild(QLabel, "", Qt.FindDirectChildrenOnly).setText(str(critical_count))
+            self.risk_cards['high'].findChild(QLabel, "", Qt.FindDirectChildrenOnly).setText(str(high_count))
+            self.risk_cards['medium'].findChild(QLabel, "", Qt.FindDirectChildrenOnly).setText(str(medium_count))
+            self.risk_cards['low'].findChild(QLabel, "", Qt.FindDirectChildrenOnly).setText(str(low_count))
+
+            # Update decisions list
+            self.decisions_list_detail.clear()
+            if not active:
+                self.decisions_list_detail.addItem("No active decisions. System is healthy.")
+                self.actions_label.setText("No active decisions requiring action.")
+                return
+
+            for d in active:
+                rid = d.get('decision_id', '?')
+                cat = d.get('category', '?').upper()
+                risk = d.get('risk_level', '?').upper()
+                decision_text = d.get('decision', '')
+                confidence = d.get('confidence', 0)
+                color = COLOR_DANGER if risk == 'CRITICAL' else ('#fab729' if risk == 'HIGH' else (COLOR_WARNING if risk == 'MEDIUM' else COLOR_SUCCESS))
+                item = QListWidgetItem(f"[{rid}] [{cat}] [{risk}] {decision_text} (conf: {confidence:.0%})")
+                item.setForeground(QColor(color))
+                item.setFont(QFont("Segoe UI", 9))
+                self.decisions_list_detail.addItem(item)
+
+            # Build actions text
+            actions_text = ""
+            for d in active[:5]:
+                for action in d.get('recommended_actions', []):
+                    actions_text += f"  [{d.get('decision_id', '?')}]: {action}\n"
+            self.actions_label.setText(actions_text if actions_text else "No active decisions requiring action.")
+
+        except Exception:
+            self.decisions_list_detail.clear()
+            self.decisions_list_detail.addItem("Decision engine temporarily unavailable.")
 
     def _create_mini_card(self, title, val, color):
         card = QFrame()
@@ -152,7 +290,12 @@ class IntelligenceHubScreen(BaseScreen):
     def _on_tab_changed(self, index):
         """Lazy load the selected tab if not already instantiated."""
         if index == 0: return # Overview always loaded
-        
+
+        # Decisions tab (index 6) is built-in, just refresh it
+        if index == 6:
+            self._refresh_decisions_tab()
+            return
+
         tab_info = self.tab_instances.get(index)
         if tab_info and tab_info["instance"] is None:
             # Instantiate the screen
@@ -170,27 +313,140 @@ class IntelligenceHubScreen(BaseScreen):
                 instance._on_screen_shown()
 
     def _on_screen_shown(self):
-        """Initialize overview data."""
+        """Initialize overview data with real observability metrics."""
+        self._refresh_overview_dashboard()
+
+    def _refresh_overview_dashboard(self):
+        """Pull live data from the observability layer."""
+        try:
+            dashboard = generate_operational_dashboard_data()
+        except Exception:
+            dashboard = {}
+
+        # Update KPIs
+        health = dashboard.get('system_health', {})
+        stability = str(health.get('stability_score', 0))
+        self.kpis["health"].findChild(QLabel, "", Qt.FindDirectChildrenOnly).setText(
+            f"{stability}%")
+        color = COLOR_SUCCESS if health.get('stability_score', 0) >= 80 else (
+            COLOR_WARNING if health.get('stability_score', 0) >= 50 else COLOR_DANGER)
+        self.kpis["health"].setStyleSheet(
+            f"background: {COLOR_BG_SURFACE}; border-radius: 10px; border-left: 3px solid {color};")
+        self.kpis["health"].findChild(QLabel, "", Qt.FindDirectChildrenOnly).setStyleSheet(
+            f"color: {color}; font-size: 18px; font-weight: bold;")
+
+        # Update health indicator in header
+        self.health_indicator.setText(f"ERP HEALTH: {stability}%")
+        self.health_indicator.setStyleSheet(
+            f"background: {COLOR_BG_ELEVATED}; color: {color}; padding: 6px 15px; "
+            f"border-radius: 15px; font-weight: bold; font-size: 11px; border: 1px solid {color};")
+
+        # Check for anomalies and update alert banner
+        anomalies = health.get('anomalies', [])
+        if anomalies:
+            anomaly_types = ', '.join(a.get('type', 'unknown') for a in anomalies[:3])
+            self.alert_text.setText(f"⚠ ANOMALIES DETECTED: {anomaly_types}")
+            self.alert_text.setStyleSheet("color: #fab729; font-weight: bold; font-size: 11px;")
+            self.alert_banner.setStyleSheet(
+                f"background: {COLOR_BG_MAIN}; border: 1px solid #fab729; border-radius: 8px;")
+        else:
+            self.alert_text.setText("🚨 NO CRITICAL INCIDENTS DETECTED")
+            self.alert_text.setStyleSheet("color: #f38ba8; font-weight: bold; font-size: 11px;")
+            self.alert_banner.setStyleSheet(
+                f"background: {COLOR_BG_MAIN}; border: 1px solid #f38ba8; border-radius: 8px;")
+
+        # Update error overview
+        error_overview = dashboard.get('error_overview', {})
+        top_errors = error_overview.get('top_errors', [])
+        total = error_overview.get('total_tracked_errors', 0)
+        error_text = f"Total tracked errors: {total}\n\n"
+        for exc_type, count in top_errors[:5]:
+            error_text += f"  • {exc_type}: {count} occurrences\n"
+        failing_module = error_overview.get('most_failing_module', {})
+        if failing_module.get('module'):
+            error_text += f"\nMost failing module: {failing_module['module']} ({failing_module['count']} events)"
+        self.error_label.setText(error_text if top_errors else "No errors tracked yet.")
+
+        # Update performance overview
+        perf_overview = dashboard.get('performance_overview', {})
+        avg_latency = perf_overview.get('avg_api_latency', 0)
+        perf_text = f"Average API latency: {avg_latency}ms\n\n"
+        slow_api = perf_overview.get('slow_operations', [])
+        if slow_api:
+            perf_text += f"Slow API calls (>3s): {len(slow_api)}\n"
+            for endpoint, duration in slow_api[:5]:
+                perf_text += f"  • {endpoint}: {duration:.0f}ms\n"
+        else:
+            perf_text += "No slow API calls detected.\n"
+        slow_ui = perf_overview.get('slow_ui_operations', [])
+        if slow_ui:
+            perf_text += f"\nSlow screen loads (>3s): {len(slow_ui)}\n"
+            for screen, duration in slow_ui[:5]:
+                perf_text += f"  • {screen}: {duration:.0f}ms\n"
+        self.perf_label.setText(perf_text)
+
+        # Update event list from real event store
         self._refresh_event_stream()
-        # Aggregation logic would go here to fill Overview KPIs
-        self.kpis["health"].findChild(QLabel, "", Qt.FindDirectChildrenOnly).setText("100%")
+
+        # Update decisions section in overview
+        self._refresh_decisions_overview()
 
     def _refresh_event_stream(self):
-        """Fetch unified events from audit/ops APIs."""
+        """Stream live events from the in-memory event store."""
         self.event_list.clear()
         try:
-            # Combine multiple sources (Sales, Jobs, Workflows)
-            # This is a simplified aggregation for the hub
-            events = [
-                {"ts": "10:45", "msg": "Invoice #442 Created", "color": COLOR_SUCCESS},
-                {"ts": "10:42", "msg": "Workflow Approval Delayed", "color": COLOR_WARNING},
-                {"ts": "10:35", "msg": "Background Job #12 Failed", "color": COLOR_DANGER},
-                {"ts": "10:30", "msg": "Stock Update: Paracetamol", "color": COLOR_INFO},
-            ]
-            for e in events:
-                item = QListWidgetItem(f"[{e['ts']}] {e['msg']}")
-                item.setForeground(QColor(e['color']))
+            events_summary = get_event_summary(limit=30)
+            recent = events_summary.get('recent_events', [])
+            if not recent:
+                self.event_list.addItem("No events captured yet.")
+                return
+            type_colors = {
+                'api_request': COLOR_INFO,
+                'api_response': COLOR_SUCCESS,
+                'ui_action': COLOR_INFO,
+                'navigation_event': COLOR_INFO,
+                'auth_event': COLOR_WARNING,
+                'error_event': COLOR_DANGER,
+                'system_event': COLOR_WARNING,
+            }
+            for e in recent:
+                ts = e.get('timestamp', '')
+                etype = e.get('type', 'unknown')
+                action = e.get('action', '')
+                module = e.get('module', '')
+                color = type_colors.get(etype, COLOR_TEXT_MUTED)
+                item = QListWidgetItem(f"[{ts}] [{module}] {action}")
+                item.setForeground(QColor(color))
                 item.setFont(QFont("Segoe UI", 9))
                 self.event_list.addItem(item)
+
+            # Update distribution card
+            distribution = events_summary.get('distribution', {})
+            if distribution:
+                total = sum(distribution.values())
+                top_types = sorted(distribution.items(), key=lambda x: -x[1])[:3]
+                summary = ", ".join(f"{t}: {c}" for t, c in top_types)
+                self.kpis["workflows"].findChild(QLabel, "", Qt.FindDirectChildrenOnly).setText(str(total))
         except Exception:
-            self.event_list.addItem("Stream temporarily unavailable")
+            self.event_list.addItem("Event stream temporarily unavailable")
+
+    def _refresh_decisions_overview(self):
+        """Update the decisions section in the overview tab."""
+        try:
+            decisions = evaluate_decisions()
+            active = decisions.get('active_decisions', [])
+            if not active:
+                self.decisions_list.clear()
+                self.decisions_list.addItem("No active decisions. System is healthy.")
+                return
+            self.decisions_list.clear()
+            for d in active[:10]:
+                risk = d.get('risk_level', '?').upper()
+                color = COLOR_DANGER if risk == 'CRITICAL' else ('#fab729' if risk == 'HIGH' else (COLOR_WARNING if risk == 'MEDIUM' else COLOR_SUCCESS))
+                item = QListWidgetItem(f"[{d.get('decision_id', '?')}] [{risk}] {d.get('decision', '')}")
+                item.setForeground(QColor(color))
+                item.setFont(QFont("Segoe UI", 9))
+                self.decisions_list.addItem(item)
+        except Exception:
+            self.decisions_list.clear()
+            self.decisions_list.addItem("Decision engine unavailable.")

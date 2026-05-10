@@ -631,3 +631,524 @@ def record_screen_load(screen: str, duration_ms: float):
         _get_perf_telemetry().record_screen_load(screen, duration_ms)
     except Exception:
         pass
+
+
+# ============================================================
+# Phase 9 — Event Store (bounded, in-memory)
+# ============================================================
+
+MAX_EVENTS = 10000
+
+
+class Event:
+    """Lightweight structured event with sanitized metadata."""
+    __slots__ = ['timestamp', 'epoch', 'event_type', 'module', 'action', 'metadata', 'correlation_id']
+
+    def __init__(self, event_type: str, module: str, action: str,
+                 metadata: dict = None, correlation_id: str = None):
+        self.timestamp = datetime.now().strftime(DATE_FORMAT)
+        self.epoch = time.time()
+        self.event_type = event_type
+        self.module = module
+        self.action = action
+        self.metadata = sanitize_dict(metadata) if metadata else {}
+        self.correlation_id = correlation_id
+
+
+class EventStore:
+    """Bounded in-memory event store. Never blocks, never grows unbounded."""
+
+    def __init__(self, max_events: int = MAX_EVENTS):
+        self._max = max_events
+        self._events: deque = deque(maxlen=max_events)
+        self._lock = threading.Lock()
+
+    def append(self, event_type: str, module: str, action: str,
+               metadata: dict = None, correlation_id: str = None) -> Event:
+        event = Event(event_type, module, action, metadata, correlation_id)
+        with self._lock:
+            self._events.append(event)
+        return event
+
+    def query(self, event_type: str = None, module: str = None,
+              action: str = None, since_seconds: float = None,
+              limit: int = 100) -> list:
+        with self._lock:
+            events = list(self._events)
+        if since_seconds:
+            cutoff = time.time() - since_seconds
+            events = [e for e in events if e.epoch > cutoff]
+        if event_type:
+            events = [e for e in events if e.event_type == event_type]
+        if module:
+            events = [e for e in events if e.module == module]
+        if action:
+            events = [e for e in events if e.action == action]
+        return events[-limit:]
+
+    def replay(self, correlation_id: str) -> list:
+        """Reconstruct all events for a given correlation ID."""
+        if not correlation_id:
+            return []
+        with self._lock:
+            return [e for e in self._events if e.correlation_id == correlation_id]
+
+    def get_stats(self) -> dict:
+        with self._lock:
+            by_type: dict = defaultdict(int)
+            by_module: dict = defaultdict(int)
+            for e in self._events:
+                by_type[e.event_type] += 1
+                by_module[e.module] += 1
+            return {
+                'total_events': len(self._events),
+                'by_type': dict(by_type),
+                'by_module': dict(by_module),
+            }
+
+
+_event_store: Optional[EventStore] = None
+_event_store_lock = threading.Lock()
+
+
+def _get_event_store() -> EventStore:
+    global _event_store
+    if _event_store is None:
+        with _event_store_lock:
+            if _event_store is None:
+                _event_store = EventStore()
+    return _event_store
+
+
+def emit_event(event_type: str, module: str, action: str,
+               metadata: dict = None, correlation_id: str = None):
+    """Emit a structured event to the store (never crashes, never blocks)."""
+    try:
+        _get_event_store().append(event_type, module, action, metadata, correlation_id)
+    except Exception:
+        pass
+
+
+# ============================================================
+# Phase 10 — Correlation Engine (lightweight pattern detection)
+# ============================================================
+
+_ANOMALY_WINDOW = 60  # seconds
+_ANOMALY_THRESHOLDS = {
+    'auth_failure': 5,
+    'api_error': 10,
+    'ui_error': 3,
+}
+
+
+class CorrelationEngine:
+    """Lightweight engine for event linking, trace reconstruction, and anomaly detection."""
+
+    def get_trace(self, correlation_id: str) -> list:
+        """Reconstruct a full trace for a given correlation ID."""
+        if not correlation_id:
+            return []
+        try:
+            events = _get_event_store().replay(correlation_id)
+            return sorted(events, key=lambda e: e.epoch)
+        except Exception:
+            return []
+
+    def detect_anomalies(self) -> list:
+        """Detect anomalies based on event frequency within a time window."""
+        try:
+            now = time.time()
+            events = _get_event_store().query(since_seconds=_ANOMALY_WINDOW, limit=MAX_EVENTS)
+            type_counts: dict = defaultdict(int)
+            for e in events:
+                type_counts[e.event_type] += 1
+
+            anomalies = []
+            # Auth failure burst
+            auth_count = type_counts.get('auth_event', 0)
+            if auth_count >= _ANOMALY_THRESHOLDS['auth_failure']:
+                anomalies.append({
+                    'type': 'auth_failure_burst',
+                    'count': auth_count,
+                    'threshold': _ANOMALY_THRESHOLDS['auth_failure'],
+                    'window_seconds': _ANOMALY_WINDOW,
+                })
+            # API error burst
+            api_error_count = type_counts.get('error_event', 0)
+            if api_error_count >= _ANOMALY_THRESHOLDS['api_error']:
+                anomalies.append({
+                    'type': 'api_error_burst',
+                    'count': api_error_count,
+                    'threshold': _ANOMALY_THRESHOLDS['api_error'],
+                    'window_seconds': _ANOMALY_WINDOW,
+                })
+            # UI error burst
+            ui_error_count = type_counts.get('ui_error', 0)
+            if ui_error_count >= _ANOMALY_THRESHOLDS['ui_error']:
+                anomalies.append({
+                    'type': 'ui_error_burst',
+                    'count': ui_error_count,
+                    'threshold': _ANOMALY_THRESHOLDS['ui_error'],
+                    'window_seconds': _ANOMALY_WINDOW,
+                })
+            return anomalies
+        except Exception:
+            return []
+
+    def get_event_summary(self, limit: int = 50) -> dict:
+        """Get a summary of recent events with distribution stats."""
+        try:
+            store = _get_event_store()
+            events = store.query(limit=limit)
+            stats = store.get_stats()
+            return {
+                'recent_count': len(events),
+                'distribution': stats.get('by_type', {}),
+                'top_modules': dict(sorted(
+                    stats.get('by_module', {}).items(),
+                    key=lambda x: -x[1]
+                )[:5]),
+            }
+        except Exception:
+            return {'recent_count': 0, 'distribution': {}, 'top_modules': {}}
+
+
+_correlation_engine: Optional[CorrelationEngine] = None
+_corr_engine_lock = threading.Lock()
+
+
+def _get_correlation_engine() -> CorrelationEngine:
+    global _correlation_engine
+    if _correlation_engine is None:
+        with _corr_engine_lock:
+            if _correlation_engine is None:
+                _correlation_engine = CorrelationEngine()
+    return _correlation_engine
+
+
+def detect_anomalies() -> list:
+    """Detect system anomalies (never crashes)."""
+    try:
+        return _get_correlation_engine().detect_anomalies()
+    except Exception:
+        return []
+
+
+def get_trace(correlation_id: str) -> list:
+    """Get trace for a correlation ID (never crashes)."""
+    try:
+        return _get_correlation_engine().get_trace(correlation_id)
+    except Exception:
+        return []
+
+
+def get_event_summary(limit: int = 50) -> dict:
+    """Get event summary (never crashes)."""
+    try:
+        return _get_correlation_engine().get_event_summary(limit)
+    except Exception:
+        return {}
+
+
+def generate_operational_dashboard_data() -> dict:
+    """Unified dashboard data provider combining all telemetry sources."""
+    try:
+        insight = generate_operational_insight_report()
+        anomalies = detect_anomalies()
+        slow_ops = _get_perf_telemetry().get_slow_operations()
+        event_stats = _get_event_store().get_stats()
+        recent_events = _get_event_store().query(limit=50)
+
+        recent_data = [
+            {
+                'timestamp': e.timestamp,
+                'type': e.event_type,
+                'module': e.module,
+                'action': e.action,
+                'correlation_id': e.correlation_id or '',
+            }
+            for e in recent_events
+        ]
+
+        return {
+            'system_health': {
+                'stability_score': insight.get('stability_score', 100),
+                'crash_count': insight.get('ui_crash_count', 0),
+                'error_rate': round(insight.get('auth_failure_ratio', 0), 3),
+                'total_events': event_stats.get('total_events', 0),
+                'anomalies': anomalies,
+                'total_errors': insight.get('total_tracked_errors', 0),
+            },
+            'event_summary': {
+                'recent_events': recent_data,
+                'distribution': event_stats.get('by_type', {}),
+            },
+            'error_overview': {
+                'top_errors': insight.get('top_recurring_errors', []),
+                'most_failing_module': insight.get('most_failing_module', {}),
+                'most_failing_endpoint': insight.get('most_failing_endpoint', {}),
+                'total_tracked_errors': insight.get('total_tracked_errors', 0),
+            },
+            'performance_overview': {
+                'avg_api_latency': _get_avg_api_latency(),
+                'slow_operations': slow_ops.get('slow_api', []),
+                'slow_ui_operations': slow_ops.get('slow_ui', []),
+            },
+        }
+    except Exception:
+        return {
+            'system_health': {'stability_score': 0, 'anomalies': [], 'total_events': 0},
+            'event_summary': {'recent_events': [], 'distribution': {}},
+            'error_overview': {'top_errors': [], 'total_tracked_errors': 0},
+            'performance_overview': {'avg_api_latency': 0, 'slow_operations': []},
+        }
+
+
+def _get_avg_api_latency() -> float:
+    """Calculate average API latency from telemetry data."""
+    try:
+        perf = _get_perf_telemetry()
+        with perf._lock:
+            if not perf._api_times:
+                return 0.0
+            total = sum(d for _, d, _ in perf._api_times)
+            return round(total / len(perf._api_times), 1)
+    except Exception:
+        return 0.0
+
+
+# ============================================================
+# Phase 13 — Decision Intelligence Engine (Frontend-side)
+# Lightweight deterministic rules that run on the client side
+# using in-memory event data. No AI/ML.
+# ============================================================
+
+_DECISION_RULES = {
+    'ui_crash_cluster': {
+        'category': 'ui',
+        'risk_level': 'high',
+        'threshold': 3,
+        'description': 'Multiple UI errors detected in short window',
+        'actions': ['Check browser console for errors', 'Review recent frontend deployments', 'Test affected workflows'],
+    },
+    'auth_failure_burst': {
+        'category': 'security',
+        'risk_level': 'critical',
+        'threshold': 5,
+        'description': 'Multiple authentication failures detected',
+        'actions': ['Review failed auth logs', 'Enable account lockout', 'Consider MFA enforcement'],
+    },
+    'api_error_burst': {
+        'category': 'performance',
+        'risk_level': 'high',
+        'threshold': 10,
+        'description': 'High rate of API errors detected',
+        'actions': ['Check API logs', 'Review recent backend changes', 'Check network connectivity'],
+    },
+    'slow_api_cluster': {
+        'category': 'performance',
+        'risk_level': 'medium',
+        'threshold': 3,
+        'description': 'Multiple slow API calls detected',
+        'actions': ['Profile slow endpoints', 'Check database queries', 'Add caching if appropriate'],
+    },
+    'high_error_rate': {
+        'category': 'performance',
+        'risk_level': 'high',
+        'description': 'Error rate above 5%',
+        'actions': ['Check application logs', 'Review recent deployments', 'Rollback if regression'],
+    },
+    'system_event_burst': {
+        'category': 'system',
+        'risk_level': 'high',
+        'threshold': 5,
+        'description': 'Unusual burst of system events',
+        'actions': ['Check system resources', 'Review system logs', 'Verify background services'],
+    },
+    'disk_warning': {
+        'category': 'system',
+        'risk_level': 'critical',
+        'description': 'Disk space warning from telemetry',
+        'actions': ['Free disk space', 'Archive old files', 'Expand storage'],
+    },
+}
+
+
+def evaluate_decisions() -> dict:
+    """
+    Evaluate all decision rules against current in-memory telemetry.
+    Returns structured decisions with risk levels and recommended actions.
+    Never crashes, never blocks.
+    """
+    try:
+        stats = _get_event_store().get_stats()
+        anomalies = detect_anomalies()
+        slow_ops = _get_perf_telemetry().get_slow_operations()
+        insight = generate_operational_insight_report()
+
+        by_type = stats.get('by_type', {})
+        by_module = stats.get('by_module', {})
+        total_events = stats.get('total_events', 0)
+
+        decisions = []
+        active_categories = set()
+
+        # Rule: UI crash cluster
+        ui_errors = by_type.get('ui_error', 0)
+        if ui_errors >= _DECISION_RULES['ui_crash_cluster']['threshold']:
+            rule = _DECISION_RULES['ui_crash_cluster']
+            decisions.append({
+                'decision_id': 'UI-CRASH-001',
+                'category': rule['category'],
+                'risk_level': rule['risk_level'],
+                'decision': rule['description'],
+                'confidence': min(ui_errors * 0.15, 0.95),
+                'description': f'{ui_errors} UI errors in the event window.',
+                'recommended_actions': rule['actions'],
+                'triggered_by': ['ui_error'],
+            })
+            active_categories.add('ui')
+
+        # Rule: Auth failure burst
+        auth_events = by_type.get('auth_event', 0)
+        if auth_events >= _DECISION_RULES['auth_failure_burst']['threshold']:
+            rule = _DECISION_RULES['auth_failure_burst']
+            decisions.append({
+                'decision_id': 'SEC-AUTH-001',
+                'category': rule['category'],
+                'risk_level': rule['risk_level'],
+                'decision': rule['description'],
+                'confidence': min(auth_events * 0.12, 0.92),
+                'description': f'{auth_events} authentication events detected.',
+                'recommended_actions': rule['actions'],
+                'triggered_by': ['auth_event'],
+            })
+            active_categories.add('security')
+
+        # Rule: API error burst
+        api_errors = by_type.get('error_event', 0)
+        if api_errors >= _DECISION_RULES['api_error_burst']['threshold']:
+            rule = _DECISION_RULES['api_error_burst']
+            decisions.append({
+                'decision_id': 'PERF-ERR-001',
+                'category': rule['category'],
+                'risk_level': rule['risk_level'],
+                'decision': rule['description'],
+                'confidence': min(api_errors * 0.08, 0.90),
+                'description': f'{api_errors} API errors in the event window.',
+                'recommended_actions': rule['actions'],
+                'triggered_by': ['error_event'],
+            })
+            active_categories.add('performance')
+
+        # Rule: Slow API cluster
+        slow_api = slow_ops.get('slow_api', [])
+        if len(slow_api) >= _DECISION_RULES['slow_api_cluster']['threshold']:
+            rule = _DECISION_RULES['slow_api_cluster']
+            decisions.append({
+                'decision_id': 'PERF-SLOW-001',
+                'category': rule['category'],
+                'risk_level': rule['risk_level'],
+                'decision': rule['description'],
+                'confidence': min(len(slow_api) * 0.1, 0.80),
+                'description': f'{len(slow_api)} slow API calls detected (>3s).',
+                'recommended_actions': rule['actions'],
+                'triggered_by': ['api_response'],
+            })
+            active_categories.add('performance')
+
+        # Rule: High error rate
+        if total_events > 20:
+            error_count = by_type.get('error_event', 0) + by_type.get('ui_error', 0)
+            error_rate = error_count / max(total_events, 1)
+            if error_rate > 0.05:
+                rule = _DECISION_RULES['high_error_rate']
+                decisions.append({
+                    'decision_id': 'PERF-ERR-RATE-001',
+                    'category': rule['category'],
+                    'risk_level': rule['risk_level'],
+                    'decision': rule['description'],
+                    'confidence': round(min(error_rate * 10, 0.95), 2),
+                    'description': f'Error rate at {error_rate:.1%} ({error_count}/{total_events} events).',
+                    'recommended_actions': rule['actions'],
+                    'triggered_by': ['error_event', 'ui_error'],
+                })
+                active_categories.add('performance')
+
+        # Rule: Anomaly-driven decisions
+        for anomaly in anomalies:
+            anomaly_type = anomaly.get('type', '')
+            if 'auth' in anomaly_type and 'security' not in active_categories:
+                decisions.append({
+                    'decision_id': 'SEC-ANOMALY-001',
+                    'category': 'security',
+                    'risk_level': 'high',
+                    'decision': 'Anomalous authentication pattern detected',
+                    'confidence': 0.80,
+                    'description': f"{anomaly.get('count', '?')}x {anomaly_type} (threshold: {anomaly.get('threshold', '?')}).",
+                    'recommended_actions': ['Review auth logs', 'Check for credential stuffing', 'Enable MFA if not active'],
+                    'triggered_by': ['anomaly'],
+                })
+                active_categories.add('security')
+                break
+
+        # Rule: System event burst
+        sys_events = by_type.get('system_event', 0)
+        if sys_events >= _DECISION_RULES['system_event_burst']['threshold']:
+            rule = _DECISION_RULES['system_event_burst']
+            decisions.append({
+                'decision_id': 'SYS-BURST-001',
+                'category': rule['category'],
+                'risk_level': rule['risk_level'],
+                'decision': rule['description'],
+                'confidence': min(sys_events * 0.08, 0.80),
+                'description': f'{sys_events} system events in the event window.',
+                'recommended_actions': rule['actions'],
+                'triggered_by': ['system_event'],
+            })
+            active_categories.add('system')
+
+        # Determine overall risk
+        risk_order = {'critical': 4, 'high': 3, 'medium': 2, 'low': 1}
+        overall_risk = 'low'
+        for d in decisions:
+            if risk_order.get(d['risk_level'], 0) > risk_order.get(overall_risk, 0):
+                overall_risk = d['risk_level']
+
+        # Sort by risk descending
+        risk_sort = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
+        decisions.sort(key=lambda d: risk_sort.get(d['risk_level'], 99))
+
+        # Build category breakdown
+        by_decision_category = {}
+        for d in decisions:
+            cat = d['category']
+            by_decision_category[cat] = by_decision_category.get(cat, 0) + 1
+
+        return {
+            'active_decisions': decisions,
+            'summary': {
+                'total_active': len(decisions),
+                'overall_risk_level': overall_risk,
+                'by_category': by_decision_category,
+            },
+            'rule_count': len(_DECISION_RULES),
+            'evaluated_at': _timestamp_now(),
+        }
+
+    except Exception:
+        return {
+            'active_decisions': [],
+            'summary': {
+                'total_active': 0,
+                'overall_risk_level': 'unknown',
+                'by_category': {},
+            },
+            'rule_count': len(_DECISION_RULES),
+            'evaluated_at': _timestamp_now(),
+            'error': 'Decision evaluation failed',
+        }
+
+
+def _timestamp_now() -> str:
+    return datetime.now().strftime(DATE_FORMAT)

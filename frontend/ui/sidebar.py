@@ -3,9 +3,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QListWidget, Q
 from PySide6.QtCore import Qt, Signal, QSize, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QIcon
 from theme.theme_manager import ThemeManager
+from theme.theme_engine import ThemeEngine
 from ui.role_manager import UserRole, get_visible_navigation_items, is_navigation_item_visible
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 
 class Sidebar(QWidget):
@@ -44,9 +45,10 @@ class Sidebar(QWidget):
         if self._role:
             self.apply_role_filter(self._role)
         
-        # Connect theme changes
+        # Connect theme changes (legacy ThemeManager + live ThemeEngine)
         self.theme_manager = ThemeManager()
         self.theme_manager.theme_changed.connect(self.update_theme)
+        ThemeEngine.instance().theme_changed.connect(self.update_theme)
     
     def set_role(self, role: UserRole):
         """Set the role and update navigation visibility."""
@@ -228,14 +230,14 @@ class Sidebar(QWidget):
         self.logout_btn.setFixedHeight(40)
         self.logout_btn.setStyleSheet(f"""
             QPushButton {{
-                background-color: {{COLOR_DANGER}};
-                color: {{COLOR_BG_MAIN}};
+                background-color: {COLOR_DANGER};
+                color: {COLOR_TEXT_ON_PRIMARY};
                 border: none;
                 border-radius: 8px;
                 padding: 10px;
             }}
             QPushButton:hover {{
-                background-color: {{COLOR_PRIMARY}};
+                background-color: {COLOR_PRIMARY_HOVER};
             }}
         """)
         bottom_layout.addWidget(self.logout_btn)
@@ -444,7 +446,130 @@ class Sidebar(QWidget):
     def set_active_item(self, index):
         """Set the active item programmatically."""
         pass
-    
+
     def update_theme(self, theme_name):
         """Update sidebar styling based on theme."""
-        pass
+        self._refresh_all_styles()
+
+    def _refresh_all_styles(self):
+        """Re-apply all sidebar stylesheets with current theme colors."""
+        # Scroll area
+        for child in self.findChildren(QScrollArea):
+            child.setStyleSheet(f"""
+                QScrollArea {{ 
+                    border: none; 
+                    background-color: {COLOR_BG_MAIN}; 
+                }}
+                QScrollArea>QWidget>QScrollBar:vertical {{
+                    background: {COLOR_BG_MAIN};
+                    width: 8px;
+                }}
+                QScrollArea>QWidget>QScrollBar::handle:vertical {{
+                    background: {COLOR_BORDER};
+                    border-radius: 4px;
+                }}
+                QScrollArea>QWidget>QScrollBar::add-line:vertical, 
+                QScrollArea>QWidget>QScrollBar::sub-line:vertical {{
+                    height: 0px;
+                }}
+            """)
+            scroll_content = child.widget()
+            if scroll_content:
+                scroll_content.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
+            break
+
+        # Brand frame
+        for child in self.findChildren(QFrame):
+            cs = child.styleSheet()
+            if 'background-color' in cs and 'COLOR_PRIMARY' in cs:
+                child.setStyleSheet(f"background-color: {COLOR_PRIMARY};")
+                brand_label = child.findChild(QLabel)
+                if brand_label:
+                    brand_label.setStyleSheet(f"color: {COLOR_BG_MAIN};")
+                break
+
+        # Navigation section
+        for child in self.findChildren(QWidget):
+            if child is not self and hasattr(child, 'layout'):
+                cl = child.layout()
+                if cl and hasattr(cl, 'itemAt'):
+                    first = True
+                    for i in range(cl.count()):
+                        item = cl.itemAt(i)
+                        if item and item.widget():
+                            ws = item.widget().styleSheet()
+                            if first and ('background' in ws or 'background-color' in ws):
+                                if 'transparent' not in ws:
+                                    item.widget().setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
+                                    first = False
+
+        # All navigation buttons
+        for page_id, btn in self._navigation_items.items():
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: transparent;
+                    color: {COLOR_TEXT_PRIMARY};
+                    border: none;
+                    border-radius: 6px;
+                    text-align: left;
+                    padding-left: 15px;
+                }}
+                QPushButton:hover {{
+                    background-color: {COLOR_BORDER};
+                }}
+                QPushButton:pressed {{
+                    background-color: {COLOR_BORDER_LIGHT};
+                }}
+            """)
+
+        # Group headers
+        for group_name in self._expanded_groups:
+            header_btn = getattr(self, f"_{group_name}_header", None)
+            if header_btn:
+                header_btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: transparent;
+                        border: none;
+                        text-align: left;
+                        padding-left: 10px;
+                        color: {COLOR_TEXT_PRIMARY};
+                        font-weight: bold;
+                        font-size: 13px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {COLOR_BG_ELEVATED};
+                    }}
+                """)
+                arrow = getattr(header_btn, '_arrow', None)
+                if arrow:
+                    arrow.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: 12px;")
+                for c in header_btn.findChildren(QLabel):
+                    if c is not arrow:
+                        c.setStyleSheet(f"color: {COLOR_PRIMARY};")
+
+        # Item containers inside groups
+        for group_name, group_widget in self._group_widgets.items():
+            for c in group_widget.findChildren(QWidget):
+                if c.styleSheet() and 'background-color' in c.styleSheet():
+                    c.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
+
+        # Bottom frame with logout
+        for child in self.findChildren(QFrame):
+            cs = child.styleSheet()
+            find_logout = child.findChild(QPushButton)
+            if find_logout and ('logout' in find_logout.text().lower() or 'Logout' in find_logout.text()):
+                find_logout.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {COLOR_DANGER};
+                        color: {COLOR_TEXT_ON_PRIMARY};
+                        border: none;
+                        border-radius: 8px;
+                        padding: 10px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {COLOR_PRIMARY_HOVER};
+                    }}
+                """)
+                child.setStyleSheet(f"background-color: {COLOR_BG_SURFACE};")
+                break
+
