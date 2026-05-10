@@ -215,11 +215,24 @@ class CustomerFactory:
 
     @staticmethod
     def build(**kwargs):
-        today = timezone.now().date()
+        name = kwargs.get('name')
+        code = kwargs.get('code', f'CUST{uuid.uuid4().hex[:6]}')
+        subtype = kwargs.get('subtype', 'INDIVIDUAL')
+        customer_type = kwargs.get('customer_type', 'RETAIL')
+        
+        first_name = kwargs.get('first_name', 'Test')
+        last_name = kwargs.get('last_name', 'Customer')
+        
+        if not name and subtype == 'INDIVIDUAL' and first_name and last_name:
+            name = f"{first_name} {last_name}"
+        
         defaults = {
-            'name': kwargs.get('name', f'Customer {uuid.uuid4().hex[:6]}'),
-            'code': kwargs.get('code', f'CUST{uuid.uuid4().hex[:6]}'),
-            'customer_type': kwargs.get('customer_type', 'INDIVIDUAL'),
+            'name': name or f'Customer {uuid.uuid4().hex[:6]}',
+            'code': code,
+            'subtype': subtype,
+            'customer_type': customer_type,
+            'first_name': first_name,
+            'last_name': last_name,
             'contact_person': kwargs.get('contact_person', 'Test Contact'),
             'email': kwargs.get('email', f'customer{uuid.uuid4().hex[:6]}@test.com'),
             'phone': kwargs.get('phone', '+1234567890'),
@@ -229,18 +242,31 @@ class CustomerFactory:
             'tax_number': kwargs.get('tax_number', ''),
             'credit_limit': kwargs.get('credit_limit', Decimal('10000.00')),
             'balance': kwargs.get('balance', Decimal('0.00')),
-            'payment_terms': kwargs.get('payment_terms', 'Net 30'),
+            'payment_terms_days': kwargs.get('payment_terms_days', 30),
             'notes': kwargs.get('notes', ''),
             'is_active': kwargs.get('is_active', True),
         }
+        defaults.update(kwargs)
         return Customer(**defaults)
 
     @staticmethod
     def create(name=None, code=None, **kwargs):
+        subtype = kwargs.get('subtype', 'INDIVIDUAL')
+        customer_type = kwargs.get('customer_type', 'RETAIL')
+        
+        first_name = kwargs.get('first_name', 'Test')
+        last_name = kwargs.get('last_name', 'Customer')
+        
+        if not name and subtype == 'INDIVIDUAL' and first_name and last_name:
+            name = f"{first_name} {last_name}"
+        
         defaults = {
             'name': name or f'Customer {uuid.uuid4().hex[:6]}',
             'code': code or f'CUST{uuid.uuid4().hex[:6]}',
-            'customer_type': 'INDIVIDUAL',
+            'subtype': subtype,
+            'customer_type': customer_type,
+            'first_name': first_name,
+            'last_name': last_name,
             'contact_person': 'Test Contact',
             'email': f'customer{uuid.uuid4().hex[:6]}@test.com',
             'phone': '+1234567890',
@@ -250,7 +276,80 @@ class CustomerFactory:
             'tax_number': '',
             'credit_limit': Decimal('10000.00'),
             'balance': Decimal('0.00'),
-            'payment_terms': 'Net 30',
+            'payment_terms_days': 30,
+            'notes': '',
+            'is_active': True,
+        }
+        defaults.update(kwargs)
+        customer = Customer(**defaults)
+        customer.full_clean()
+        customer.save()
+        return customer
+
+    @staticmethod
+    def build(**kwargs):
+        name = kwargs.get('name')
+        code = kwargs.get('code', f'CUST{uuid.uuid4().hex[:6]}')
+        subtype = kwargs.get('subtype', 'INDIVIDUAL')
+        customer_type = kwargs.get('customer_type', 'RETAIL')
+        
+        first_name = kwargs.get('first_name', 'Test')
+        last_name = kwargs.get('last_name', 'Customer')
+        
+        if not name and subtype == 'INDIVIDUAL' and first_name and last_name:
+            name = f"{first_name} {last_name}"
+        
+        defaults = {
+            'name': name or f'Customer {uuid.uuid4().hex[:6]}',
+            'code': code,
+            'subtype': subtype,
+            'customer_type': customer_type,
+            'first_name': first_name,
+            'last_name': last_name,
+            'contact_person': kwargs.get('contact_person', 'Test Contact'),
+            'email': kwargs.get('email', f'customer{uuid.uuid4().hex[:6]}@test.com'),
+            'phone': kwargs.get('phone', '+1234567890'),
+            'address': kwargs.get('address', '123 Customer Street'),
+            'city': kwargs.get('city', 'Test City'),
+            'country': kwargs.get('country', 'Test Country'),
+            'tax_number': kwargs.get('tax_number', ''),
+            'credit_limit': kwargs.get('credit_limit', Decimal('10000.00')),
+            'balance': kwargs.get('balance', Decimal('0.00')),
+            'payment_terms_days': kwargs.get('payment_terms_days', 30),
+            'notes': kwargs.get('notes', ''),
+            'is_active': kwargs.get('is_active', True),
+        }
+        defaults.update(kwargs)
+        return Customer(**defaults)
+
+    @staticmethod
+    def create(name=None, code=None, **kwargs):
+        subtype = kwargs.get('subtype', 'INDIVIDUAL')
+        customer_type = kwargs.get('customer_type', 'RETAIL')
+        
+        first_name = kwargs.get('first_name', 'Test')
+        last_name = kwargs.get('last_name', 'Customer')
+        
+        if not name and subtype == 'INDIVIDUAL' and first_name and last_name:
+            name = f"{first_name} {last_name}"
+        
+        defaults = {
+            'name': name or f'Customer {uuid.uuid4().hex[:6]}',
+            'code': code or f'CUST{uuid.uuid4().hex[:6]}',
+            'subtype': subtype,
+            'customer_type': customer_type,
+            'first_name': first_name,
+            'last_name': last_name,
+            'contact_person': 'Test Contact',
+            'email': f'customer{uuid.uuid4().hex[:6]}@test.com',
+            'phone': '+1234567890',
+            'address': '123 Customer Street',
+            'city': 'Test City',
+            'country': 'Test Country',
+            'tax_number': '',
+            'credit_limit': Decimal('10000.00'),
+            'balance': Decimal('0.00'),
+            'payment_terms_days': 30,
             'notes': '',
             'is_active': True,
         }
@@ -411,9 +510,26 @@ class SupplierFactory:
 
     @staticmethod
     def build(**kwargs):
+        name = kwargs.get('name')
+        code = kwargs.get('code', f'SUP{uuid.uuid4().hex[:6]}')
+        subtype = kwargs.get('subtype', 'INDIVIDUAL')
+        
+        company_name = kwargs.get('company_name', 'Test Company')
+        first_name = kwargs.get('first_name', 'Test')
+        last_name = kwargs.get('last_name', 'Contact')
+        
+        if not name and subtype == 'COMPANY' and company_name:
+            name = company_name
+        elif not name and subtype == 'INDIVIDUAL' and first_name and last_name:
+            name = f"{first_name} {last_name}"
+        
         defaults = {
-            'name': kwargs.get('name', f'Supplier {uuid.uuid4().hex[:6]}'),
-            'code': kwargs.get('code', f'SUP{uuid.uuid4().hex[:6]}'),
+            'name': name or f'Supplier {uuid.uuid4().hex[:6]}',
+            'code': code,
+            'subtype': subtype,
+            'company_name': company_name,
+            'first_name': first_name,
+            'last_name': last_name,
             'contact_person': kwargs.get('contact_person', 'Test Contact'),
             'email': kwargs.get('email', f'supplier{uuid.uuid4().hex[:6]}@test.com'),
             'phone': kwargs.get('phone', '+1234567890'),
@@ -423,17 +539,34 @@ class SupplierFactory:
             'tax_number': kwargs.get('tax_number', ''),
             'credit_limit': kwargs.get('credit_limit', Decimal('50000.00')),
             'balance': kwargs.get('balance', Decimal('0.00')),
-            'payment_terms': kwargs.get('payment_terms', 'Net 30'),
+            'payment_terms_days': kwargs.get('payment_terms_days', 30),
+            'supply_categories': kwargs.get('supply_categories', 'Medicine'),
             'notes': kwargs.get('notes', ''),
             'is_active': kwargs.get('is_active', True),
         }
+        defaults.update(kwargs)
         return Supplier(**defaults)
 
     @staticmethod
     def create(name=None, code=None, **kwargs):
+        subtype = kwargs.get('subtype', 'INDIVIDUAL')
+        
+        company_name = kwargs.get('company_name', 'Test Company')
+        first_name = kwargs.get('first_name', 'Test')
+        last_name = kwargs.get('last_name', 'Contact')
+        
+        if not name and subtype == 'COMPANY' and company_name:
+            name = company_name
+        elif not name and subtype == 'INDIVIDUAL' and first_name and last_name:
+            name = f"{first_name} {last_name}"
+        
         defaults = {
             'name': name or f'Supplier {uuid.uuid4().hex[:6]}',
             'code': code or f'SUP{uuid.uuid4().hex[:6]}',
+            'subtype': subtype,
+            'company_name': company_name,
+            'first_name': first_name,
+            'last_name': last_name,
             'contact_person': 'Test Contact',
             'email': f'supplier{uuid.uuid4().hex[:6]}@test.com',
             'phone': '+1234567890',
@@ -443,7 +576,8 @@ class SupplierFactory:
             'tax_number': '',
             'credit_limit': Decimal('50000.00'),
             'balance': Decimal('0.00'),
-            'payment_terms': 'Net 30',
+            'payment_terms_days': 30,
+            'supply_categories': 'Medicine',
             'notes': '',
             'is_active': True,
         }

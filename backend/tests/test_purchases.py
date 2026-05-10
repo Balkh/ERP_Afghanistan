@@ -30,7 +30,7 @@ class SupplierModelTests(BaseTestCase):
 
     def test_create_supplier(self):
         """Test basic supplier creation."""
-        supplier = SupplierFactory.create(name='Test Supplier')
+        supplier = SupplierFactory.create(first_name='Test', last_name='Supplier')
         self.assertEqual(supplier.name, 'Test Supplier')
         self.assertTrue(supplier.is_active)
         self.assertEqual(supplier.balance, Decimal('0.00'))
@@ -88,7 +88,7 @@ class SupplierModelTests(BaseTestCase):
 
     def test_supplier_str_representation(self):
         """Test supplier string representation."""
-        supplier = SupplierFactory.create(name='Pharma Co', code='SUP001')
+        supplier = SupplierFactory.create(subtype='COMPANY', company_name='Pharma Co', code='SUP001')
         self.assertEqual(str(supplier), 'Pharma Co (SUP001)')
 
 
@@ -215,7 +215,7 @@ class PurchaseInvoiceModelTests(BaseTestCase):
 
     def test_purchase_invoice_str_representation(self):
         """Test invoice string representation."""
-        supplier = SupplierFactory.create(name='Test Supplier')
+        supplier = SupplierFactory.create(first_name='Test', last_name='Supplier')
         invoice = PurchaseInvoiceFactory.create(
             invoice_number='PI-001',
             supplier=supplier
@@ -384,7 +384,7 @@ class SupplierPaymentModelTests(BaseTestCase):
 
     def test_supplier_payment_str_representation(self):
         """Test payment string representation."""
-        supplier = SupplierFactory.create(name='Pharma Co')
+        supplier = SupplierFactory.create(subtype='COMPANY', company_name='Pharma Co')
         payment = SupplierPaymentFactory.create(
             supplier=supplier,
             amount=Decimal('2000.00')

@@ -94,17 +94,28 @@ class CustomerModelTests(BaseTestCase):
 
     def test_customer_str_representation(self):
         """Test customer string representation."""
-        customer = CustomerFactory.create(name='John Doe', code='CUST001')
+        customer = CustomerFactory.create(first_name='John', last_name='Doe', code='CUST001')
         self.assertEqual(str(customer), 'John Doe (CUST001)')
 
     def test_customer_types(self):
         """Test different customer types."""
-        for customer_type in ['INDIVIDUAL', 'PHARMACY', 'HOSPITAL', 'CLINIC', 'OTHER']:
+        valid_customer_types = ['RETAIL', 'WHOLESALE', 'PHARMACY', 'HOSPITAL', 'CLINIC', 'DISTRIBUTOR', 'OTHER']
+        for customer_type in valid_customer_types:
             customer = CustomerFactory.create(
                 name=f'{customer_type} Customer',
                 customer_type=customer_type
             )
             self.assertEqual(customer.customer_type, customer_type)
+
+    def test_customer_subtypes(self):
+        """Test different customer subtypes."""
+        for subtype in ['INDIVIDUAL', 'COMPANY']:
+            create_kwargs = {'name': f'{subtype} Customer', 'subtype': subtype}
+            if subtype == 'COMPANY':
+                create_kwargs['company_name'] = f'{subtype} Company'
+                create_kwargs['business_license'] = 'BL123456'
+            customer = CustomerFactory.create(**create_kwargs)
+            self.assertEqual(customer.subtype, subtype)
 
 
 class SalesInvoiceModelTests(BaseTestCase):
@@ -399,7 +410,7 @@ class CustomerPaymentModelTests(BaseTestCase):
 
     def test_customer_payment_str_representation(self):
         """Test payment string representation."""
-        customer = CustomerFactory.create(name='John Doe')
+        customer = CustomerFactory.create(first_name='John', last_name='Doe')
         payment = CustomerPaymentFactory.create(
             customer=customer,
             amount=Decimal('500.00')

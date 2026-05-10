@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from datetime import date
 from typing import Optional
@@ -15,6 +16,8 @@ from payments.models import (
 from accounting.services.journal_engine import JournalEngine
 from accounting.models import Account
 
+logger = logging.getLogger('erp.payments')
+
 
 class PaymentEngine:
     """
@@ -28,6 +31,16 @@ class PaymentEngine:
     - Fee calculation
     - Settlement tracking
     - Journal entry creation
+
+    IMPORTANT: This creates journal entries for money movement (cash flow).
+    The sales/purchase invoice accounting is handled by SalesAccountingService
+    and PurchaseAccountingService respectively - they handle the receivable/
+    payable recognition (AR/AP) and revenue/expense recognition.
+
+    This separation ensures:
+    - Invoice dispatch (SalesAccountingService) -> Creates SALE entry (AR, Revenue, Tax, COGS)
+    - Payment received (PaymentEngine) -> Creates RECEIPT entry (Cash, AR reduction)
+    - Both are necessary and create different journal entries for different events.
     """
 
     @staticmethod
@@ -455,8 +468,38 @@ class PaymentEngine:
     # ---- Journal Entry Helpers ----
 
     @staticmethod
+    def _validate_required_accounts() -> list:
+        """Validate that required accounting accounts exist.
+        
+        Returns list of missing account codes if any are missing.
+        """
+        missing = []
+        
+        required_accounts = {
+            '1000': 'Cash/Bank',  # Primary payment account
+            '1200': 'Accounts Receivable',
+            '1300': 'Inventory',
+            '2100': 'Tax Payable',
+            '4100': 'Sales Revenue',
+            '5100': 'COGS',
+            '6100': 'Operating Expenses',
+        }
+        
+        for code, name in required_accounts.items():
+            if not Account.objects.filter(code=code, is_active=True).exists():
+                missing.append(f"{code} ({name})")
+        
+        return missing
+
+    @staticmethod
     def _create_receipt_journal_entry(txn: FinancialTransaction) -> dict:
         """Create journal entry for a receipt."""
+        
+        missing_accounts = PaymentEngine._validate_required_accounts()
+        if missing_accounts:
+            logger.error(f"[PAYMENTS] Missing required accounts for receipt {txn.transaction_number}: {missing_accounts}")
+            return {'success': False, 'errors': [f'Missing required accounting accounts: {", ".join(missing_accounts)}']}
+        
         lines = [
             {
                 'account_id': txn.destination_account.accounting_account_id,
@@ -467,59 +510,41 @@ class PaymentEngine:
         ]
 
         if txn.fee > 0:
-            # Fee expense
-            try:
-                fee_account = Account.objects.filter(
-                    account_type='EXPENSE',
-                    account_category='OPERATING_EXPENSE'
-                ).first()
-                if fee_account:
-                    lines.append({
-                        'account_id': fee_account.id,
-                        'debit': txn.fee,
-                        'credit': 0,
-                        'description': f"Transaction fee for {txn.transaction_number}"
-                    })
-            except Exception:
-                pass
+            fee_account = Account.objects.filter(
+                account_type='EXPENSE',
+                account_category='OPERATING_EXPENSE'
+            ).first()
+            if not fee_account:
+                return {'success': False, 'errors': ['Fee expense account not found']}
+            lines.append({
+                'account_id': fee_account.id,
+                'debit': txn.fee,
+                'credit': 0,
+                'description': f"Transaction fee for {txn.transaction_number}"
+            })
 
-        # Credit party
         if txn.party_type == 'CUSTOMER':
-            # Credit Accounts Receivable
-            try:
-                ar_account = Account.objects.get(code='1130', is_active=True)
-                lines.append({
-                    'account_id': ar_account.id,
-                    'debit': 0,
-                    'credit': txn.amount,
-                    'description': f"AR reduction - {txn.party_name}"
-                })
-            except Account.DoesNotExist:
-                # Fallback to the first asset account if 1130 not found
-                ar_account = Account.objects.filter(account_type='ASSET', is_active=True).first()
-                if not ar_account:
-                    return {'success': False, 'errors': ['Accounts Receivable account not found']}
-                lines.append({
-                    'account_id': ar_account.id,
-                    'debit': 0,
-                    'credit': txn.amount,
-                    'description': f"AR reduction - {txn.party_name}"
-                })
+            ar_account = Account.objects.filter(code='1200', is_active=True).first()
+            if not ar_account:
+                return {'success': False, 'errors': ['Accounts Receivable account (1200) not found']}
+            lines.append({
+                'account_id': ar_account.id,
+                'debit': 0,
+                'credit': txn.amount,
+                'description': f"AR reduction - {txn.party_name}"
+            })
         else:
-            # Default to revenue or suspense
-            try:
-                revenue_account = Account.objects.filter(
-                    account_type='REVENUE'
-                ).first()
-                if revenue_account:
-                    lines.append({
-                        'account_id': revenue_account.id,
-                        'debit': 0,
-                        'credit': txn.amount,
-                        'description': f"Revenue - {txn.description}"
-                    })
-            except Exception:
-                pass
+            revenue_account = Account.objects.filter(
+                account_type='REVENUE'
+            ).first()
+            if not revenue_account:
+                return {'success': False, 'errors': ['Revenue account not found']}
+            lines.append({
+                'account_id': revenue_account.id,
+                'debit': 0,
+                'credit': txn.amount,
+                'description': f"Revenue - {txn.description}"
+            })
 
         if len(lines) < 2:
             return {'success': False, 'errors': ['Cannot create balanced journal entry']}
@@ -530,59 +555,53 @@ class PaymentEngine:
             lines=lines,
             entry_date=txn.transaction_date,
             reference=txn.reference_number or txn.transaction_number,
-            auto_post=True
+            auto_post=True,
+            source_module='payments',
+            source_document=str(txn.id),
+            change_reason=f"Receipt {txn.transaction_number}"
         )
 
     @staticmethod
     def _create_payment_journal_entry(txn: FinancialTransaction) -> dict:
         """Create journal entry for a payment."""
+        
+        missing_accounts = PaymentEngine._validate_required_accounts()
+        if missing_accounts:
+            logger.error(f"[PAYMENTS] Missing required accounts for payment {txn.transaction_number}: {missing_accounts}")
+            return {'success': False, 'errors': [f'Missing required accounting accounts: {", ".join(missing_accounts)}']}
+        
         lines = []
 
-        # Debit: expense account (where money is going)
-        try:
-            expense_account = Account.objects.filter(
+        expense_account = Account.objects.filter(
+            account_type='EXPENSE',
+            account_category='OPERATING_EXPENSE'
+        ).first()
+        if not expense_account:
+            expense_account = Account.objects.filter(account_type='EXPENSE', is_active=True).first()
+        
+        if not expense_account:
+            return {'success': False, 'errors': ['Expense account not found for payment journal entry']}
+        
+        lines.append({
+            'account_id': expense_account.id,
+            'debit': txn.amount,
+            'credit': 0,
+            'description': f"Payment {txn.transaction_number} - {txn.description}"
+        })
+
+        if txn.fee > 0:
+            fee_account = Account.objects.filter(
                 account_type='EXPENSE',
                 account_category='OPERATING_EXPENSE'
             ).first()
-            if expense_account:
+            if fee_account:
                 lines.append({
-                    'account_id': expense_account.id,
-                    'debit': txn.amount,
+                    'account_id': fee_account.id,
+                    'debit': txn.fee,
                     'credit': 0,
-                    'description': f"Payment {txn.transaction_number} - {txn.description}"
+                    'description': f"Transaction fee for {txn.transaction_number}"
                 })
-            else:
-                # Fallback to first expense account if specific category not found
-                expense_account = Account.objects.filter(account_type='EXPENSE', is_active=True).first()
-                if expense_account:
-                    lines.append({
-                        'account_id': expense_account.id,
-                        'debit': txn.amount,
-                        'credit': 0,
-                        'description': f"Payment {txn.transaction_number} - {txn.description}"
-                    })
-                else:
-                    return {'success': False, 'errors': ['Expense account not found for payment journal entry']}
-        except Exception:
-            return {'success': False, 'errors': ['Expense account not found for payment journal entry']}
 
-        if txn.fee > 0:
-            try:
-                fee_account = Account.objects.filter(
-                    account_type='EXPENSE',
-                    account_category='OPERATING_EXPENSE'
-                ).first()
-                if fee_account:
-                    lines.append({
-                        'account_id': fee_account.id,
-                        'debit': txn.fee,
-                        'credit': 0,
-                        'description': f"Transaction fee for {txn.transaction_number}"
-                    })
-            except Exception:
-                pass
-
-        # Credit: source account (where money is coming from)
         lines.append({
             'account_id': txn.source_account.accounting_account_id,
             'debit': 0,
@@ -599,12 +618,21 @@ class PaymentEngine:
             lines=lines,
             entry_date=txn.transaction_date,
             reference=txn.reference_number or txn.transaction_number,
-            auto_post=True
+            auto_post=True,
+            source_module='payments',
+            source_document=str(txn.id),
+            change_reason=f"Payment {txn.transaction_number}"
         )
 
     @staticmethod
     def _create_transfer_journal_entry(txn: FinancialTransaction) -> dict:
         """Create journal entry for a transfer."""
+        
+        missing_accounts = PaymentEngine._validate_required_accounts()
+        if missing_accounts:
+            logger.error(f"[PAYMENTS] Missing required accounts for transfer {txn.transaction_number}: {missing_accounts}")
+            return {'success': False, 'errors': [f'Missing required accounting accounts: {", ".join(missing_accounts)}']}
+        
         lines = [
             {
                 'account_id': txn.destination_account.accounting_account_id,
@@ -633,8 +661,8 @@ class PaymentEngine:
                         'credit': 0,
                         'description': f"Transfer fee for {txn.transaction_number}"
                     })
-            except Exception:
-                pass
+            except Exception as e:
+                logger.error(f"[PAYMENTS] Fee account lookup failed for transfer {txn.transaction_number}: {e}")
 
         return JournalEngine.create_entry(
             entry_type='TRANSFER',
@@ -642,7 +670,10 @@ class PaymentEngine:
             lines=lines,
             entry_date=txn.transaction_date,
             reference=txn.transaction_number,
-            auto_post=True
+            auto_post=True,
+            source_module='payments',
+            source_document=str(txn.id),
+            change_reason=f"Transfer {txn.transaction_number}"
         )
 
     @staticmethod
