@@ -5,6 +5,7 @@ import time
 import threading
 import logging
 import traceback
+from collections import defaultdict, deque
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
 from typing import Any, Callable, Optional, TypeVar
@@ -308,6 +309,7 @@ def safe_execute(fn: Callable[..., T],
                 'context': log_context,
             }}
         )
+        record_error(exc_type=type(e).__name__, module=log_context, category='ui')
         return fallback_return
 
 
@@ -340,6 +342,7 @@ class SafeBoundary:
                     'context': self._context,
                 }}
             )
+            record_error(exc_type=exc_type.__name__, module=self._context, category='ui')
             self.exception = exc_val
             return True  # exception is suppressed
         return False
@@ -415,3 +418,216 @@ def generate_correlation_id(prefix: str = "op") -> str:
     with _corr_id_lock:
         _corr_id_counter += 1
         return f"{prefix}-{_corr_id_counter}"
+
+
+# ============================================================
+# Phase 14 — Error Aggregation + Pattern Detection + Telemetry
+# ============================================================
+
+_MAX_ERROR_RECORDS = 500
+_MAX_AUTH_RECORDS = 100
+_MAX_API_RECORDS = 200
+_MAX_UI_RECORDS = 100
+_MAX_API_TIMES = 200
+_MAX_SCREEN_TIMES = 100
+
+_BURST_AUTH_WINDOW = 60
+_BURST_API_WINDOW = 60
+_BURST_UI_WINDOW = 60
+_BURST_AUTH_THRESHOLD = 5
+_BURST_API_THRESHOLD = 10
+_BURST_UI_THRESHOLD = 3
+
+
+class _ErrorAggregator:
+    """Lightweight, bounded, in-memory error aggregation for operational intelligence."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._errors = deque(maxlen=_MAX_ERROR_RECORDS)
+        self._type_counts: dict = defaultdict(int)
+        self._module_counts: dict = defaultdict(int)
+        self._endpoint_counts: dict = defaultdict(int)
+        self._auth_failures = deque(maxlen=_MAX_AUTH_RECORDS)
+        self._api_failures = deque(maxlen=_MAX_API_RECORDS)
+        self._ui_errors = deque(maxlen=_MAX_UI_RECORDS)
+
+    def record_error(self, exc_type='', module='', endpoint='', category=''):
+        with self._lock:
+            now = time.time()
+            self._errors.append({
+                'ts': now, 'type': exc_type, 'module': module,
+                'endpoint': endpoint, 'category': category,
+            })
+            if exc_type:
+                self._type_counts[exc_type] += 1
+            if module:
+                self._module_counts[module] += 1
+            if endpoint:
+                self._endpoint_counts[endpoint] += 1
+            if category == 'auth':
+                self._auth_failures.append(now)
+            elif category == 'api':
+                self._api_failures.append(now)
+            elif category == 'ui':
+                self._ui_errors.append(now)
+
+    def detect_bursts(self) -> dict:
+        with self._lock:
+            now = time.time()
+            result: dict = {}
+            auth_n = sum(1 for t in self._auth_failures if t > now - _BURST_AUTH_WINDOW)
+            if auth_n >= _BURST_AUTH_THRESHOLD:
+                result['auth_failure_burst'] = auth_n
+            api_n = sum(1 for t in self._api_failures if t > now - _BURST_API_WINDOW)
+            if api_n >= _BURST_API_THRESHOLD:
+                result['api_failure_burst'] = api_n
+            ui_n = sum(1 for t in self._ui_errors if t > now - _BURST_UI_WINDOW)
+            if ui_n >= _BURST_UI_THRESHOLD:
+                result['ui_error_burst'] = ui_n
+            return result
+
+    def generate_insight_report(self) -> dict:
+        with self._lock:
+            now = time.time()
+            cutoff = now - 300  # 5-minute recency window
+
+            top_errors = sorted(self._type_counts.items(), key=lambda x: -x[1])[:5]
+            top_module = max(self._module_counts.items(), key=lambda x: x[1]) if self._module_counts else ('', 0)
+            top_endpoint = max(self._endpoint_counts.items(), key=lambda x: x[1]) if self._endpoint_counts else ('', 0)
+
+            recent_auth = sum(1 for t in self._auth_failures if t > cutoff)
+            total_auth = len(self._auth_failures) or 1
+            auth_ratio = round(recent_auth / total_auth, 2)
+
+            recent_ui = sum(1 for t in self._ui_errors if t > cutoff)
+
+            score = 100
+            if recent_auth:
+                score -= min(recent_auth * 5, 30)
+            if recent_ui:
+                score -= min(recent_ui * 10, 30)
+            recent_total = sum(1 for e in self._errors if e['ts'] > cutoff)
+            if recent_total > 10:
+                score -= min((recent_total - 10) * 2, 20)
+            score = max(0, min(100, score))
+
+            return {
+                'top_recurring_errors': top_errors,
+                'most_failing_module': {'module': top_module[0], 'count': top_module[1]},
+                'most_failing_endpoint': {'endpoint': top_endpoint[0], 'count': top_endpoint[1]},
+                'auth_failure_ratio': auth_ratio,
+                'ui_crash_count': recent_ui,
+                'stability_score': score,
+                'total_tracked_errors': len(self._errors),
+            }
+
+
+_aggregator_instance: Optional[_ErrorAggregator] = None
+_aggregator_init_lock = threading.Lock()
+
+
+def _get_aggregator() -> _ErrorAggregator:
+    global _aggregator_instance
+    if _aggregator_instance is None:
+        with _aggregator_init_lock:
+            if _aggregator_instance is None:
+                _aggregator_instance = _ErrorAggregator()
+    return _aggregator_instance
+
+
+def record_error(exc_type='', module='', endpoint='', category=''):
+    """Record an error in the aggregation store (never crashes)."""
+    try:
+        _get_aggregator().record_error(exc_type, module, endpoint, category)
+    except Exception:
+        pass
+
+
+def detect_error_bursts() -> dict:
+    """Detect active error bursts (auth, API, UI). Returns dict of burst types."""
+    try:
+        return _get_aggregator().detect_bursts()
+    except Exception:
+        return {}
+
+
+def generate_operational_insight_report() -> dict:
+    """Lightweight operational insight report from in-memory aggregated data."""
+    try:
+        return _get_aggregator().generate_insight_report()
+    except Exception:
+        return {'error': 'report generation failed', 'stability_score': 0}
+
+
+# --- Performance Telemetry (bounded, lightweight) ---
+
+_SLOW_API_THRESHOLD_MS = 5000
+_SLOW_UI_THRESHOLD_MS = 3000
+
+
+class _PerformanceTelemetry:
+    """Bounded in-memory performance tracking for API and UI operations."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._api_times = deque(maxlen=_MAX_API_TIMES)
+        self._screen_loads = deque(maxlen=_MAX_SCREEN_TIMES)
+
+    def record_api_time(self, endpoint: str, duration_ms: float):
+        with self._lock:
+            self._api_times.append((endpoint, duration_ms, time.time()))
+            if duration_ms > _SLOW_API_THRESHOLD_MS:
+                log_warning_once(
+                    get_logger('perf'),
+                    f"Slow API: {endpoint} took {duration_ms:.0f}ms",
+                    dedup_key=f"slow_api_{endpoint}",
+                    tags=['perf', 'slow_api'],
+                )
+
+    def record_screen_load(self, screen: str, duration_ms: float):
+        with self._lock:
+            self._screen_loads.append((screen, duration_ms, time.time()))
+            if duration_ms > _SLOW_UI_THRESHOLD_MS:
+                log_warning_once(
+                    get_logger('perf'),
+                    f"Slow screen: {screen} loaded in {duration_ms:.0f}ms",
+                    dedup_key=f"slow_ui_{screen}",
+                    tags=['perf', 'slow_ui'],
+                )
+
+    def get_slow_operations(self, min_threshold_ms: float = 3000) -> dict:
+        with self._lock:
+            return {
+                'slow_api': [(e, d) for e, d, _ in self._api_times if d > min_threshold_ms][-10:],
+                'slow_ui': [(s, d) for s, d, _ in self._screen_loads if d > min_threshold_ms][-10:],
+            }
+
+
+_perf_instance: Optional[_PerformanceTelemetry] = None
+_perf_init_lock = threading.Lock()
+
+
+def _get_perf_telemetry() -> _PerformanceTelemetry:
+    global _perf_instance
+    if _perf_instance is None:
+        with _perf_init_lock:
+            if _perf_instance is None:
+                _perf_instance = _PerformanceTelemetry()
+    return _perf_instance
+
+
+def record_api_time(endpoint: str, duration_ms: float):
+    """Record an API response time (never crashes)."""
+    try:
+        _get_perf_telemetry().record_api_time(endpoint, duration_ms)
+    except Exception:
+        pass
+
+
+def record_screen_load(screen: str, duration_ms: float):
+    """Record a UI screen load time (never crashes)."""
+    try:
+        _get_perf_telemetry().record_screen_load(screen, duration_ms)
+    except Exception:
+        pass

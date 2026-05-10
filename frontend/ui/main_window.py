@@ -1,5 +1,6 @@
 import sys
 import os
+import time
 from PySide6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                                  QFrame, QLabel, QStackedWidget, QStatusBar, QApplication, QMessageBox,
                                  QMenuBar, QMenu, QSizePolicy)
@@ -54,7 +55,7 @@ from ui.components.loading_spinner import LoadingOverlay
 from ui.components.navigation_header import NavigationHeader
 from ui.theme.theme_manager import ThemeManager
 from theme.theme_engine import ThemeEngine
-from utils.logger import get_logger, set_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id
+from utils.logger import get_logger, set_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id, record_screen_load, record_error, detect_error_bursts, generate_operational_insight_report
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 
 log = get_logger('ui')
@@ -175,6 +176,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.health_label.setText("● Error")
             self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: 15px; font-weight: bold;")
+            record_error(exc_type=type(e).__name__, module='startup_health', category='api')
             log.warning(f"Startup health check error: {e}",
                          extra={'extra_fields': {'tags': ['system', 'startup', 'error']}})
 
@@ -520,6 +522,7 @@ class MainWindow(QMainWindow):
 
     def change_page(self, index, page_title):
         """Change the current page based on sidebar selection."""
+        _start = time.time()
         log.debug(f"Navigate to page {index}: {page_title.strip()}",
                    extra={'extra_fields': {'tags': ['ui', 'navigation']}})
         set_active_screen(page_title.strip())
@@ -579,6 +582,9 @@ class MainWindow(QMainWindow):
             safe_execute(self.licensing_screen.load_license_info,
                          log_context="change_page:licensing", tags=['ui', 'navigation', corr_id])
 
+        _duration = (time.time() - _start) * 1000
+        record_screen_load(page_title.strip(), _duration)
+
     # --- Navigation Methods (Phase 5-6) ---
     def _update_nav_header(self, index: int, page_title: str):
         """Update navigation header visibility and state."""
@@ -636,26 +642,31 @@ class MainWindow(QMainWindow):
     
     def _go_back(self):
         """Navigate back in history."""
+        with SafeBoundary(log_context="go_back", tags=['ui', 'navigation']):
+            self._do_go_back()
+
+    def _do_go_back(self):
+        """Inner implementation of back navigation."""
         if self.navigation_history:
-            # Pop last entry
             prev_index, prev_title = self.navigation_history.pop()
-            # Temporarily disable history tracking
             self._disable_history = True
             self.pages.setCurrentIndex(prev_index)
             self.header.setText(prev_title)
             self._disable_history = False
-            # Update nav header
             current_idx = self.pages.currentIndex()
             self._update_nav_header(current_idx, prev_title)
     
     def _go_home(self):
         """Navigate to dashboard (home)."""
-        # Temporarily disable history tracking
+        with SafeBoundary(log_context="go_home", tags=['ui', 'navigation']):
+            self._do_go_home()
+
+    def _do_go_home(self):
+        """Inner implementation of home navigation."""
         self._disable_history = True
         self.pages.setCurrentIndex(0)
         self.header.setText("Pharmacy ERP Dashboard")
         self._disable_history = False
-        # Update nav header
         self._update_nav_header(0, "Pharmacy ERP Dashboard")
     
     def _close_screen(self):
@@ -1058,6 +1069,10 @@ class MainWindow(QMainWindow):
     
     def navigate_to(self, page_id):
         """Navigate to a specific page."""
+        with SafeBoundary(log_context="navigate_to", tags=['ui', 'navigation']):
+            self._do_navigate(page_id)
+
+    def _do_navigate(self, page_id):
         page_map = {
             "dashboard": 0,
             "products": 1,
@@ -1156,16 +1171,17 @@ class MainWindow(QMainWindow):
     
     def refresh_current_view(self):
         """Refresh the current view data."""
+        with SafeBoundary(log_context="refresh_current_view", tags=['ui', 'navigation']):
+            self._do_refresh_current_view()
+
+    def _do_refresh_current_view(self):
         index = self.pages.currentIndex()
-        
-        # Reload data for current screen
         if hasattr(self, 'product_screen') and index == 2:
             self.product_screen.load_products()
         elif hasattr(self, 'customer_screen') and index == 8:
             self.customer_screen.load_customers()
         elif hasattr(self, 'supplier_screen') and index == 9:
             self.supplier_screen.load_suppliers()
-        
         self.status_bar.showMessage("Refreshed", 2000)
         
     def resizeEvent(self, event):

@@ -12,7 +12,7 @@ from security.obfuscator import Obfuscator
 from security.encrypted_config import EncryptedConfig
 from security.tamper_detector import TamperDetector
 from api.client import APIClient
-from utils.logger import get_logger, init_logging, shutdown as log_shutdown, set_active_screen, capture_health_snapshot, DiagnosticContext
+from utils.logger import get_logger, init_logging, shutdown as log_shutdown, set_active_screen, capture_health_snapshot, DiagnosticContext, record_error
 from security.session_store import load_session as session_store_load, _migrate_from_legacy
 
 log = get_logger(__name__)
@@ -83,6 +83,7 @@ def global_excepthook(exc_type, exc_value, exc_traceback):
             extra['extra_fields']['health'] = hs
         except Exception:
             pass
+        record_error(exc_type=exc_type.__name__, module='global_excepthook', category='ui')
         logger.critical(f"Unhandled exception: {exc_type.__name__}: {exc_value} | screen={screen}", extra=extra)
         logger.debug(f"Full traceback:\n{tb_text}", extra={'extra_fields': {'tags': ['crash']}})
     except Exception:
