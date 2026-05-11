@@ -21,6 +21,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.conf.urls.static import static
 from core.operations import views as ops_views
+from core.operations.views import decisions_list, decisions_detail, decisions_evaluate_event
 from core.operations.control_center import (
     control_center, quick_stats, health_live, financial_summary,
     inventory_summary, operations_summary, hr_summary,

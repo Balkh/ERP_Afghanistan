@@ -1,14 +1,14 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                               QLabel, QFrame, QPushButton, QScrollArea,
-                               QGroupBox, QProgressBar)
-from PySide6.QtCore import Qt, QThread, Signal
+                                QLabel, QFrame, QPushButton, QScrollArea,
+                                QGroupBox, QProgressBar)
+from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont
 from api.client import APIClient
 from datetime import date
 
 # Design tokens
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)  # noqa: F401
 
 
 class AccountingDashboard(QWidget):
@@ -19,6 +19,7 @@ class AccountingDashboard(QWidget):
         self.api_client = APIClient()
         self.setup_ui()
         self.load_data()
+        self._start_reconciliation_timer()
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -35,6 +36,9 @@ class AccountingDashboard(QWidget):
 
         self.summary_cards = self._create_summary_cards()
         content_layout.addWidget(self.summary_cards)
+
+        self.inventory_valuation = self._create_inventory_valuation()
+        content_layout.addWidget(self.inventory_valuation)
 
         self.quick_actions = self._create_quick_actions()
         content_layout.addWidget(self.quick_actions)
@@ -62,6 +66,7 @@ class AccountingDashboard(QWidget):
             ("ar_outstanding", "AR Outstanding", "0.00", COLOR_PRIMARY),
             ("ap_outstanding", "AP Outstanding", "0.00", COLOR_TEXT_SECONDARY),
             ("journal_count", "Journal Entries", "0", COLOR_TEXT_MUTED),
+            ("reconciliation_status", "Reconciliation", "Checking...", COLOR_TEXT_MUTED),
         ]
 
         for i, (key, title, value, color) in enumerate(card_configs):
@@ -102,6 +107,45 @@ class AccountingDashboard(QWidget):
         """)
 
         return frame
+
+    def _create_inventory_valuation(self):
+        group = QGroupBox("Inventory Valuation")
+        group.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        layout = QVBoxLayout(group)
+
+        self.inventory_value_label = QLabel("Loading...")
+        self.inventory_value_label.setFont(QFont("Segoe UI", 14))
+        layout.addWidget(self.inventory_value_label)
+
+        self.inventory_diff_label = QLabel("")
+        self.inventory_diff_label.setFont(QFont("Segoe UI", 10))
+        layout.addWidget(self.inventory_diff_label)
+
+        return group
+
+    def _load_inventory_valuation(self):
+        try:
+            result = self.api_client.get("/api/inventory/stock-movements/stock_valuation/")
+            if result:
+                total_value = result.get("total_inventory_value", "0")
+                accounting_balance = result.get("accounting_inventory_balance", "N/A")
+                diff = result.get("reconciliation_diff", "N/A")
+
+                self.inventory_value_label.setText(f"AFN {float(total_value):,.2f}")
+
+                if diff != "N/A":
+                    diff_val = float(diff)
+                    if abs(diff_val) < 0.02:
+                        self.inventory_diff_label.setText("✓ In sync with accounting")
+                        self.inventory_diff_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
+                    else:
+                        self.inventory_diff_label.setText(f"⚠ Diff: AFN {diff_val:,.2f}")
+                        self.inventory_diff_label.setStyleSheet(f"color: {COLOR_WARNING};")
+                else:
+                    self.inventory_diff_label.setText("Accounting balance unavailable")
+        except Exception as e:
+            print(f"Error loading inventory valuation: {e}")
+            self.inventory_value_label.setText("N/A")
 
     def _create_quick_actions(self):
         group = QGroupBox("Quick Actions")
@@ -167,6 +211,7 @@ class AccountingDashboard(QWidget):
     def load_data(self):
         self._load_summary_data()
         self._load_recent_entries()
+        self._load_inventory_valuation()
 
     def _load_summary_data(self):
         try:
@@ -209,6 +254,38 @@ class AccountingDashboard(QWidget):
                 self._set_card_value("journal_count", entries["count"])
         except Exception:
             pass
+
+        # Load reconciliation status
+        self._load_reconciliation_status()
+
+    def _load_reconciliation_status(self):
+        """Load accounting reconciliation status and update indicator."""
+        try:
+            result = self.api_client.get("/api/accounting/accounts/reconciliation/")
+            if result:
+                is_healthy = result.get("is_healthy", False)
+                summary = result.get("summary", {})
+                self._set_card_value(
+                    "reconciliation_status",
+                    f"{summary.get('passed', 0)}/{summary.get('total_checks', 0)}"
+                )
+                # Update card color based on health
+                if "reconciliation_status" in self.card_labels:
+                    label = self.card_labels["reconciliation_status"]
+                    if is_healthy:
+                        label.setStyleSheet(
+                            f"color: {COLOR_SUCCESS}; font-weight: bold; font-size: 20px;"
+                        )
+                    else:
+                        label.setStyleSheet(
+                            f"color: {COLOR_DANGER}; font-weight: bold; font-size: 20px;"
+                        )
+        except Exception as e:
+            print(f"Error loading reconciliation status: {e}")
+            try:
+                self._set_card_value("reconciliation_status", "N/A")
+            except Exception:
+                pass
 
     def _set_card_value(self, key, value):
         if key in self.card_labels:

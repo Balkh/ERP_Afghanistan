@@ -367,6 +367,7 @@ class Account(CompanyScopedMixin, TimeStampedUUIDModel):
 class JournalEntry(CompanyScopedMixin, TimeStampedUUIDModel):
     """
     Model representing a journal entry in the accounting system.
+    Includes full audit trail for enterprise accountability.
     """
     objects = CompanyScopedManager()
     ENTRY_TYPE_CHOICES = [
@@ -378,6 +379,11 @@ class JournalEntry(CompanyScopedMixin, TimeStampedUUIDModel):
         ('TRANSFER', _('Transfer')),
         ('OPENING', _('Opening Balance')),
         ('CLOSING', _('Closing Balance')),
+        ('INVENTORY_IN', _('Inventory Receipt')),
+        ('INVENTORY_OUT', _('Inventory Issue')),
+        ('INVENTORY_ADJ', _('Inventory Adjustment')),
+        ('PAYROLL', _('Payroll')),
+        ('REVERSAL', _('Reversal')),
     ]
 
     entry_number = models.CharField(
@@ -404,6 +410,57 @@ class JournalEntry(CompanyScopedMixin, TimeStampedUUIDModel):
     )
     is_active = models.BooleanField(default=True, verbose_name=_('Is Active'))
 
+    # Audit trail
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='journal_entries_created',
+        verbose_name=_('Created By')
+    )
+    posted_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='journal_entries_posted',
+        verbose_name=_('Posted By')
+    )
+    reversed_by_entry = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reverses_entry',
+        verbose_name=_('Reversed By')
+    )
+    source_module = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name=_('Source Module'),
+        help_text=_('Module that created this entry (e.g., sales, purchases, inventory, payroll)')
+    )
+    source_document = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name=_('Source Document'),
+        help_text=_('Reference to source document ID (e.g., invoice UUID)')
+    )
+    change_reason = models.TextField(
+        blank=True,
+        verbose_name=_('Change Reason'),
+        help_text=_('Reason for creation or modification')
+    )
+    original_entry = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reversed_entries',
+        verbose_name=_('Original Entry (for reversals)')
+    )
+
     class Meta:
         verbose_name = _('Journal Entry')
         verbose_name_plural = _('Journal Entries')
@@ -413,6 +470,9 @@ class JournalEntry(CompanyScopedMixin, TimeStampedUUIDModel):
             models.Index(fields=['entry_date']),
             models.Index(fields=['entry_type']),
             models.Index(fields=['is_posted']),
+            models.Index(fields=['source_module']),
+            models.Index(fields=['source_document']),
+            models.Index(fields=['created_by']),
         ]
 
     def __str__(self):
@@ -433,25 +493,26 @@ class JournalEntry(CompanyScopedMixin, TimeStampedUUIDModel):
         """Check if entry is balanced (debits = credits)."""
         return self.total_debit == self.total_credit
 
+    @property
+    def is_reversed(self):
+        """Check if this entry has been reversed."""
+        return self.reverses_entry.exists()
+
     def save(self, *args, **kwargs):
         """Override save with fiscal period locking validation."""
-        # Check if entry date falls in a locked period
         if self.entry_date and not self._state.adding:
-            # Update case - check if period is locked
             old_entry = JournalEntry.objects.filter(id=self.id).first()
             if old_entry and old_entry.entry_date != self.entry_date:
-                # Date changed - check new date
                 if is_period_locked(self.entry_date):
                     raise ValidationError(
                         _('Cannot modify entry: the fiscal period is locked.')
                     )
         elif self.entry_date and self._state.adding:
-            # Create case - check period for new entry
             if is_period_locked(self.entry_date):
                 raise ValidationError(
                     _('Cannot create entry: the fiscal period is locked.')
                 )
-        
+
         super().save(*args, **kwargs)
 
     def can_modify(self):
@@ -462,10 +523,88 @@ class JournalEntry(CompanyScopedMixin, TimeStampedUUIDModel):
             return False
         return True
 
+    def can_reverse(self):
+        """Check if this entry can be reversed."""
+        if not self.is_posted:
+            return False
+        if self.entry_type == 'REVERSAL':
+            return False
+        return not self.is_reversed
+
+
+class JournalEventLog(TimeStampedUUIDModel):
+    """
+    Lightweight event log for journal entry lifecycle.
+    Provides forensic traceability without performance overhead.
+    """
+    EVENT_TYPE_CHOICES = [
+        ('CREATED', 'Created'),
+        ('MODIFIED', 'Modified'),
+        ('POSTED', 'Posted'),
+        ('UNPOSTED', 'Unposted'),
+        ('REVERSED', 'Reversed'),
+        ('CANCELLED', 'Cancelled'),
+        ('VIEWED', 'Viewed'),
+    ]
+
+    entry = models.ForeignKey(
+        JournalEntry,
+        on_delete=models.CASCADE,
+        related_name='event_logs',
+        verbose_name=_('Journal Entry')
+    )
+    event_type = models.CharField(
+        max_length=20,
+        choices=EVENT_TYPE_CHOICES,
+        verbose_name=_('Event Type')
+    )
+    user = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='journal_events',
+        verbose_name=_('User')
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Timestamp')
+    )
+    reference = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name=_('Reference')
+    )
+    notes = models.TextField(
+        blank=True,
+        verbose_name=_('Notes')
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name=_('IP Address')
+    )
+
+    class Meta:
+        verbose_name = _('Journal Event Log')
+        verbose_name_plural = _('Journal Event Logs')
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['entry']),
+            models.Index(fields=['event_type']),
+            models.Index(fields=['user']),
+            models.Index(fields=['timestamp']),
+        ]
+
+    def __str__(self):
+        user_str = str(self.user) if self.user else 'System'
+        return f"{self.entry.entry_number} - {self.event_type} by {user_str} at {self.timestamp}"
+
 
 class JournalEntryLine(TimeStampedUUIDModel):
     """
     Model representing a line item in a journal entry.
+    Includes audit field for forensic traceability.
     """
     entry = models.ForeignKey(
         JournalEntry,
@@ -495,6 +634,14 @@ class JournalEntryLine(TimeStampedUUIDModel):
         max_length=255,
         blank=True,
         verbose_name=_('Line Description')
+    )
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='journal_lines_created',
+        verbose_name=_('Created By')
     )
 
     class Meta:

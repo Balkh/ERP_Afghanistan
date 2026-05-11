@@ -93,7 +93,7 @@ class StockIntegrationService:
         # Get available batches
         if batch_id:
             # Allocate from specific batch
-            batches = Batch.objects.filter(
+            batches = Batch.objects.select_for_update().filter(
                 id=batch_id,
                 remaining_quantity__gt=0,
                 is_active=True
@@ -101,7 +101,7 @@ class StockIntegrationService:
         else:
             batches = StockIntegrationService.get_available_batches(
                 product, warehouse, exclude_expired=True, selection_mode=selection_mode
-            )
+            ).select_for_update()
         
         if not batches.exists():
             result.errors.append(f'No available stock for product {product}')

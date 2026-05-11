@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
@@ -36,7 +37,7 @@ class PurchaseAccountingService:
         Debit: Tax Receivable (tax)
         Credit: Accounts Payable (total_amount)
         """
-        expense_amount = invoice.subtotal - invoice.tax if invoice.tax > 0 else invoice.subtotal
+        expense_amount = invoice.subtotal
         
         lines = [
             {
@@ -68,7 +69,10 @@ class PurchaseAccountingService:
             lines=lines,
             entry_date=invoice.invoice_date,
             reference=invoice.invoice_number,
-            auto_post=True
+            auto_post=True,
+            source_module='purchases',
+            source_document=str(invoice.id),
+            change_reason=f'Purchase invoice {invoice.invoice_number}'
         )
         
         if result.get('success'):
@@ -386,6 +390,3 @@ class SupplierPaymentViewSet(viewsets.ModelViewSet):
         """Create payment, update balances, and create journal entry."""
         payment = serializer.save()
         payment.update_supplier_balance()
-        
-        # Create accounting journal entry for the payment
-        PurchaseAccountingService.create_payment_journal_entry(payment)

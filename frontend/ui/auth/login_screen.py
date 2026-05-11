@@ -8,6 +8,10 @@ from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QFont, QPixmap, QPainter, QColor, QBrush
 from api.client import APIClient
 from api.endpoints import get_endpoint
+from security.session_store import save_session as encrypted_save_session, load_session as encrypted_load_session
+from utils.logger import get_logger
+
+log = get_logger('auth')
 
 # Design system imports
 from ui.constants import (
@@ -224,6 +228,8 @@ class LoginDialog(QDialog):
         """Perform actual login API call."""
         try:
             endpoint = get_endpoint("login") or "/api/auth/login/"
+            log.info(f"Login attempt: user={username}",
+                     extra={'extra_fields': {'tags': ['auth', 'login']}})
             response = self.api_client.post(endpoint, {
                 "username": username,
                 "password": password
@@ -233,17 +239,20 @@ class LoginDialog(QDialog):
             
             if response and isinstance(response, dict):
                 if response.get("success"):
-                    token = response.get("token") or response.get("access")
-                    user_data = response.get("user", {})
-                    
+                    data = response.get("data", response)
+                    self.api_client.set_auth_data(data)
+                    user_data = data.get("user", {})
+                    token = self.api_client._auth_token
+
                     if token:
-                        self.api_client.set_auth_token(token)
-                        
-                        # Store session
                         if self.remember.isChecked():
-                            self._save_session(token, username)
-                        
+                            encrypted_save_session(username, token, data.get('refresh_token', ''))
+                            log.info(f"Session persisted for user={username}",
+                                     extra={'extra_fields': {'tags': ['auth', 'session']}})
+
                         user_data["token"] = token
+                        log.info(f"Login successful: user={username}",
+                                 extra={'extra_fields': {'tags': ['auth', 'login']}})
                         self.login_successful.emit(user_data)
                         self.accept()
                         return
@@ -254,35 +263,28 @@ class LoginDialog(QDialog):
                     msg = error.get("message", "Login failed")
                 else:
                     msg = str(error)
+                log.warning(f"Login failed: user={username} reason={msg}",
+                             extra={'extra_fields': {'tags': ['auth', 'login', 'error']}})
                 self.show_error(msg)
                 
             else:
+                log.warning(f"Login invalid response: user={username}",
+                             extra={'extra_fields': {'tags': ['auth', 'login', 'error']}})
                 self.show_error("Invalid response from server")
                 
         except Exception as e:
             self.set_loading(False)
+            log.warning(f"Login connection error: user={username} error={e}",
+                         extra={'extra_fields': {'tags': ['auth', 'login', 'error']}})
             self.show_error(f"Connection failed: {str(e)}")
     
     def _save_session(self, token, username):
-        """Save session to file."""
-        try:
-            import os
-            session_file = os.path.join(os.path.dirname(__file__), "..", "..", "session.dat")
-            with open(session_file, "w") as f:
-                f.write(f"{username}:{token}")
-        except:
-            pass
-    
+        """Save session to encrypted file. Use encrypted_save_session instead."""
+        encrypted_save_session(username, token)
+
     def load_session(self):
-        """Load saved session."""
-        try:
-            import os
-            session_file = os.path.join(os.path.dirname(__file__), "..", "..", "session.dat")
-            if os.path.exists(session_file):
-                with open(session_file, "r") as f:
-                    data = f.read().split(":")
-                    if len(data) == 2:
-                        return data
-        except:
-            pass
+        """Load saved session from encrypted store with legacy fallback."""
+        username, token, _ = encrypted_load_session()
+        if username and token:
+            return username, token
         return None, None

@@ -72,20 +72,37 @@ class JWTAuthentication(authentication.BaseAuthentication):
 
 def generate_jwt_token(user):
     """
-    Generate JWT token for user
+    Generate JWT access token for user.
+    Expires in 24 hours.
     """
     payload = {
         'user_id': user.id,
         'email': user.email,
+        'token_type': 'access',
         'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24),
         'iat': datetime.datetime.utcnow(),
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
 
 
-def verify_jwt_token(token):
+def generate_refresh_token(user):
     """
-    Verify and decode JWT token
+    Generate JWT refresh token for user.
+    Expires in 7 days.
+    """
+    payload = {
+        'user_id': user.id,
+        'token_type': 'refresh',
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
+        'iat': datetime.datetime.utcnow(),
+    }
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+
+
+def verify_jwt_token(token, expected_type=None):
+    """
+    Verify and decode JWT token.
+    Optionally check token_type claim.
     """
     try:
         payload = jwt.decode(
@@ -93,6 +110,8 @@ def verify_jwt_token(token):
             settings.SECRET_KEY,
             algorithms=['HS256']
         )
+        if expected_type and payload.get('token_type') != expected_type:
+            raise exceptions.AuthenticationFailed('Invalid token type')
         return payload
     except jwt.ExpiredSignatureError:
         raise exceptions.AuthenticationFailed('Token has expired')

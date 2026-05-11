@@ -78,10 +78,10 @@ class StockIntegrationService:
                     product_obj = product if hasattr(product, 'id') else Product.objects.get(id=product)
                     batch = None
                     if batch_id:
-                        batch = Batch.objects.get(id=batch_id)
+                        batch = Batch.objects.select_for_update().get(id=batch_id)
                     else:
                         # Find batch in source warehouse
-                        batches = Batch.objects.filter(
+                        batches = Batch.objects.select_for_update().filter(
                             product=product_obj,
                             remaining_quantity__gt=0,
                             location=str(transfer.source_warehouse.id),

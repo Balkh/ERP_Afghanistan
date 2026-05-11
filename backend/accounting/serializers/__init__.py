@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from accounting.models import Account, JournalEntry, JournalEntryLine
+from accounting.models import Account, JournalEntry, JournalEntryLine, JournalEventLog
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -36,7 +36,7 @@ class AccountSerializer(serializers.ModelSerializer):
         """Ensure account code is unique and numeric."""
         if not value.isdigit():
             raise serializers.ValidationError('Account code must contain only digits.')
-        
+
         instance = self.instance
         if Account.objects.filter(code=value).exclude(id=instance.id if instance else None).exists():
             raise serializers.ValidationError('Account with this code already exists.')
@@ -48,7 +48,7 @@ class AccountSerializer(serializers.ModelSerializer):
         if value and instance:
             if value.id == instance.id:
                 raise serializers.ValidationError('An account cannot be its own parent.')
-            
+
             current = value
             visited = set()
             while current is not None:
@@ -93,15 +93,31 @@ class JournalEntryLineSerializer(serializers.ModelSerializer):
         """Validate debit/credit rules."""
         debit = data.get('debit', Decimal('0.00'))
         credit = data.get('credit', Decimal('0.00'))
-        
+
         if debit < 0 or credit < 0:
             raise serializers.ValidationError('Debit and credit amounts cannot be negative.')
         if debit == 0 and credit == 0:
             raise serializers.ValidationError('Either debit or credit must be positive.')
         if debit > 0 and credit > 0:
             raise serializers.ValidationError('Cannot have both debit and credit on the same line.')
-        
+
         return data
+
+
+class JournalEventLogSerializer(serializers.ModelSerializer):
+    user_display = serializers.SerializerMethodField()
+    entry_number = serializers.CharField(source='entry.entry_number', read_only=True)
+
+    class Meta:
+        model = JournalEventLog
+        fields = [
+            'id', 'entry', 'entry_number', 'event_type', 'user', 'user_display',
+            'timestamp', 'reference', 'notes', 'ip_address'
+        ]
+        read_only_fields = ['id', 'timestamp', 'ip_address']
+
+    def get_user_display(self, obj):
+        return str(obj.user) if obj.user else 'System'
 
 
 class JournalEntrySerializer(serializers.ModelSerializer):
@@ -110,17 +126,21 @@ class JournalEntrySerializer(serializers.ModelSerializer):
     total_debit = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
     total_credit = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
     is_balanced = serializers.BooleanField(read_only=True)
+    event_history = serializers.SerializerMethodField()
+    can_modify_field = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = JournalEntry
         fields = [
             'id', 'entry_number', 'entry_date', 'entry_type', 'description',
             'reference', 'is_posted', 'is_active',
+            'created_by', 'posted_by', 'reversed_by_entry',
+            'source_module', 'source_document', 'change_reason',
             'total_debit', 'total_credit', 'is_balanced',
-            'lines', 'writable_lines',
+            'lines', 'writable_lines', 'event_history', 'can_modify_field',
             'created_at', 'updated_at'
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'is_posted', 'created_by']
         extra_kwargs = {
             'entry_number': {'required': True},
             'entry_date': {'required': True},
@@ -128,43 +148,50 @@ class JournalEntrySerializer(serializers.ModelSerializer):
             'description': {'required': True},
         }
 
+    def get_event_history(self, obj):
+        events = JournalEventLog.objects.filter(entry=obj).order_by('-timestamp')[:20]
+        return JournalEventLogSerializer(events, many=True).data
+
+    def get_can_modify_field(self, obj):
+        return obj.can_modify()
+
     def create(self, validated_data):
         """Create journal entry with lines."""
         lines_data = validated_data.pop('writable_lines', [])
         entry = JournalEntry.objects.create(**validated_data)
-        
+
         for line_data in lines_data:
             JournalEntryLine.objects.create(entry=entry, **line_data)
-        
+
         return entry
 
     def update(self, instance, validated_data):
         """Update journal entry with lines."""
         if instance.is_posted:
             raise serializers.ValidationError('Posted journal entries cannot be modified.')
-        
+
         lines_data = validated_data.pop('writable_lines', None)
         instance = super().update(instance, validated_data)
-        
+
         if lines_data is not None:
             instance.lines.all().delete()
             for line_data in lines_data:
                 JournalEntryLine.objects.create(entry=instance, **line_data)
-        
+
         return instance
 
     def validate(self, data):
         """Validate journal entry is balanced."""
         instance = self.instance
         lines = data.get('writable_lines', [])
-        
+
         if lines:
             total_debit = sum(line.get('debit', Decimal('0')) for line in lines)
             total_credit = sum(line.get('credit', Decimal('0')) for line in lines)
-            
+
             if total_debit != total_credit:
                 raise serializers.ValidationError(
                     f'Journal entry must be balanced. Debits: {total_debit}, Credits: {total_credit}'
                 )
-        
+
         return data

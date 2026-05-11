@@ -3,7 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from security.models import AuditLog, UserRole
-from security.authentication import generate_jwt_token
+from security.authentication import generate_jwt_token, generate_refresh_token, verify_jwt_token
 from core.api.responses import APIResponse
 from core.api.errors import ErrorCode, create_error_response, get_status_for_error
 from datetime import datetime, timedelta
@@ -47,9 +47,8 @@ def login_view(request):
             status=401
         )
     
-    # Generate tokens
     access_token = generate_jwt_token(user)
-    refresh_token = generate_jwt_token(user)  # In production, generate separate refresh token
+    refresh_token = generate_refresh_token(user)
     
     # Get user roles
     user_roles = UserRole.objects.filter(
@@ -129,22 +128,45 @@ def login_view(request):
 def refresh_token_view(request):
     """
     Refresh access token using refresh token.
-    Standardized response format.
+    Returns new access + refresh tokens (token rotation).
     """
-    refresh_token = request.data.get('refresh_token')
+    raw_refresh_token = request.data.get('refresh_token')
     
-    if not refresh_token:
+    if not raw_refresh_token:
         return Response(
             create_error_response(ErrorCode.VAL_001, "Refresh token is required"),
             status=400
         )
     
-    # In production, validate refresh token and generate new access token
-    # For now, return error that this feature needs implementation
-    return Response(
-        create_error_response(ErrorCode.SYS_001, "Token refresh not implemented"),
-        status=501
-    )
+    try:
+        payload = verify_jwt_token(raw_refresh_token, expected_type='refresh')
+    except Exception as e:
+        return Response(
+            create_error_response(ErrorCode.AUTH_002, str(e)),
+            status=401
+        )
+    
+    try:
+        from django.contrib.auth.models import User
+        user = User.objects.get(id=payload['user_id'], is_active=True)
+    except User.DoesNotExist:
+        return Response(
+            create_error_response(ErrorCode.AUTH_003, "User not found or inactive"),
+            status=401
+        )
+    
+    new_access = generate_jwt_token(user)
+    new_refresh = generate_refresh_token(user)
+    
+    return Response(APIResponse.success(
+        data={
+            "access_token": new_access,
+            "refresh_token": new_refresh,
+            "token_type": "Bearer",
+            "expires_in": 86400,
+        },
+        message="Token refreshed successfully"
+    ))
 
 
 @api_view(['POST'])
@@ -515,7 +537,7 @@ def users_detail(request, user_id):
         ))
 
     elif request.method == 'PUT':
-        if not request.user.request.user.is_superuser:
+        if not request.user.is_superuser:
             return Response(
                 create_error_response(ErrorCode.AUTH_002, "Permission denied"),
                 status=403
@@ -559,7 +581,7 @@ def users_detail(request, user_id):
         ))
 
     elif request.method == 'DELETE':
-        if not request.user.request.user.is_superuser:
+        if not request.user.is_superuser:
             return Response(
                 create_error_response(ErrorCode.AUTH_002, "Permission denied"),
                 status=403
@@ -592,7 +614,7 @@ def roles_list(request):
     from security.models import Role
 
     if request.method == 'GET':
-        if not request.user.is_superuser and not request.user.request.user.is_superuser:
+        if not request.user.is_superuser:
             return Response(
                 create_error_response(ErrorCode.AUTH_002, "Permission denied"),
                 status=403
@@ -614,7 +636,7 @@ def roles_list(request):
         ))
 
     elif request.method == 'POST':
-        if not request.user.request.user.is_superuser:
+        if not request.user.is_superuser:
             return Response(
                 create_error_response(ErrorCode.AUTH_002, "Permission denied"),
                 status=403
@@ -679,7 +701,7 @@ def roles_detail(request, role_id):
         ))
 
     elif request.method == 'PUT':
-        if not request.user.request.user.is_superuser:
+        if not request.user.is_superuser:
             return Response(
                 create_error_response(ErrorCode.AUTH_002, "Permission denied"),
                 status=403
@@ -706,7 +728,7 @@ def roles_detail(request, role_id):
         ))
 
     elif request.method == 'DELETE':
-        if not request.user.request.user.is_superuser:
+        if not request.user.is_superuser:
             return Response(
                 create_error_response(ErrorCode.AUTH_002, "Permission denied"),
                 status=403

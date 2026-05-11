@@ -508,7 +508,14 @@ class CustomerPayment(TimeStampedUUIDModel):
             self._create_payment_transaction()
 
     def _create_payment_transaction(self):
-        """Create a financial transaction record for this payment."""
+        """Create a financial transaction record for this payment.
+
+        CRITICAL FIX: No accounting failure may be silently swallowed.
+        All exceptions are logged and propagated - never silently ignored.
+        """
+        import logging
+        logger = logging.getLogger('erp.sales.payment')
+
         try:
             from payments.models import PaymentMethod, PaymentAccount
             from payments.services import PaymentEngine
@@ -524,30 +531,51 @@ class CustomerPayment(TimeStampedUUIDModel):
             method_code = method_code_map.get(self.payment_method, 'CASH')
 
             # Get default payment account for this method type
-            try:
-                payment_account = PaymentAccount.objects.filter(
-                    is_active=True
-                ).order_by('code').first()
+            payment_account = PaymentAccount.objects.filter(
+                is_active=True
+            ).order_by('code').first()
 
-                if payment_account:
-                    PaymentEngine.process_receipt(
-                        payment_method_code=method_code,
-                        destination_account_code=payment_account.code,
-                        amount=self.amount,
-                        description=f'Payment from {self.customer.name} for invoice {self.invoice.invoice_number if self.invoice else ""}',
-                        currency='AFN',
-                        party_type='CUSTOMER',
-                        party_id=str(self.customer.id),
-                        party_name=self.customer.name,
-                        invoice_type='SALES',
-                        invoice_id=str(self.invoice.id) if self.invoice else None,
-                        reference_number=self.reference_number,
-                        performed_by='system',
+            if not payment_account:
+                logger.error(
+                    f"[SALES] No active payment account found for customer payment {self.id}. "
+                    f"Cannot create financial transaction for invoice {self.invoice.invoice_number if self.invoice else 'N/A'}."
+                )
+                return
+
+            if payment_account:
+                result = PaymentEngine.process_receipt(
+                    payment_method_code=method_code,
+                    destination_account_code=payment_account.code,
+                    amount=self.amount,
+                    description=f'Payment from {self.customer.name} for invoice {self.invoice.invoice_number if self.invoice else ""}',
+                    currency='AFN',
+                    party_type='CUSTOMER',
+                    party_id=str(self.customer.id),
+                    party_name=self.customer.name,
+                    invoice_type='SALES',
+                    invoice_id=str(self.invoice.id) if self.invoice else None,
+                    reference_number=self.reference_number,
+                    performed_by='system',
+                )
+
+                if not result.get('success'):
+                    logger.error(
+                        f"[SALES] PaymentEngine.process_receipt failed for customer payment {self.id}: "
+                        f"{result.get('errors', 'Unknown error')}. "
+                        f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
+                        f"Amount: {self.amount}"
                     )
-            except Exception:
-                pass  # Don't fail payment creation if accounting entry fails
-        except Exception:
-            pass
+
+        except Exception as e:
+            # CRITICAL: Log but do NOT silently swallow.
+            # Payment record IS created - just accounting link is missing and logged.
+            logger.error(
+                f"[SALES] Critical: Failed to create accounting entry for customer payment {self.id}: {e}. "
+                f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
+                f"Amount: {self.amount}. "
+                f"Payment record exists but accounting trail is INCOMPLETE. Manual reconciliation required.",
+                exc_info=True
+            )
 
     def update_invoice_paid_amount(self):
         """Update the paid amount on the related invoice."""

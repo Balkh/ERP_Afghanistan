@@ -90,90 +90,123 @@ class EnterpriseButton(QPushButton):
         
     def _apply_variant_style(self):
         """Apply variant-specific styles."""
-        from ui.constants import COLOR_PRIMARY, COLOR_SUCCESS, COLOR_DANGER, COLOR_WARNING, COLOR_TEXT_PRIMARY
+        from ui.constants import (COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                                  COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE,
+                                  COLOR_SUCCESS_MUTED, COLOR_DANGER, COLOR_DANGER_HOVER,
+                                  COLOR_DANGER_ACTIVE, COLOR_DANGER_MUTED,
+                                  COLOR_WARNING, COLOR_WARNING_HOVER, COLOR_WARNING_ACTIVE,
+                                  COLOR_WARNING_MUTED,
+                                  COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_MUTED,
+                                  COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BG_ELEVATED)
         variant_styles = {
             ButtonVariant.PRIMARY: f"""
                 QPushButton {{
                     background-color: {COLOR_PRIMARY};
-                    color: white;
+                    color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_PRIMARY};
+                    background-color: {COLOR_PRIMARY_HOVER};
                 }}
                 QPushButton:pressed {{
-                    background-color: {COLOR_PRIMARY};
+                    background-color: {COLOR_PRIMARY_ACTIVE};
+                }}
+                QPushButton:disabled {{
+                    background-color: {COLOR_BORDER};
+                    color: {COLOR_TEXT_MUTED};
                 }}
             """,
             ButtonVariant.SECONDARY: f"""
                 QPushButton {{
                     background-color: {COLOR_PRIMARY};
-                    color: white;
+                    color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_PRIMARY};
+                    background-color: {COLOR_PRIMARY_HOVER};
                 }}
                 QPushButton:pressed {{
-                    background-color: {COLOR_PRIMARY};
+                    background-color: {COLOR_PRIMARY_ACTIVE};
+                }}
+                QPushButton:disabled {{
+                    background-color: {COLOR_BORDER};
+                    color: {COLOR_TEXT_MUTED};
                 }}
             """,
             ButtonVariant.SUCCESS: f"""
                 QPushButton {{
                     background-color: {COLOR_SUCCESS};
-                    color: white;
+                    color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_SUCCESS};
+                    background-color: {COLOR_SUCCESS_HOVER};
                 }}
                 QPushButton:pressed {{
-                    background-color: {COLOR_SUCCESS};
+                    background-color: {COLOR_SUCCESS_ACTIVE};
+                }}
+                QPushButton:disabled {{
+                    background-color: {COLOR_SUCCESS_MUTED};
+                    color: {COLOR_TEXT_MUTED};
                 }}
             """,
             ButtonVariant.DANGER: f"""
                 QPushButton {{
                     background-color: {COLOR_DANGER};
-                    color: white;
+                    color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_DANGER};
+                    background-color: {COLOR_DANGER_HOVER};
                 }}
                 QPushButton:pressed {{
-                    background-color: {COLOR_DANGER};
+                    background-color: {COLOR_DANGER_ACTIVE};
+                }}
+                QPushButton:disabled {{
+                    background-color: {COLOR_DANGER_MUTED};
+                    color: {COLOR_TEXT_MUTED};
                 }}
             """,
             ButtonVariant.WARNING: f"""
                 QPushButton {{
                     background-color: {COLOR_WARNING};
-                    color: {COLOR_TEXT_PRIMARY};
+                    color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_WARNING};
+                    background-color: {COLOR_WARNING_HOVER};
                 }}
                 QPushButton:pressed {{
-                    background-color: {COLOR_WARNING};
+                    background-color: {COLOR_WARNING_ACTIVE};
+                }}
+                QPushButton:disabled {{
+                    background-color: {COLOR_WARNING_MUTED};
+                    color: {COLOR_TEXT_MUTED};
                 }}
             """,
             ButtonVariant.GHOST: f"""
                 QPushButton {{
                     background-color: transparent;
                     color: {COLOR_PRIMARY};
-                    border: 1px solid {COLOR_PRIMARY};
+                    border: 1px solid {COLOR_BORDER};
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
-                    background-color: rgba(255, 107, 53, 0.1);
+                    background-color: {COLOR_BG_ELEVATED};
+                    border: 1px solid {COLOR_PRIMARY};
                 }}
                 QPushButton:pressed {{
-                    background-color: rgba(255, 107, 53, 0.2);
+                    background-color: {COLOR_BORDER_LIGHT};
+                    border: 1px solid {COLOR_PRIMARY_ACTIVE};
+                }}
+                QPushButton:disabled {{
+                    color: {COLOR_TEXT_MUTED};
+                    border: 1px solid {COLOR_BORDER_LIGHT};
                 }}
             """
         }
@@ -280,17 +313,17 @@ class SplitButton(QPushButton):
         self.setPopupMode(QPushButton.MenuButtonPopup)
         
         # Style the split button
-        from ui.constants import COLOR_PRIMARY
+        from ui.constants import COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_TEXT_ON_PRIMARY
         self.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_PRIMARY};
-                color: white;
+                color: {COLOR_TEXT_ON_PRIMARY};
                 border: none;
                 padding: {SPACING_SM} 16px;
                 border-radius: 4px;
                 font-weight: 600;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_PRIMARY};
+                background-color: {COLOR_PRIMARY_HOVER};
             }}
         """)

@@ -6,7 +6,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django.db.models import Sum, Count, Avg, Max, Min
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 
@@ -292,56 +292,56 @@ class JobsStatsProvider:
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def control_center(request):
     """Get complete enterprise control center dashboard."""
     return Response(ControlCenterAggregator.get_complete_dashboard())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def quick_stats(request):
     """Get quick KPI stats."""
     return Response(QuickStatsProvider.get_kpis())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def health_live(request):
     """Get live health metrics."""
     return Response(ControlCenterAggregator.get_live_health())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def financial_summary(request):
     """Get financial dashboard summary."""
     return Response(ControlCenterAggregator.get_financial_dashboard())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def inventory_summary(request):
     """Get inventory dashboard summary."""
     return Response(ControlCenterAggregator.get_inventory_dashboard())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def operations_summary(request):
     """Get operations dashboard summary."""
     return Response(ControlCenterAggregator.get_operations_dashboard())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def hr_summary(request):
     """Get HR dashboard summary."""
     return Response(ControlCenterAggregator.get_hr_dashboard())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def operational_intelligence(request):
     """Get deterministic operational intelligence (cached)."""
     from core.operations.operational_intelligence import CachedIntelligenceAggregator
@@ -350,7 +350,7 @@ def operational_intelligence(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def signal_summary(request):
     """Get signal coordinator summary."""
     from core.operations.signal_coordinator import get_signal_summary
@@ -359,7 +359,7 @@ def signal_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def active_signals(request):
     """Get active signals from coordinator."""
     from core.operations.signal_coordinator import get_active_signals
@@ -371,7 +371,7 @@ def active_signals(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def register_signal(request):
     """Register a new signal through coordinator."""
     from core.operations.signal_coordinator import register_intelligence_signal
@@ -382,7 +382,7 @@ def register_signal(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def jobs_dashboard(request):
     """Get background jobs dashboard for control center."""
     return Response(JobsStatsProvider.get_job_stats())

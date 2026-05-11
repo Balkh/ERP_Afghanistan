@@ -10,7 +10,7 @@
 
 ---
 
-## Current Status: Phase 12 COMPLETE
+## Current Status: Phase 3B.5 COMPLETE + PHASE 12 COMPLETE
 
 | Phase | Description | Status |
 |---|---|---|
@@ -39,9 +39,11 @@
 | **Phase 11** | **Enterprise Control Center (ControlCenterAggregator dashboards)** | ✅ Complete |
 | **Phase 12** | **Advanced Operational Intelligence (SLA, Capacity Forecast, Alerts)** | ✅ Complete |
 | **Phase 12.1** | **Intelligence Stability Patch (RuleRegistry, SignalCoordinator)** | ✅ Complete |
+| **Phase 13** | **Decision Intelligence Engine + Configuration Integrity** | ✅ Complete |
+| **Phase 3B.5** | **Intelligence Stabilization Audit (audit layer, health report)** | ✅ Complete |
 
 ### Test Suite Summary
-- **995+ tests passing** (increased from 932)
+- **1358+ tests passing** (995 ERP + 363 simulation)
 - **Coverage**: Inventory 93.94%, Accounting 72.11%, Sales ~96%, Purchases ~96%, Overall ~50%
 - **Key fixes in Phase 5**:
   - Fixed `StockMovement._update_batch_quantity()` to skip TRANSFER movements (was resetting batch to 0)
@@ -49,6 +51,7 @@
   - Fixed Notification model `object_id` field to allow NULL
 - **Transfer bug**: `StockMovement._update_batch_quantity()` only counted IN/OUT movements, not TRANSFER. When transfer OUT movement was created, it calculated -50 (no IN yet) and reset batch to 0. Fix: Skip recalculation for TRANSFER movements.
 - **Test files**: `test_accounting.py`, `test_inventory.py`, `test_sales.py`, `test_purchases.py`, `test_api.py`, `test_lifecycle.py`, `test_edge_cases.py`, `test_lifecycle_full.py`, `test_accounting_viewset.py`, `test_accounting_views.py`, `test_inventory_views.py`, `test_sales_views.py`, `test_purchases_views.py`, `test_financial_reports.py`, `test_services.py`, `test_auth.py`, `test_transfer.py`, `test_notifications.py`
+- **Simulation test files**: `test_simulation.py`, `test_agents.py`, `test_workflows.py`, `test_truth_engine.py`, `test_root_cause.py`, `test_audit.py`
 
 ### Phase 7E Steps Completed
 1. ✅ Created HR Reports service (`hr/services/reports.py`)
@@ -160,6 +163,121 @@ Advanced Operational Intelligence Layer - DETERMINISTIC (NO AI/ML):
 - Control Center = signal consumer ONLY
 - Alert System = formatted output ONLY
 
+### Phase 3A — Truth Comparison Engine (Simulation)
+| Component | Status |
+|---|---|
+| ExpectedStateCollector | ✅ Done |
+| ActualStateCollector (read-only Django ORM) | ✅ Done |
+| TruthComparator (6 mismatch types) | ✅ Done |
+| IntegrityScorer (5 scores, penalty-based) | ✅ Done |
+| TruthReportGenerator (severity, hints, conclusion) | ✅ Done |
+| SnapshotManager (versioned, bounded) | ✅ Done |
+| TruthEngine orchestrator | ✅ Done |
+| Wired into SimulationEngine (passive hook) | ✅ Done |
+| Test suite (55 + 8 integration = 63 tests) | ✅ Done |
+
+### Phase 3A Key Architecture
+- **TruthEngine** (`simulation/truth_engine/engine.py`): Orchestrates collect → compare → score → report → snapshot
+- **SimulationEngine integration**: Passive observation via `enable_truth_engine: True` config flag
+- **Isolation**: All 6 collector methods chain via `return self` for fluent API; `build()` returns `ActualState`
+- **Exception safety**: TruthEngine failures are caught and logged, never crash the simulation
+- **Read-only**: No ERP writes, no automatic correction, all mismatches explicitly logged
+
+### Phase 3A Files Created
+- `simulation/truth_engine/models/models.py`: Mismatch, MismatchType, MismatchSeverity, ExpectedState, ActualState, DriftReport
+- `simulation/truth_engine/collector/expected.py`: ExpectedStateCollector
+- `simulation/truth_engine/collector/actual.py`: ActualStateCollector (Django ORM, read-only)
+- `simulation/truth_engine/comparator/comparator.py`: TruthComparator
+- `simulation/truth_engine/scoring/scorer.py`: IntegrityScorer
+- `simulation/truth_engine/reports/reporter.py`: TruthReportGenerator
+- `simulation/truth_engine/snapshot/snapshot.py`: SnapshotManager
+- `simulation/truth_engine/engine.py`: TruthEngine orchestrator
+- `simulation/tests/test_truth_engine.py`: 55 tests
+- `simulation/tests/test_simulation.py`: 8 integration tests (TestTruthEngineIntegration)
+
+### Phase 3B — Root Cause Intelligence Engine
+| Component | Status |
+|---|---|
+| EventCorrelator (event chain linking) | ✅ Done |
+| RootCauseClassifier (7 cause types, confidence scoring) | ✅ Done |
+| CausalAnalyzer (dependency chain analysis) | ✅ Done |
+| DriftPatternDetector (5 rule-based patterns) | ✅ Done |
+| RootCauseExplainer (structured explanations) | ✅ Done |
+| CausalGraphBuilder (DAG construction) | ✅ Done |
+| DriftMemoryStore (historical pattern storage) | ✅ Done |
+| RootCauseEngine orchestrator | ✅ Done |
+| Read-only architecture (no ERP writes) | ✅ Verified |
+| Test suite (71 tests) | ✅ Done |
+
+### Phase 3B Key Architecture
+- **RootCauseEngine** (`simulation/truth_engine/root_cause/engine.py`): Orchestrates analyze → classify → explain → graph → remember
+- **Phase 3A integration**: Reads mismatch data from TruthEngine output — read-only, no mutations
+- **7 cause types**: LOGIC_ERROR, CONCURRENCY_ISSUE, MISSING_MAPPING, WORKFLOW_DESIGN_FLAW, DATA_INCONSISTENCY, TIMING_DESYNC, UNKNOWN_CAUSE
+- **5 drift patterns**: repeated_inventory_drift, payment_failure_under_load, journal_imbalance_concurrency, partial_workflow_execution, concurrent_access_conflict
+- **Exception safety**: All failures caught and logged, never crash the simulation
+
+### Phase 3B Files Created
+- `simulation/truth_engine/root_cause/models.py`: RootCause, CausalChain, CausalLink, DriftPattern, CausalGraph, Explanation
+- `simulation/truth_engine/root_cause/correlator/event_correlator.py`: EventCorrelator
+- `simulation/truth_engine/root_cause/classifier/root_cause_classifier.py`: RootCauseClassifier
+- `simulation/truth_engine/root_cause/analyzer/causal_analyzer.py`: CausalAnalyzer
+- `simulation/truth_engine/root_cause/patterns/drift_pattern_detector.py`: DriftPatternDetector
+- `simulation/truth_engine/root_cause/explainer/explanation_engine.py`: RootCauseExplainer
+- `simulation/truth_engine/root_cause/graph/causal_graph_builder.py`: CausalGraphBuilder
+- `simulation/truth_engine/root_cause/history/drift_memory.py`: DriftMemoryStore
+- `simulation/truth_engine/root_cause/engine.py`: RootCauseEngine orchestrator
+- `simulation/tests/test_root_cause.py`: 71 tests
+
+### Phase 3B.5 — Intelligence Stabilization Audit
+| Component | Status |
+|---|---|
+| EventLifecycleAnalyzer (orphans, duplicates, recursion, fan-out) | ✅ Done |
+| EventRetentionValidator (bounded history, leak detection) | ✅ Done |
+| EventTopologyReporter | ✅ Done |
+| GraphIntegrityValidator (DAG cycles, orphans, density) | ✅ Done |
+| GraphMemoryAuditor (bounded node/edge storage) | ✅ Done |
+| GraphComplexityAnalyzer (depth, branching, traversal cost) | ✅ Done |
+| MemoryBoundaryValidator (bounded maxlen across structures) | ✅ Done |
+| StoragePressureAnalyzer | ✅ Done |
+| RetentionPolicyVerifier | ✅ Done |
+| DependencyAnalyzer (production import scanner) | ✅ Done |
+| LayerIsolationValidator (strict separation) | ✅ Done |
+| CouplingRiskReporter | ✅ Done |
+| SimulationLoadAnalyzer | ✅ Done |
+| ScalabilityEstimator | ✅ Done |
+| StabilityThresholdValidator | ✅ Done |
+| IntelligenceHealthReportGenerator (score 0–100) | ✅ Done |
+| Test suite (37+ tests, 43 in test_audit.py) | ✅ Done |
+
+### Phase 3B.5 Key Architecture
+- **Read-only**: All 16 components are analyzers — they read simulation structures, never mutate them
+- **Bounded memory**: Every bounded structure audited for maxlen enforcement (deque, list caps)
+- **DAG safety**: GraphIntegrityValidator detects cycles before they enter the graph
+- **Layer isolation**: DependencyAnalyzer scans file-level imports; `ALLOWED_BRIDGE_FILES` exempts the one legitimate production bridge (`actual.py`)
+- **No prediction**: All alerts are rule-based threshold checks, zero AI/ML
+- **Exception safety**: All component failures caught and logged, never crash the audit
+
+### Phase 3B.5 Files Created
+| File | Purpose |
+|------|---------|
+| `simulation/audit/event_lifecycle/analyzer.py` | EventLifecycleAnalyzer |
+| `simulation/audit/event_lifecycle/validator.py` | EventRetentionValidator |
+| `simulation/audit/event_lifecycle/reporter.py` | EventTopologyReporter |
+| `simulation/audit/graph/validator.py` | GraphIntegrityValidator |
+| `simulation/audit/graph/auditor.py` | GraphMemoryAuditor |
+| `simulation/audit/graph/analyzer.py` | GraphComplexityAnalyzer |
+| `simulation/audit/memory/validator.py` | MemoryBoundaryValidator |
+| `simulation/audit/memory/analyzer.py` | StoragePressureAnalyzer |
+| `simulation/audit/memory/verifier.py` | RetentionPolicyVerifier |
+| `simulation/audit/dependencies/analyzer.py` | DependencyAnalyzer |
+| `simulation/audit/dependencies/validator.py` | LayerIsolationValidator |
+| `simulation/audit/dependencies/reporter.py` | CouplingRiskReporter |
+| `simulation/audit/performance/analyzer.py` | SimulationLoadAnalyzer |
+| `simulation/audit/performance/estimator.py` | ScalabilityEstimator |
+| `simulation/audit/performance/validator.py` | StabilityThresholdValidator |
+| `simulation/audit/reporting/generator.py` | IntelligenceHealthReportGenerator |
+| `simulation/tests/test_audit.py` | 43 tests across 18 test classes |
+
 ---
 
 ## Where to Start Next
@@ -168,7 +286,7 @@ Advanced Operational Intelligence Layer - DETERMINISTIC (NO AI/ML):
 1. **Run backend**: `cd backend && python manage.py runserver`
 2. **Seed data**: `python manage.py seed_payments` (payment methods + accounts)
 3. **Test accounting flows**: Create a sale invoice → dispatch → verify journal entry auto-created
-4. **Define Phase 5**: What features are needed next? (e.g., user auth, roles, barcode hardware integration, multi-warehouse transfers, insurance module, etc.)
+4. **Define next phase**: What features are needed next? (e.g., user auth, roles, barcode hardware integration, multi-warehouse transfers, insurance module, etc.)
 
 ### Quick Verification Commands
 ```bash

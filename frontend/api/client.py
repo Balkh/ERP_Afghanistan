@@ -4,7 +4,7 @@ import time
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtWidgets import QApplication
 from typing import Dict, Any, Optional, Callable
-from utils.logger import get_logger, record_api_time, record_error
+from utils.logger import get_logger, record_api_time, record_error, emit_event, generate_correlation_id
 
 log = get_logger('api')
 
@@ -64,8 +64,12 @@ class APIClient(QObject):
                     break
         
         url = f"{self.base_url}{endpoint}"
-        
+
+        _correlation_id = generate_correlation_id("api")
         log.info(f"{method} {endpoint}", extra={'extra_fields': {'tags': ['api', 'request']}})
+        emit_event('api_request', module='api_client', action=f"{method} {endpoint}",
+                   metadata={'method': method, 'url': url, 'correlation_id': _correlation_id},
+                   correlation_id=_correlation_id)
         
         # Emit started signal
         self.request_started.emit(endpoint)
@@ -142,11 +146,20 @@ class APIClient(QObject):
                 if not response_data.get("success", True):
                     error_info = response_data.get("error", {})
                     record_error(exc_type='APISuccessFalse', endpoint=endpoint, category='api')
+                    emit_event('api_response', module='api_client',
+                               action=f"{method} {endpoint} failure",
+                               metadata={'status': response.status_code, 'method': method},
+                               correlation_id=_correlation_id)
                     raise APIError(error_info.get("message", "API request failed"), response.status_code, response_data)
-            
+
             # Emit success signals
             self.request_finished.emit(endpoint, True)
             self.response_received.emit(endpoint, response_data)
+
+            emit_event('api_response', module='api_client',
+                       action=f"{method} {endpoint} success",
+                       metadata={'status': response.status_code, 'method': method},
+                       correlation_id=_correlation_id)
             
             return response_data
             

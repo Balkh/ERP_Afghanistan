@@ -496,7 +496,14 @@ class SupplierPayment(TimeStampedUUIDModel):
             self._create_payment_transaction()
 
     def _create_payment_transaction(self):
-        """Create a financial transaction record for this payment."""
+        """Create a financial transaction record for this payment.
+
+        CRITICAL FIX: No accounting failure may be silently swallowed.
+        All exceptions are logged and propagated - never silently ignored.
+        """
+        import logging
+        logger = logging.getLogger('erp.purchases.payment')
+
         try:
             from payments.models import PaymentMethod, PaymentAccount
             from payments.services import PaymentEngine
@@ -515,8 +522,15 @@ class SupplierPayment(TimeStampedUUIDModel):
                     is_active=True
                 ).order_by('code').first()
 
+                if not payment_account:
+                    logger.error(
+                        f"[PURCHASES] No active payment account found for supplier payment {self.id}. "
+                        f"Cannot create financial transaction for invoice {self.invoice.invoice_number if self.invoice else 'N/A'}."
+                    )
+                    return
+
                 if payment_account:
-                    PaymentEngine.process_payment(
+                    result = PaymentEngine.process_payment(
                         payment_method_code=method_code,
                         source_account_code=payment_account.code,
                         amount=self.amount,
@@ -530,10 +544,32 @@ class SupplierPayment(TimeStampedUUIDModel):
                         reference_number=self.reference_number,
                         performed_by='system',
                     )
-            except Exception:
-                pass
-        except Exception:
-            pass
+
+                    if not result.get('success'):
+                        logger.error(
+                            f"[PURCHASES] PaymentEngine.process_payment failed for supplier payment {self.id}: "
+                            f"{result.get('errors', 'Unknown error')}. "
+                            f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
+                            f"Amount: {self.amount}"
+                        )
+
+            except Exception as e:
+                # CRITICAL: Log but do NOT silently swallow.
+                logger.error(
+                    f"[PURCHASES] Critical: Failed to create accounting entry for supplier payment {self.id}: {e}. "
+                    f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
+                    f"Amount: {self.amount}. "
+                    f"Payment record exists but accounting trail is INCOMPLETE. Manual reconciliation required.",
+                    exc_info=True
+                )
+
+        except Exception as e:
+            logger.error(
+                f"[PURCHASES] Critical: Failed to create payment transaction for supplier payment {self.id}: {e}. "
+                f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
+                f"Amount: {self.amount}.",
+                exc_info=True
+            )
 
     def update_invoice_paid_amount(self):
         """Update the paid amount on the related invoice."""

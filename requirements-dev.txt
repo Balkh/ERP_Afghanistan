@@ -1,0 +1,8 @@
+coverage==7.13.5
+flake8
+mypy
+pip-tools
+pipreqs
+pytest-cov==7.1.0
+pytest-django==4.12.0
+pytest==9.0.3

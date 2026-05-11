@@ -1,13 +1,16 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from accounting import views
-from accounting.views_account import (AccountViewSet, JournalEntryViewSet, 
-                                       export_report, advanced_report, report_options)
+from accounting.views_account import (
+    AccountViewSet, JournalEntryViewSet, JournalEventLogViewSet,
+    export_report, advanced_report, report_options
+)
 
 # Router for account views
 router = DefaultRouter()
 router.register(r'accounts', AccountViewSet, basename='account')
 router.register(r'journal-entries', JournalEntryViewSet, basename='journalentry')
+router.register(r'journal-events', JournalEventLogViewSet, basename='journalevent')
 
 urlpatterns = [
     # Calculation endpoints

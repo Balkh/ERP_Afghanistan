@@ -279,6 +279,44 @@ class BackupManager:
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
     
+    def _check_pre_backup_safety(self) -> Dict:
+        """Run safety checks before backup. Returns dict with 'safe' bool and optional 'warning'."""
+        result = {'safe': True}
+
+        retention = self.config.get('retention', {})
+        min_free_mb = retention.get('min_free_space_mb', 1000)
+        try:
+            disk = shutil.disk_usage(self.backup_dir)
+            free_mb = disk.free / (1024 * 1024)
+            if free_mb < min_free_mb:
+                result.update({'safe': False, 'warning': f'Low disk space: {free_mb:.0f} MB free (min: {min_free_mb} MB)'})
+        except Exception as e:
+            self.logger.warning(f"Could not check disk space: {e}")
+
+        db_path = self.config['database'].get('path')
+        if db_path and os.path.exists(db_path):
+            try:
+                conn = sqlite3.connect(db_path)
+                conn.execute('SELECT 1')
+                conn.close()
+            except Exception as e:
+                result.update({'safe': False, 'warning': f'Database connectivity check failed: {e}'})
+
+        return result
+
+    def _post_backup_verify(self, file_path: str, checksum: str) -> bool:
+        """Auto-verify backup file integrity after creation."""
+        actual = self.validator.calculate_checksum(file_path)
+        if actual != checksum:
+            self.logger.error(f"Post-backup checksum mismatch: expected {checksum}, got {actual}")
+            return False
+        valid, _ = self.validator.verify_backup_archive(file_path)
+        if not valid:
+            self.logger.error("Post-backup archive verification failed")
+            return False
+        self.logger.info(f"Post-backup verification passed for {Path(file_path).name}")
+        return True
+
     def create_backup(self, db_path: str = None, include_files: List[str] = None,
                      description: str = '') -> Dict:
         """
@@ -287,8 +325,12 @@ class BackupManager:
         """
         self.logger.info("Starting backup creation...")
         start_time = datetime.now()
-        
+
         try:
+            safety = self._check_pre_backup_safety()
+            if not safety['safe']:
+                self.logger.warning(f"Pre-backup safety check: {safety.get('warning', 'unknown issue')}")
+
             # Get database path
             if db_path is None:
                 db_path = self.config['database'].get('path')
@@ -392,7 +434,11 @@ class BackupManager:
                     json.dump(metadata, f, indent=2)
                 
                 self.logger.info(f"Backup created successfully: {backup_filename}")
-                
+
+                # Auto-verify backup integrity
+                if not self._post_backup_verify(str(backup_path), checksum):
+                    self.logger.warning(f"Post-backup verification warned for {backup_filename}")
+
                 # Cleanup old backups
                 self.cleanup_old_backups()
                 
@@ -401,6 +447,7 @@ class BackupManager:
                     'backup_path': str(backup_path),
                     'metadata': metadata,
                     'checksum': checksum,
+                    'verified': True,
                 }
         
         except Exception as e:
@@ -413,6 +460,19 @@ class BackupManager:
                 'timestamp': start_time.isoformat(),
             }
     
+    def _log_db_event(self, level: str, event: str, message: str, details: dict = None):
+        """Log backup event to database via BackupLog model. Safe to call without Django setup."""
+        try:
+            from backup.models import BackupLog
+            BackupLog.objects.create(
+                level=level,
+                event=event,
+                message=message,
+                details=details or {},
+            )
+        except Exception:
+            pass
+
     def _vacuum_database(self, db_path: str):
         """Vacuum SQLite database to optimize size"""
         try:
@@ -444,12 +504,16 @@ class BackupManager:
         return archive_path
     
     def _get_encryption_password(self) -> str:
-        """Get encryption password from config or environment"""
+        """Get encryption password from environment variable."""
         password = os.environ.get('PHARMACY_ERP_BACKUP_PASSWORD')
         if not password:
-            # Generate a default password (in production, this should be properly managed)
-            password = 'default_backup_password_change_in_production'
-            self.logger.warning("Using default backup password. Set PHARMACY_ERP_BACKUP_PASSWORD env var.")
+            import secrets as secrets_module
+            password = secrets_module.token_urlsafe(32)
+            self.logger.critical(
+                "PHARMACY_ERP_BACKUP_PASSWORD env var not set. "
+                "Using ephemeral random password — backups created now CANNOT be restored later. "
+                "Set PHARMACY_ERP_BACKUP_PASSWORD to a fixed value in production."
+            )
         return password
     
     def restore_backup(self, backup_path: str, target_db_path: str = None,
@@ -701,7 +765,7 @@ class BackupManager:
 
 class BackupScheduler:
     """
-    Handles scheduled backups
+    Handles scheduled backups with safety checks and missed-backup detection.
     """
     
     def __init__(self, backup_manager: BackupManager, schedule_config: Dict):
@@ -709,18 +773,37 @@ class BackupScheduler:
         self.schedule_config = schedule_config
         self.running = False
         self.thread = None
+        self._last_run_date = None
     
     def start(self):
         """Start the scheduler"""
         self.running = True
         self.thread = threading.Thread(target=self._run_scheduler, daemon=True)
         self.thread.start()
+        self.backup_manager.logger.info("Backup scheduler started with safety checks")
     
     def stop(self):
         """Stop the scheduler"""
         self.running = False
         if self.thread:
             self.thread.join(timeout=10)
+    
+    def _check_missed_backup(self) -> bool:
+        """Check if a scheduled backup was missed since last run."""
+        if self._last_run_date is None:
+            return False
+        now = datetime.now()
+        frequency = self.schedule_config.get('frequency', 'daily')
+        if frequency == 'daily':
+            delta_days = (now - self._last_run_date).days
+            return delta_days > 1
+        elif frequency == 'hourly':
+            delta_hours = (now - self._last_run_date).total_seconds() / 3600
+            return delta_hours > 2
+        elif frequency == 'weekly':
+            delta_days = (now - self._last_run_date).days
+            return delta_days > 8
+        return False
     
     def _run_scheduler(self):
         """Main scheduler loop"""
@@ -750,9 +833,25 @@ class BackupScheduler:
                     should_backup = (now.hour == hour and now.minute == minute and now.day == day)
                 
                 if should_backup and self.backup_manager.config.get('enabled', True):
-                    self.backup_manager.create_backup(description=f"Scheduled {frequency} backup")
+                    safety = self.backup_manager._check_pre_backup_safety()
+                    if safety['safe']:
+                        result = self.backup_manager.create_backup(description=f"Scheduled {frequency} backup")
+                        if result.get('success'):
+                            self.backup_manager._log_db_event('INFO', 'backup_completed', f"Scheduled backup: {result.get('metadata', {}).get('filename', 'unknown')}")
+                        else:
+                            self.backup_manager._log_db_event('ERROR', 'backup_failed', f"Scheduled backup failed: {result.get('error', 'unknown')}")
+                        self._last_run_date = now
+                    else:
+                        msg = safety.get('warning', 'unknown issue')
+                        self.backup_manager.logger.warning(f"Scheduled backup skipped: {msg}")
+                        self.backup_manager._log_db_event('WARNING', 'backup_failed', f"Scheduled backup skipped: {msg}")
+                else:
+                    missed = self._check_missed_backup()
+                    if missed:
+                        self.backup_manager.logger.warning(
+                            f"Missed scheduled backup detected (last run: {self._last_run_date})"
+                        )
                 
-                # Sleep for 1 minute
                 time.sleep(60)
                 
             except Exception as e:

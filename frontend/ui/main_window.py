@@ -55,7 +55,7 @@ from ui.components.loading_spinner import LoadingOverlay
 from ui.components.navigation_header import NavigationHeader
 from ui.theme.theme_manager import ThemeManager
 from theme.theme_engine import ThemeEngine
-from utils.logger import get_logger, set_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id, record_screen_load, record_error, detect_error_bursts, generate_operational_insight_report
+from utils.logger import get_logger, set_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id, record_screen_load, record_error, detect_error_bursts, generate_operational_insight_report, emit_event
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 
 log = get_logger('ui')
@@ -176,7 +176,11 @@ class MainWindow(QMainWindow):
         except Exception as e:
             self.health_label.setText("● Error")
             self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: 15px; font-weight: bold;")
+            _cid = generate_correlation_id("health")
             record_error(exc_type=type(e).__name__, module='startup_health', category='api')
+            emit_event('system_event', module='main_window', action='health_check_error',
+                       metadata={'error': str(e), 'screen': get_active_screen()},
+                       correlation_id=_cid)
             log.warning(f"Startup health check error: {e}",
                          extra={'extra_fields': {'tags': ['system', 'startup', 'error']}})
 
@@ -523,9 +527,12 @@ class MainWindow(QMainWindow):
     def change_page(self, index, page_title):
         """Change the current page based on sidebar selection."""
         _start = time.time()
+        _corr = generate_correlation_id("nav")
         log.debug(f"Navigate to page {index}: {page_title.strip()}",
                    extra={'extra_fields': {'tags': ['ui', 'navigation']}})
         set_active_screen(page_title.strip())
+        emit_event('navigation_event', module='main_window',
+                   action=page_title.strip(), correlation_id=_corr)
 # --- Navigation History (Phase 4) ---
         if not self._disable_history:
             current = self.pages.currentIndex()
@@ -745,6 +752,7 @@ class MainWindow(QMainWindow):
 
     def on_theme_changed(self, theme_name):
         """Handle theme change — update constants and re-apply stylesheets."""
+        _cid = generate_correlation_id("theme")
         engine = ThemeEngine.instance()
         if engine.current_theme() != theme_name:
             engine.apply_theme(theme_name)
@@ -757,6 +765,10 @@ class MainWindow(QMainWindow):
         except Exception:
             log.info(f"Theme switched to {theme_name}",
                       extra={'extra_fields': {'tags': ['ui', 'theme']}})
+        emit_event('ui_action', module='main_window',
+                   action=f'theme_switch:{theme_name}',
+                   metadata={'snapshot': hs if 'hs' in dir() else {}},
+                   correlation_id=_cid)
 
     def _refresh_window_styles(self):
         """Re-apply the content-frame stylesheet after a theme switch."""
@@ -1153,6 +1165,7 @@ class MainWindow(QMainWindow):
         
         if reply == QMessageBox.Yes:
             username = self.user_data.get('username', 'unknown')
+            _cid = generate_correlation_id("auth")
             try:
                 hs = capture_health_snapshot()
                 log.info(f"User logout: {username} | snapshot: {hs}",
@@ -1160,6 +1173,9 @@ class MainWindow(QMainWindow):
             except Exception:
                 log.info(f"User logout: {username}",
                           extra={'extra_fields': {'tags': ['auth', 'logout']}})
+            emit_event('auth_event', module='main_window', action='logout',
+                       metadata={'username': username, 'screen': get_active_screen()},
+                       correlation_id=_cid)
             encrypted_clear_session()
             self.api_client.clear_auth_token()
             

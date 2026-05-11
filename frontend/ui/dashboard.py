@@ -5,6 +5,7 @@ from PySide6.QtGui import QFont
 from ui.role_manager import UserRole
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from theme.theme_engine import ThemeEngine
 
 
 class Dashboard(QWidget):
@@ -30,6 +31,8 @@ class Dashboard(QWidget):
         self._refresh_timer.timeout.connect(self.refresh_data)
         self._refresh_timer.start(60000)
 
+        self._theme_token = ThemeEngine.instance().register(self.refresh_theme)
+
         if self._api_client:
             QTimer.singleShot(200, self.refresh_data)
 
@@ -42,9 +45,43 @@ class Dashboard(QWidget):
         self._rebuild_role_section()
         self.refresh_data()
 
+    def refresh_theme(self):
+        """Re-apply dashboard stylesheets with current theme colors."""
+        self.setStyleSheet(f"""
+            QWidget#dashboard {{ background-color: {COLOR_BG_MAIN}; }}
+        """)
+        for child in self.findChildren(QScrollArea):
+            child.setStyleSheet(f"QScrollArea {{ background-color: {COLOR_BG_MAIN}; }}")
+            break
+        self._subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
+
+        # Re-apply KPI card frame backgrounds
+        for pair in self._kpi_labels.values():
+            _, v_lbl = pair
+            parent = v_lbl.parent()
+            if parent:
+                border_color = self.C.get(
+                    [k for k, v in self.C.items() if v == v_lbl.styleSheet().split('color:')[1].strip().rstrip(';')][0]
+                    if 'color:' in v_lbl.styleSheet() else 'blue', COLOR_PRIMARY)
+                parent.setStyleSheet(f"""
+                    QFrame {{
+                        background-color: {COLOR_BG_ELEVATED};
+                        border-left: 4px solid {border_color};
+                        border-radius: 8px;
+                    }}
+                """)
+
+        # Re-apply role + alert card backgrounds
+        for name in ('roleCard', 'alertCard', 'actionsCard'):
+            for child in self.findChildren(QFrame):
+                if child.objectName() == name:
+                    child.setStyleSheet(f"QFrame#{name} {{ background: {COLOR_BG_ELEVATED}; border-radius: 10px; }}")
+        self._rebuild_alerts()
+
     def cleanup(self):
         if self._refresh_timer:
             self._refresh_timer.stop()
+        ThemeEngine.instance().unregister(self._theme_token)
 
     # ------------------------------------------------------------------
     # Static UI  (built once, never fully rebuilt)

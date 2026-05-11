@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
@@ -65,17 +66,17 @@ class SalesAccountingService:
         return total_cogs.quantize(Decimal('0.01'))
 
     @classmethod
-    def create_sales_journal_entry(cls, invoice: SalesInvoice, allocations: list = None) -> dict:
+    def create_sales_journal_entry(cls, invoice: SalesInvoice, allocations: list = None, cogs_override: Decimal = None) -> dict:
         """Create journal entry for a sales invoice.
-        
+
         Debit: Accounts Receivable (total_amount)
         Debit: COGS (cost of goods sold) - if allocations provided
         Credit: Sales Revenue (subtotal - tax)
         Credit: Tax Payable (tax)
         Credit: Inventory (1300) - if COGS calculated
         """
-        revenue_amount = invoice.subtotal - invoice.tax if invoice.tax > 0 else invoice.subtotal
-        
+        revenue_amount = invoice.subtotal
+
         lines = [
             {
                 'account_code': cls.AR_ACCOUNT_CODE,
@@ -84,9 +85,15 @@ class SalesAccountingService:
                 'description': f'Sale invoice {invoice.invoice_number} - {invoice.customer.name}'
             },
         ]
-        
+
+        # Calculate COGS once (either from override or allocations)
+        cogs_amount = Decimal('0.00')
         if allocations:
-            cogs_amount = cls.calculate_cogs(invoice, allocations)
+            if cogs_override is not None:
+                cogs_amount = cogs_override.quantize(Decimal('0.01'))
+            else:
+                cogs_amount = cls.calculate_cogs(invoice, allocations)
+
             if cogs_amount > 0:
                 lines.append({
                     'account_code': cls.COGS_ACCOUNT_CODE,
@@ -94,14 +101,14 @@ class SalesAccountingService:
                     'credit': 0,
                     'description': f'COGS for invoice {invoice.invoice_number}'
                 })
-        
+
         lines.append({
             'account_code': cls.REVENUE_ACCOUNT_CODE,
             'debit': 0,
             'credit': revenue_amount,
             'description': f'Revenue from invoice {invoice.invoice_number}'
         })
-        
+
         if invoice.tax > 0:
             lines.append({
                 'account_code': cls.TAX_ACCOUNT_CODE,
@@ -109,30 +116,31 @@ class SalesAccountingService:
                 'credit': invoice.tax,
                 'description': f'Tax on invoice {invoice.invoice_number}'
             })
-        
-        if allocations:
-            cogs_amount = cls.calculate_cogs(invoice, allocations)
-            if cogs_amount > 0:
-                lines.append({
-                    'account_code': cls.INVENTORY_ACCOUNT_CODE,
-                    'debit': 0,
-                    'credit': cogs_amount,
-                    'description': f'Inventory reduction for invoice {invoice.invoice_number}'
-                })
-        
+
+        if cogs_amount > 0:
+            lines.append({
+                'account_code': cls.INVENTORY_ACCOUNT_CODE,
+                'debit': 0,
+                'credit': cogs_amount,
+                'description': f'Inventory reduction for invoice {invoice.invoice_number}'
+            })
+
         result = JournalEngine.create_entry(
             entry_type='SALE',
             description=f'Sales invoice {invoice.invoice_number} - {invoice.customer.name}',
             lines=lines,
             entry_date=invoice.invoice_date,
             reference=invoice.invoice_number,
-            auto_post=True
+            auto_post=True,
+            source_module='sales',
+            source_document=str(invoice.id),
+            change_reason=f'Sales invoice {invoice.invoice_number}'
         )
-        
+
         if result.get('success'):
             invoice.journal_entry_id = result.get('entry_id')
             invoice.save(update_fields=['journal_entry_id', 'updated_at'])
-        
+
         return result
 
     @classmethod
@@ -367,8 +375,10 @@ class SalesInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
                 invoice.save(update_fields=['status', 'updated_at'])
                 
                 # Create accounting journal entry (with allocations for COGS calculation)
+                # COGS is calculated from actual batch costs via allocations
                 accounting_result = SalesAccountingService.create_sales_journal_entry(
-                    invoice, allocations=stock_result.allocations
+                    invoice, allocations=stock_result.allocations,
+                    cogs_override=None,  # Uses batch purchase prices from allocations
                 )
                 
                 if not accounting_result.get('success'):
@@ -461,6 +471,3 @@ class CustomerPaymentViewSet(viewsets.ModelViewSet):
         """Create payment, update balances, and create journal entry."""
         payment = serializer.save()
         payment.update_customer_balance()
-        
-        # Create accounting journal entry for the payment
-        SalesAccountingService.create_receipt_journal_entry(payment)

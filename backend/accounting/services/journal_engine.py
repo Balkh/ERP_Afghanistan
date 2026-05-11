@@ -6,7 +6,12 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone as django_timezone
 
-from accounting.models import Account, JournalEntry, JournalEntryLine
+from accounting.models import Account, JournalEntry, JournalEntryLine, JournalEventLog
+
+
+class AccountingError(Exception):
+    """Raised when an accounting operation fails and MUST be handled."""
+    pass
 
 
 class JournalEngine:
@@ -113,61 +118,87 @@ class JournalEngine:
         entry_date: Optional[date] = None,
         reference: str = '',
         entry_number: Optional[str] = None,
-        auto_post: bool = False
+        auto_post: bool = False,
+        source_module: str = '',
+        source_document: str = '',
+        change_reason: str = '',
+        created_by: Optional[int] = None,
     ) -> dict:
         """
-        Create a new journal entry with double-entry validation.
+        Create a new journal entry with double-entry validation and full audit trail.
         """
         if entry_date is None:
             entry_date = django_timezone.now().date()
-        
+
         if not entry_number:
             entry_number = JournalEngine.generate_entry_number(entry_type)
-        
+
         validation_errors = JournalEngine.validate_lines(lines)
-        
+
         if JournalEntry.objects.filter(entry_number=entry_number).exists():
             validation_errors.append(f"Entry number {entry_number} already exists.")
-        
+
         if validation_errors:
             return {'success': False, 'errors': validation_errors}
-        
+
         total_debit = Decimal('0.00')
         total_credit = Decimal('0.00')
-        
+
         entry = JournalEntry.objects.create(
             entry_number=entry_number,
             entry_date=entry_date,
             entry_type=entry_type,
             description=description,
             reference=reference,
-            is_posted=auto_post
+            is_posted=auto_post,
+            source_module=source_module,
+            source_document=source_document,
+            change_reason=change_reason,
+            created_by_id=created_by,
         )
-        
+
         for line_data in lines:
             account = None
             if 'account_id' in line_data:
-                account = Account.objects.get(id=line_data['account_id'])
+                account = Account.objects.select_for_update().get(id=line_data['account_id'])
             elif 'account_code' in line_data:
-                account = Account.objects.get(code=line_data['account_code'])
-            
+                account = Account.objects.select_for_update().get(code=line_data['account_code'])
+
             debit = Decimal(str(line_data.get('debit', 0)))
             credit = Decimal(str(line_data.get('credit', 0)))
-            
+
             JournalEntryLine.objects.create(
                 entry=entry,
                 account=account,
                 debit=debit,
                 credit=credit,
-                description=line_data.get('description', '')
+                description=line_data.get('description', ''),
+                created_by_id=created_by,
             )
-            
+
             total_debit += debit
             total_credit += credit
-        
+
+        # Log creation event
+        JournalEventLog.objects.create(
+            entry=entry,
+            event_type='CREATED',
+            user_id=created_by,
+            notes=change_reason or f'Entry created: {entry_number}',
+        )
+
         if auto_post:
             JournalEngine.update_account_balances(entry)
-        
+            entry.is_posted = True
+            entry.posted_by_id = created_by
+            entry.save(update_fields=['is_posted', 'posted_by', 'updated_at'])
+            JournalEventLog.objects.create(
+                entry=entry,
+                event_type='POSTED',
+                user_id=created_by,
+                notes='Auto-posted on creation',
+            )
+
         return {
             'success': True,
             'entry_id': str(entry.id),
@@ -177,28 +208,58 @@ class JournalEngine:
         }
 
     @staticmethod
+    def log_event(
+        entry: JournalEntry,
+        event_type: str,
+        user_id: Optional[int] = None,
+        reference: str = '',
+        notes: str = '',
+        ip_address: str = ''
+    ) -> JournalEventLog:
+        """
+        Centralized helper to log a journal event.
+        Use this for all event logging to ensure consistency.
+        """
+        return JournalEventLog.objects.create(
+            entry=entry,
+            event_type=event_type,
+            user_id=user_id,
+            reference=reference,
+            notes=notes,
+            ip_address=ip_address,
+        )
+
+    @staticmethod
     @transaction.atomic
-    def post_entry(entry_id) -> dict:
+    def post_entry(entry_id, posted_by: Optional[int] = None) -> dict:
         """Post a journal entry, locking it and updating account balances."""
         try:
-            entry = JournalEntry.objects.get(id=entry_id)
+            entry = JournalEntry.objects.select_for_update().get(id=entry_id)
         except JournalEntry.DoesNotExist:
             return {'success': False, 'errors': ['Journal entry not found']}
-        
+
         if entry.is_posted:
             return {'success': False, 'errors': ['Entry is already posted']}
-        
+
         if not entry.is_balanced:
             return {
                 'success': False,
                 'errors': [f'Cannot post unbalanced entry. Debits: {entry.total_debit:.2f}, Credits: {entry.total_credit:.2f}']
             }
-        
+
         entry.is_posted = True
-        entry.save(update_fields=['is_posted', 'updated_at'])
-        
+        entry.posted_by_id = posted_by
+        entry.save(update_fields=['is_posted', 'posted_by', 'updated_at'])
+
         JournalEngine.update_account_balances(entry)
-        
+
+        JournalEngine.log_event(
+            entry=entry,
+            event_type='POSTED',
+            user_id=posted_by,
+            notes='Entry posted',
+        )
+
         return {
             'success': True,
             'message': 'Journal entry posted successfully',
@@ -207,21 +268,28 @@ class JournalEngine:
 
     @staticmethod
     @transaction.atomic
-    def unpost_entry(entry_id) -> dict:
+    def unpost_entry(entry_id, user_id: Optional[int] = None) -> dict:
         """Unpost a journal entry, reverting account balance changes."""
         try:
-            entry = JournalEntry.objects.get(id=entry_id)
+            entry = JournalEntry.objects.select_for_update().get(id=entry_id)
         except JournalEntry.DoesNotExist:
             return {'success': False, 'errors': ['Journal entry not found']}
-        
+
         if not entry.is_posted:
             return {'success': False, 'errors': ['Entry is not posted']}
-        
+
         entry.is_posted = False
         entry.save(update_fields=['is_posted', 'updated_at'])
-        
+
         JournalEngine.recalculate_all_balances()
-        
+
+        JournalEngine.log_event(
+            entry=entry,
+            event_type='UNPOSTED',
+            user_id=user_id,
+            notes='Entry unposted',
+        )
+
         return {
             'success': True,
             'message': 'Journal entry unposted successfully',
@@ -230,16 +298,19 @@ class JournalEngine:
 
     @staticmethod
     @transaction.atomic
-    def reverse_entry(entry_id, reason: str = '') -> dict:
+    def reverse_entry(entry_id, reason: str = '', user_id: Optional[int] = None) -> dict:
         """Reverse a posted journal entry by creating an opposite entry."""
         try:
-            original = JournalEntry.objects.get(id=entry_id)
+            original = JournalEntry.objects.select_for_update().get(id=entry_id)
         except JournalEntry.DoesNotExist:
             return {'success': False, 'errors': ['Original journal entry not found']}
-        
+
         if not original.is_posted:
             return {'success': False, 'errors': ['Cannot reverse an unposted entry']}
-        
+
+        if original.is_reversed:
+            return {'success': False, 'errors': ['Entry has already been reversed']}
+
         reversed_lines = []
         for line in original.lines.all():
             reversed_lines.append({
@@ -248,37 +319,59 @@ class JournalEngine:
                 'credit': line.debit,
                 'description': f"Reversal: {line.description}"
             })
-        
+
         reversal_number = f"REV-{original.entry_number}"
-        return JournalEngine.create_entry(
+
+        # Log reversal event on original BEFORE creating reversal entry
+        JournalEngine.log_event(
+            entry=original,
+            event_type='REVERSED',
+            user_id=user_id,
+            notes=f'Reversed by entry {reversal_number}: {reason}',
+            reference=reversal_number,
+        )
+
+        result = JournalEngine.create_entry(
             entry_type='REVERSAL',
             description=f"Reversal of {original.entry_number}: {reason or original.description}",
             lines=reversed_lines,
             entry_date=django_timezone.now().date(),
             reference=original.reference,
             entry_number=reversal_number,
-            auto_post=True
+            auto_post=True,
+            source_module='accounting',
+            source_document=str(original.id),
+            change_reason=f'Reversal: {reason}',
+            created_by=user_id,
         )
 
+        if result.get('success'):
+            original.refresh_from_db()
+            original.reversed_by_entry_id = result.get('entry_id')
+            original.save(update_fields=['reversed_by_entry', 'updated_at'])
+
+        return result
+
     @staticmethod
+    @transaction.atomic
     def update_account_balances(entry: JournalEntry):
-        """Update account balances based on a posted journal entry."""
+        """Update account balances based on a posted journal entry with row-level locking."""
         for line in entry.lines.all():
-            account = line.account
-            
+            account = Account.objects.select_for_update().get(id=line.account.id)
+
             total_debit = JournalEntryLine.objects.filter(
                 account=account, entry__is_posted=True, entry__is_active=True
             ).aggregate(total=models.Sum('debit'))['total'] or Decimal('0.00')
-            
+
             total_credit = JournalEntryLine.objects.filter(
                 account=account, entry__is_posted=True, entry__is_active=True
             ).aggregate(total=models.Sum('credit'))['total'] or Decimal('0.00')
-            
+
             if account.account_type in ['ASSET', 'EXPENSE']:
                 balance = total_debit - total_credit
             else:
                 balance = total_credit - total_debit
-            
+
             Account.objects.filter(id=account.id).update(balance=balance)
 
     @staticmethod

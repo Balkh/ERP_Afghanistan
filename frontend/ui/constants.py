@@ -1,5 +1,196 @@
 """UI constants for consistent styling across the ERP application."""
 
+# ═══════════════════════════════════════════════════════════════
+# LIVE THEME SYSTEM — colors switch at runtime
+# ═══════════════════════════════════════════════════════════════
+# The module-level COLOR_* variables default to DARK theme.
+# Call ``set_active_theme("light")`` or ``set_active_theme("dark")``
+# to update all COLOR_* globals instantly.
+#
+# ThemeEngine (theme/theme_engine.py) calls this automatically;
+# individual screens import COLOR_* as usual.
+# ═══════════════════════════════════════════════════════════════
+
+_active_theme_name: str = "dark"
+
+_THEME_DARK = {
+    # Primary colors
+    "COLOR_PRIMARY": "#89b4fa",
+    "COLOR_PRIMARY_HOVER": "#74c7ec",
+    "COLOR_PRIMARY_ACTIVE": "#89dceb",
+    "COLOR_PRIMARY_MUTED": "#45475a",
+    # Semantic colors
+    "COLOR_SUCCESS": "#a6e3a1",
+    "COLOR_SUCCESS_HOVER": "#94e2d5",
+    "COLOR_SUCCESS_ACTIVE": "#74c7a0",
+    "COLOR_SUCCESS_MUTED": "#45475a",
+    "COLOR_SUCCESS_BG": "#1e3a2f",
+    "COLOR_WARNING": "#f9e2af",
+    "COLOR_WARNING_HOVER": "#fab387",
+    "COLOR_WARNING_ACTIVE": "#f38ba8",
+    "COLOR_WARNING_MUTED": "#45475a",
+    "COLOR_WARNING_BG": "#3a3520",
+    "COLOR_DANGER": "#f38ba8",
+    "COLOR_DANGER_HOVER": "#eba0ac",
+    "COLOR_DANGER_ACTIVE": "#dc2626",
+    "COLOR_DANGER_MUTED": "#45475a",
+    "COLOR_DANGER_BG": "#3a1f2a",
+    "COLOR_INFO": "#89b4fa",
+    "COLOR_INFO_HOVER": "#74c7ec",
+    "COLOR_INFO_ACTIVE": "#89dceb",
+    "COLOR_INFO_MUTED": "#45475a",
+    "COLOR_INFO_BG": "#1e2a3a",
+    # Backgrounds
+    "COLOR_BG_MAIN": "#1e1e2e",
+    "COLOR_BG_SURFACE": "#282838",
+    "COLOR_BG_ELEVATED": "#313244",
+    "COLOR_BG_INPUT": "#1e1e2e",
+    # Text
+    "COLOR_TEXT_PRIMARY": "#cdd6f4",
+    "COLOR_TEXT_SECONDARY": "#a6adc8",
+    "COLOR_TEXT_MUTED": "#6c7086",
+    "COLOR_TEXT_ON_PRIMARY": "#11111b",
+    # Light-theme-named tokens (dark values — used as-is in dark mode)
+    "COLOR_BG_LIGHT": "#313244",
+    "COLOR_BG_LIGHT_SURFACE": "#313244",
+    "COLOR_TEXT_LIGHT": "#cdd6f4",
+    "COLOR_TEXT_SECONDARY_LIGHT": "#a6adc8",
+    "COLOR_TEXT_DIALOG": "#cdd6f4",
+    "COLOR_BORDER_LIGHT_THEME": "#45475a",
+    "COLOR_MUTED_LIGHT": "#6c7086",
+    "COLOR_BG_BUTTON_LIGHT": "#585b70",
+    "COLOR_BG_BUTTON_SECONDARY": "#45475a",
+    # Secondary button
+    "COLOR_SECONDARY_BG": "#45475a",
+    "COLOR_SECONDARY_HOVER": "#585b70",
+    "COLOR_SECONDARY_TEXT": "#cdd6f4",
+    "COLOR_SECONDARY_ACTIVE": "#6c7086",
+    # Borders
+    "COLOR_BORDER": "#45475a",
+    "COLOR_BORDER_LIGHT": "#38384a",
+    "COLOR_BORDER_FOCUS": "#89b4fa",
+    "COLOR_BORDER_DIALOG": "#45475a",
+    "COLOR_BORDER_TABLE": "#45475a",
+    "COLOR_BORDER_INPUT": "#45475a",
+    "COLOR_TABLE_GRIDLINE": "#45475a",
+    "COLOR_TEXT_TITLE": "#cdd6f4",
+    "COLOR_HEADER_DARK": "#11111b",
+    # Tables
+    "COLOR_TABLE_HEADER": "#313244",
+    "COLOR_TABLE_ALT": "#282838",
+    "COLOR_TABLE_GRID": "#45475a",
+    "COLOR_TABLE_BORDER_LIGHT": "#585b70",
+    "COLOR_TABLE_HEADER_BG_LIGHT": "#45475a",
+    "COLOR_FORM_BORDER_LIGHT": "#585b70",
+    "COLOR_FORM_TEXT_LIGHT": "#cdd6f4",
+    "COLOR_UI_DIVIDER_LIGHT": "#45475a",
+    # Status indicators
+    "COLOR_STATUS_VALID": "#a6e3a1",
+    "COLOR_STATUS_INVALID": "#f38ba8",
+    "COLOR_STATUS_WARNING": "#fab387",
+    "COLOR_STATUS_PENDING": "#f9e2af",
+    # Brand
+    "COLOR_WHATSAPP": "#25D366",
+}
+
+_THEME_LIGHT = {
+    "COLOR_PRIMARY": "#4a8ae8",
+    "COLOR_PRIMARY_HOVER": "#3a7ad8",
+    "COLOR_PRIMARY_ACTIVE": "#2a6ac8",
+    "COLOR_PRIMARY_MUTED": "#b0b8c8",
+    "COLOR_SUCCESS": "#2ecc71",
+    "COLOR_SUCCESS_HOVER": "#27ae60",
+    "COLOR_SUCCESS_ACTIVE": "#1e9b54",
+    "COLOR_SUCCESS_MUTED": "#b0b8c8",
+    "COLOR_SUCCESS_BG": "#e8f8f0",
+    "COLOR_WARNING": "#f39c12",
+    "COLOR_WARNING_HOVER": "#e67e22",
+    "COLOR_WARNING_ACTIVE": "#d35400",
+    "COLOR_WARNING_MUTED": "#b0b8c8",
+    "COLOR_WARNING_BG": "#fef5e7",
+    "COLOR_DANGER": "#e74c3c",
+    "COLOR_DANGER_HOVER": "#c0392b",
+    "COLOR_DANGER_ACTIVE": "#a93226",
+    "COLOR_DANGER_MUTED": "#b0b8c8",
+    "COLOR_DANGER_BG": "#fdedec",
+    "COLOR_INFO": "#3498db",
+    "COLOR_INFO_HOVER": "#2980b9",
+    "COLOR_INFO_ACTIVE": "#1f6da0",
+    "COLOR_INFO_MUTED": "#b0b8c8",
+    "COLOR_INFO_BG": "#eaf2f8",
+    "COLOR_BG_MAIN": "#f4f5f8",
+    "COLOR_BG_SURFACE": "#ffffff",
+    "COLOR_BG_ELEVATED": "#e8eaf0",
+    "COLOR_BG_INPUT": "#ffffff",
+    "COLOR_TEXT_PRIMARY": "#1a1b2e",
+    "COLOR_TEXT_SECONDARY": "#5a5b7a",
+    "COLOR_TEXT_MUTED": "#9a9bb0",
+    "COLOR_TEXT_ON_PRIMARY": "#ffffff",
+    "COLOR_BG_LIGHT": "#f4f5f8",
+    "COLOR_BG_LIGHT_SURFACE": "#ffffff",
+    "COLOR_TEXT_LIGHT": "#1a1b2e",
+    "COLOR_TEXT_SECONDARY_LIGHT": "#5a5b7a",
+    "COLOR_TEXT_DIALOG": "#1a1b2e",
+    "COLOR_BORDER_LIGHT_THEME": "#d1d3dc",
+    "COLOR_MUTED_LIGHT": "#9a9bb0",
+    "COLOR_BG_BUTTON_LIGHT": "#e8eaf0",
+    "COLOR_BG_BUTTON_SECONDARY": "#dcdee5",
+    "COLOR_SECONDARY_BG": "#dcdee5",
+    "COLOR_SECONDARY_HOVER": "#c5c7d0",
+    "COLOR_SECONDARY_TEXT": "#1a1b2e",
+    "COLOR_SECONDARY_ACTIVE": "#b0b8c8",
+    "COLOR_BORDER": "#d1d3dc",
+    "COLOR_BORDER_LIGHT": "#e5e6ed",
+    "COLOR_BORDER_FOCUS": "#4a8ae8",
+    "COLOR_BORDER_DIALOG": "#d1d3dc",
+    "COLOR_BORDER_TABLE": "#d1d3dc",
+    "COLOR_BORDER_INPUT": "#c5c7d0",
+    "COLOR_TABLE_GRIDLINE": "#d1d3dc",
+    "COLOR_TEXT_TITLE": "#1a1b2e",
+    "COLOR_HEADER_DARK": "#2c3e70",
+    "COLOR_TABLE_HEADER": "#dcdee5",
+    "COLOR_TABLE_ALT": "#f4f5f8",
+    "COLOR_TABLE_GRID": "#d1d3dc",
+    "COLOR_TABLE_BORDER_LIGHT": "#c5c7d0",
+    "COLOR_TABLE_HEADER_BG_LIGHT": "#dcdee5",
+    "COLOR_FORM_BORDER_LIGHT": "#c5c7d0",
+    "COLOR_FORM_TEXT_LIGHT": "#1a1b2e",
+    "COLOR_UI_DIVIDER_LIGHT": "#d1d3dc",
+    "COLOR_STATUS_VALID": "#27ae60",
+    "COLOR_STATUS_INVALID": "#e74c3c",
+    "COLOR_STATUS_WARNING": "#e67e22",
+    "COLOR_STATUS_PENDING": "#f39c12",
+    "COLOR_WHATSAPP": "#25D366",
+}
+
+
+def set_active_theme(theme_name: str) -> None:
+    """Update all COLOR_* globals to the named theme's palette."""
+    global _active_theme_name
+    pool = _THEME_LIGHT if theme_name == "light" else _THEME_DARK
+    _active_theme_name = theme_name
+    g = globals()
+    for name, value in pool.items():
+        g[name] = value
+    g["COLOR_TEXT"] = g["COLOR_TEXT_PRIMARY"]
+    g["COLOR_BACKGROUND"] = g["COLOR_BG_MAIN"]
+
+
+def get_active_theme() -> str:
+    """Return ``"dark"`` or ``"light"`` depending on active palette."""
+    return _active_theme_name
+
+
+def get_active_colors() -> dict:
+    """Return the full color dict for the active theme."""
+    return _THEME_LIGHT if _active_theme_name == "light" else _THEME_DARK
+
+
+# ═══════════════════════════════════════════════════════════════
+# Apply DARK defaults so existing imports work unchanged.
+# ═══════════════════════════════════════════════════════════════
+set_active_theme("dark")
+
 # Spacing constants (in pixels)
 SPACING_NONE = 0
 SPACING_XS = 4
@@ -66,105 +257,12 @@ Z_INDEX_TOOLTIP = 3
 Z_INDEX_MODAL = 4
 Z_INDEX_TOAST = 5
 
-# =====================================================
-# DESIGN TOKEN SYSTEM - PHASE 1: COLOR TOKENIZATION
-# =====================================================
-
-# Primary colors
-COLOR_PRIMARY = "#89b4fa"           # Primary blue (buttons, links)
-COLOR_PRIMARY_HOVER = "#74c7ec"     # Primary hover state
-COLOR_PRIMARY_ACTIVE = "#89dceb"   # Primary active/pressed state
-COLOR_PRIMARY_MUTED = "#45475a"    # Primary muted/disabled
-
-# Semantic colors
-COLOR_SUCCESS = "#a6e3a1"          # Success green
-COLOR_SUCCESS_HOVER = "#94e2d5"    # Success hover state
-COLOR_SUCCESS_ACTIVE = "#74c7a0"   # Success active/pressed state
-COLOR_SUCCESS_MUTED = "#45475a"   # Success muted/disabled state
-COLOR_SUCCESS_BG = "#1e3a2f"       # Success background
-COLOR_WARNING = "#f9e2af"          # Warning yellow/orange
-COLOR_WARNING_HOVER = "#fab387"    # Warning hover state
-COLOR_WARNING_ACTIVE = "#f38ba8"   # Warning active state
-COLOR_WARNING_MUTED = "#45475a"    # Warning muted state
-COLOR_WARNING_BG = "#3a3520"       # Warning background
-COLOR_DANGER = "#f38ba8"           # Danger red
-COLOR_DANGER_HOVER = "#eba0ac"     # Danger hover state
-COLOR_DANGER_ACTIVE = "#dc2626"    # Danger active state
-COLOR_DANGER_MUTED = "#45475a"     # Danger muted state
-COLOR_DANGER_BG = "#3a1f2a"        # Danger background
-COLOR_INFO = "#89b4fa"             # Info blue
-COLOR_INFO_HOVER = "#74c7ec"       # Info hover state
-COLOR_INFO_ACTIVE = "#89dceb"      # Info active state
-COLOR_INFO_MUTED = "#45475a"       # Info muted state
-COLOR_INFO_BG = "#1e2a3a"         # Info background
-
-# Background colors (dark theme)
-COLOR_BG_MAIN = "#1e1e2e"          # Main background (dark base)
-COLOR_BG_SURFACE = "#282838"       # Surface/cards
-COLOR_BG_ELEVATED = "#313244"       # Elevated elements
-COLOR_BG_INPUT = "#1e1e2e"         # Input fields background
-
-# Text colors
-COLOR_TEXT_PRIMARY = "#cdd6f4"     # Primary text (high contrast)
-COLOR_TEXT_SECONDARY = "#a6adc8"   # Secondary text (medium contrast)
-COLOR_TEXT_MUTED = "#6c7086"       # Muted/disabled text
-COLOR_TEXT_ON_PRIMARY = "#11111b"  # Text on primary color
-
-# Light theme specific (for dialogs/forms on light backgrounds)
-COLOR_BG_LIGHT = "#282838"         # Light background for dialogs
-COLOR_BG_LIGHT_SURFACE = "#313244" # Light surface
-COLOR_TEXT_LIGHT = "#cdd6f4"       # Text on light backgrounds
-COLOR_TEXT_SECONDARY_LIGHT = "#a6adc8"  # Secondary text light
-COLOR_TEXT_DIALOG = "#cdd6f4"       # Dialog label text
-COLOR_BORDER_LIGHT_THEME = "#45475a"   # Border for light theme
-COLOR_MUTED_LIGHT = "#6c7086"      # Muted text light
-COLOR_BG_BUTTON_LIGHT = "#585b70"   # Light theme button background
-COLOR_BG_BUTTON_SECONDARY = "#45475a"  # Secondary/secondary button
-
-# Secondary button system
-COLOR_SECONDARY_BG = "#45475a"       # Secondary button background
-COLOR_SECONDARY_HOVER = "#585b70"     # Secondary button hover
-COLOR_SECONDARY_TEXT = "#cdd6f4"      # Secondary button text
-COLOR_SECONDARY_ACTIVE = "#6c7086"    # Secondary button active
-
-# Border colors
-COLOR_BORDER = "#45475a"           # Default border
-COLOR_BORDER_LIGHT = "#38384a"     # Light border
-COLOR_BORDER_FOCUS = "#89b4fa"     # Focus state border
-COLOR_BORDER_LIGHT_THEME = "#45475a"  # Light theme border
-COLOR_BORDER_DIALOG = "#45475a"    # Dialog border
-COLOR_BORDER_TABLE = "#45475a"     # Table grid/border
-COLOR_BORDER_INPUT = "#45475a"     # Input field border
-COLOR_TABLE_GRIDLINE = "#45475a"  # Table grid lines
-COLOR_TEXT_TITLE = "#cdd6f4"       # Title text color
-COLOR_HEADER_DARK = "#11111b"     # Header background dark
-
-# Table colors
-COLOR_TABLE_HEADER = "#313244"    # Table header background
-COLOR_TABLE_ALT = "#282838"        # Table alternate row
-COLOR_TABLE_GRID = "#45475a"       # Table grid lines
-
-# Status indicator colors
-COLOR_STATUS_VALID = "#a6e3a1"     # Valid/active status
-COLOR_STATUS_INVALID = "#f38ba8"   # Invalid/error status
-COLOR_STATUS_WARNING = "#fab387"   # Warning status (orange)
-COLOR_STATUS_PENDING = "#f9e2af"  # Pending status
-
-# WhatsApp brand color (for document_action_dialog)
-COLOR_WHATSAPP = "#25D366"
-
-# =====================================================
-# PHASE 3: LIGHT THEME READABILITY TOKENS (SAFE EXTENSION)
-# =====================================================
-# These tokens improve Light Theme readability without
-# modifying existing tokens. Applied selectively to
-# tables, forms, borders, and UI dividers.
-
-COLOR_TABLE_BORDER_LIGHT = "#585b70"       # Clear table gridlines/borders
-COLOR_TABLE_HEADER_BG_LIGHT = "#45475a"    # Distinct table header background
-COLOR_FORM_BORDER_LIGHT = "#585b70"        # Visible input/control borders
-COLOR_FORM_TEXT_LIGHT = "#cdd6f4"          # High-contrast form input text
-COLOR_UI_DIVIDER_LIGHT = "#45475a"         # Visible section dividers
+# ═══════════════════════════════════════════════════════════════
+# COLOR TOKENS — sourced from the active theme dict above.
+# Values change at runtime when ``set_active_theme()`` is called.
+# ═══════════════════════════════════════════════════════════════
+# All COLOR_* variables are set by ``set_active_theme("dark")``
+# at module init.  See the _THEME_DARK / _THEME_LIGHT dicts above.
 
 # =====================================================
 # PHASE 2: LAYOUT TOKENIZATION

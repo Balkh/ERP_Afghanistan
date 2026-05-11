@@ -165,6 +165,7 @@ REST_FRAMEWORK = {
     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
     'DEFAULT_VERSION': 'v1',
     'VERSIONS': ['v1'],
+    'EXCEPTION_HANDLER': 'core.api.exception_handler.standardized_exception_handler',
 }
 
 # CORS settings
@@ -263,3 +264,14 @@ LOGGING = {
 # Create logs directory if it doesn't exist
 logs_dir = BASE_DIR / 'logs'
 logs_dir.mkdir(exist_ok=True)
+
+# Startup validation: warn if SECRET_KEY is still the insecure default
+_default_secret = 'django-insecure-please-change-in-production'
+if SECRET_KEY == _default_secret and not DEBUG:
+    import warnings
+    warnings.warn(
+        "SECRET_KEY is still set to the insecure default. "
+        "Set the SECRET_KEY environment variable in production.",
+        RuntimeWarning,
+        stacklevel=2
+    )

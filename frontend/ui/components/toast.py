@@ -28,8 +28,8 @@ class Toast(QFrame):
         # Set background color based on type
         colors = {
             "success": COLOR_SUCCESS,
-            "error": "#f44336",
-            "warning": "#ff9800",
+            "error": COLOR_DANGER,
+            "warning": COLOR_WARNING,
             "info": COLOR_PRIMARY
         }
         bg_color = colors.get(toast_type, COLOR_PRIMARY)

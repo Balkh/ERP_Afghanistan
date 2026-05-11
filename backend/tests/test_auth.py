@@ -31,9 +31,10 @@ class LoginViewTests(APITestCase):
         data = {'username': 'testuser', 'password': 'StrongPass123!'}
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('token', response.data)
-        self.assertIn('user_id', response.data)
-        self.assertIn('roles', response.data)
+        self.assertTrue(response.data['success'])
+        self.assertIn('access_token', response.data['data'])
+        self.assertIn('refresh_token', response.data['data'])
+        self.assertIn('user', response.data['data'])
 
     def test_login_invalid_password(self):
         """Test login with wrong password fails."""
@@ -150,11 +151,12 @@ class UserProfileTests(APITestCase):
         url = '/api/auth/profile/'
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['username'], 'profileuser')
-        self.assertIn('roles', response.data)
-        self.assertIn('permissions', response.data)
-        self.assertIn('Pharmacist', response.data['roles'])
-        self.assertIn('view_inventory', response.data['permissions'])
+        self.assertTrue(response.data['success'])
+        self.assertEqual(response.data['data']['username'], 'profileuser')
+        self.assertIn('roles', response.data['data'])
+        self.assertIn('permissions', response.data['data'])
+        self.assertIn('Pharmacist', response.data['data']['roles'])
+        self.assertIn('view_inventory', response.data['data']['permissions'])
 
     def test_profile_without_auth(self):
         """Test profile without authentication fails."""
@@ -249,7 +251,7 @@ class JWTAuthenticationTests(APITestCase):
         login_url = '/api/auth/login/'
         login_data = {'username': 'jwtuser', 'password': 'JwtPass123!'}
         login_response = self.client.post(login_url, login_data, format='json')
-        token = login_response.data['token']
+        token = login_response.data['data']['access_token']
 
         # Access protected endpoint with token
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {token}')

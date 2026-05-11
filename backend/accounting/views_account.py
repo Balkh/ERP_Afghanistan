@@ -9,17 +9,34 @@ from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from core.multitenant.views import CompanyScopedViewSetMixin
-from accounting.models import Account, JournalEntry, JournalEntryLine
+from accounting.models import Account, JournalEntry, JournalEntryLine, JournalEventLog
 from accounting.serializers import (
     AccountSerializer,
     AccountTreeSerializer,
     JournalEntrySerializer,
     JournalEntryLineSerializer,
+    JournalEventLogSerializer,
 )
 from accounting.services.account_hierarchy import AccountHierarchyService
 from accounting.services.financial_reports import FinancialReportEngine
 from accounting.services.report_exporter import ReportExporter
+from accounting.services.reconciliation import AccountingReconciliationService
 from security.permissions import RoleBasedPermission
+
+
+class JournalEventLogViewSet(viewsets.ModelViewSet):
+    """
+    CRUD API for Journal Event Logs (audit trail).
+    Read-only in practice - events are created by the system.
+    """
+    queryset = JournalEventLog.objects.all()
+    serializer_class = JournalEventLogSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['entry', 'event_type', 'user']
+    search_fields = ['entry__entry_number', 'reference', 'notes']
+    ordering_fields = ['timestamp', 'event_type']
+    ordering = ['-timestamp']
 
 
 class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
@@ -282,6 +299,39 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
             return HttpResponse(text, content_type='text/plain')
         return Response(report)
 
+    @action(detail=False, methods=['get'])
+    def reconciliation(self, request):
+        """
+        Run full accounting reconciliation checks.
+        Verifies integrity between operational data and accounting records.
+        """
+        result = AccountingReconciliationService.full_reconciliation()
+        return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def inventory_valuation(self, request):
+        """Get inventory valuation with accounting reconciliation."""
+        from inventory.views import StockMovementViewSet
+        from inventory.service import StockIntegrationService
+        from accounting.services.inventory_accounting import InventoryAccountingService
+
+        warehouse_id = request.query_params.get('warehouse_id')
+        as_of_date = request.query_params.get('as_of_date')
+
+        # Get stock levels
+        stock_levels = StockIntegrationService.get_stock_levels(
+            include_expired=False
+        )
+
+        total_value = Decimal('0.00')
+        for item in stock_levels:
+            total_value += item.get('remaining_quantity', Decimal('0'))
+
+        return Response({
+            'total_value': total_value,
+            'items': stock_levels,
+        })
+
     def perform_destroy(self, instance):
         """Delete account with validation."""
         try:
@@ -342,6 +392,14 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         if result.get('success'):
             return Response(result)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def event_history(self, request, pk=None):
+        """Get event history for a journal entry."""
+        entry = self.get_object()
+        events = JournalEventLog.objects.filter(entry=entry).order_by('-timestamp')
+        serializer = JournalEventLogSerializer(events, many=True)
+        return Response(serializer.data)
 
 
 # Export API Views

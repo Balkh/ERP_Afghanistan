@@ -102,14 +102,31 @@ class BackupScreen(QWidget):
             self.table.setItem(row, 5, QTableWidgetItem(point.get('status', 'READY')))
     
     def create_backup(self):
-        """Create new backup."""
+        """Create new backup via API."""
         reply = QMessageBox.question(
             self, "Create Backup",
             "Are you sure you want to create a new backup?",
             QMessageBox.Yes | QMessageBox.No
         )
         if reply == QMessageBox.Yes:
-            QMessageBox.information(
-                self, "Backup",
-                "Backup creation initiated. This may take a few minutes."
-            )
+            try:
+                response = self.api_client.post("/api/backup/records/create_backup/", {
+                    "description": "Manual backup from UI",
+                    "encrypted": True,
+                    "compressed": True,
+                })
+                if isinstance(response, dict) and response.get("success"):
+                    QMessageBox.information(
+                        self, "Backup",
+                        "Backup creation started. This may take a few minutes."
+                    )
+                    self.load_restore_points()
+                else:
+                    err_msg = "Unknown error"
+                    if isinstance(response, dict):
+                        err_info = response.get("error", {})
+                        if isinstance(err_info, dict):
+                            err_msg = err_info.get("message", err_msg)
+                    QMessageBox.warning(self, "Backup Failed", f"Failed to create backup: {err_msg}")
+            except Exception as e:
+                QMessageBox.warning(self, "Backup Failed", f"Failed to create backup: {e}")
