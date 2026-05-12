@@ -16,6 +16,13 @@ from accounting.models import Account, JournalEntry, JournalEntryLine, Currency
 
 class COGSExistenceTests(TestCase):
     """Test that COGS-related methods exist and are properly configured."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        Account.objects.get_or_create(code='5100', defaults={
+            'name': 'COGS', 'account_type': 'EXPENSE', 'account_category': 'COST_OF_GOODS_SOLD', 'is_active': True
+        })
     
     def test_cogs_account_code_defined(self):
         """Test COGS account code is defined."""
@@ -85,9 +92,9 @@ class COGSIntegrationFlowTests(TestCase):
         # Get existing dispatched invoices with COGS
         dispatched = SalesInvoice.objects.filter(
             status='DISPATCHED'
-        ).select_related('journal_entry').first()
+        ).first()
         
-        if dispatched and dispatched.journal_entry:
+        if dispatched and dispatched.journal_entry_id:
             entry = dispatched.journal_entry
             
             # Check if COGS line exists
@@ -142,8 +149,8 @@ class COGSIntegrationFlowTests(TestCase):
         """Test that same invoice doesn't get multiple COGS entries."""
         # Find invoices with journal entries
         invoices_with_je = SalesInvoice.objects.filter(
-            journal_entry__isnull=False
-        ).select_related('journal_entry')
+            journal_entry_id__isnull=False
+        )
         
         for invoice in invoices_with_je:
             # Count journal entries (should be 1)
@@ -158,6 +165,16 @@ class COGSIntegrationFlowTests(TestCase):
 
 class InventoryAccountBalanceTests(TestCase):
     """Test inventory and accounting balances are consistent."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        Account.objects.get_or_create(code='1300', defaults={
+            'name': 'Inventory', 'account_type': 'ASSET', 'account_category': 'CURRENT_ASSET', 'is_active': True
+        })
+        Account.objects.get_or_create(code='5100', defaults={
+            'name': 'COGS', 'account_type': 'EXPENSE', 'account_category': 'COST_OF_GOODS_SOLD', 'is_active': True
+        })
     
     def test_inventory_account_exists(self):
         """Test inventory asset account exists."""

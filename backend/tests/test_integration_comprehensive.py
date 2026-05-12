@@ -22,8 +22,7 @@ class InventoryServiceIntegrationTests(TestCase):
         cls.category = Category.objects.create(name='Test Cat')
         cls.warehouse = Warehouse.objects.create(name='Test WH', code='TW', address='Loc')
         cls.product = Product.objects.create(
-            name='Test Product', sku='TP01', category=cls.category, unit=cls.unit,
-            unit_price=Decimal('100'), cost_price=Decimal('50')
+            name='Test Product', sku='TP01', barcode='BAR011', category=cls.category, unit=cls.unit
         )
         
     def test_batch_creation(self):
@@ -33,7 +32,11 @@ class InventoryServiceIntegrationTests(TestCase):
             batch_number='B001',
             quantity=Decimal('100'),
             remaining_quantity=Decimal('100'),
-            expiry_date=date.today() + timedelta(days=365)
+            manufacturing_date=date.today() - timedelta(days=30),
+            expiry_date=date.today() + timedelta(days=365),
+            purchase_price=Decimal('10.00'),
+            sale_price=Decimal('15.00'),
+            location='A1'
         )
         self.assertEqual(batch.remaining_quantity, Decimal('100'))
         
@@ -45,22 +48,22 @@ class InventoryServiceIntegrationTests(TestCase):
             movement_type='IN',
             quantity=Decimal('50'),
             unit_cost=Decimal('50'),
-            reference='REF001'
+            reference_type='MANUAL',
+            reference_id='REF001'
         )
         self.assertEqual(movement.quantity, Decimal('50'))
         
     def test_stock_integration_service_exists(self):
         """Test stock integration service exists."""
         from inventory.service.stock_integration import StockIntegrationService
-        self.assertTrue(hasattr(StockIntegrationService, 'create_sale_outbound'))
-        self.assertTrue(hasattr(StockIntegrationService, 'create_purchase_inbound'))
-        self.assertTrue(hasattr(StockIntegrationService, 'adjust_stock'))
+        self.assertTrue(hasattr(StockIntegrationService, 'get_available_batches'))
+        self.assertTrue(hasattr(StockIntegrationService, 'allocate_stock'))
+        self.assertTrue(hasattr(StockIntegrationService, 'process_sale'))
         
     def test_transfer_service_exists(self):
         """Test transfer service exists."""
-        from inventory.service.transfer_service import TransferService
-        self.assertTrue(hasattr(TransferService, 'create_transfer'))
-        self.assertTrue(hasattr(TransferService, 'approve_transfer'))
+        from inventory.service.transfer_service import process_transfer
+        self.assertTrue(callable(process_transfer))
 
 
 class SalesWorkflowIntegrationTests(TestCase):
@@ -71,8 +74,7 @@ class SalesWorkflowIntegrationTests(TestCase):
         cls.unit = Unit.objects.create(symbol='pcs', name='Pieces')
         cls.category = Category.objects.create(name='Test Cat')
         cls.product = Product.objects.create(
-            name='Test Product', sku='TP02', category=cls.category, unit=cls.unit,
-            unit_price=Decimal('100'), cost_price=Decimal('50')
+            name='Test Product', sku='TP02', barcode='BAR012', category=cls.category, unit=cls.unit
         )
         cls.customer = Customer.objects.create(name='Test Cust', phone='123', address='Addr')
         
@@ -98,16 +100,16 @@ class SalesWorkflowIntegrationTests(TestCase):
             invoice=invoice,
             product=self.product,
             quantity=Decimal('5'),
-            unit_price=Decimal('100')
+            unit_price=Decimal('100'),
+            total=Decimal('500')
         )
         self.assertEqual(item.quantity, Decimal('5'))
         
-    def test_sales_service_exists(self):
-        """Test sales service exists."""
-        from sales.service.sales_invoice_service import SalesInvoiceService
-        self.assertTrue(hasattr(SalesInvoiceService, 'create_invoice'))
-        self.assertTrue(hasattr(SalesInvoiceService, 'dispatch_invoice'))
-        self.assertTrue(hasattr(SalesInvoiceService, 'cancel_invoice'))
+    def test_sales_viewset_exists(self):
+        """Test sales viewset exists."""
+        from sales.views import SalesInvoiceViewSet
+        self.assertTrue(hasattr(SalesInvoiceViewSet, 'dispatch_invoice'))
+        self.assertTrue(hasattr(SalesInvoiceViewSet, 'cancel'))
 
 
 class PurchaseWorkflowIntegrationTests(TestCase):
@@ -118,8 +120,7 @@ class PurchaseWorkflowIntegrationTests(TestCase):
         cls.unit = Unit.objects.create(symbol='pcs', name='Pieces')
         cls.category = Category.objects.create(name='Test Cat')
         cls.product = Product.objects.create(
-            name='Test Product', sku='TP03', category=cls.category, unit=cls.unit,
-            unit_price=Decimal('100'), cost_price=Decimal('50')
+            name='Test Product', sku='TP03', barcode='BAR013', category=cls.category, unit=cls.unit
         )
         cls.supplier = Supplier.objects.create(name='Test Sup', phone='123', address='Addr')
         
@@ -145,16 +146,16 @@ class PurchaseWorkflowIntegrationTests(TestCase):
             invoice=invoice,
             product=self.product,
             quantity=Decimal('10'),
-            unit_cost=Decimal('50')
+            unit_price=Decimal('50'),
+            total=Decimal('500'),
+            expiry_date=date.today() + timedelta(days=365)
         )
         self.assertEqual(item.quantity, Decimal('10'))
         
-    def test_purchase_service_exists(self):
-        """Test purchase service exists."""
-        from purchases.service.purchase_invoice_service import PurchaseInvoiceService
-        self.assertTrue(hasattr(PurchaseInvoiceService, 'create_invoice'))
-        self.assertTrue(hasattr(PurchaseInvoiceService, 'receive_invoice'))
-        self.assertTrue(hasattr(PurchaseInvoiceService, 'cancel_invoice'))
+    def test_purchase_viewset_exists(self):
+        """Test purchase viewset exists."""
+        from purchases.views import PurchaseInvoiceViewSet
+        self.assertTrue(hasattr(PurchaseInvoiceViewSet, 'cancel'))
 
 
 class PaymentIntegrationTests(TestCase):
@@ -168,7 +169,7 @@ class PaymentIntegrationTests(TestCase):
         from payments.services import PaymentEngine
         self.assertTrue(hasattr(PaymentEngine, 'process_receipt'))
         self.assertTrue(hasattr(PaymentEngine, 'process_payment'))
-        self.assertTrue(hasattr(PaymentEngine, 'transfer_funds'))
+        self.assertTrue(hasattr(PaymentEngine, 'process_transfer'))
         
     def test_payment_method_model_exists(self):
         """Test payment method exists."""
@@ -216,8 +217,8 @@ class HRPayrollIntegrationTests(TestCase):
         
     def test_salary_model_exists(self):
         """Test salary model exists."""
-        from payroll.models import Salary
-        self.assertTrue(hasattr(Salary, 'objects'))
+        from payroll.models import SalaryStructure
+        self.assertTrue(hasattr(SalaryStructure, 'objects'))
 
 
 class CostingIntegrationTests(TestCase):
@@ -229,10 +230,10 @@ class CostingIntegrationTests(TestCase):
         self.assertTrue(hasattr(CostingService, 'calculate_weighted_average_cost'))
         self.assertTrue(hasattr(CostingService, 'recalculate_product_average_cost'))
         
-    def test_cogs_service_exists(self):
-        """Test COGS service exists."""
-        from inventory.services.cogs_service import COGSService
-        self.assertTrue(hasattr(COGSService, 'calculate_cogs'))
+    def test_cogs_integration_exists(self):
+        """Test COGS integration through existing services."""
+        from inventory.service.stock_integration import StockIntegrationService
+        self.assertTrue(hasattr(StockIntegrationService, 'process_sale'))
 
 
 class ReportingIntegrationTests(TestCase):
@@ -263,7 +264,7 @@ class BackupIntegrationTests(TestCase):
     def test_restore_service_exists(self):
         """Test restore service exists."""
         from backup.services.restore_service import RestoreService
-        self.assertTrue(hasattr(RestoreService, 'create_restore_point'))
+        self.assertTrue(hasattr(RestoreService, 'create_snapshot'))
         self.assertTrue(hasattr(RestoreService, 'restore'))
         
     def test_backup_models_exist(self):
@@ -279,8 +280,8 @@ class NotificationIntegrationTests(TestCase):
     def test_notification_service_exists(self):
         """Test notification service exists."""
         from security.notification_service import NotificationService
-        self.assertTrue(hasattr(NotificationService, 'send_notification'))
-        self.assertTrue(hasattr(NotificationService, 'get_user_notifications'))
+        self.assertTrue(hasattr(NotificationService, 'create_notification'))
+        self.assertTrue(hasattr(NotificationService, 'get_unread_count'))
         
     def test_notification_model_exists(self):
         """Test notification model exists."""

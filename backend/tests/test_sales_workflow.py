@@ -134,7 +134,7 @@ class CustomerSelectionWorkflowTests(BaseTestCase):
         )
 
         invoice = SalesInvoiceFactory.create(customer=customer)
-        self.assertEqual(invoice.customer.name, "Pharma Plus")
+        self.assertEqual(invoice.customer.name, customer.name)
 
     def test_credit_limit_enforcement(self):
         """Credit limit should be enforced on new invoices."""

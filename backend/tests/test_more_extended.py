@@ -4,7 +4,7 @@ Extended Tests - Get to 45% Coverage
 
 from datetime import date, timedelta
 from decimal import Decimal
-from django.test import TestCase, TransactionTestCase
+from django.test import TestCase, TransactionTestCase, Client
 from django.contrib.auth.models import User
 
 from accounting.models import Account, JournalEntry, JournalEntryLine
@@ -54,6 +54,7 @@ class MoreModelTests(TransactionTestCase):
         for i in range(3):
             p = Product.objects.create(
                 name=f'Medicine {i}', sku=f'MED-{i:03d}',
+                barcode=f'BAR_MM{i:02d}',
                 category=cat, unit=unit
             )
             products.append(p)
@@ -76,7 +77,7 @@ class MoreModelTests(TransactionTestCase):
         """Test multiple batches per product"""
         unit = Unit.objects.create(symbol='BTL', name='Bottle')
         cat = Category.objects.create(name='Syrups')
-        product = Product.objects.create(name='Syrup', sku='SYR', category=cat, unit=unit)
+        product = Product.objects.create(name='Syrup', sku='SYR', barcode='BAR_MM03', category=cat, unit=unit)
         
         for i in range(3):
             Batch.objects.create(
@@ -91,7 +92,7 @@ class MoreModelTests(TransactionTestCase):
                 location=f'Shelf {i}'
             )
             
-        self.assertEqual(product.batches.count(), 3)
+        self.assertEqual(product.batch_set.count(), 3)
         
     def test_journal_entry_multiple_lines(self):
         """Test journal entry with multiple lines"""
@@ -116,8 +117,8 @@ class MoreModelTests(TransactionTestCase):
         unit = Unit.objects.create(symbol='P', name='Piece')
         cat = Category.objects.create(name='Pills')
         
-        prod1 = Product.objects.create(name='A', sku='A', category=cat, unit=unit)
-        prod2 = Product.objects.create(name='B', sku='B', category=cat, unit=unit)
+        prod1 = Product.objects.create(name='A', sku='A', barcode='BAR_MM04', category=cat, unit=unit)
+        prod2 = Product.objects.create(name='B', sku='B', barcode='BAR_MM05', category=cat, unit=unit)
         
         cust = Customer.objects.create(name='Multi Item Customer', phone='123', address='Addr')
         inv = SalesInvoice.objects.create(
@@ -125,8 +126,8 @@ class MoreModelTests(TransactionTestCase):
             order_date=date.today(), due_date=date.today() + timedelta(days=30)
         )
         
-        SalesItem.objects.create(invoice=inv, product=prod1, quantity=Decimal('10'), unit_price=Decimal('100'))
-        SalesItem.objects.create(invoice=inv, product=prod2, quantity=Decimal('5'), unit_price=Decimal('200'))
+        SalesItem.objects.create(invoice=inv, product=prod1, quantity=Decimal('10'), unit_price=Decimal('100'), total=Decimal('1000'))
+        SalesItem.objects.create(invoice=inv, product=prod2, quantity=Decimal('5'), unit_price=Decimal('200'), total=Decimal('1000'))
         
         self.assertEqual(inv.items.count(), 2)
         
@@ -135,8 +136,8 @@ class MoreModelTests(TransactionTestCase):
         unit = Unit.objects.create(symbol='BOX', name='Box')
         cat = Category.objects.create(name='Boxes')
         
-        prod1 = Product.objects.create(name='X', sku='X', category=cat, unit=unit)
-        prod2 = Product.objects.create(name='Y', sku='Y', category=cat, unit=unit)
+        prod1 = Product.objects.create(name='X', sku='X', barcode='BAR_MM06', category=cat, unit=unit)
+        prod2 = Product.objects.create(name='Y', sku='Y', barcode='BAR_MM07', category=cat, unit=unit)
         
         sup = Supplier.objects.create(name='Multi Supplier', phone='456', address='Addr')
         inv = PurchaseInvoice.objects.create(
@@ -144,8 +145,8 @@ class MoreModelTests(TransactionTestCase):
             order_date=date.today(), due_date=date.today() + timedelta(days=30)
         )
         
-        PurchaseItem.objects.create(invoice=inv, product=prod1, quantity=Decimal('20'), unit_price=Decimal('50'))
-        PurchaseItem.objects.create(invoice=inv, product=prod2, quantity=Decimal('10'), unit_price=Decimal('100'))
+        PurchaseItem.objects.create(invoice=inv, product=prod1, quantity=Decimal('20'), unit_price=Decimal('50'), total=Decimal('1000'), expiry_date=date.today() + timedelta(days=365))
+        PurchaseItem.objects.create(invoice=inv, product=prod2, quantity=Decimal('10'), unit_price=Decimal('100'), total=Decimal('1000'), expiry_date=date.today() + timedelta(days=365))
         
         self.assertEqual(inv.items.count(), 2)
 
@@ -209,7 +210,7 @@ class DataIntegrityTests(TransactionTestCase):
         unit = Unit.objects.create(symbol='U', name='Unit')
         cat = Category.objects.create(name='C')
         wh = Warehouse.objects.create(name='W', code='W', address='L')
-        product = Product.objects.create(name='P', sku='P', category=cat, unit=unit)
+        product = Product.objects.create(name='P', sku='P', barcode='BAR_MM08', category=cat, unit=unit)
         
         # Add stock
         StockMovement.objects.create(
@@ -257,7 +258,7 @@ class BusinessFlowTests(TransactionTestCase):
         wh = Warehouse.objects.create(name='WH', code='WH', address='A')
         
         # Purchase
-        product = Product.objects.create(name='Med', sku='MED', category=cat, unit=unit)
+        product = Product.objects.create(name='Med', sku='MED', barcode='BAR_MM09', category=cat, unit=unit)
         supplier = Supplier.objects.create(name='Supplier', phone='1', address='A')
         
         purchase = PurchaseInvoice.objects.create(
@@ -267,7 +268,7 @@ class BusinessFlowTests(TransactionTestCase):
         PurchaseItem.objects.create(
             invoice=purchase, product=product,
             batch_number='B1', expiry_date=date.today() + timedelta(days=365),
-            quantity=Decimal('100'), unit_price=Decimal('10')
+            quantity=Decimal('100'), unit_price=Decimal('10'), total=Decimal('1000')
         )
         
         # Sale
@@ -278,7 +279,7 @@ class BusinessFlowTests(TransactionTestCase):
         )
         SalesItem.objects.create(
             invoice=sale, product=product,
-            quantity=Decimal('10'), unit_price=Decimal('20')
+            quantity=Decimal('10'), unit_price=Decimal('20'), total=Decimal('200')
         )
         
         # Verify

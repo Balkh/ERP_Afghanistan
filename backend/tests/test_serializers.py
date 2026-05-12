@@ -567,7 +567,9 @@ class SalesInvoiceSerializerTests(BaseTestCase):
 class SupplierSerializerTests(BaseTestCase):
 
     def test_serialize_supplier(self):
-        supplier = SupplierFactory.create(name='Pharma Corp')
+        supplier = SupplierFactory.create(
+            subtype='COMPANY', company_name='Pharma Corp'
+        )
         data = SupplierSerializer(supplier).data
         self.assertEqual(data['name'], 'Pharma Corp')
         self.assertIn('available_credit', data)

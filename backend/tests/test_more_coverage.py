@@ -30,7 +30,7 @@ class MoreModelTests(TestCase):
         wh = Warehouse.objects.create(name='W', code='W', address='L')
         prod = Product.objects.create(name='P', sku='P', category=cat, unit=unit)
         from inventory.models import StockMovement
-        move = StockMovement.objects.create(product=prod, warehouse=wh, movement_type='IN', quantity=Decimal('10'))
+        move = StockMovement.objects.create(product=prod, warehouse=wh, movement_type='IN', quantity=Decimal('10'), reference_type='MANUAL')
         self.assertEqual(move.quantity, Decimal('10'))
 
 
@@ -129,17 +129,17 @@ class AdditionalServiceTests(TestCase):
     def test_stock_integration_exists(self):
         """Test stock integration."""
         from inventory.service.stock_integration import StockIntegrationService
-        self.assertTrue(hasattr(StockIntegrationService, 'create_sale_outbound'))
+        self.assertTrue(hasattr(StockIntegrationService, 'get_available_batches'))
         
-    def test_sales_invoice_service_exists(self):
-        """Test sales invoice service."""
-        from sales.service.sales_invoice_service import SalesInvoiceService
-        self.assertTrue(hasattr(SalesInvoiceService, 'create_invoice'))
+    def test_sales_viewset_exists(self):
+        """Test sales viewset exists."""
+        from sales.views import SalesInvoiceViewSet
+        self.assertTrue(hasattr(SalesInvoiceViewSet, 'dispatch_invoice'))
         
-    def test_purchase_invoice_service_exists(self):
-        """Test purchase invoice service."""
-        from purchases.service.purchase_invoice_service import PurchaseInvoiceService
-        self.assertTrue(hasattr(PurchaseInvoiceService, 'create_invoice'))
+    def test_purchase_viewset_exists(self):
+        """Test purchase viewset exists."""
+        from purchases.views import PurchaseInvoiceViewSet
+        self.assertTrue(hasattr(PurchaseInvoiceViewSet, 'cancel'))
         
     def test_payment_engine_exists(self):
         """Test payment engine."""

@@ -20,15 +20,37 @@ from accounting.services.inventory_accounting import (
 from inventory.models import Product, Category, Unit, Warehouse, Batch, StockMovement
 
 
+def _create_inventory_accounts():
+    """Create the standard inventory accounting accounts needed for tests."""
+    accounts = [
+        ('1300', 'Inventory', 'ASSET', 'CURRENT_ASSET'),
+        ('4900', 'Inventory Gain', 'REVENUE', 'OPERATING_REVENUE'),
+        ('5100', 'Cost of Goods Sold', 'EXPENSE', 'COST_OF_GOODS_SOLD'),
+        ('5200', 'Inventory Loss', 'EXPENSE', 'OPERATING_EXPENSE'),
+        ('5210', 'Inventory Write-Off', 'EXPENSE', 'OPERATING_EXPENSE'),
+    ]
+    for code, name, acct_type, category in accounts:
+        Account.objects.get_or_create(
+            code=code,
+            defaults=dict(
+                name=name, account_type=acct_type,
+                account_category=category, is_active=True
+            )
+        )
+
+
 class InventoryAdjustmentTest(TransactionTestCase):
     """Test inventory adjustment accounting."""
 
     def setUp(self):
+        _create_inventory_accounts()
         self.category = Category.objects.create(name='Medicines', is_active=True)
         self.unit = Unit.objects.create(name='Piece', symbol='PCS', is_active=True)
         self.product = Product.objects.create(
-            name='Aspirin', sku='ASP001', category=self.category,
-            unit=self.unit, is_active=True
+            name='Aspirin', sku='ASP001', barcode='BAR_ASP001',
+            generic_name='Aspirin Generic', brand_name='Aspirin Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=self.category, unit=self.unit, is_active=True
         )
         self.warehouse = Warehouse.objects.create(
             name='Main WH', code='WH01', is_active=True
@@ -89,14 +111,25 @@ class InventoryWriteOffTest(TransactionTestCase):
     """Test inventory write-off accounting."""
 
     def setUp(self):
+        _create_inventory_accounts()
         self.category = Category.objects.create(name='Cat', is_active=True)
         self.unit = Unit.objects.create(name='U', symbol='U', is_active=True)
         self.product = Product.objects.create(
-            name='Test', sku='T001', category=self.category,
-            unit=self.unit, is_active=True
+            name='Test', sku='T001', barcode='BAR_T001',
+            generic_name='Test Generic', brand_name='Test Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=self.category, unit=self.unit, is_active=True
         )
         self.warehouse = Warehouse.objects.create(
             name='WH', code='WH', is_active=True
+        )
+        self.batch = Batch.objects.create(
+            product=self.product, batch_number='B-WROFF',
+            quantity=100, remaining_quantity=100,
+            purchase_price=Decimal('10.00'), sale_price=Decimal('15.00'),
+            expiry_date=django_timezone.now().date() + timedelta(days=365),
+            manufacturing_date=django_timezone.now().date(),
+            location='WH', is_active=True
         )
 
     def test_write_off_creates_journal_entry(self):
@@ -104,7 +137,7 @@ class InventoryWriteOffTest(TransactionTestCase):
         result = InventoryAccountingService.process_inventory_write_off(
             product=self.product,
             quantity=Decimal('10'),
-            batch=None,
+            batch=self.batch,
             reason='Expired',
             reference_type='EXPIRY'
         )
@@ -128,11 +161,14 @@ class InventoryCOGSTest(TransactionTestCase):
     """Test COGS calculation and accounting."""
 
     def setUp(self):
+        _create_inventory_accounts()
         self.category = Category.objects.create(name='Meds', is_active=True)
         self.unit = Unit.objects.create(name='P', symbol='P', is_active=True)
         self.product = Product.objects.create(
-            name='Drug', sku='D001', category=self.category,
-            unit=self.unit, is_active=True
+            name='Drug', sku='D001', barcode='BAR_D001',
+            generic_name='Drug Generic', brand_name='Drug Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=self.category, unit=self.unit, is_active=True
         )
         self.warehouse = Warehouse.objects.create(
             name='WH', code='WH', is_active=True
@@ -192,12 +228,16 @@ class InventoryCOGSTest(TransactionTestCase):
 class InventoryMovementValidationTest(TransactionTestCase):
     """Test movement validation in inventory accounting."""
 
-    def test_invalid_adjustment_movement_raises_error(self):
-        """Test invalid movement type raises error."""
+    def test_invalid_adjustment_movement_returns_error(self):
+        """Test adjustment with no cost basis returns error result."""
+        _create_inventory_accounts()
         category = Category.objects.create(name='C', is_active=True)
         unit = Unit.objects.create(name='U', symbol='U', is_active=True)
         product = Product.objects.create(
-            name='P', sku='P', category=category, unit=unit, is_active=True
+            name='P', sku='P', barcode='BAR_P',
+            generic_name='P Generic', brand_name='P Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=category, unit=unit, is_active=True
         )
         warehouse = Warehouse.objects.create(name='WH', code='WH', is_active=True)
 
@@ -211,8 +251,8 @@ class InventoryMovementValidationTest(TransactionTestCase):
         )
         movement.save()
 
-        with self.assertRaises(InventoryAccountingServiceError):
-            InventoryAccountingService.process_inventory_adjustment(movement)
+        result = InventoryAccountingService.process_inventory_adjustment(movement)
+        self.assertFalse(result.get('success', True))
 
 
 class WarehouseTransferAccountingTest(TransactionTestCase):
@@ -222,7 +262,10 @@ class WarehouseTransferAccountingTest(TransactionTestCase):
         self.category = Category.objects.create(name='C', is_active=True)
         self.unit = Unit.objects.create(name='U', symbol='U', is_active=True)
         self.product = Product.objects.create(
-            name='P', sku='P', category=self.category, unit=self.unit, is_active=True
+            name='P', sku='P', barcode='BAR_P2',
+            generic_name='P Generic', brand_name='P Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=self.category, unit=self.unit, is_active=True
         )
 
     def test_warehouse_transfer_returns_no_action(self):
@@ -240,19 +283,31 @@ class InventoryAccountingDispatcherTest(TransactionTestCase):
     """Test the central dispatcher for inventory accounting."""
 
     def setUp(self):
+        _create_inventory_accounts()
         self.category = Category.objects.create(name='Cat', is_active=True)
         self.unit = Unit.objects.create(name='U', symbol='U', is_active=True)
         self.product = Product.objects.create(
-            name='Prod', sku='P001', category=self.category,
-            unit=self.unit, is_active=True
+            name='Prod', sku='P001', barcode='BAR_PROD',
+            generic_name='Prod Generic', brand_name='Prod Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=self.category, unit=self.unit, is_active=True
         )
         self.warehouse = Warehouse.objects.create(name='WH', code='WH', is_active=True)
+        self.batch = Batch.objects.create(
+            product=self.product, batch_number='B-DISPATCH',
+            quantity=100, remaining_quantity=100,
+            purchase_price=Decimal('10.00'), sale_price=Decimal('15.00'),
+            expiry_date=django_timezone.now().date() + timedelta(days=365),
+            manufacturing_date=django_timezone.now().date(),
+            location='WH', is_active=True
+        )
 
     def test_dispatcher_routes_adjustment(self):
         """Test dispatcher routes adjustment to correct handler."""
         movement = StockMovement(
             product=self.product,
             warehouse=self.warehouse,
+            batch=self.batch,
             movement_type='ADJUSTMENT',
             quantity=Decimal('5'),
             reference_type='MANUAL',
@@ -321,10 +376,14 @@ class InventoryAccountCodesTest(TransactionTestCase):
 
     def test_uses_correct_inventory_account(self):
         """Test inventory adjustments use account 1300."""
+        _create_inventory_accounts()
         category = Category.objects.create(name='C', is_active=True)
         unit = Unit.objects.create(name='U', symbol='U', is_active=True)
         product = Product.objects.create(
-            name='P', sku='P', category=category, unit=unit, is_active=True
+            name='P', sku='P', barcode='BAR_P3',
+            generic_name='P Generic', brand_name='P Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=category, unit=unit, is_active=True
         )
         warehouse = Warehouse.objects.create(name='WH', code='WH', is_active=True)
 
@@ -347,10 +406,14 @@ class InventoryAccountCodesTest(TransactionTestCase):
 
     def test_uses_correct_loss_account(self):
         """Test negative adjustments use account 5200."""
+        _create_inventory_accounts()
         category = Category.objects.create(name='C2', is_active=True)
         unit = Unit.objects.create(name='U2', symbol='U2', is_active=True)
         product = Product.objects.create(
-            name='P2', sku='P2', category=category, unit=unit, is_active=True
+            name='P2', sku='P2', barcode='BAR_P4',
+            generic_name='P2 Generic', brand_name='P2 Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=category, unit=unit, is_active=True
         )
         warehouse = Warehouse.objects.create(name='WH2', code='WH2', is_active=True)
 
@@ -373,10 +436,14 @@ class InventoryAccountCodesTest(TransactionTestCase):
 
     def test_uses_correct_write_off_account(self):
         """Test write-offs use account 5210."""
+        _create_inventory_accounts()
         category = Category.objects.create(name='C3', is_active=True)
         unit = Unit.objects.create(name='U3', symbol='U3', is_active=True)
         product = Product.objects.create(
-            name='P3', sku='P3', category=category, unit=unit, is_active=True
+            name='P3', sku='P3', barcode='BAR_P5',
+            generic_name='P3 Generic', brand_name='P3 Brand',
+            strength='100mg', form='Tablet', manufacturer='TestMfg',
+            category=category, unit=unit, is_active=True
         )
 
         result = InventoryAccountingService.process_inventory_write_off(

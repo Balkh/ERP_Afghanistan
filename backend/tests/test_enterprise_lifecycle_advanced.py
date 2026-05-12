@@ -184,17 +184,36 @@ class ConcurrentAllocationProtectionTest(TransactionTestCase):
 
     def test_allocation_checks_available_stock(self):
         """Allocation must check available stock before succeeding."""
-        # Create limited stock
-        Batch.objects.create(
-            product=self.prod, batch_number='B-CONC-001', quantity=10, remaining_quantity=10,
-            purchase_price=Decimal('5.00'), sale_price=Decimal('10.00'),
-            expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(), location=str(self.wh.id), is_active=True
+        # Create limited stock via purchase (creates batch + IN movement)
+        purchase_result = StockIntegrationService.process_purchase(
+            'PO-CONC-001',
+            [{
+                'product': self.prod,
+                'quantity': Decimal('10'),
+                'batch_number': 'B-CONC-001',
+                'expiry_date': date.today() + timedelta(days=180),
+                'unit_price': Decimal('5.00'),
+            }],
+            self.wh
         )
+        self.assertTrue(purchase_result.success)
 
         # First allocation of 8 should succeed
         result1 = StockIntegrationService.allocate_stock(self.prod, Decimal('8'), self.wh)
         self.assertTrue(result1.success)
+
+        # Create OUT movement to reduce actual stock
+        for alloc in result1.allocations:
+            StockIntegrationService.create_stock_movement(
+                product=self.prod,
+                batch=alloc.batch_id,
+                warehouse=self.wh,
+                movement_type='OUT',
+                reference_type='SALE',
+                reference_id='INV-CONC-001',
+                quantity=-alloc.quantity,
+                unit_cost=alloc.unit_cost,
+            )
 
         # Second allocation of 5 should fail (only 2 remaining)
         result2 = StockIntegrationService.allocate_stock(self.prod, Decimal('5'), self.wh)

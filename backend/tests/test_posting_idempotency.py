@@ -163,14 +163,15 @@ class JournalEntryIdempotencyTests(TestCase):
         """Test purchase doesn't create duplicate journal entries."""
         supplier = Supplier.objects.first()
         if not supplier:
-            supplier = Supplier.objects.create(name='Test', code='SUP', supplier_type='DISTRIBUTOR')
+            supplier = Supplier.objects.create(name='Test', code='SUP')
         
         # Create purchase
-        invoice = PurchaseInvoice.objects.create(
-            invoice_number=f'PUR-IDEMP-{date.today().strftime("%Y%m%d%H%M%S")}',
-            supplier=supplier,
-            invoice_date=date.today(),
-            due_date=date.today() + timedelta(days=30),
+            invoice = PurchaseInvoice.objects.create(
+                invoice_number=f'PUR-IDEMP-{date.today().strftime("%Y%m%d%H%M%S")}',
+                supplier=supplier,
+                order_date=date.today(),
+                invoice_date=date.today(),
+                due_date=date.today() + timedelta(days=30),
             status='RECEIVED',
             subtotal=Decimal('2000'),
             tax=Decimal('0'),

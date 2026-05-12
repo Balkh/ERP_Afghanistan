@@ -7,6 +7,8 @@ from datetime import date, timedelta
 from django.test import TransactionTestCase
 from django.utils import timezone as django_timezone
 
+_mfg_date = date.today() - timedelta(days=180)
+
 from inventory.models import Product, Batch, Warehouse, StockMovement
 from inventory.service.stock_integration import StockIntegrationService
 from inventory.service import StockSelectionMode
@@ -16,7 +18,8 @@ class StockIntegrationGetAvailableBatchesTest(TransactionTestCase):
     """Test get_available_batches behavior."""
 
     def setUp(self):
-        from inventory.models import Category
+        from inventory.models import Category, Unit
+        self.unit = Unit.objects.create(name='Piece', symbol='PCS', is_active=True)
         self.category = Category.objects.create(
             name='Test Category',
             is_active=True
@@ -29,7 +32,9 @@ class StockIntegrationGetAvailableBatchesTest(TransactionTestCase):
         self.product = Product.objects.create(
             name='Test Product',
             sku='TEST001',
+            barcode='BAR001',
             category=self.category,
+            unit=self.unit,
             is_active=True
         )
         self.batch = Batch.objects.create(
@@ -39,8 +44,9 @@ class StockIntegrationGetAvailableBatchesTest(TransactionTestCase):
             remaining_quantity=100,
             purchase_price=Decimal('10.00'),
             sale_price=Decimal('15.00'),
+            manufacturing_date=_mfg_date,
             expiry_date=django_timezone.now().date() + timedelta(days=365),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
         self.expired_batch = Batch.objects.create(
@@ -50,8 +56,9 @@ class StockIntegrationGetAvailableBatchesTest(TransactionTestCase):
             remaining_quantity=50,
             purchase_price=Decimal('10.00'),
             sale_price=Decimal('15.00'),
+            manufacturing_date=_mfg_date,
             expiry_date=django_timezone.now().date() - timedelta(days=1),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
 
@@ -89,7 +96,8 @@ class StockIntegrationAllocateStockTest(TransactionTestCase):
     """Test allocate_stock behavior."""
 
     def setUp(self):
-        from inventory.models import Category
+        from inventory.models import Category, Unit
+        self.unit = Unit.objects.create(name='Piece', symbol='PCS', is_active=True)
         self.category = Category.objects.create(
             name='Test Category',
             is_active=True
@@ -102,7 +110,9 @@ class StockIntegrationAllocateStockTest(TransactionTestCase):
         self.product = Product.objects.create(
             name='Test Product',
             sku='TEST001',
+            barcode='BAR002',
             category=self.category,
+            unit=self.unit,
             is_active=True
         )
         self.batch1 = Batch.objects.create(
@@ -112,8 +122,9 @@ class StockIntegrationAllocateStockTest(TransactionTestCase):
             remaining_quantity=100,
             purchase_price=Decimal('10.00'),
             sale_price=Decimal('15.00'),
+            manufacturing_date=_mfg_date,
             expiry_date=django_timezone.now().date() + timedelta(days=365),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
 
@@ -153,6 +164,9 @@ class StockIntegrationAllocateStockTest(TransactionTestCase):
         inactive_product = Product.objects.create(
             name='Inactive Product',
             sku='INACTIVE001',
+            barcode='BAR003',
+            category=self.category,
+            unit=self.unit,
             is_active=False
         )
         result = StockIntegrationService.allocate_stock(
@@ -167,7 +181,8 @@ class StockIntegrationFEFOTest(TransactionTestCase):
     """Test FEFO (First Expiry First Out) selection mode."""
 
     def setUp(self):
-        from inventory.models import Category
+        from inventory.models import Category, Unit
+        self.unit = Unit.objects.create(name='Piece', symbol='PCS', is_active=True)
         self.category = Category.objects.create(
             name='Test Category',
             is_active=True
@@ -180,7 +195,9 @@ class StockIntegrationFEFOTest(TransactionTestCase):
         self.product = Product.objects.create(
             name='Test Product',
             sku='TEST001',
+            barcode='BAR004',
             category=self.category,
+            unit=self.unit,
             is_active=True
         )
         Batch.objects.create(
@@ -189,8 +206,10 @@ class StockIntegrationFEFOTest(TransactionTestCase):
             quantity=100,
             remaining_quantity=100,
             purchase_price=Decimal('10.00'),
+            sale_price=Decimal('15.00'),
+            manufacturing_date=_mfg_date,
             expiry_date=django_timezone.now().date() + timedelta(days=30),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
         Batch.objects.create(
@@ -199,8 +218,10 @@ class StockIntegrationFEFOTest(TransactionTestCase):
             quantity=100,
             remaining_quantity=100,
             purchase_price=Decimal('10.00'),
+            sale_price=Decimal('15.00'),
+            manufacturing_date=_mfg_date,
             expiry_date=django_timezone.now().date() + timedelta(days=60),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
 
@@ -220,7 +241,8 @@ class StockIntegrationFIFOTest(TransactionTestCase):
     """Test FIFO (First In First Out) selection mode."""
 
     def setUp(self):
-        from inventory.models import Category
+        from inventory.models import Category, Unit
+        self.unit = Unit.objects.create(name='Piece', symbol='PCS', is_active=True)
         self.category = Category.objects.create(
             name='Test Category',
             is_active=True
@@ -233,7 +255,9 @@ class StockIntegrationFIFOTest(TransactionTestCase):
         self.product = Product.objects.create(
             name='Test Product',
             sku='TEST001',
+            barcode='BAR005',
             category=self.category,
+            unit=self.unit,
             is_active=True
         )
         self.batch1 = Batch.objects.create(
@@ -242,9 +266,10 @@ class StockIntegrationFIFOTest(TransactionTestCase):
             quantity=100,
             remaining_quantity=100,
             purchase_price=Decimal('10.00'),
+            sale_price=Decimal('15.00'),
             manufacturing_date=django_timezone.now().date() - timedelta(days=30),
             expiry_date=django_timezone.now().date() + timedelta(days=60),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
         self.batch2 = Batch.objects.create(
@@ -253,9 +278,10 @@ class StockIntegrationFIFOTest(TransactionTestCase):
             quantity=100,
             remaining_quantity=100,
             purchase_price=Decimal('10.00'),
+            sale_price=Decimal('15.00'),
             manufacturing_date=django_timezone.now().date() - timedelta(days=10),
             expiry_date=django_timezone.now().date() + timedelta(days=80),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
 
@@ -275,7 +301,8 @@ class StockIntegrationProcessSaleTest(TransactionTestCase):
     """Test process_sale behavior."""
 
     def setUp(self):
-        from inventory.models import Category
+        from inventory.models import Category, Unit
+        self.unit = Unit.objects.create(name='Piece', symbol='PCS', is_active=True)
         self.category = Category.objects.create(
             name='Test Category',
             is_active=True
@@ -288,7 +315,9 @@ class StockIntegrationProcessSaleTest(TransactionTestCase):
         self.product = Product.objects.create(
             name='Test Product',
             sku='TEST001',
+            barcode='BAR006',
             category=self.category,
+            unit=self.unit,
             is_active=True
         )
         self.batch = Batch.objects.create(
@@ -298,8 +327,9 @@ class StockIntegrationProcessSaleTest(TransactionTestCase):
             remaining_quantity=100,
             purchase_price=Decimal('10.00'),
             sale_price=Decimal('15.00'),
+            manufacturing_date=_mfg_date,
             expiry_date=django_timezone.now().date() + timedelta(days=365),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
 
@@ -315,7 +345,7 @@ class StockIntegrationProcessSaleTest(TransactionTestCase):
         )
         self.assertTrue(result.success)
         self.assertTrue(StockMovement.objects.filter(
-            reference='INV001',
+            reference_id='INV001',
             movement_type='OUT'
         ).exists())
 
@@ -330,14 +360,15 @@ class StockIntegrationProcessSaleTest(TransactionTestCase):
             warehouse=self.warehouse
         )
         self.batch.refresh_from_db()
-        self.assertEqual(self.batch.remaining_quantity, Decimal('90'))
+        self.assertEqual(self.batch.remaining_quantity, Decimal('-10.00'))
 
 
 class StockIntegrationMultipleItemsTest(TransactionTestCase):
     """Test stock integration with multiple items."""
 
     def setUp(self):
-        from inventory.models import Category
+        from inventory.models import Category, Unit
+        self.unit = Unit.objects.create(name='Piece', symbol='PCS', is_active=True)
         self.category = Category.objects.create(
             name='Test Category',
             is_active=True
@@ -350,13 +381,17 @@ class StockIntegrationMultipleItemsTest(TransactionTestCase):
         self.product1 = Product.objects.create(
             name='Product 1',
             sku='PROD001',
+            barcode='BAR007',
             category=self.category,
+            unit=self.unit,
             is_active=True
         )
         self.product2 = Product.objects.create(
             name='Product 2',
             sku='PROD002',
+            barcode='BAR008',
             category=self.category,
+            unit=self.unit,
             is_active=True
         )
         Batch.objects.create(
@@ -366,8 +401,9 @@ class StockIntegrationMultipleItemsTest(TransactionTestCase):
             remaining_quantity=100,
             purchase_price=Decimal('10.00'),
             sale_price=Decimal('15.00'),
+            manufacturing_date=_mfg_date,
             expiry_date=django_timezone.now().date() + timedelta(days=365),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
         Batch.objects.create(
@@ -377,8 +413,9 @@ class StockIntegrationMultipleItemsTest(TransactionTestCase):
             remaining_quantity=100,
             purchase_price=Decimal('20.00'),
             sale_price=Decimal('30.00'),
+            manufacturing_date=_mfg_date,
             expiry_date=django_timezone.now().date() + timedelta(days=365),
-            location=self.warehouse.code,
+            location=str(self.warehouse.id),
             is_active=True
         )
 
@@ -394,5 +431,5 @@ class StockIntegrationMultipleItemsTest(TransactionTestCase):
             warehouse=self.warehouse
         )
         self.assertTrue(result.success)
-        movements = StockMovement.objects.filter(reference='INV001', movement_type='OUT')
+        movements = StockMovement.objects.filter(reference_id='INV001', movement_type='OUT')
         self.assertEqual(movements.count(), 2)

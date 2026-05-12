@@ -184,6 +184,7 @@ class SalesAPITests(APIBase):
     def setUp(self):
         """Set up test data."""
         from django.contrib.auth import get_user_model
+        from accounting.models import Account
         User = get_user_model()
         self.user = User.objects.create_user(
             username='testuser',
@@ -192,6 +193,20 @@ class SalesAPITests(APIBase):
         )
         self.client.force_authenticate(user=self.user)
         self.customer = CustomerFactory.create()
+        # Ensure required accounts exist for dispatch/cancel flows
+        account_defs = [
+            ('1200', 'Accounts Receivable', 'ASSET', 'CURRENT_ASSET'),
+            ('1300', 'Inventory', 'ASSET', 'CURRENT_ASSET'),
+            ('4100', 'Sales Revenue', 'REVENUE', 'OPERATING_REVENUE'),
+            ('5100', 'Cost of Goods Sold', 'EXPENSE', 'COST_OF_GOODS_SOLD'),
+            ('2100', 'Tax Payable', 'LIABILITY', 'CURRENT_LIABILITY'),
+            ('1010', 'Cash', 'ASSET', 'CURRENT_ASSET'),
+        ]
+        for code, name, acc_type, category in account_defs:
+            Account.objects.get_or_create(
+                code=code,
+                defaults={'name': name, 'account_type': acc_type, 'account_category': category, 'is_active': True}
+            )
 
     def test_create_sales_invoice(self):
         """Test sales invoice creation via API."""
@@ -244,10 +259,12 @@ class SalesAPITests(APIBase):
             location=str(warehouse.id)
         )
         
-        # Create confirmed invoice
+        # Create confirmed invoice with correct totals
         invoice = SalesInvoiceFactory.create(
             customer=self.customer,
-            status='CONFIRMED'
+            status='CONFIRMED',
+            subtotal=Decimal('50.00'),
+            total_amount=Decimal('50.00'),
         )
         # Add invoice item
         SalesItem.objects.create(

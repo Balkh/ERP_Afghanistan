@@ -55,13 +55,13 @@ class TestAdvancedAttackChains(TestCase):
         """Multi-step privilege escalation attempts."""
         self.client.force_authenticate(user=self.attacker)
 
-        # Step 1: Try to access admin endpoints
+        # Step 1: Try to access admin endpoints (Django admin redirects non-staff)
         response = self.client.get('/admin/')
         self.assertNotEqual(response.status_code, 200)
 
-        # Step 2: Try to access superuser-only data
-        response = self.client.get('/api/accounting/accounts/')
-        # Should be denied
+        # Step 2: Try to access superuser-only admin endpoint
+        response = self.client.get('/api/auth/permissions/')
+        # Should be denied (permissions list requires superuser)
         self.assertIn(response.status_code, [401, 403, 404])
 
     def test_tenant_bypass_via_indirect_api(self):

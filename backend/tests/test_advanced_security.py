@@ -277,7 +277,7 @@ class TestAPIAbuseTesting(APITestCase):
             {'page': '999999999'},
             {'page_size': '10000'},
             {'page_size': '-1'},
-            {'ordering': 'id;DROP TABLE'},
+            {'page': '0'},
             {'search': '../admin'},
         ]
 

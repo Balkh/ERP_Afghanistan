@@ -9,6 +9,7 @@ from django.test import TransactionTestCase
 
 from accounting.models import Currency, ExchangeRate, Account, JournalEntry, JournalEntryLine
 from accounting.services.journal_engine import JournalEngine
+from accounting.services.financial_reports import FinancialReportEngine
 from accounting.services.currency_converter import CurrencyConverter, CurrencyConversionError
 
 
@@ -90,9 +91,9 @@ class ExchangeRateModelTest(TransactionTestCase):
             rate=Decimal('72.500000'),
             effective_date=date.today(),
             is_active=True,
-            is_manual=True
+            source='Manual'
         )
-        self.assertTrue(rate.is_manual)
+        self.assertEqual(rate.source, 'Manual')
 
     def test_historical_exchange_rate(self):
         """Test historical exchange rate retrieval."""
@@ -159,11 +160,11 @@ class CurrencyConverterServiceTest(TransactionTestCase):
 
     def test_convert_amount_usd_to_afn(self):
         """Convert USD amount to AFN."""
-        result = CurrencyConverter.convert_amount(
+        result = CurrencyConverter.convert(
             Decimal('100.00'),
             self.usd,
             self.afn
-        )
+        )['converted_amount']
         self.assertEqual(result, Decimal('7000.00'))
 
     def test_convert_amount_afn_to_usd(self):
@@ -176,18 +177,18 @@ class CurrencyConverterServiceTest(TransactionTestCase):
             effective_date=date.today(),
             is_active=True
         )
-        result = CurrencyConverter.convert_amount(
+        result = CurrencyConverter.convert(
             Decimal('7000.00'),
             self.afn,
             self.usd
-        )
+        )['converted_amount']
         self.assertEqual(result, Decimal('100.00'))
 
     def test_rounding_consistency(self):
         """Test rounding is consistent for financial accuracy."""
         # Convert with various amounts
-        result1 = CurrencyConverter.convert_amount(Decimal('1.99'), self.usd, self.afn)
-        result2 = CurrencyConverter.convert_amount(Decimal('1.999'), self.usd, self.afn)
+        result1 = CurrencyConverter.convert(Decimal('1.99'), self.usd, self.afn)['converted_amount']
+        result2 = CurrencyConverter.convert(Decimal('1.999'), self.usd, self.afn)['converted_amount']
         
         # Both should round to same precision (2 decimal places)
         self.assertEqual(result1.as_tuple().exponent, -2)
@@ -198,13 +199,17 @@ class MixedCurrencyPaymentTest(TransactionTestCase):
     """Test mixed currency payment workflows - critical for Afghanistan."""
 
     def setUp(self):
+        self.afn = Currency.objects.create(
+            code='AFN', name='Afghan Afghani', symbol='؋', is_default=True, is_active=True
+        )
+        self.usd = Currency.objects.create(
+            code='USD', name='US Dollar', symbol='$', is_active=True
+        )
+
         self.cash_afn = Account.objects.create(code='1000', name='Cash AFN', account_type='ASSET', is_active=True)
         self.cash_usd = Account.objects.create(code='1001', name='Cash USD', account_type='ASSET', is_active=True)
         self.ar = Account.objects.create(code='1100', name='Accounts Receivable', account_type='ASSET', is_active=True)
         self.sales = Account.objects.create(code='4000', name='Sales', account_type='REVENUE', is_active=True)
-
-        self.afn = Currency.objects.get(code='AFN')
-        self.usd = Currency.objects.get(code='USD')
 
         # Rate: 1 USD = 70 AFN
         ExchangeRate.objects.create(
@@ -222,7 +227,7 @@ class MixedCurrencyPaymentTest(TransactionTestCase):
             {'account_id': str(self.ar.id), 'debit': '7000', 'credit': '0'},
             {'account_id': str(self.sales.id), 'debit': '0', 'credit': '7000'},
         ]
-        result = JournalEngine.create_entry('INVOICE', 'INV-USD-001', lines)
+        result = JournalEngine.create_entry('INVOICE', 'Invoice INV-USD-001', lines, entry_number='INV-USD-001')
         JournalEngine.post_entry(result['entry_id'])
 
         # Payment in AFN
@@ -230,7 +235,7 @@ class MixedCurrencyPaymentTest(TransactionTestCase):
             {'account_id': str(self.cash_afn.id), 'debit': '7000', 'credit': '0'},
             {'account_id': str(self.ar.id), 'debit': '0', 'credit': '7000'},
         ]
-        result2 = JournalEngine.create_entry('RECEIPT', 'RCT-USD-001', lines2)
+        result2 = JournalEngine.create_entry('RECEIPT', 'Receipt RCT-USD-001', lines2, entry_number='RCT-USD-001')
         JournalEngine.post_entry(result2['entry_id'])
 
         # Verify AR is zero
@@ -254,7 +259,7 @@ class HawalaSettlementTest(TransactionTestCase):
             {'account_id': str(self.ar.id), 'debit': '1000', 'credit': '0'},
             {'account_id': str(self.sales.id), 'debit': '0', 'credit': '1000'},
         ]
-        result1 = JournalEngine.create_entry('INVOICE', 'INV-HAW-001', lines1)
+        result1 = JournalEngine.create_entry('INVOICE', 'Invoice INV-HAW-001', lines1, entry_number='INV-HAW-001')
         JournalEngine.post_entry(result1['entry_id'])
 
         # Hawala settlement (through hawala agent)
@@ -262,7 +267,7 @@ class HawalaSettlementTest(TransactionTestCase):
             {'account_id': str(self.hawala.id), 'debit': '1000', 'credit': '0'},
             {'account_id': str(self.ar.id), 'debit': '0', 'credit': '1000'},
         ]
-        result2 = JournalEngine.create_entry('HAWALA', 'HAW-001', lines2)
+        result2 = JournalEngine.create_entry('HAWALA', 'Hawala settlement HAW-001', lines2, entry_number='HAW-001')
         JournalEngine.post_entry(result2['entry_id'])
 
         # Cash payment to hawala agent
@@ -270,7 +275,7 @@ class HawalaSettlementTest(TransactionTestCase):
             {'account_id': str(self.cash.id), 'debit': '1000', 'credit': '0'},
             {'account_id': str(self.hawala.id), 'debit': '0', 'credit': '1000'},
         ]
-        result3 = JournalEngine.create_entry('PAYMENT', 'PAY-HAW-001', lines3)
+        result3 = JournalEngine.create_entry('PAYMENT', 'Payment PAY-HAW-001', lines3, entry_number='PAY-HAW-001')
         JournalEngine.post_entry(result3['entry_id'])
 
         # Verify all posted
@@ -300,17 +305,17 @@ class CurrencyRoundingTest(TransactionTestCase):
 
     def test_fractional_amount_rounding(self):
         """Test fractional amounts round correctly."""
-        result = CurrencyConverter.convert_amount(Decimal('10.99'), self.usd, self.afn)
-        expected = Decimal('772.25')  # 10.99 * 70.25 = 772.2475 -> 772.25
+        result = CurrencyConverter.convert(Decimal('10.99'), self.usd, self.afn)['converted_amount']
+        expected = Decimal('772.05')  # 10.99 * 70.25 = 772.0475 -> 772.05
         self.assertEqual(result, expected)
 
     def test_zero_amount_handling(self):
         """Zero amount converts to zero."""
-        result = CurrencyConverter.convert_amount(Decimal('0'), self.usd, self.afn)
+        result = CurrencyConverter.convert(Decimal('0'), self.usd, self.afn)['converted_amount']
         self.assertEqual(result, Decimal('0'))
 
     def test_large_amount_rounding(self):
         """Test large amounts round correctly."""
-        result = CurrencyConverter.convert_amount(Decimal('10000.99'), self.usd, self.afn)
-        # 10000.99 * 70.25 = 702569.5975 -> 702569.60
+        result = CurrencyConverter.convert(Decimal('10000.99'), self.usd, self.afn)['converted_amount']
+        # 10000.99 * 70.25 = 702569.5475 -> 702569.55
         self.assertEqual(result.as_tuple().exponent, -2)

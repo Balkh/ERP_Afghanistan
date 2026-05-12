@@ -47,7 +47,7 @@ class SimpleModelTests(TestCase):
         unit = Unit.objects.create(symbol='PCS', name='Pieces')
         cat = Category.objects.create(name='Cat2')
         prod = Product.objects.create(name='Prod2', sku='P2', category=cat, unit=unit)
-        batch = Batch.objects.create(product=prod, batch_number='B001', quantity=Decimal('100'), remaining_quantity=Decimal('100'))
+        batch = Batch.objects.create(product=prod, batch_number='B001', quantity=Decimal('100'), remaining_quantity=Decimal('100'), manufacturing_date=date.today(), expiry_date=date.today() + timedelta(days=365), purchase_price=Decimal('10'), sale_price=Decimal('15'), location='A1')
         self.assertEqual(batch.batch_number, 'B001')
         
     def test_customer_model(self):

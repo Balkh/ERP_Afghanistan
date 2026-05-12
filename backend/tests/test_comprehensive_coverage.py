@@ -10,7 +10,7 @@ from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 
 from accounting.models import Account, JournalEntry, JournalEntryLine, Currency
-from inventory.models import Product, Category, Warehouse, Unit, StockMovement
+from inventory.models import Product, Category, Warehouse, Unit, StockMovement, Batch
 from sales.models import Customer, SalesInvoice, SalesItem
 from purchases.models import Supplier, PurchaseInvoice, PurchaseItem
 from security.models import Notification
@@ -106,7 +106,7 @@ class NotificationServiceTests(TransactionTestCase):
         user = User.objects.create_user('notif_test', 'nt@test.com', 'pass')
         
         notification = Notification.objects.create(
-            recipient=user,
+            user=user,
             title='Test Notification',
             message='Test message',
             notification_type='INFO'
@@ -120,7 +120,7 @@ class NotificationServiceTests(TransactionTestCase):
         
         for notif_type in types:
             Notification.objects.create(
-                recipient=user,
+                user=user,
                 title=f'{notif_type} Test',
                 message='Test',
                 notification_type=notif_type
@@ -130,12 +130,12 @@ class NotificationServiceTests(TransactionTestCase):
     def test_notification_service_import(self):
         """Test notification service can be imported"""
         from security.notification_service import NotificationService
-        self.assertTrue(hasattr(NotificationService, 'send_notification'))
+        self.assertTrue(hasattr(NotificationService, 'create_notification'))
         
     def test_notification_methods(self):
         """Test notification service methods"""
         from security.notification_service import NotificationService
-        methods = ['send_notification', 'get_user_notifications', 'mark_as_read']
+        methods = ['create_notification', 'get_unread_count', 'mark_as_read']
         for method in methods:
             self.assertTrue(hasattr(NotificationService, method))
 
@@ -274,7 +274,7 @@ class EdgeCaseTests(TransactionTestCase):
     def test_large_number_creation(self):
         """Test creating many objects"""
         for i in range(10):
-            Account.objects.create(code=f'ACC{i}', name=f'Account {i}', account_type='ASSET', is_active=True)
+            Account.objects.create(code=f'{9000+i}', name=f'Account {i}', account_type='ASSET', is_active=True)
         self.assertEqual(Account.objects.count(), 10)
         
     def test_related_object_cascade(self):
@@ -282,10 +282,9 @@ class EdgeCaseTests(TransactionTestCase):
         cat = Category.objects.create(name='Parent')
         Product.objects.create(name='Child', sku='C', category=cat, unit=Unit.objects.create(symbol='U', name='Unit'))
         
-        # Delete category - products should remain or be cascade deleted
-        cat_id = cat.id
+        # Delete product first, then category (protected FK)
+        Product.objects.filter(category=cat).delete()
         cat.delete()
-        # Product may or may not be deleted depending on cascade setting
         
     def test_concurrent_creation(self):
         """Test concurrent object creation"""
@@ -309,13 +308,13 @@ class ForeignKeyTests(TransactionTestCase):
         cust = Customer.objects.create(name='FK Cust', phone='1', address='A')
         inv = SalesInvoice.objects.create(customer=cust, invoice_date=date.today(), order_date=date.today(), due_date=date.today())
         prod = Product.objects.create(name='P', sku='P', unit=Unit.objects.create(symbol='U', name='U'), category=Category.objects.create(name='C'))
-        item = SalesItem.objects.create(invoice=inv, product=prod, quantity=Decimal('1'), unit_price=Decimal('10'))
+        item = SalesItem.objects.create(invoice=inv, product=prod, quantity=Decimal('1'), unit_price=Decimal('10'), total=Decimal('10'))
         self.assertEqual(item.invoice, inv)
         
     def test_journal_line_to_entry(self):
         """Test journal line to entry FK"""
         entry = JournalEntry.objects.create(entry_number='JE-FK-001', entry_date=date.today(), description='Test')
-        acc = Account.objects.create(code='FK', name='FK', account_type='ASSET', is_active=True)
+        acc = Account.objects.create(code='8000', name='FK', account_type='ASSET', is_active=True)
         line = JournalEntryLine.objects.create(entry=entry, account=acc, debit=Decimal('100'), credit=0)
         self.assertEqual(line.entry, entry)
 
@@ -325,10 +324,10 @@ class UniqueConstraintTests(TransactionTestCase):
     
     def test_unique_account_code(self):
         """Test account code is unique"""
-        Account.objects.create(code='UNIQUE1', name='A', account_type='ASSET', is_active=True)
+        Account.objects.create(code='7777', name='A', account_type='ASSET', is_active=True)
         # Second with same code should fail or be handled
         try:
-            Account.objects.create(code='UNIQUE1', name='B', account_type='ASSET', is_active=True)
+            Account.objects.create(code='7777', name='B', account_type='ASSET', is_active=True)
         except:
             pass
             
@@ -357,7 +356,7 @@ class DateTimeTests(TransactionTestCase):
         
     def test_journal_entry_date(self):
         """Test journal entry date"""
-        acc = Account.objects.create(code='DT', name='DT', account_type='ASSET', is_active=True)
+        acc = Account.objects.create(code='9000', name='DT', account_type='ASSET', is_active=True)
         entry = JournalEntry.objects.create(
             entry_number='JE-DT-001',
             entry_date=date.today(),

@@ -114,13 +114,19 @@ class InventoryToSalesToCOGSTest(TransactionTestCase):
 
     def test_sale_reduces_inventory_and_creates_cogs_entry(self):
         """Sale should reduce inventory and create COGS journal entry."""
-        # Create inventory
-        Batch.objects.create(
-            product=self.prod, batch_number='B-SALE-001', quantity=100, remaining_quantity=100,
-            purchase_price=Decimal('5.00'), sale_price=Decimal('10.00'),
-            expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location=str(self.wh.id), is_active=True
+        # Create inventory via purchase (creates batch + IN movement)
+        purchase_result = StockIntegrationService.process_purchase(
+            'PO-SALE-001',
+            [{
+                'product': self.prod,
+                'quantity': Decimal('100'),
+                'batch_number': 'B-SALE-001',
+                'expiry_date': date.today() + timedelta(days=365),
+                'unit_price': Decimal('5.00'),
+            }],
+            self.wh
         )
+        self.assertTrue(purchase_result.success)
 
         # Verify initial stock
         initial_stock = StockIntegrationService.get_total_available_stock(self.prod, self.wh)
@@ -132,10 +138,11 @@ class InventoryToSalesToCOGSTest(TransactionTestCase):
         )
         self.assertTrue(allocation.success)
 
-        # Create stock movement (OUT)
+        # Create stock movement (OUT) linked to batch
         for alloc in allocation.allocations:
             StockIntegrationService.create_stock_movement(
                 product=self.prod,
+                batch=alloc.batch_id,
                 warehouse=self.wh,
                 movement_type='OUT',
                 reference_type='SALE',
@@ -174,8 +181,8 @@ class InventoryToSalesToCOGSTest(TransactionTestCase):
 
         self.assertIsNotNone(cash_row)
         self.assertIsNotNone(sales_row)
-        self.assertEqual(cash_row['debit'], Decimal('1000'))
-        self.assertEqual(sales_row['credit'], Decimal('1000'))
+        self.assertEqual(cash_row['total_debit'], Decimal('1000'))
+        self.assertEqual(sales_row['total_credit'], Decimal('1000'))
 
 
 class PaymentToLedgerToCashFlowTest(TransactionTestCase):
@@ -252,7 +259,7 @@ class InvoiceToJournalToTrialBalanceTest(TransactionTestCase):
         result = JournalEngine.create_entry('SALE', 'ORPHAN-TEST', lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        entry = JournalEntry.objects.get(entry_number='ORPHAN-TEST')
+        entry = JournalEntry.objects.get(entry_number=result['entry_number'])
         lines_qs = JournalEntryLine.objects.filter(entry=entry)
 
         total_debit = sum(l.debit for l in lines_qs)

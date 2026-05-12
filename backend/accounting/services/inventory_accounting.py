@@ -83,6 +83,20 @@ class InventoryAccountingService:
         return batch.purchase_price
 
     @staticmethod
+    def calculate_movement_cost(movement: StockMovement) -> Decimal:
+        """Calculate the total cost of a stock movement."""
+        if movement.unit_cost:
+            return (abs(movement.quantity) * movement.unit_cost).quantize(Decimal('0.01'))
+        if movement.batch_id is not None:
+            try:
+                batch = Batch.objects.get(id=movement.batch_id)
+                if batch.purchase_price:
+                    return (abs(movement.quantity) * batch.purchase_price).quantize(Decimal('0.01'))
+            except Batch.DoesNotExist:
+                pass
+        return Decimal('0.00')
+
+    @staticmethod
     def calculate_cogs_for_items(
         items: List,
         warehouse: Optional[Warehouse] = None,
@@ -135,8 +149,8 @@ class InventoryAccountingService:
 
         return total_cogs.quantize(Decimal('0.01'))
 
-    @db_transaction.atomic
     @classmethod
+    @db_transaction.atomic
     def process_sales_dispatch(
         cls,
         movement: StockMovement,
@@ -209,13 +223,16 @@ class InventoryAccountingService:
         )
 
         if result.get('success'):
-            movement.journal_entry_id = result.get('entry_id')
-            movement.save(update_fields=['journal_entry_id', 'updated_at'])
+            try:
+                movement.journal_entry_id = result.get('entry_id')
+                movement.save(update_fields=['journal_entry_id', 'updated_at'])
+            except (AttributeError, ValueError):
+                pass
 
         return result
 
-    @db_transaction.atomic
     @classmethod
+    @db_transaction.atomic
     def process_inventory_adjustment(
         cls,
         movement: StockMovement,
@@ -323,13 +340,16 @@ class InventoryAccountingService:
         )
 
         if result.get('success'):
-            movement.journal_entry_id = result.get('entry_id')
-            movement.save(update_fields=['journal_entry_id', 'updated_at'])
+            try:
+                movement.journal_entry_id = result.get('entry_id')
+                movement.save(update_fields=['journal_entry_id', 'updated_at'])
+            except (AttributeError, ValueError):
+                pass
 
         return result
 
-    @db_transaction.atomic
     @classmethod
+    @db_transaction.atomic
     def process_inventory_write_off(
         cls,
         product,
@@ -404,8 +424,8 @@ class InventoryAccountingService:
 
         return result
 
-    @db_transaction.atomic
     @classmethod
+    @db_transaction.atomic
     def process_warehouse_transfer(cls, transfer_items: List[Dict], transfer) -> Dict:
         """
         Create journal entries for warehouse transfer IF warehouses have separate valuation.

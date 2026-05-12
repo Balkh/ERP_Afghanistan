@@ -167,7 +167,8 @@ class ModelExpansionTests(TransactionTestCase):
         for i, unit in enumerate(units):
             Product.objects.create(
                 name=f'Product {i}', sku=f'PROD-{i:03d}',
-                category=cat, unit=unit
+                category=cat, unit=unit,
+                barcode=f'BARCODE-{i:03d}'
             )
         self.assertEqual(Product.objects.count(), 3)
         
