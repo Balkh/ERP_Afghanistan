@@ -623,6 +623,10 @@ class ControlCenterEngine:
         except Exception:
             logger.exception("clear_all encountered an error")
 
+    def clear(self) -> None:
+        """Alias for clear_all() for compatibility."""
+        return self.clear_all()
+
     def get_orchestration_count(self) -> int:
         """Get the total number of signals processed."""
         return self._orchestration_count

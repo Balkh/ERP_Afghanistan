@@ -29,6 +29,7 @@ from core.operations.control_center import (
     jobs_dashboard
 )
 from core.operations.decision_engine import get_active_decisions, get_decision_summary, evaluate_event_decisions
+from core.operations.observability import views as obs_views
 
 
 @csrf_exempt
@@ -106,6 +107,7 @@ urlpatterns = [
     path('api/workflows/', include('workflows.urls')),
     path('api/jobs/', include('jobs.urls')),
     path('api/core/', include('core.urls')),
+    path('api/observability/v1/', include('core.operations.observability.urls')),
 ]
 
 # Serve static files in development

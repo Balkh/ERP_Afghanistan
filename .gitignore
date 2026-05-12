@@ -203,3 +203,5 @@ tmp/
 *_backup.*
 session.dat
 *.session
+
+test_output.txt

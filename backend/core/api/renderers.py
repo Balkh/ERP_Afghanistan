@@ -39,6 +39,12 @@ class StandardizedJSONRenderer(JSONRenderer):
         if company_id:
             meta['company_id'] = str(company_id)
         
+        if hasattr(response, 'observability_read_only') and response.observability_read_only:
+            meta['read_only'] = True
+        
+        if hasattr(response, 'observability_meta_extras') and response.observability_meta_extras:
+            meta.update(response.observability_meta_extras)
+        
         if hasattr(response, 'status_code'):
             if 200 <= response.status_code < 300:
                 standard_response = {

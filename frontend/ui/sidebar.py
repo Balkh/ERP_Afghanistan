@@ -76,7 +76,7 @@ class Sidebar(QWidget):
                 "reports": {"trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing"},
                 "finance": {"payments", "expenses", "budgeting", "tax", "cost_centers", "cashflow"},
                 "hr": {"employees", "attendance", "leave", "payroll"},
-                "system": {"control_center", "intelligence_hub", "invoice_templates", "entities", "licensing", "production", "fixed_assets", "backup", "audit", "user_management"}
+                "system": {"observability", "control_center", "intelligence_hub", "invoice_templates", "entities", "licensing", "production", "fixed_assets", "backup", "audit", "user_management"}
             }
             group_items = group_items_map.get(group_name, set())
             any_visible = any(item in visible_items for item in group_items)
@@ -200,6 +200,7 @@ class Sidebar(QWidget):
         
         self._create_group(nav_layout, "System", "system", [
             ("Control Center", "control_center", 38),
+            ("Observability", "observability", 39),
             ("Intelligence Hub", "intelligence_hub", 32),
             ("Invoice Templates", "invoice_templates", 33),
             ("Business Entities", "entities", 35),

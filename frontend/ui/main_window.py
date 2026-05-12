@@ -515,6 +515,11 @@ class MainWindow(QMainWindow):
         self.control_center_screen = ControlCenterScreen(api_client=self.api_client)
         self.pages.addWidget(self.control_center_screen)
 
+        # 39: Observability
+        from ui.observability.observability_screen import ObservabilityScreen
+        self.observability_screen = ObservabilityScreen(api_client=self.api_client)
+        self.pages.addWidget(self.observability_screen)
+
         main_layout.addWidget(content_frame, 1)
 
         self.sidebar.page_changed.connect(self.change_page)
@@ -625,6 +630,7 @@ class MainWindow(QMainWindow):
             31: "User Management", 32: "Intelligence Hub", 33: "Invoice Templates",
             34: "Expenses", 35: "Entities", 36: "Licensing", 37: "Production",
             38: "Control Center",
+            39: "Observability",
         }
         
         # Build breadcrumb based on current page category
@@ -642,7 +648,7 @@ class MainWindow(QMainWindow):
             return ["Home", "Finance", page_map.get(index, page_title)]
         elif index in [23, 24, 25, 26]:
             return ["Home", "HR", page_map.get(index, page_title)]
-        elif index in [27, 28, 29, 30, 31, 32, 33, 35, 36, 37, 38]:
+        elif index in [27, 28, 29, 30, 31, 32, 33, 35, 36, 37, 38, 39]:
             return ["Home", "System", page_map.get(index, page_title)]
         else:
             return ["Home", page_map.get(index, page_title)]
