@@ -748,6 +748,12 @@ def roles_detail(request, role_id):
 @permission_classes([IsAuthenticated])
 def permissions_list(request):
     """List all permissions."""
+    if not request.user.is_superuser:
+        return Response(
+            create_error_response(ErrorCode.AUTH_002, "Permission denied"),
+            status=403
+        )
+
     from security.models import Permission
 
     permissions = Permission.objects.filter(is_active=True).order_by('module', 'codename')

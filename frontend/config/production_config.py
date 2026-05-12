@@ -32,7 +32,7 @@ def get_resource_path(relative_path):
 def get_data_path():
     """
     Get the application data directory
-    In production, this will be in %APPDATA%\PharmacyERP or similar
+    In production, this will be in %%APPDATA%%\\PharmacyERP or similar
     """
     if getattr(sys, 'frozen', False):
         # Use AppData directory for user data in production

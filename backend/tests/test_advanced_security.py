@@ -113,8 +113,6 @@ class TestTokenAttackSimulation(APITestCase):
 
     def test_expired_token_reuse_attempt(self):
         """Test if expired tokens can be reused."""
-        self.client.force_authenticate(user=self.user)
-
         expired_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjF9.ExpiredSignature"
 
         response = self.client.get(
@@ -135,14 +133,11 @@ class TestTokenAttackSimulation(APITestCase):
 
     def test_token_replay_attack(self):
         """Test token replay attack prevention."""
-        self.client.force_authenticate(user=self.user)
-
         token = "valid_but_reused_token_attack"
 
-        response1 = self.client.get('/api/inventory/products/')
-        response2 = self.client.get('/api/inventory/products/', HTTP_AUTHORIZATION=f'Bearer {token}')
+        response = self.client.get('/api/inventory/products/', HTTP_AUTHORIZATION=f'Bearer {token}')
 
-        self.assertIn(response2.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
+        self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
 
     def test_malformed_token_handling(self):
         """Test malformed tokens are handled safely."""

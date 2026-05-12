@@ -27,6 +27,7 @@ from rsa_utils import (
     is_license_valid
 )
 from license_service import LicenseService, create_license_for_current_device, validate_license_file
+from utils.device_fingerprint import is_device_id_valid
 
 
 def test_rsa_key_generation():
@@ -83,12 +84,12 @@ def test_license_creation_and_signing():
     assert is_valid == True
     print("PASS: License verification successful")
     
-     # Test with tampered data
-     tampered_data = license_data.copy()
-     tampered_data["device_id"] = "tampered_device_id"
-     is_valid_tampered = verify_license(tampered_data, signature, public_key)
-     assert is_valid_tampered == False
-     print("PASS: Tamper detection working")
+    # Test with tampered data
+    tampered_data = license_data.copy()
+    tampered_data["device_id"] = "tampered_device_id"
+    is_valid_tampered = verify_license(tampered_data, signature, public_key)
+    assert is_valid_tampered == False
+    print("PASS: Tamper detection working")
 
 
 def test_complete_license_flow():
@@ -107,11 +108,11 @@ def test_complete_license_flow():
         license_type="enterprise"
     )
     
-     # Validate license
-     is_valid, message = is_license_valid(license, public_key)
-     assert is_valid == True
-     assert "valid" in message.lower()
-     print("PASS: Complete license flow successful")
+    # Validate license
+    is_valid, message = is_license_valid(license, public_key)
+    assert is_valid == True
+    assert "valid" in message.lower()
+    print("PASS: Complete license flow successful")
 
 
 def test_license_service():

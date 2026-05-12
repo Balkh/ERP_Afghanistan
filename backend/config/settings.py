@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'production',
     'workflows',
     'jobs',
+    'integration',
 ]
 
 MIDDLEWARE = [
