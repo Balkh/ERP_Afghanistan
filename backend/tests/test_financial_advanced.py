@@ -16,11 +16,11 @@ from datetime import date, timedelta
 from django.test import TestCase
 from django.db.models import Sum
 
-from accounting.models import Account, JournalEntry, JournalEntryLine
+from accounting.models import Account, Currency, JournalEntry, JournalEntryLine
 from accounting.services.account_hierarchy import AccountHierarchyService
-from accounting.services.currency_converter import CurrencyConverter
+from accounting.services.currency_converter import CurrencyConverter, CurrencyConversionError
 from accounting.services.discount_calculator import DiscountCalculator
-from accounting.services.invoice_calculator import InvoiceCalculator
+from accounting.services.invoice_calculator import InvoiceCalculator, InvoiceLineItem
 from accounting.services.tax_calculator import TaxCalculator
 
 
@@ -44,9 +44,9 @@ class AccountHierarchyAdvancedTests(TestCase):
     def test_get_full_path_deep_hierarchy(self):
         """Test full path for deep hierarchy."""
         path = self.cash.full_path
-        self.assertIn('Assets', path)
-        self.assertIn('Current Assets', path)
-        self.assertIn('Cash', path)
+        self.assertIn('1000', path)
+        self.assertIn('1100', path)
+        self.assertIn('1110', path)
         
     def test_get_level_root_account(self):
         """Test level for root account."""
@@ -85,23 +85,33 @@ class AccountHierarchyAdvancedTests(TestCase):
 class CurrencyConverterAdvancedTests(TestCase):
     """Advanced CurrencyConverter tests."""
     
+    @classmethod
+    def setUpTestData(cls):
+        cls.afn = Currency.objects.create(
+            code='AFN', name='Afghan Afghani', symbol='؋', is_default=True, is_active=True
+        )
+        cls.usd = Currency.objects.create(
+            code='USD', name='US Dollar', symbol='$', is_default=False, is_active=True
+        )
+    
     def test_get_exchange_rate_same_currency(self):
         """Test exchange rate for same currency."""
-        rate = CurrencyConverter.get_exchange_rate('AFN', 'AFN')
-        self.assertEqual(rate, Decimal('1.00'))
+        rate = CurrencyConverter.get_exchange_rate(self.afn, self.afn)
+        self.assertEqual(rate, Decimal('1.000000'))
         
     def test_get_exchange_rate_different_currencies(self):
         """Test exchange rate for different currencies."""
-        # This may return None if no rate exists
-        rate = CurrencyConverter.get_exchange_rate('USD', 'AFN')
-        # Should either return a rate or None
-        if rate is not None:
+        try:
+            rate = CurrencyConverter.get_exchange_rate(self.usd, self.afn)
             self.assertIsInstance(rate, Decimal)
+        except CurrencyConversionError:
+            pass
             
     def test_get_available_currencies_includes_afn(self):
         """Test AFN is in available currencies."""
         currencies = CurrencyConverter.get_available_currencies()
-        # Should include AFN at minimum
+        codes = [c['code'] for c in currencies]
+        self.assertIn('AFN', codes)
 
 
 class DiscountCalculatorAdvancedTests(TestCase):
@@ -110,86 +120,98 @@ class DiscountCalculatorAdvancedTests(TestCase):
     def test_calculate_percentage_discount_10_percent(self):
         """Test 10% discount calculation."""
         result = DiscountCalculator.calculate_percentage_discount(
-            amount=Decimal('1000.00'),
-            percentage=Decimal('10.00')
+            percentage=Decimal('10.00'),
+            subtotal=Decimal('1000.00')
         )
-        self.assertEqual(result, Decimal('100.00'))
+        self.assertEqual(result.discount_amount, Decimal('100.00'))
         
     def test_calculate_percentage_discount_0_percent(self):
         """Test 0% discount returns 0."""
         result = DiscountCalculator.calculate_percentage_discount(
-            amount=Decimal('1000.00'),
-            percentage=Decimal('0')
+            percentage=Decimal('0'),
+            subtotal=Decimal('1000.00')
         )
-        self.assertEqual(result, Decimal('0.00'))
+        self.assertEqual(result.discount_amount, Decimal('0.00'))
         
     def test_calculate_percentage_discount_100_percent(self):
         """Test 100% discount returns full amount."""
         result = DiscountCalculator.calculate_percentage_discount(
-            amount=Decimal('1000.00'),
-            percentage=Decimal('100.00')
+            percentage=Decimal('100.00'),
+            subtotal=Decimal('1000.00')
         )
-        self.assertEqual(result, Decimal('1000.00'))
+        self.assertEqual(result.discount_amount, Decimal('1000.00'))
         
-    def test_calculate_fixed_discount_full_amount(self):
-        """Test fixed discount cannot exceed amount."""
-        result = DiscountCalculator.calculate_fixed_discount(
-            amount=Decimal('100.00'),
-            discount_amount=Decimal('150.00')
-        )
-        # Should be capped at 100
-        self.assertEqual(result, Decimal('100.00'))
+    def test_calculate_fixed_discount_exceeds_subtotal(self):
+        """Test fixed discount exceeding subtotal raises error."""
+        with self.assertRaises(ValueError):
+            DiscountCalculator.calculate_fixed_discount(
+                discount_value=Decimal('150.00'),
+                subtotal=Decimal('100.00')
+            )
         
     def test_calculate_fixed_discount_zero(self):
         """Test zero fixed discount."""
         result = DiscountCalculator.calculate_fixed_discount(
-            amount=Decimal('1000.00'),
-            discount_amount=Decimal('0')
+            discount_value=Decimal('0'),
+            subtotal=Decimal('1000.00')
         )
-        self.assertEqual(result, Decimal('0.00'))
+        self.assertEqual(result.discount_amount, Decimal('0.00'))
         
     def test_calculate_fixed_discount_normal(self):
         """Test normal fixed discount."""
         result = DiscountCalculator.calculate_fixed_discount(
-            amount=Decimal('1000.00'),
-            discount_amount=Decimal('50.00')
+            discount_value=Decimal('50.00'),
+            subtotal=Decimal('1000.00')
         )
-        self.assertEqual(result, Decimal('50.00'))
+        self.assertEqual(result.discount_amount, Decimal('50.00'))
 
 
 class InvoiceCalculatorAdvancedTests(TestCase):
     """Advanced InvoiceCalculator tests."""
     
+    @classmethod
+    def setUpTestData(cls):
+        Currency.objects.create(
+            code='AFN', name='Afghan Afghani', symbol='؋', is_default=True, is_active=True
+        )
+    
+    def setUp(self):
+        self.calculator = InvoiceCalculator()
+    
     def test_calculate_with_items(self):
         """Test calculate with line items."""
         items = [
-            {'unit_price': Decimal('100.00'), 'quantity': Decimal('2')},
-            {'unit_price': Decimal('50.00'), 'quantity': Decimal('3')},
+            InvoiceLineItem(product_name='Item 1', unit_price=Decimal('100.00'), quantity=Decimal('2')),
+            InvoiceLineItem(product_name='Item 2', unit_price=Decimal('50.00'), quantity=Decimal('3')),
         ]
-        result = InvoiceCalculator.calculate(items, Decimal('0'), Decimal('0'))
+        result = self.calculator.calculate(items)
         self.assertIsNotNone(result)
         
     def test_calculate_with_discount(self):
         """Test calculate with discount."""
-        items = [{'unit_price': Decimal('100.00'), 'quantity': Decimal('1')}]
-        result = InvoiceCalculator.calculate(items, Decimal('10.00'), Decimal('0'))
+        items = [InvoiceLineItem(product_name='Item', unit_price=Decimal('100.00'), quantity=Decimal('1'))]
+        result = self.calculator.calculate(items, invoice_discount_value=Decimal('10.00'))
         self.assertIsNotNone(result)
         
     def test_calculate_with_tax(self):
         """Test calculate with tax."""
-        items = [{'unit_price': Decimal('100.00'), 'quantity': Decimal('1')}]
-        result = InvoiceCalculator.calculate(items, Decimal('0'), Decimal('10.00'))
+        items = [InvoiceLineItem(product_name='Item', unit_price=Decimal('100.00'), quantity=Decimal('1'))]
+        result = self.calculator.calculate(items, tax_rates=[Decimal('10.00')])
         self.assertIsNotNone(result)
         
     def test_calculate_with_discount_and_tax(self):
         """Test calculate with both discount and tax."""
-        items = [{'unit_price': Decimal('100.00'), 'quantity': Decimal('1')}]
-        result = InvoiceCalculator.calculate(items, Decimal('10.00'), Decimal('10.00'))
+        items = [InvoiceLineItem(product_name='Item', unit_price=Decimal('100.00'), quantity=Decimal('1'))]
+        result = self.calculator.calculate(
+            items,
+            invoice_discount_value=Decimal('10.00'),
+            tax_rates=[Decimal('10.00')]
+        )
         self.assertIsNotNone(result)
         
     def test_calculate_empty_items(self):
         """Test calculate with empty items."""
-        result = InvoiceCalculator.calculate([], Decimal('0'), Decimal('0'))
+        result = self.calculator.calculate([])
         self.assertIsNotNone(result)
 
 
@@ -199,64 +221,61 @@ class TaxCalculatorAdvancedTests(TestCase):
     def test_calculate_fixed_tax_basic(self):
         """Test fixed tax basic calculation."""
         result = TaxCalculator.calculate_fixed_tax(
-            amount=Decimal('1000.00'),
-            fixed_amount=Decimal('50.00')
+            amount=Decimal('50.00')
         )
         self.assertEqual(result.tax_amount, Decimal('50.00'))
         
     def test_calculate_fixed_tax_zero_amount(self):
         """Test fixed tax with zero amount."""
         result = TaxCalculator.calculate_fixed_tax(
-            amount=Decimal('0'),
-            fixed_amount=Decimal('50.00')
+            amount=Decimal('0')
         )
         self.assertEqual(result.tax_amount, Decimal('0'))
         
     def test_calculate_fixed_tax_zero_rate(self):
         """Test fixed tax with zero rate."""
         result = TaxCalculator.calculate_fixed_tax(
-            amount=Decimal('1000.00'),
-            fixed_amount=Decimal('0')
+            amount=Decimal('0')
         )
         self.assertEqual(result.tax_amount, Decimal('0'))
         
     def test_calculate_percentage_tax_basic(self):
         """Test percentage tax basic calculation."""
         result = TaxCalculator.calculate_percentage_tax(
-            amount=Decimal('1000.00'),
-            percentage=Decimal('10.00')
+            rate=Decimal('10.00'),
+            taxable_amount=Decimal('1000.00')
         )
         self.assertEqual(result.tax_amount, Decimal('100.00'))
         
     def test_calculate_percentage_tax_zero(self):
         """Test percentage tax with zero rate."""
         result = TaxCalculator.calculate_percentage_tax(
-            amount=Decimal('1000.00'),
-            percentage=Decimal('0')
+            rate=Decimal('0'),
+            taxable_amount=Decimal('1000.00')
         )
         self.assertEqual(result.tax_amount, Decimal('0'))
         
     def test_calculate_percentage_tax_100_percent(self):
         """Test 100% percentage tax."""
         result = TaxCalculator.calculate_percentage_tax(
-            amount=Decimal('1000.00'),
-            percentage=Decimal('100.00')
+            rate=Decimal('100.00'),
+            taxable_amount=Decimal('1000.00')
         )
         self.assertEqual(result.tax_amount, Decimal('1000.00'))
         
     def test_calculate_compound_tax_basic(self):
         """Test compound tax basic calculation."""
         result = TaxCalculator.calculate_compound_tax(
-            amount=Decimal('1000.00'),
-            percentage=Decimal('10.00')
+            base_amount=Decimal('1000.00'),
+            tax_rates=[Decimal('10.00')]
         )
         self.assertIsNotNone(result.tax_amount)
         
     def test_calculate_compound_tax_on_zero(self):
         """Test compound tax on zero amount."""
         result = TaxCalculator.calculate_compound_tax(
-            amount=Decimal('0'),
-            percentage=Decimal('10.00')
+            base_amount=Decimal('0'),
+            tax_rates=[Decimal('10.00')]
         )
         self.assertEqual(result.tax_amount, Decimal('0'))
 
@@ -284,14 +303,14 @@ class JournalEntryWithLinesTests(TestCase):
         JournalEntryLine.objects.create(
             entry=entry,
             account=self.cash,
-            debit_amount=Decimal('100.00'),
-            credit_amount=Decimal('0.00')
+            debit=Decimal('100.00'),
+            credit=Decimal('0.00')
         )
         JournalEntryLine.objects.create(
             entry=entry,
             account=self.revenue,
-            debit_amount=Decimal('0.00'),
-            credit_amount=Decimal('100.00')
+            debit=Decimal('0.00'),
+            credit=Decimal('100.00')
         )
         
         self.assertEqual(entry.lines.count(), 2)
@@ -307,22 +326,22 @@ class JournalEntryWithLinesTests(TestCase):
         JournalEntryLine.objects.create(
             entry=entry,
             account=self.cash,
-            debit_amount=Decimal('500.00'),
-            credit_amount=Decimal('0.00')
+            debit=Decimal('500.00'),
+            credit=Decimal('0.00')
         )
         JournalEntryLine.objects.create(
             entry=entry,
             account=self.revenue,
-            debit_amount=Decimal('0.00'),
-            credit_amount=Decimal('500.00')
+            debit=Decimal('0.00'),
+            credit=Decimal('500.00')
         )
         
         total_debit = entry.lines.aggregate(
-            total=Sum('debit_amount')
+            total=Sum('debit')
         )['total'] or Decimal('0')
         
         total_credit = entry.lines.aggregate(
-            total=Sum('credit_amount')
+            total=Sum('credit')
         )['total'] or Decimal('0')
         
         self.assertEqual(total_debit, total_credit)

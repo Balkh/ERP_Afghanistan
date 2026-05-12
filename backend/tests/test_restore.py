@@ -36,13 +36,39 @@ class RestoreServiceTestCase(TestCase):
     
     def test_restore_point_creation(self):
         """Test restore point is created on validation"""
-        restore_service = RestoreService(self.backup_record)
-        
-        with patch.object(restore_service, '_validate_file_exists'):
-            pass
-        
+        from backup.services.providers import (
+            MockFileProvider, MockChecksumProvider, MockArchiveProvider,
+        )
+
+        file_provider = MockFileProvider()
+        file_provider.add_file(
+            self.backup_record.file_path,
+            exists=True,
+            size=self.backup_record.file_size_bytes,
+            content='CREATE TABLE accounting_account (id int);',
+        )
+        checksum_provider = MockChecksumProvider()
+        checksum_provider.add_checksum(
+            self.backup_record.file_path, self.backup_record.checksum,
+        )
+        archive_provider = MockArchiveProvider()
+        archive_provider.add_archive(
+            self.backup_record.file_path,
+            extension='.sql',
+            sql_content='CREATE TABLE accounting_account (id int);',
+            tables=['accounting_account', 'inventory_product',
+                    'sales_invoice', 'purchases_invoice'],
+            transactions_valid=True,
+        )
+
+        restore_service = RestoreService(
+            self.backup_record,
+            file_provider=file_provider,
+            checksum_provider=checksum_provider,
+            archive_provider=archive_provider,
+        )
         restore_point = restore_service.validate_backup(user=self.user)
-        
+
         self.assertIsNotNone(restore_point.id)
         self.assertEqual(restore_point.backup_record, self.backup_record)
         self.assertEqual(restore_point.status, 'validated')
@@ -63,21 +89,44 @@ class RestoreServiceTestCase(TestCase):
     
     def test_validation_checksum_match(self):
         """Test validation passes when checksum matches"""
-        test_content = b'test content for checksum'
+        from backup.services.providers import (
+            MockFileProvider, MockChecksumProvider, MockArchiveProvider,
+        )
+
+        file_provider = MockFileProvider()
+        file_provider.add_file(
+            self.backup_record.file_path,
+            exists=True,
+            size=1024,
+            content='CREATE TABLE accounting_account (id int);',
+        )
+        checksum_provider = MockChecksumProvider()
+        checksum_provider.add_checksum(
+            self.backup_record.file_path, self.backup_record.checksum,
+        )
+        archive_provider = MockArchiveProvider()
+        archive_provider.add_archive(
+            self.backup_record.file_path,
+            extension='.sql',
+            sql_content='CREATE TABLE accounting_account (id int);',
+            tables=['accounting_account', 'inventory_product',
+                    'sales_invoice', 'purchases_invoice'],
+            transactions_valid=True,
+        )
+
+        restore_service = RestoreService(
+            self.backup_record,
+            file_provider=file_provider,
+            checksum_provider=checksum_provider,
+            archive_provider=archive_provider,
+        )
+        restore_point = restore_service.validate_backup(user=self.user)
         
-        with patch('os.path.exists', return_value=True), \
-             patch('builtins.open', MagicMock()), \
-             patch('os.path.getsize', return_value=1024), \
-             patch('hashlib.sha256', return_value=MagicMock(hexdigest=lambda: self.backup_record.checksum)):
-            
-            restore_service = RestoreService(self.backup_record)
-            restore_point = restore_service.validate_backup(user=self.user)
-            
-            restores = RestoreValidation.objects.filter(
-                restore_point=restore_point,
-                validation_type='data_integrity'
-            )
-            self.assertTrue(restores.exists())
+        restores = RestoreValidation.objects.filter(
+            restore_point=restore_point,
+            validation_type='data_integrity'
+        )
+        self.assertTrue(restores.exists())
     
     def test_create_snapshot(self):
         """Test snapshot creation captures current state"""

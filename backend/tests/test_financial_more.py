@@ -6,13 +6,15 @@ Focus on services with lower coverage that we can actually test.
 
 from decimal import Decimal
 from datetime import date, timedelta
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from django.db import models
 
-from accounting.models import Account, JournalEntry, JournalEntryLine
+from accounting.models import Account, JournalEntry, JournalEntryLine, Currency
 from accounting.services.discount_calculator import DiscountCalculator, DiscountType
 from accounting.services.tax_calculator import TaxCalculator, TaxType
 from accounting.services.invoice_calculator import InvoiceCalculator
+from accounting.services.account_hierarchy import AccountHierarchyService
+from accounting.services.currency_converter import CurrencyConverter
 
 
 class DiscountCalculatorMoreTests(TestCase):
@@ -54,9 +56,9 @@ class DiscountCalculatorMoreTests(TestCase):
                 subtotal=Decimal('-1000.00')
             )
             
-    def test_apply_invoice_discount_method_exists(self):
-        """Test apply_invoice_discount method exists."""
-        self.assertTrue(hasattr(DiscountCalculator, 'apply_invoice_discount'))
+    def test_apply_volume_discount_method_exists(self):
+        """Test apply_volume_discount method exists."""
+        self.assertTrue(hasattr(DiscountCalculator, 'apply_volume_discount'))
 
 
 class TaxCalculatorMoreTests(TestCase):
@@ -71,16 +73,17 @@ class TaxCalculatorMoreTests(TestCase):
         )
         self.assertTrue(result.is_compound)
         
-    def test_calculate_exempt_tax_method_exists(self):
-        """Test exempt tax method exists."""
-        self.assertTrue(hasattr(TaxCalculator, 'calculate_exempt_tax'))
+    def test_calculate_fixed_tax_method_exists(self):
+        """Test fixed tax method exists."""
+        self.assertTrue(hasattr(TaxCalculator, 'calculate_fixed_tax'))
         
-    def test_calculate_exempt_tax_returns_zero(self):
-        """Test exempt tax returns zero."""
-        result = TaxCalculator.calculate_exempt_tax(
-            amount=Decimal('1000.00')
-        )
-        self.assertEqual(result.tax_amount, Decimal('0'))
+    def test_item_level_exempt_tax_returns_zero(self):
+        """Test item level exempt tax returns zero."""
+        items = [
+            {'quantity': '1', 'unit_price': '1000.00', 'tax_type': 'exempt'}
+        ]
+        total, updated = TaxCalculator.calculate_item_level_taxes(items)
+        self.assertEqual(total, Decimal('0'))
         
     def test_calculate_item_level_taxes_empty(self):
         """Test item level taxes with empty list."""
@@ -100,37 +103,52 @@ class TaxCalculatorMoreTests(TestCase):
         items = [
             {'quantity': Decimal('1'), 'unit_price': Decimal('100.00'), 'tax_type': 'fixed', 'tax_amount': Decimal('5.00')}
         ]
-        total, result = TaxCalculator.calculate_item_level_tasks(items)
+        total, result = TaxCalculator.calculate_item_level_taxes(items)
         
-    def test_get_tax_summary_method_exists(self):
-        """Test get_tax_summary method exists."""
-        self.assertTrue(hasattr(TaxCalculator, 'get_tax_summary'))
+    def test_calculate_multi_tax_method_exists(self):
+        """Test calculate_multi_tax method exists."""
+        self.assertTrue(hasattr(TaxCalculator, 'calculate_multi_tax'))
 
 
 class InvoiceCalculatorMoreTests(TestCase):
     """More InvoiceCalculator tests for better coverage."""
     
-    def test_calculate_subtotal_method_exists(self):
-        """Test calculate_subtotal method exists."""
-        self.assertTrue(hasattr(InvoiceCalculator, 'calculate_subtotal'))
+    @classmethod
+    def setUpTestData(cls):
+        Currency.objects.create(
+            code='AFN', name='Afghani', symbol='؋', is_default=True, is_active=True
+        )
+
+    def test_calculate_simple_method_exists(self):
+        """Test calculate_simple method exists."""
+        self.assertTrue(hasattr(InvoiceCalculator, 'calculate_simple'))
         
-    def test_calculate_grand_total_method_exists(self):
-        """Test calculate_grand_total method exists."""
-        self.assertTrue(hasattr(InvoiceCalculator, 'calculate_grand_total'))
+    def test_calculate_mixed_payment_method_exists(self):
+        """Test calculate_mixed_payment_invoice method exists."""
+        self.assertTrue(hasattr(InvoiceCalculator, 'calculate_mixed_payment_invoice'))
         
-    def test_round_amount_method_exists(self):
-        """Test round_amount method exists."""
-        self.assertTrue(hasattr(InvoiceCalculator, 'round_amount'))
+    def test_calculate_simple_returns_dict(self):
+        """Test calculate_simple returns dict."""
+        calc = InvoiceCalculator()
+        items = [{'quantity': 2, 'unit_price': '50.00'}]
+        result = calc.calculate_simple(items)
+        self.assertIsInstance(result, dict)
         
-    def test_round_amount_default_precision(self):
-        """Test round_amount with default precision."""
-        result = InvoiceCalculator.round_amount(Decimal('123.456'))
-        self.assertIsInstance(result, Decimal)
+    def test_calculate_simple_subtotal(self):
+        """Test calculate_simple calculates subtotal."""
+        calc = InvoiceCalculator()
+        items = [{'quantity': 2, 'unit_price': '50.00'}]
+        result = calc.calculate_simple(items)
+        self.assertEqual(result['subtotal'], Decimal('100'))
         
-    def test_round_amount_custom_precision(self):
-        """Test round_amount with custom precision."""
-        result = InvoiceCalculator.round_amount(Decimal('123.456'), Decimal('0.01'))
-        self.assertIsInstance(result, Decimal)
+    def test_calculate_simple_with_discount_and_tax(self):
+        """Test calculate_simple with discount and tax."""
+        calc = InvoiceCalculator()
+        items = [{'quantity': 2, 'unit_price': '50.00'}]
+        result = calc.calculate_simple(items, discount=Decimal('10'), tax_rate=Decimal('10'))
+        after_discount = Decimal('100') - Decimal('10')
+        expected_tax = (after_discount * Decimal('10') / Decimal('100')).quantize(Decimal('0.01'))
+        self.assertEqual(result['tax'], expected_tax)
 
 
 class AccountHierarchyMoreTests(TestCase):
@@ -145,28 +163,29 @@ class AccountHierarchyMoreTests(TestCase):
             code='1100', name='Cash', account_type='ASSET', parent=cls.root, is_active=True
         )
         
-    def test_get_account_by_code_method_exists(self):
-        """Test get_account_by_code method exists."""
-        self.assertTrue(hasattr(AccountHierarchyService, 'get_account_by_code'))
+    def test_get_accounts_by_type_method_exists(self):
+        """Test get_accounts_by_type method exists."""
+        self.assertTrue(hasattr(AccountHierarchyService, 'get_accounts_by_type'))
         
-    def test_get_account_by_code_existing(self):
-        """Test get_account_by_code returns existing account."""
-        account = AccountHierarchyService.get_account_by_code('1000')
-        self.assertEqual(account, self.root)
+    def test_get_accounts_by_type_returns_filtered(self):
+        """Test get_accounts_by_type returns filtered accounts."""
+        accounts = AccountHierarchyService.get_accounts_by_type('ASSET')
+        self.assertIn(self.root, accounts)
+        self.assertIn(self.child, accounts)
         
-    def test_validate_account_code_method_exists(self):
-        """Test validate_account_code method exists."""
-        self.assertTrue(hasattr(AccountHierarchyService, 'validate_account_code'))
+    def test_get_leaf_accounts_method_exists(self):
+        """Test get_leaf_accounts method exists."""
+        self.assertTrue(hasattr(AccountHierarchyService, 'get_leaf_accounts'))
         
-    def test_validate_account_code_valid(self):
-        """Test valid account code validation."""
-        result = AccountHierarchyService.validate_account_code('1000')
-        self.assertTrue(result)
+    def test_get_leaf_accounts_returns_list(self):
+        """Test get_leaf_accounts returns list of leaf accounts."""
+        accounts = AccountHierarchyService.get_leaf_accounts()
+        self.assertIsInstance(accounts, list)
         
-    def test_validate_account_code_invalid_chars(self):
-        """Test invalid characters in account code."""
-        result = AccountHierarchyService.validate_account_code('10AB')
-        self.assertFalse(result)
+    def test_get_ancestors_returns_empty_for_root(self):
+        """Test get_ancestors returns empty for root account."""
+        ancestors = AccountHierarchyService.get_ancestors(self.root.id)
+        self.assertEqual(ancestors, [])
 
 
 class JournalEntryMoreTests(TestCase):
@@ -241,19 +260,26 @@ class JournalEntryMoreTests(TestCase):
 
 class CurrencyConverterMoreTests(TestCase):
     """More CurrencyConverter tests."""
-    
-    def test_get_exchange_rate_invalid_currency_handling(self):
-        """Test handling of invalid currency."""
-        try:
-            rate = CurrencyConverter.get_exchange_rate('INVALID', 'AFN')
-        except Exception:
-            pass  # Expected to fail
-            
-    def test_set_exchange_rate_method_exists(self):
-        """Test set_exchange_rate method exists."""
-        self.assertTrue(hasattr(CurrencyConverter, 'set_exchange_rate'))
+
+    @classmethod
+    def setUpTestData(cls):
+        cls.afn = Currency.objects.create(
+            code='AFN', name='Afghani', symbol='؋', is_default=True, is_active=True
+        )
+        cls.usd = Currency.objects.create(
+            code='USD', name='US Dollar', symbol='$', is_active=True
+        )
         
-    def test_convert_between_known_currencies(self):
-        """Test conversion between known currencies."""
-        result = CurrencyConverter.convert_amount(Decimal('100'), 'AFN', 'AFN')
-        self.assertEqual(result, Decimal('100'))
+    def test_get_exchange_rate_same_currency(self):
+        """Test exchange rate for same currency returns 1."""
+        rate = CurrencyConverter.get_exchange_rate(self.afn, self.afn)
+        self.assertEqual(rate, Decimal('1.000000'))
+        
+    def test_get_available_currencies_method_exists(self):
+        """Test get_available_currencies method exists."""
+        self.assertTrue(hasattr(CurrencyConverter, 'get_available_currencies'))
+        
+    def test_convert_between_same_currency(self):
+        """Test conversion between same currency returns same amount."""
+        result = CurrencyConverter.convert(Decimal('100'), self.afn, self.afn)
+        self.assertEqual(result['converted_amount'], Decimal('100'))

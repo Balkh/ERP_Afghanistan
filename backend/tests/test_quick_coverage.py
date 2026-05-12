@@ -139,7 +139,7 @@ class QuickSecurityTests(TestCase):
     
     def test_permission_imports(self):
         """Test permission imports work"""
-        from security.permissions import IsAccountant, IsManager
+        from security.permissions import RoleBasedPermission, IsOwnerOrReadOnly
         self.assertTrue(True)
         
     def test_user_creation(self):

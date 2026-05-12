@@ -6,7 +6,7 @@ from decimal import Decimal
 from datetime import date, timedelta
 from django.test import TestCase
 
-from accounting.models import Account, JournalEntry, JournalEntryLine
+from accounting.models import Account, JournalEntry, JournalEntryLine, Currency
 from accounting.services.journal_engine import JournalEngine
 from accounting.services.report_exporter import ReportExporter
 from accounting.services.invoice_calculator import InvoiceCalculator
@@ -50,6 +50,12 @@ class JournalEngineMethodTests(TestCase):
 class InvoiceCalculatorMethodTests(TestCase):
     """Test actual invoice calculator methods."""
     
+    @classmethod
+    def setUpTestData(cls):
+        Currency.objects.create(
+            code='AFN', name='Afghani', symbol='؋', is_default=True, is_active=True
+        )
+
     def test_calculate_exists(self):
         """Test calculate method exists."""
         self.assertTrue(hasattr(InvoiceCalculator, 'calculate'))
@@ -64,11 +70,9 @@ class InvoiceCalculatorMethodTests(TestCase):
         
     def test_calculate_simple_basic(self):
         """Test calculate_simple basic."""
-        result = InvoiceCalculator.calculate_simple(
-            subtotal=Decimal('1000.00'),
-            tax_rate=Decimal('0.10'),
-            discount_rate=Decimal('0.05')
-        )
+        calc = InvoiceCalculator()
+        items = [{'quantity': 2, 'unit_price': '50.00'}]
+        result = calc.calculate_simple(items)
         self.assertIsInstance(result, dict)
         self.assertIn('total', result)
 
@@ -103,10 +107,10 @@ class TaxCalculatorMethodTests(TestCase):
     def test_calculate_percentage_tax_basic(self):
         """Test percentage tax calculation."""
         result = TaxCalculator.calculate_percentage_tax(
-            amount=Decimal('1000.00'),
-            rate=Decimal('0.10')
+            rate=Decimal('10.00'),
+            taxable_amount=Decimal('1000.00')
         )
-        self.assertEqual(result, Decimal('100.00'))
+        self.assertEqual(result.tax_amount, Decimal('100.00'))
 
 
 class DiscountCalculatorMethodTests(TestCase):
@@ -130,11 +134,12 @@ class DiscountCalculatorMethodTests(TestCase):
         
     def test_calculate_percentage_discount_basic(self):
         """Test percentage discount basic."""
+        from accounting.services.discount_calculator import DiscountResult
         result = DiscountCalculator.calculate_percentage_discount(
             subtotal=Decimal('1000.00'),
             percentage=Decimal('10')
         )
-        self.assertIsInstance(result, dict)
+        self.assertIsInstance(result, DiscountResult)
 
 
 class CurrencyConverterMethodTests(TestCase):

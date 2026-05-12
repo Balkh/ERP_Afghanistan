@@ -75,27 +75,25 @@ class PermissionTestsExpanded(TestCase):
     def test_permission_classes_exist(self):
         """Test permission classes exist"""
         from security.permissions import (
-            IsAdminOrReadOnly, IsOwnerOrAdmin, CanManageAccount,
-            CanManageJournal, CanViewReports, CanManageInventory,
-            CanManageSales, CanManagePurchases
+            RoleBasedPermission, IsOwnerOrReadOnly, LicenseRequiredPermission
         )
         self.assertTrue(True)
         
     def test_role_based_permissions(self):
         """Test role-based permission assignments"""
         from security.permissions import (
-            CanManageSales, CanManagePurchases, CanViewReports
+            RoleBasedPermission, IsOwnerOrReadOnly, LicenseRequiredPermission
         )
         # Test that permission classes can be instantiated
-        perm1 = CanManageSales()
-        perm2 = CanManagePurchases()
-        perm3 = CanViewReports()
+        perm1 = RoleBasedPermission()
+        perm2 = IsOwnerOrReadOnly()
+        perm3 = LicenseRequiredPermission()
         self.assertIsNotNone(perm1)
         
     def test_permission_methods(self):
         """Test permission has required methods"""
-        from security.permissions import CanViewReports
-        perm = CanViewReports()
+        from security.permissions import RoleBasedPermission
+        perm = RoleBasedPermission()
         self.assertTrue(hasattr(perm, 'has_permission'))
         self.assertTrue(hasattr(perm, 'has_object_permission'))
 

@@ -41,37 +41,41 @@ class JournalEntryIdempotencyTests(TestCase):
     
     def test_create_entry_returns_same_reference(self):
         """Test that creating entry twice with same data returns same reference."""
-        data = {
-            'entry_number': f'IDEMP-{date.today().strftime("%Y%m%d%H%M%S")}',
-            'entry_date': date.today(),
-            'description': 'Test idempotent entry',
-            'is_posted': False,
-            'is_active': True,
-            'lines': [
-                {'account': self.cash_account, 'debit': Decimal('100'), 'credit': Decimal('0'), 'description': 'Debit'},
-                {'account': self.revenue_account, 'debit': Decimal('0'), 'credit': Decimal('100'), 'description': 'Credit'}
-            ]
-        }
-        
+        entry_number = f'IDEMP-{date.today().strftime("%Y%m%d%H%M%S")}'
+        lines = [
+            {'account_id': self.cash_account.id, 'debit': Decimal('100'), 'credit': Decimal('0'), 'description': 'Debit'},
+            {'account_id': self.revenue_account.id, 'debit': Decimal('0'), 'credit': Decimal('100'), 'description': 'Credit'},
+        ]
+
         from accounting.services.journal_engine import JournalEngine
-        
+
         # Create first time
-        result1 = JournalEngine.create_entry(**data)
+        result1 = JournalEngine.create_entry(
+            entry_type='GENERAL',
+            description='Test idempotent entry',
+            lines=lines,
+            entry_date=date.today(),
+            entry_number=entry_number,
+        )
         self.assertTrue(result1['success'])
-        entry1_id = result1['entry']['id']
-        
+        entry1_id = result1['entry_id']
+
         # Try to create again with same data - should fail or return existing
-        result2 = JournalEngine.create_entry(**data)
-        
+        result2 = JournalEngine.create_entry(
+            entry_type='GENERAL',
+            description='Test idempotent entry',
+            lines=lines,
+            entry_date=date.today(),
+            entry_number=entry_number,
+        )
+
         # Either fails (already exists) or returns same entry
         if result2['success']:
-            # If succeeds, check it's not a duplicate
-            entry2_id = result2['entry']['id']
             # Should be same entry or failure
             entry_count = JournalEntry.objects.filter(
-                entry_number=data['entry_number']
+                entry_number=entry_number
             ).count()
-            self.assertLessEqual(entry_count, 1, 
+            self.assertLessEqual(entry_count, 1,
                 "Should not create duplicate entries for same number")
     
     def test_post_entry_idempotent(self):
