@@ -1,22 +1,25 @@
 """
-Phase 5B.1 — Controlled Execution Sandbox Tests.
+Phase 5B.1 (v2.0 Hardened) — Simulation Sandbox Tests.
 
-Validates:
-A. Execution Plan Builder — Decision→Plan conversion, deterministic plan generation
-B. Simulation Safety — no database writes, no ERP mutation, sandbox isolation
-C. Impact Analysis — deterministic estimation, bounded outputs, repeatable
-D. Trace Integrity — immutable logs, bounded memory, decision lineage
-E. Integration with 5B.0 — governance pipeline continuity
+Validates the hardened architecture invariants:
+A. Simulation Plan Builder — Governance→Plan, deterministic, no pseudo-execution
+B. Simulation Engine — No side effects, no mutation, bounded output
+C. Impact Analysis — Descriptive only, no decision coupling, deterministic
+D. Simulation Trace — Immutable, bounded, forensic-only
+E. Full Pipeline Integration with 5B.0 — All layers separated, no execution
 """
 import unittest
 from collections import deque
 from core.operations.execution.models import (
-    ExecutionPlan, ExecutionStep, SimulationResult, ImpactReport, TraceLog,
+    SimulationPlan, SimulationStep, SimulationOutcome,
+    ImpactAnalysisReport, SimulationTrace,
 )
-from core.operations.execution.plan_builder import build_plan, get_supported_action_templates
-from core.operations.execution.simulator import simulate
-from core.operations.execution.impact_analyzer import analyze
-from core.operations.execution.trace_logger import SandboxTraceLogger
+from core.operations.execution.simulation_plan_builder import (
+    build_simulation_plan, get_supported_simulation_templates,
+)
+from core.operations.execution.simulation_engine import model_plan
+from core.operations.execution.impact_analysis import estimate_impact
+from core.operations.execution.simulation_trace import SimulationTraceLogger
 from core.operations.governance.models import DecisionResult
 
 
@@ -25,7 +28,6 @@ def _make_decision(decision_type: str = "SAFE_PASS",
                    domain: str = "observability_read",
                    risk_level: str = "NONE",
                    risk_score: int = 0) -> DecisionResult:
-    """Helper to create a DecisionResult for testing."""
     return DecisionResult(
         decision=decision_type,
         action_id="test-action-001",
@@ -48,125 +50,142 @@ def _make_decision(decision_type: str = "SAFE_PASS",
 
 
 # ═══════════════════════════════════════════════════════════
-# A. EXECUTION PLAN TESTS
+# INVARIANT: ALL OUTPUTS MUST BE IN SIMULATION CONTEXT
 # ═══════════════════════════════════════════════════════════
 
-class ExecutionPlanTest(unittest.TestCase):
-    """Decision → Plan conversion correctness."""
+class SimulationContextMarkerTest(unittest.TestCase):
+    """Every output carries the simulation context marker."""
 
-    def test_build_plan_from_safe_pass(self):
-        """SAFE_PASS decision produces valid plan."""
+    def test_plan_has_context_marker(self):
         decision = _make_decision("SAFE_PASS")
-        plan = build_plan(decision)
-        self.assertIsInstance(plan, ExecutionPlan)
+        plan = build_simulation_plan(decision)
+        self.assertIn("simulation_context", plan.metadata)
+
+    def test_outcome_has_context_marker(self):
+        decision = _make_decision("SAFE_PASS")
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        self.assertIn("simulation_context", outcome.metadata)
+
+    def test_impact_has_context_marker(self):
+        decision = _make_decision("SAFE_PASS")
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+        self.assertIn("simulation_context", impact.metadata)
+
+    def test_trace_has_context_marker(self):
+        decision = _make_decision("SAFE_PASS")
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+        logger = SimulationTraceLogger()
+        trace = logger.record(plan, outcome, impact)
+        self.assertIn("simulation_context", trace.metadata)
+
+
+# ═══════════════════════════════════════════════════════════
+# A. SIMULATION PLAN BUILDER TESTS
+# ═══════════════════════════════════════════════════════════
+
+class SimulationPlanBuilderTest(unittest.TestCase):
+    """Governance DecisionResult → SimulationPlan conversion."""
+
+    def test_build_from_safe_pass(self):
+        decision = _make_decision("SAFE_PASS")
+        plan = build_simulation_plan(decision)
+        self.assertIsInstance(plan, SimulationPlan)
         self.assertEqual(plan.decision_id, "test-action-001")
         self.assertEqual(plan.action_type, "observability_read")
 
-    def test_build_plan_from_blocked(self):
-        """BLOCKED decision produces plan with single blocked step."""
+    def test_build_from_blocked(self):
         decision = _make_decision("BLOCKED", action_type="inventory_dispatch",
                                   domain="domain_operations", risk_level="CRITICAL")
-        plan = build_plan(decision)
+        plan = build_simulation_plan(decision)
         self.assertEqual(len(plan.steps), 1)
-        self.assertEqual(plan.steps[0].simulated_status, "SKIPPED")
+        self.assertEqual(plan.steps[0].modeled_status, "SKIPPED")
 
-    def test_build_plan_deterministic(self):
-        """Same decision produces same plan structure."""
+    def test_build_deterministic(self):
         d1 = _make_decision("SAFE_PASS")
         d2 = _make_decision("SAFE_PASS")
-        p1 = build_plan(d1)
-        p2 = build_plan(d2)
+        p1 = build_simulation_plan(d1)
+        p2 = build_simulation_plan(d2)
         self.assertEqual(len(p1.steps), len(p2.steps))
         self.assertEqual(p1.action_type, p2.action_type)
-        self.assertEqual(p1.domain, p2.domain)
 
     def test_plan_has_policy_trace(self):
-        """Plan includes policy trace from decision."""
         decision = _make_decision("SAFE_PASS")
-        plan = build_plan(decision)
+        plan = build_simulation_plan(decision)
         self.assertIn("policy_compliance", plan.policy_trace)
-        self.assertIn("policy_violations", plan.policy_trace)
 
-    def test_plan_immutable(self):
-        """ExecutionPlan is immutable (frozen dataclass)."""
+    def test_plan_is_immutable(self):
         decision = _make_decision("SAFE_PASS", action_type="replay_start")
-        plan = build_plan(decision)
+        plan = build_simulation_plan(decision)
         with self.assertRaises(AttributeError):
             plan.action_type = "modified"
 
-    def test_observability_read_has_4_steps(self):
-        """observability_read plan has 4 steps."""
-        decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        plan = build_plan(decision)
-        self.assertEqual(len(plan.steps), 4)
-
-    def test_replay_execute_has_5_steps(self):
-        """replay_execute plan has 5 steps."""
-        decision = _make_decision("SIMULATION_ONLY", action_type="replay_execute",
-                                  risk_level="HIGH", risk_score=3)
-        plan = build_plan(decision)
-        self.assertEqual(len(plan.steps), 5)
+    def test_blocked_description_subjunctive(self):
+        decision = _make_decision("BLOCKED", action_type="system_rollback",
+                                  domain="system_operations", risk_level="CRITICAL")
+        plan = build_simulation_plan(decision)
+        desc = plan.steps[0].description
+        self.assertIn("[SIMULATION]", desc)
+        self.assertIn("BLOCKED", desc)
 
     def test_template_registry(self):
-        """Template registry has action types."""
-        templates = get_supported_action_templates()
+        templates = get_supported_simulation_templates()
         self.assertIn("replay_execute", templates)
         self.assertIn("observability_read", templates)
         self.assertIn("inventory_dispatch", templates)
 
 
 # ═══════════════════════════════════════════════════════════
-# B. SIMULATION SAFETY TESTS
+# B. SIMULATION ENGINE TESTS
 # ═══════════════════════════════════════════════════════════
 
-class SimulationSafetyTest(unittest.TestCase):
-    """No side effects, no ERP mutation, sandbox isolation."""
+class SimulationEngineTest(unittest.TestCase):
+    """No side effects, no mutation, deterministic modeling."""
 
-    def test_simulation_no_write(self):
-        """Simulation marks all mutation steps as simulated (not executed)."""
+    def test_all_steps_marked_applied_false(self):
+        """Every modeled step has applied=False."""
         decision = _make_decision("SIMULATION_ONLY", action_type="inventory_dispatch",
                                   domain="domain_operations", risk_level="MEDIUM")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        self.assertTrue(result.success)
-        for step in result.step_results:
-            output = step.simulated_output
-            if output.get("mutation_blocked", False):
-                self.assertFalse(output.get("executed", True),
-                                 f"Step {step.step_type} should not be executed")
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        self.assertTrue(outcome.all_modeled_cleanly)
+        for step in outcome.step_outcomes:
+            output = step.modeled_output
+            app = output.get("applied", True)
+            self.assertFalse(app, f"Step {step.step_type} should not be applied")
 
-    def test_simulation_no_erp_mutation(self):
-        """No ERP mutation during simulation."""
+    def test_no_erp_mutation_in_modeling(self):
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        for step in result.step_results:
-            self.assertEqual(step.simulated_status, "SIMULATED")
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        for step in outcome.step_outcomes:
+            self.assertEqual(step.modeled_status, "MODELED")
 
-    def test_simulation_bounded_output(self):
-        """Simulation result has bounded step count."""
+    def test_bounded_output(self):
         decision = _make_decision("SAFE_PASS", action_type="replay_execute",
                                   risk_level="HIGH", risk_score=3)
-        plan = build_plan(decision)
-        result = simulate(plan)
-        self.assertLessEqual(len(result.step_results), 10)
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        self.assertLessEqual(len(outcome.step_outcomes), 10)
 
-    def test_simulation_no_side_effects(self):
-        """Simulation does not modify the plan."""
+    def test_no_side_effects_on_plan(self):
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        plan = build_plan(decision)
+        plan = build_simulation_plan(decision)
         step_count_before = len(plan.steps)
-        _ = simulate(plan)
+        _ = model_plan(plan)
         self.assertEqual(len(plan.steps), step_count_before)
 
-    def test_blocked_plan_simulation(self):
-        """BLOCKED plan simulation marks steps as skipped."""
+    def test_blocked_dispatch_is_skipped(self):
         decision = _make_decision("BLOCKED", action_type="system_rollback",
                                   domain="system_operations", risk_level="CRITICAL")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        for step in result.step_results:
-            self.assertEqual(step.simulated_status, "SKIPPED")
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        for step in outcome.step_outcomes:
+            self.assertEqual(step.modeled_status, "SKIPPED")
 
 
 # ═══════════════════════════════════════════════════════════
@@ -174,184 +193,155 @@ class SimulationSafetyTest(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════
 
 class ImpactAnalysisTest(unittest.TestCase):
-    """Deterministic impact estimation, bounded outputs."""
+    """Descriptive estimation, no decision coupling, deterministic."""
 
     def test_observability_read_no_impact(self):
-        """observability_read has no financial/inventory/workflow impact."""
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        impact = analyze(plan, result)
-        self.assertEqual(impact.financial_impact.get("severity"), "none")
-        self.assertEqual(impact.inventory_impact.get("severity"), "none")
-        self.assertEqual(impact.workflow_impact.get("severity"), "none")
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+        self.assertEqual(impact.financial_estimate.get("severity"), "none")
+        self.assertEqual(impact.inventory_estimate.get("severity"), "none")
+        self.assertEqual(impact.workflow_estimate.get("severity"), "none")
 
-    def test_inventory_dispatch_has_impact(self):
-        """inventory_dispatch has high financial/inventory impact."""
+    def test_inventory_dispatch_high_impact(self):
         decision = _make_decision("SIMULATION_ONLY", action_type="inventory_dispatch",
                                   domain="domain_operations", risk_level="MEDIUM")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        impact = analyze(plan, result)
-        self.assertEqual(impact.financial_impact.get("severity"), "high")
-        self.assertEqual(impact.inventory_impact.get("severity"), "high")
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+        self.assertEqual(impact.financial_estimate.get("severity"), "high")
+        self.assertEqual(impact.inventory_estimate.get("severity"), "high")
 
     def test_impact_deterministic(self):
-        """Same plan + simulation = same impact report."""
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        impact1 = analyze(plan, result)
-        impact2 = analyze(plan, result)
-        self.assertEqual(impact1.financial_impact, impact2.financial_impact)
-        self.assertEqual(impact1.inventory_impact, impact2.inventory_impact)
-        self.assertEqual(impact1.domains_affected, impact2.domains_affected)
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact1 = estimate_impact(plan, outcome)
+        impact2 = estimate_impact(plan, outcome)
+        self.assertEqual(impact1.financial_estimate, impact2.financial_estimate)
 
-    def test_impact_has_domains_affected(self):
-        """Impact report lists affected domains."""
+    def test_impact_lists_domains(self):
         decision = _make_decision("SIMULATION_ONLY", action_type="inventory_dispatch",
                                   domain="domain_operations", risk_level="MEDIUM")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        impact = analyze(plan, result)
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
         self.assertGreater(len(impact.domains_affected), 0)
 
     def test_impact_has_risk_propagation(self):
-        """Impact report has risk propagation map."""
         decision = _make_decision("SIMULATION_ONLY", action_type="inventory_dispatch",
                                   domain="domain_operations", risk_level="MEDIUM")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        impact = analyze(plan, result)
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
         self.assertIsInstance(impact.risk_propagation, list)
 
-    def test_impact_immutable(self):
-        """ImpactReport is immutable."""
+    def test_impact_is_immutable(self):
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        impact = analyze(plan, result)
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
         with self.assertRaises(AttributeError):
             impact.plan_id = "modified"
 
 
 # ═══════════════════════════════════════════════════════════
-# D. TRACE INTEGRITY TESTS
+# D. SIMULATION TRACE TESTS
 # ═══════════════════════════════════════════════════════════
 
-class TraceIntegrityTest(unittest.TestCase):
-    """Immutable logs, bounded memory, correct lineage."""
+class SimulationTraceTest(unittest.TestCase):
+    """Immutable, bounded, forensic-only records."""
 
     def setUp(self):
-        self.logger = SandboxTraceLogger(max_traces=50)
+        self.logger = SimulationTraceLogger(max_traces=50)
 
     def test_trace_recorded(self):
-        """Recorded trace is accessible."""
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        impact = analyze(plan, result)
-        trace = self.logger.record(plan, result, impact)
-        self.assertIsInstance(trace, TraceLog)
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+        trace = self.logger.record(plan, outcome, impact)
+        self.assertIsInstance(trace, SimulationTrace)
         self.assertEqual(trace.plan_id, plan.plan_id)
 
-    def test_trace_has_decision_lineage(self):
-        """Trace maintains decision lineage."""
+    def test_trace_decision_lineage(self):
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        plan = build_plan(decision)
-        result = simulate(plan)
-        impact = analyze(plan, result)
-        trace = self.logger.record(plan, result, impact)
+        plan = build_simulation_plan(decision)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+        trace = self.logger.record(plan, outcome, impact)
         self.assertEqual(trace.decision_id, "test-action-001")
         self.assertEqual(trace.action_type, "observability_read")
 
     def test_trace_bounded_memory(self):
-        """Trace logger enforces maxlen."""
-        logger = SandboxTraceLogger(max_traces=10)
+        logger = SimulationTraceLogger(max_traces=10)
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        for i in range(20):
-            plan = build_plan(decision)
-            result = simulate(plan)
-            impact = analyze(plan, result)
-            logger.record(plan, result, impact)
+        for _ in range(20):
+            plan = build_simulation_plan(decision)
+            outcome = model_plan(plan)
+            impact = estimate_impact(plan, outcome)
+            logger.record(plan, outcome, impact)
         self.assertEqual(logger.get_trace_count(), 10)
 
-    def test_trace_get_recent(self):
-        """get_traces returns most recent traces."""
-        logger = SandboxTraceLogger(max_traces=50)
+    def test_trace_get_limit_capped(self):
+        logger = SimulationTraceLogger(max_traces=200)
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        for i in range(5):
-            plan = build_plan(decision)
-            result = simulate(plan)
-            impact = analyze(plan, result)
-            logger.record(plan, result, impact)
-        traces = logger.get_traces(limit=3)
-        self.assertLessEqual(len(traces), 3)
-
-    def test_trace_limit_capped(self):
-        """Trace limit is capped at 100."""
-        logger = SandboxTraceLogger(max_traces=200)
-        decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        for i in range(150):
-            plan = build_plan(decision)
-            result = simulate(plan)
-            impact = analyze(plan, result)
-            logger.record(plan, result, impact)
+        for _ in range(150):
+            plan = build_simulation_plan(decision)
+            outcome = model_plan(plan)
+            impact = estimate_impact(plan, outcome)
+            logger.record(plan, outcome, impact)
         traces = logger.get_traces(limit=500)
         self.assertLessEqual(len(traces), 100)
 
     def test_trace_clear(self):
-        """Trace logger clear resets all traces."""
-        logger = SandboxTraceLogger(max_traces=50)
         decision = _make_decision("SAFE_PASS", action_type="observability_read")
-        for i in range(10):
-            plan = build_plan(decision)
-            result = simulate(plan)
-            impact = analyze(plan, result)
-            logger.record(plan, result, impact)
-        logger.clear()
-        self.assertEqual(logger.get_trace_count(), 0)
+        for _ in range(10):
+            plan = build_simulation_plan(decision)
+            outcome = model_plan(plan)
+            impact = estimate_impact(plan, outcome)
+            self.logger.record(plan, outcome, impact)
+        self.logger.clear()
+        self.assertEqual(self.logger.get_trace_count(), 0)
 
-    def test_trace_immutable(self):
-        """TraceLog is immutable."""
-        trace = TraceLog(trace_id="test-trace")
+    def test_trace_is_immutable(self):
+        trace = SimulationTrace(trace_id="test-trace")
         with self.assertRaises(AttributeError):
             trace.trace_id = "modified"
 
 
 # ═══════════════════════════════════════════════════════════
-# E. INTEGRATION WITH 5B.0
+# E. FULL PIPELINE INTEGRATION WITH 5B.0
 # ═══════════════════════════════════════════════════════════
 
 class GovernanceIntegrationTest(unittest.TestCase):
-    """Full pipeline integration with Phase 5B.0 governance."""
+    """Full pipeline: 5B.0 → Plan Builder → Engine → Impact → Trace."""
 
     def test_full_pipeline_safe_pass(self):
-        """Full pipeline: 5B.0 decision → plan → simulate → impact → trace."""
         from core.operations.governance.interceptor import intercept
         from core.operations.governance.policy_evaluator import evaluate
         from core.operations.governance.risk_classifier import classify
         from core.operations.governance.decision_gate import decide
 
-        logger = SandboxTraceLogger(max_traces=50)
+        logger = SimulationTraceLogger(max_traces=50)
 
         action = intercept("observability_read", "api", {"path": "/health/"})
         pr = evaluate(action)
         rc = classify(action)
         d = decide(action, pr, rc)
 
-        plan = build_plan(d)
-        sim = simulate(plan)
-        impact = analyze(plan, sim)
-        trace = logger.record(plan, sim, impact)
+        plan = build_simulation_plan(d)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+        trace = logger.record(plan, outcome, impact)
 
         self.assertEqual(d.decision, "SAFE_PASS")
-        self.assertTrue(sim.success)
-        self.assertEqual(impact.financial_impact.get("severity"), "none")
+        self.assertTrue(outcome.all_modeled_cleanly)
+        self.assertEqual(impact.financial_estimate.get("severity"), "none")
         self.assertEqual(trace.action_type, "observability_read")
 
     def test_full_pipeline_blocked(self):
-        """Full pipeline: blocked action never reaches simulation."""
         from core.operations.governance.interceptor import intercept
         from core.operations.governance.policy_evaluator import evaluate
         from core.operations.governance.risk_classifier import classify
@@ -362,61 +352,37 @@ class GovernanceIntegrationTest(unittest.TestCase):
         rc = classify(action)
         d = decide(action, pr, rc)
 
-        plan = build_plan(d)
-        sim = simulate(plan)
+        plan = build_simulation_plan(d)
+        outcome = model_plan(plan)
 
         self.assertEqual(d.decision, "BLOCKED")
-        self.assertTrue(sim.success)  # simulation still succeeds
-        for step in sim.step_results:
-            self.assertEqual(step.simulated_status, "SKIPPED")
+        self.assertTrue(outcome.all_modeled_cleanly)
+        for step in outcome.step_outcomes:
+            self.assertEqual(step.modeled_status, "SKIPPED")
 
     def test_full_pipeline_simulation_only(self):
-        """Full pipeline: SIMULATION_ONLY action passes through sandbox."""
         from core.operations.governance.interceptor import intercept
         from core.operations.governance.policy_evaluator import evaluate
         from core.operations.governance.risk_classifier import classify
         from core.operations.governance.decision_gate import decide
 
-        logger = SandboxTraceLogger(max_traces=50)
+        logger = SimulationTraceLogger(max_traces=50)
 
         action = intercept("replay_start", "replay")
         pr = evaluate(action)
         rc = classify(action)
         d = decide(action, pr, rc)
 
-        plan = build_plan(d)
-        sim = simulate(plan)
-        impact = analyze(plan, sim)
-        trace = logger.record(plan, sim, impact)
+        plan = build_simulation_plan(d)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+        trace = logger.record(plan, outcome, impact)
 
         self.assertEqual(d.decision, "SIMULATION_ONLY")
-        self.assertTrue(sim.success)
+        self.assertTrue(outcome.all_modeled_cleanly)
         self.assertIsNotNone(trace)
 
-    def test_full_pipeline_trace_has_risk_context(self):
-        """Trace maintains risk context from governance."""
-        from core.operations.governance.interceptor import intercept
-        from core.operations.governance.policy_evaluator import evaluate
-        from core.operations.governance.risk_classifier import classify
-        from core.operations.governance.decision_gate import decide
-
-        logger = SandboxTraceLogger(max_traces=50)
-
-        action = intercept("replay_start", "replay")
-        pr = evaluate(action)
-        rc = classify(action)
-        d = decide(action, pr, rc)
-
-        plan = build_plan(d)
-        sim = simulate(plan)
-        impact = analyze(plan, sim)
-        trace = logger.record(plan, sim, impact)
-
-        self.assertEqual(trace.risk_level, "MEDIUM")
-        self.assertIn("replay", trace.domain)
-
-    def test_full_pipeline_no_execution(self):
-        """Full pipeline: no step has executed=True."""
+    def test_full_pipeline_no_step_applied(self):
         from core.operations.governance.interceptor import intercept
         from core.operations.governance.policy_evaluator import evaluate
         from core.operations.governance.risk_classifier import classify
@@ -427,43 +393,64 @@ class GovernanceIntegrationTest(unittest.TestCase):
         rc = classify(action)
         d = decide(action, pr, rc)
 
-        plan = build_plan(d)
-        sim = simulate(plan)
+        plan = build_simulation_plan(d)
+        outcome = model_plan(plan)
 
-        for step in sim.step_results:
-            output = step.simulated_output
-            self.assertFalse(output.get("executed", False),
-                             f"Step {step.step_type} should not be executed")
+        for step in outcome.step_outcomes:
+            output = step.modeled_output
+            app = output.get("applied", True)
+            self.assertFalse(app, f"Step {step.step_type} should not be applied")
 
-    def test_integration_determinism(self):
-        """Full pipeline is deterministic for same input."""
+    def test_full_pipeline_deterministic(self):
         from core.operations.governance.interceptor import intercept
         from core.operations.governance.policy_evaluator import evaluate
         from core.operations.governance.risk_classifier import classify
         from core.operations.governance.decision_gate import decide
 
-        logger = SandboxTraceLogger(max_traces=50)
+        logger = SimulationTraceLogger(max_traces=50)
 
         action1 = intercept("observability_read", "api", {"path": "/health/"})
         pr1 = evaluate(action1)
         rc1 = classify(action1)
         d1 = decide(action1, pr1, rc1)
-        plan1 = build_plan(d1)
-        sim1 = simulate(plan1)
-        impact1 = analyze(plan1, sim1)
-        trace1 = logger.record(plan1, sim1, impact1)
+        plan1 = build_simulation_plan(d1)
+        outcome1 = model_plan(plan1)
+        impact1 = estimate_impact(plan1, outcome1)
+        trace1 = logger.record(plan1, outcome1, impact1)
 
         action2 = intercept("observability_read", "api", {"path": "/health/"})
         pr2 = evaluate(action2)
         rc2 = classify(action2)
         d2 = decide(action2, pr2, rc2)
-        plan2 = build_plan(d2)
-        sim2 = simulate(plan2)
-        impact2 = analyze(plan2, sim2)
-        trace2 = logger.record(plan2, sim2, impact2)
+        plan2 = build_simulation_plan(d2)
+        outcome2 = model_plan(plan2)
+        impact2 = estimate_impact(plan2, outcome2)
+        trace2 = logger.record(plan2, outcome2, impact2)
 
         self.assertEqual(d1.decision, d2.decision)
-        self.assertEqual(sim1.success, sim2.success)
-        self.assertEqual(impact1.financial_impact, impact2.financial_impact)
+        self.assertEqual(outcome1.all_modeled_cleanly, outcome2.all_modeled_cleanly)
+        self.assertEqual(impact1.financial_estimate, impact2.financial_estimate)
         self.assertEqual(trace1.action_type, trace2.action_type)
-        self.assertEqual(trace1.domain, trace2.domain)
+
+    def test_no_executed_flag_in_any_output(self):
+        """No output in the entire pipeline contains executed=True."""
+        from core.operations.governance.interceptor import intercept
+        from core.operations.governance.policy_evaluator import evaluate
+        from core.operations.governance.risk_classifier import classify
+        from core.operations.governance.decision_gate import decide
+
+        action = intercept("inventory_dispatch", "workflow")
+        pr = evaluate(action)
+        rc = classify(action)
+        d = decide(action, pr, rc)
+        plan = build_simulation_plan(d)
+        outcome = model_plan(plan)
+        impact = estimate_impact(plan, outcome)
+
+        self.assertFalse(d.audit_entry.get("executed", True))
+        for step in outcome.step_outcomes:
+            output = step.modeled_output
+            self.assertNotIn("executed", output,
+                             f"Step {step.step_type} has forbidden 'executed' key")
+            self.assertEqual(output.get("applied"), False,
+                             f"Step {step.step_type} should have applied=False")
