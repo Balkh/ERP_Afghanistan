@@ -86,6 +86,11 @@ class InventoryAPITests(APIBase):
         self._old_check_permissions = APIView.check_permissions
         APIView.check_permissions = lambda self, request: None
 
+    def tearDown(self):
+        """Restore permission checking to avoid leaking to other tests."""
+        from rest_framework.views import APIView
+        APIView.check_permissions = self._old_check_permissions
+
     def test_create_product(self):
         """Test product creation via API."""
         url = '/api/inventory/products/'

@@ -26,6 +26,7 @@ class ObservabilityAPIBaseTest(APITestCase):
     
     def setUp(self):
         self.client = APIClient()
+        self.client.logout()
         self.user = User.objects.create_user(username='obsuser', password='test123')
         self.client.force_authenticate(user=self.user)
     
@@ -184,6 +185,7 @@ class ObservabilityPermissionTest(APITestCase):
     
     def setUp(self):
         self.client = APIClient()
+        self.client.logout()
         self.observer = User.objects.create_user(username='observer', password='test123')
         self.admin = User.objects.create_superuser(username='obsadmin', password='test123', email='a@a.com')
     
