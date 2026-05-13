@@ -76,7 +76,9 @@ class Sidebar(QWidget):
                 "reports": {"trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing"},
                 "finance": {"payments", "expenses", "budgeting", "tax", "cost_centers", "cashflow"},
                 "hr": {"employees", "attendance", "leave", "payroll"},
-                "system": {"observability", "control_center", "intelligence_hub", "invoice_templates", "entities", "licensing", "production", "fixed_assets", "backup", "audit", "user_management"}
+                "hr_reports": {"employee_summary", "attendance_report", "leave_report", "overtime_report"},
+                "payroll_reports": {"payroll_summary", "payroll_trend", "payroll_dept_cost", "payroll_emp_history"},
+                "system": {"cognitive_dashboard", "causal_reasoning", "decision_intelligence", "observability", "control_center", "intelligence_hub", "master_dashboard", "forecast_dashboard", "anomaly_warning_center", "decision_options", "replay_time_travel", "invoice_templates", "entities", "licensing", "production", "fixed_assets", "backup", "audit", "user_management"}
             }
             group_items = group_items_map.get(group_name, set())
             any_visible = any(item in visible_items for item in group_items)
@@ -178,6 +180,7 @@ class Sidebar(QWidget):
             ("Trial Balance", "trial_balance", 13),
             ("Profit & Loss", "profit_loss", 14),
             ("Balance Sheet", "balance_sheet", 15),
+            ("Cash Flow", "cash_flow", 48),
             ("AR Ageing", "ar_ageing", 16),
             ("AP Ageing", "ap_ageing", 17),
         ])
@@ -197,11 +200,33 @@ class Sidebar(QWidget):
             ("Leave", "leave", 25),
             ("Payroll", "payroll", 26),
         ])
+
+        self._create_group(nav_layout, "HR Reports", "hr_reports", [
+            ("Employee Summary", "employee_summary", 49),
+            ("Attendance Report", "attendance_report", 50),
+            ("Leave Report", "leave_report", 51),
+            ("Overtime Report", "overtime_report", 52),
+        ])
+
+        self._create_group(nav_layout, "Payroll Reports", "payroll_reports", [
+            ("Payroll Summary", "payroll_summary", 53),
+            ("Payroll Trend", "payroll_trend", 54),
+            ("Dept Cost", "payroll_dept_cost", 55),
+            ("Employee History", "payroll_emp_history", 56),
+        ])
         
         self._create_group(nav_layout, "System", "system", [
+            ("🧠 Cognitive Dashboard", "cognitive_dashboard", 45),
+            ("🔍 Causal Reasoning", "causal_reasoning", 46),
+            ("🎯 Decision Intelligence", "decision_intelligence", 47),
             ("Control Center", "control_center", 38),
             ("Observability", "observability", 39),
             ("Intelligence Hub", "intelligence_hub", 32),
+            ("Intelligence Dashboard", "master_dashboard", 43),
+            ("Forecast Dashboard", "forecast_dashboard", 40),
+            ("Anomaly Warning Center", "anomaly_warning_center", 42),
+            ("Decision Options", "decision_options", 41),
+            ("Replay Time-Travel", "replay_time_travel", 44),
             ("Invoice Templates", "invoice_templates", 33),
             ("Business Entities", "entities", 35),
             ("Licensing", "licensing", 36),

@@ -23,8 +23,6 @@ from ui.observability.dashboards import (ObservabilityMainScreen,
 
 
 class ObservabilityScreen(QWidget):
-    REFRESH_INTERVAL_MS = 5000
-
     def __init__(self, api_client, parent=None):
         super().__init__(parent)
         self._api_client = api_client
@@ -125,13 +123,13 @@ class ObservabilityScreen(QWidget):
         if not info or info["loaded"]:
             return
 
+        self._dashboards[index] = {"key": key, "loaded": True}
         dashboard = self._create_dashboard(key)
         if dashboard:
             self.tab_widget.removeTab(index)
             new_idx = self.tab_widget.insertTab(index, dashboard, self.tab_widget.tabText(index))
-            self._dashboards[new_idx] = {"key": key, "loaded": True}
-            self._dashboards.pop(index, None)
-            dashboard.start_auto_refresh(self.REFRESH_INTERVAL_MS)
+            if new_idx != index:
+                self._dashboards[new_idx] = self._dashboards.pop(index)
 
     def _create_dashboard(self, key):
         creators = {
@@ -155,11 +153,9 @@ class ObservabilityScreen(QWidget):
     def showEvent(self, event):
         super().showEvent(event)
         if event.isVisible():
-            for index, info in list(self._dashboards.items()):
-                if info.get("loaded"):
-                    tab = self.tab_widget.widget(index)
-                    if hasattr(tab, "start_auto_refresh"):
-                        tab.start_auto_refresh(self.REFRESH_INTERVAL_MS)
+            tab = self.tab_widget.currentWidget()
+            if hasattr(tab, "start_auto_refresh"):
+                tab.start_auto_refresh()
 
     def hideEvent(self, event):
         super().hideEvent(event)

@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                 QPushButton, QListWidget, QListWidgetItem,
                                 QSplitter, QTextEdit, QSizePolicy, QAbstractItemView,
                                 QTabWidget)
-from PySide6.QtCore import Qt, QTimer, Signal, Slot, QSize
+from PySide6.QtCore import Qt, Signal, Slot, QSize
 from PySide6.QtGui import QFont, QColor
 
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
@@ -72,6 +72,54 @@ def _table_item(text, color=None):
     return item
 
 
+def diff_update_table(table, rows, col_count=None):
+    scroll_bar = table.verticalScrollBar()
+    scroll_pos = scroll_bar.value() if scroll_bar else 0
+    sel_row = table.currentRow()
+    sel_col = table.currentColumn()
+
+    if col_count is None and rows:
+        col_count = max(len(r) for r in rows) if isinstance(rows[0], (list, tuple)) else table.columnCount()
+    elif col_count is None:
+        col_count = table.columnCount()
+
+    table.setUpdatesEnabled(False)
+    old_count = table.rowCount()
+    new_count = len(rows)
+
+    if new_count != old_count:
+        table.setRowCount(new_count)
+
+    for i, row in enumerate(rows):
+        for j in range(col_count):
+            val = row[j] if j < len(row) else ""
+            if isinstance(val, QTableWidgetItem):
+                text = val.text()
+                fg = val.foreground()
+            else:
+                text = str(val)
+                fg = None
+            item = table.item(i, j)
+            if item is None:
+                if isinstance(val, QTableWidgetItem):
+                    new_item = QTableWidgetItem()
+                    new_item.setText(val.text())
+                    new_item.setForeground(val.foreground())
+                    table.setItem(i, j, new_item)
+                else:
+                    table.setItem(i, j, QTableWidgetItem(text))
+            elif item.text() != text:
+                item.setText(text)
+                if fg is not None and fg != item.foreground():
+                    item.setForeground(fg)
+
+    table.setUpdatesEnabled(True)
+    if scroll_bar and scroll_pos > 0:
+        scroll_bar.setValue(min(scroll_pos, scroll_bar.maximum()))
+    if 0 <= sel_row < new_count:
+        table.setCurrentCell(sel_row, max(0, sel_col))
+
+
 def _severity_to_color(severity):
     s = severity.lower()
     if s in ("critical", "error", "high"):
@@ -88,23 +136,23 @@ class _BaseDashboard(QWidget):
         super().__init__(parent)
         self._api_client = api_client
         self._data_loaders: list = []
-        self._refresh_timer = QTimer(self)
-        self._refresh_timer.timeout.connect(self._refresh_all)
         self._stale_data = False
         self._setup_dashboard()
 
     def _setup_dashboard(self):
         raise NotImplementedError
 
-    def _refresh_all(self):
-        for loader in self._data_loaders:
-            loader.load()
-
     def start_auto_refresh(self, interval_ms=5000):
-        self._refresh_timer.start(interval_ms)
+        for loader in self._data_loaders:
+            loader.resume()
 
     def stop_auto_refresh(self):
-        self._refresh_timer.stop()
+        for loader in self._data_loaders:
+            loader.pause()
+
+    def cleanup(self):
+        for loader in self._data_loaders:
+            loader.stop()
 
     def _show_stale_warning(self):
         self._stale_data = True
@@ -182,7 +230,7 @@ class ObservabilityMainScreen(_BaseDashboard):
 
         layout.addStretch()
 
-        loader = AsyncDataLoader(self._api_client, "/api/observability/summary/", 5000, self)
+        loader = AsyncDataLoader(self._api_client, "/api/observability/v1/summary/", 15000, self)
         loader.data_loaded.connect(self._on_data)
         loader.load_error.connect(self._on_error)
         self._data_loaders.append(loader)
@@ -190,7 +238,11 @@ class ObservabilityMainScreen(_BaseDashboard):
 
     def _on_data(self, data):
         self.last_update_label.setText(f"Last update: {time.strftime('%H:%M:%S')}")
+        if not isinstance(data, dict):
+            return
         d = data.get("data", data)
+        if not isinstance(d, dict):
+            return
         health = d.get("health", {})
         self.health_card.update_value(
             health.get("status", "Unknown"),
@@ -259,7 +311,7 @@ class ControlCenterDashboard(_BaseDashboard):
         data_layout.addWidget(self.data_table)
         layout.addWidget(data_frame, 1)
 
-        loader = AsyncDataLoader(self._api_client, "/api/control-center/", 5000, self)
+        loader = AsyncDataLoader(self._api_client, "/api/control-center/", 15000, self)
         loader.data_loaded.connect(self._on_data)
         loader.load_error.connect(self._on_error)
         self._data_loaders.append(loader)
@@ -278,17 +330,16 @@ class ControlCenterDashboard(_BaseDashboard):
         self.signal_kpi.update_value(sig_count)
 
         rows = [
-            ("API Status", health.get("status", "N/A"), "ok" if health.get("status") == "ok" else "error"),
-            ("DB Health", health.get("database", {}).get("status", "N/A"), "ok"),
-            ("Active Signals", str(sig_count), "ok"),
-            ("Anomalies", str(len(intel.get("data", {}).get("anomalies", []))), "warning"),
+            (_table_item("API Status"), _table_item(health.get("status", "N/A")),
+             _table_item("OK" if health.get("status") == "ok" else "ERROR", COLOR_STATUS_VALID if health.get("status") == "ok" else COLOR_STATUS_WARNING)),
+            (_table_item("DB Health"), _table_item(health.get("database", {}).get("status", "N/A")),
+             _table_item("OK", COLOR_STATUS_VALID)),
+            (_table_item("Active Signals"), _table_item(str(sig_count)),
+             _table_item("OK", COLOR_STATUS_VALID)),
+            (_table_item("Anomalies"), _table_item(str(len(intel.get("data", {}).get("anomalies", [])))),
+             _table_item("WARNING", COLOR_STATUS_WARNING)),
         ]
-        self.data_table.setRowCount(len(rows))
-        for i, (metric, val, status) in enumerate(rows):
-            self.data_table.setItem(i, 0, _table_item(metric))
-            self.data_table.setItem(i, 1, _table_item(val))
-            c = COLOR_STATUS_VALID if status == "ok" else COLOR_STATUS_WARNING
-            self.data_table.setItem(i, 2, _table_item(status.upper(), c))
+        diff_update_table(self.data_table, rows, col_count=3)
 
     def _on_error(self, error_msg):
         self.last_update.setText("Connection error")
@@ -349,7 +400,7 @@ class UnifiedTimelineView(_BaseDashboard):
         self._page = 1
         self._all_events = []
 
-        loader = AsyncDataLoader(self._api_client, "/api/observability/timeline/", 5000, self)
+        loader = AsyncDataLoader(self._api_client, "/api/observability/v1/timeline/", 15000, self)
         loader.data_loaded.connect(self._on_data)
         loader.load_error.connect(self._on_error)
         self._data_loaders.append(loader)
@@ -453,7 +504,7 @@ class IncidentIntelligenceView(_BaseDashboard):
 
         self._all_incidents = []
 
-        loader = AsyncDataLoader(self._api_client, "/api/observability/incidents/", 10000, self)
+        loader = AsyncDataLoader(self._api_client, "/api/observability/v1/incidents/", 15000, self)
         loader.data_loaded.connect(self._on_data)
         loader.load_error.connect(self._on_error)
         self._data_loaders.append(loader)
@@ -546,7 +597,7 @@ class PredictiveDriftDashboard(_BaseDashboard):
         trend_layout.addWidget(self.drift_table)
         layout.addWidget(trend_frame, 1)
 
-        loader = AsyncDataLoader(self._api_client, "/api/observability/drift/", 10000, self)
+        loader = AsyncDataLoader(self._api_client, "/api/observability/v1/drift/", 15000, self)
         loader.data_loaded.connect(self._on_data)
         loader.load_error.connect(self._on_error)
         self._data_loaders.append(loader)
@@ -658,7 +709,7 @@ class ReplayTimeTravelView(_BaseDashboard):
         splitter.setSizes([300, 500])
         layout.addWidget(splitter, 1)
 
-        loader = AsyncDataLoader(self._api_client, "/api/observability/replay/", 15000, self)
+        loader = AsyncDataLoader(self._api_client, "/api/observability/v1/replay/sessions/", 15000, self)
         loader.data_loaded.connect(self._on_data)
         loader.load_error.connect(self._on_error)
         self._data_loaders.append(loader)
@@ -771,7 +822,7 @@ class DigitalTwinTelemetryView(_BaseDashboard):
 
         layout.addWidget(tab, 1)
 
-        loader = AsyncDataLoader(self._api_client, "/api/observability/telemetry/", 10000, self)
+        loader = AsyncDataLoader(self._api_client, "/api/observability/v1/telemetry/", 15000, self)
         loader.data_loaded.connect(self._on_data)
         loader.load_error.connect(self._on_error)
         self._data_loaders.append(loader)

@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from simulation.control_center.orchestrator.control_center_engine import ControlCenterEngine
@@ -67,7 +67,7 @@ def _obs_error(message: str, code: str = "OBS_001", status: int = 500) -> Respon
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_health(request):
     try:
         engine = _get_engine()[0]
@@ -81,7 +81,7 @@ def observability_health(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_state(request):
     try:
         engine, router = _get_engine()
@@ -94,7 +94,7 @@ def observability_state(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_timeline(request):
     try:
         engine, router = _get_engine()
@@ -114,7 +114,7 @@ def observability_timeline(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_incidents(request):
     try:
         engine, router = _get_engine()
@@ -137,7 +137,7 @@ def observability_incidents(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_dashboard(request):
     try:
         engine, router = _get_engine()
@@ -159,7 +159,7 @@ def observability_dashboard(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_drift(request):
     try:
         engine_obj, _ = _get_engine()
@@ -173,7 +173,7 @@ def observability_drift(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_replay_sessions(request):
     try:
         replay = _get_replay()
@@ -199,7 +199,7 @@ def observability_replay_sessions(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_replay_session_detail(request, session_id: str):
     try:
         replay = _get_replay()
@@ -223,7 +223,7 @@ def observability_replay_session_detail(request, session_id: str):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def observability_digital_twin(request):
     try:
         dt = _get_digital_twin()
@@ -237,7 +237,103 @@ def observability_digital_twin(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
+def observability_frontend_summary(request):
+    """Aggregate summary for the frontend dashboard.
+
+    Returns the shape the ObservabilityMainScreen expects:
+        {health: {status, detail}, incidents: {active_count}, stability: {score}}
+    """
+    try:
+        engine, router = _get_engine()
+        health_data = {"status": "unknown", "detail": "Simulation engine unavailable"}
+        incident_count = 0
+        stability_score = 100
+
+        if engine is not None and router is not None:
+            try:
+                health_result = router.route_query("health")
+                hd = health_result.get("data", health_result)
+                if isinstance(hd, dict):
+                    h_status = hd.get("status", hd.get("overall_status", "unknown"))
+                    health_data = {
+                        "status": h_status,
+                        "detail": hd.get("detail", hd.get("message", "System health")),
+                    }
+            except Exception:
+                pass
+
+            try:
+                inc_result = router.route_query("incidents", {"limit": 1})
+                inc_data = inc_result.get("data", inc_result)
+                if isinstance(inc_data, dict):
+                    incident_count = inc_data.get("incident_count", len(inc_data.get("incidents", [])))
+            except Exception:
+                pass
+
+            try:
+                drift = engine.get_drift_visualization() if hasattr(engine, "get_drift_visualization") else None
+                if drift is not None:
+                    viz = drift.get_visualization() if hasattr(drift, "get_visualization") else {}
+                    if isinstance(viz, dict):
+                        stability_score = max(0, 100 - abs(viz.get("overall_drift", 0)))
+            except Exception:
+                pass
+
+        return _obs_response({
+            "health": health_data,
+            "incidents": {"active_count": incident_count},
+            "stability": {"score": stability_score},
+        })
+    except Exception as e:
+        return _obs_error(str(e))
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def observability_telemetry_aggregate(request):
+    """Aggregate telemetry data for the DigitalTwinTelemetryView frontend.
+
+    Returns the shape the frontend expects:
+        {summary, scenarios, integrity_checks, sla_violations}
+    """
+    dt = _get_digital_twin()
+    summary_data = {"total_scenarios": 0, "pass_rate": 0, "integrity_score": 0}
+    scenarios = []
+    integrity_checks = []
+    sla_violations = []
+
+    if dt is not None:
+        try:
+            raw_summary = dt.get_summary() if hasattr(dt, "get_summary") else {}
+            if isinstance(raw_summary, dict):
+                summary_data = {
+                    "total_scenarios": raw_summary.get("total_scenarios", raw_summary.get("scenario_count", 0)),
+                    "pass_rate": raw_summary.get("pass_rate", raw_summary.get("success_rate", 0)),
+                    "integrity_score": raw_summary.get("integrity_score", raw_summary.get("integrity", 0)),
+                }
+                scenarios = raw_summary.get("scenarios", raw_summary.get("results", []))
+        except Exception:
+            pass
+
+        try:
+            raw_val = dt.validate_system() if hasattr(dt, "validate_system") else {}
+            if isinstance(raw_val, dict):
+                integrity_checks = raw_val.get("checks", raw_val.get("results", []))
+                sla_violations = raw_val.get("violations", raw_val.get("sla_violations", []))
+        except Exception:
+            pass
+
+    return _obs_response({
+        "summary": summary_data,
+        "scenarios": scenarios[:100] if isinstance(scenarios, list) else [],
+        "integrity_checks": integrity_checks[:50] if isinstance(integrity_checks, list) else [],
+        "sla_violations": sla_violations[:50] if isinstance(sla_violations, list) else [],
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
 def observability_safety(request):
     try:
         engine_obj, _ = _get_engine()

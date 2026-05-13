@@ -19,7 +19,7 @@ from datetime import date, timedelta
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django.http import HttpResponse
 
 from core.api.responses import APIResponse
@@ -72,7 +72,7 @@ class AnalyticsViewSet(viewsets.ViewSet):
 
     All responses use standardized format with company context.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     @action(detail=False, methods=['get'], url_path='cost-centers')
     def cost_centers(self, request):

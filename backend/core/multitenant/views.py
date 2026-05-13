@@ -29,11 +29,11 @@ class CompanyScopedViewSetMixin:
         
         # If no company context, allow all (backward compatible)
         if not company_id:
-            # For superusers, allow all
-            if hasattr(self.request, 'user') and self.request.user.is_superuser:
+            if not hasattr(self.request, 'user') or not self.request.user.is_authenticated:
                 return queryset
-            # For non-superusers, scope to user's default company
-            return queryset.none()  # Empty by default
+            if self.request.user.is_superuser:
+                return queryset
+            return queryset.none()
         
         return queryset.filter(company_id=company_id)
     

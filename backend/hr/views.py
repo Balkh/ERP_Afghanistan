@@ -3,7 +3,7 @@ HR API Views - Thin API layer, business logic in services
 """
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -22,7 +22,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     """API for Department CRUD"""
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         queryset = Department.objects.all()
@@ -43,7 +43,7 @@ class PositionViewSet(viewsets.ModelViewSet):
     """API for Position CRUD"""
     queryset = Position.objects.all()
     serializer_class = PositionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         queryset = Position.objects.all()
@@ -64,7 +64,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     """API for Employee CRUD"""
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_serializer_class(self):
         if self.action == 'list':
@@ -107,7 +107,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def update_employee_status(request):
     """Update employee status"""
     employee_id = request.data.get('employee_id')
@@ -137,7 +137,7 @@ def update_employee_status(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def department_tree(request):
     """Get department tree structure"""
     tree = DepartmentService.get_department_tree()
@@ -145,7 +145,7 @@ def department_tree(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def active_employees(request):
     """Get all active employees"""
     employees = EmployeeService.get_active_employees()
@@ -162,7 +162,7 @@ from hr.services.reports import (
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def employee_summary_report(request):
     """Employee summary report"""
     summary = EmployeeReportService.get_employee_summary()
@@ -170,7 +170,7 @@ def employee_summary_report(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def department_summary_report(request):
     """Department summary report"""
     summary = EmployeeReportService.get_department_summary()
@@ -178,7 +178,7 @@ def department_summary_report(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def attendance_summary_report(request):
     """Attendance summary report"""
     start = request.query_params.get('start_date')
@@ -197,7 +197,7 @@ def attendance_summary_report(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def leave_summary_report(request):
     """Leave summary report"""
     start = request.query_params.get('start_date')
@@ -221,7 +221,7 @@ def leave_summary_report(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def overtime_summary_report(request):
     """Overtime summary report"""
     start = request.query_params.get('start_date')

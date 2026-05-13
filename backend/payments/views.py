@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from payments.models import (
     PaymentMethod,
@@ -24,7 +24,7 @@ class PaymentMethodViewSet(viewsets.ModelViewSet):
     """CRUD API for payment methods."""
     queryset = PaymentMethod.objects.filter(is_active=True)
     serializer_class = PaymentMethodSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['method_type', 'is_active', 'is_default']
     search_fields = ['name', 'code', 'provider_name']

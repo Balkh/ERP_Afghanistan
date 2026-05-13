@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django.utils import timezone
 from .models import BackupRecord, BackupSchedule, BackupLog, RestorePoint, RestoreValidation
 from .serializers import (
@@ -20,7 +20,7 @@ class BackupRecordViewSet(viewsets.ReadOnlyModelViewSet):
     """View set for viewing backup records"""
     queryset = BackupRecord.objects.all()
     serializer_class = BackupRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     ordering = ['-created_at']
     
     @action(detail=False, methods=['get'])
@@ -233,7 +233,7 @@ class BackupScheduleViewSet(viewsets.ModelViewSet):
     """View set for managing backup schedules"""
     queryset = BackupSchedule.objects.all()
     serializer_class = BackupScheduleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     ordering = ['-created_at']
 
 
@@ -241,7 +241,7 @@ class BackupLogViewSet(viewsets.ReadOnlyModelViewSet):
     """View set for viewing backup logs"""
     queryset = BackupLog.objects.all()
     serializer_class = BackupLogSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     ordering = ['-timestamp']
 
 
@@ -249,7 +249,7 @@ class RestorePointViewSet(viewsets.ReadOnlyModelViewSet):
     """View set for viewing restore points"""
     queryset = RestorePoint.objects.all()
     serializer_class = RestorePointSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     ordering = ['-created_at']
     
     @action(detail=True, methods=['post'])

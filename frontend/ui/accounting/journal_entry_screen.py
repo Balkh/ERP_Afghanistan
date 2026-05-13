@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel, QTableW
 from PySide6.QtCore import Qt, Slot, Signal, QTimer
 from PySide6.QtGui import QFont, QColor
 from api.client import APIClient
-from api.endpoints import get_endpoint
+from api.endpoints import get_endpoint, extract_list
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
@@ -362,12 +362,7 @@ class JournalEntryScreen(QFrame):
         try:
             endpoint = get_endpoint("journal_entries")
             data = self.api_client.get(endpoint, params=params)
-            if data and isinstance(data, dict):
-                raw_entries = data.get("results", []) or data.get("data", []) or []
-            elif data and isinstance(data, list):
-                raw_entries = data
-            else:
-                raw_entries = []
+            raw_entries = extract_list(data)
             self.entries = [e for e in raw_entries if isinstance(e, dict)]
             self._populate_table()
         except Exception as e:

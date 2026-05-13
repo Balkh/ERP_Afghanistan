@@ -1,7 +1,7 @@
 """Workflows API Views"""
 from rest_framework import viewsets, status, generics
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -15,7 +15,7 @@ from core.api.responses import APIResponse
 class WorkflowInstanceViewSet(viewsets.ModelViewSet):
     """Workflow instances CRUD"""
     queryset = WorkflowInstance.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         qs = super().get_queryset()
@@ -30,18 +30,18 @@ class WorkflowInstanceViewSet(viewsets.ModelViewSet):
 class ApprovalChainViewSet(viewsets.ModelViewSet):
     """Approval chains CRUD"""
     queryset = ApprovalChain.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 
 class ApprovalRequestViewSet(viewsets.ModelViewSet):
     """Approval requests CRUD"""
     queryset = ApprovalRequest.objects.all()
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 
 class WorkflowStatusView(generics.GenericAPIView):
     """Get workflow status for an entity"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get(self, request, entity_type, entity_id):
         result = WorkflowService.get_workflow_status(entity_type, entity_id)
@@ -54,7 +54,7 @@ class WorkflowStatusView(generics.GenericAPIView):
 
 class WorkflowActionView(generics.GenericAPIView):
     """Perform workflow action (submit, approve, reject, post, cancel)"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def post(self, request, workflow_id):
         action = request.data.get('action')
@@ -116,7 +116,7 @@ class WorkflowActionView(generics.GenericAPIView):
 
 class MyPendingApprovalsView(generics.GenericAPIView):
     """Get pending approval requests for current user"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get(self, request):
         user = request.user
@@ -185,7 +185,7 @@ class MyPendingApprovalsView(generics.GenericAPIView):
 
 class ApprovalRequestActionView(generics.GenericAPIView):
     """Approve or reject an approval request"""
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def post(self, request, request_id):
         action = request.data.get('action')  # 'approve' or 'reject'

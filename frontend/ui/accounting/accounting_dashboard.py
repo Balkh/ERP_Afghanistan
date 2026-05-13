@@ -4,7 +4,9 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont
 from api.client import APIClient
+from api.endpoints import extract_list
 from datetime import date
+from runtime.timer_registry import register_timer, unregister_owner
 
 # Design tokens
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
@@ -20,6 +22,15 @@ class AccountingDashboard(QWidget):
         self.setup_ui()
         self.load_data()
         self._start_reconciliation_timer()
+
+    def _start_reconciliation_timer(self):
+        self._recon_timer = QTimer(self)
+        self._recon_timer.timeout.connect(self.load_data)
+        self._recon_timer.start(300000)
+        register_timer("acct_dashboard", self._recon_timer)
+
+    def cleanup(self):
+        unregister_owner("acct_dashboard")
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -250,8 +261,12 @@ class AccountingDashboard(QWidget):
 
         try:
             entries = self.api_client.get("/api/accounting/journal-entries/", params={"page_size": 1})
-            if "count" in entries:
-                self._set_card_value("journal_count", entries["count"])
+            count = 0
+            if isinstance(entries, dict):
+                data = entries.get("data", {})
+                if isinstance(data, dict):
+                    count = data.get("count", 0)
+            self._set_card_value("journal_count", count)
         except Exception:
             pass
 
@@ -298,7 +313,7 @@ class AccountingDashboard(QWidget):
     def _load_recent_entries(self):
         try:
             entries = self.api_client.get("/api/accounting/journal-entries/", params={"page_size": 10})
-            results = entries.get("results", entries) if isinstance(entries, dict) else entries
+            results = extract_list(entries)
 
             self.entries_table.setRowCount(len(results))
             for row, entry in enumerate(results):

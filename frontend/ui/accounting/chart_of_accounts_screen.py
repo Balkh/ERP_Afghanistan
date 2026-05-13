@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QMessageBox, QHeade
 from PySide6.QtCore import Qt, Slot, Signal
 from PySide6.QtGui import QFont
 from api.client import APIClient
-from api.endpoints import get_endpoint
+from api.endpoints import get_endpoint, extract_list
 from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_TOOLBAR)
 
 
@@ -104,14 +104,7 @@ class ChartOfAccountsScreen(QFrame):
         try:
             endpoint = get_endpoint("accounts")
             response = self.api_client.get(endpoint, params={"include_inactive": "true"})
-            if isinstance(response, list):
-                self.accounts = response
-            elif isinstance(response, dict):
-                self.accounts = response.get('data', []) if response.get('success') else []
-            else:
-                self.accounts = []
-            if not isinstance(self.accounts, list):
-                self.accounts = []
+            self.accounts = extract_list(response)
             self._populate_tree()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load accounts: {e}")

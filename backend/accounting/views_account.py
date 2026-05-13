@@ -3,7 +3,7 @@ from datetime import date
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 from django.core.exceptions import ValidationError
@@ -31,7 +31,7 @@ class JournalEventLogViewSet(viewsets.ModelViewSet):
     """
     queryset = JournalEventLog.objects.all()
     serializer_class = JournalEventLogSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['entry', 'event_type', 'user']
     search_fields = ['entry__entry_number', 'reference', 'notes']
@@ -45,7 +45,7 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Account.objects.filter(is_active=True)
     serializer_class = AccountSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['account_type', 'account_category', 'is_active', 'is_system', 'parent']
     search_fields = ['code', 'name', 'description']
@@ -346,7 +346,7 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = JournalEntry.objects.filter(is_active=True)
     serializer_class = JournalEntrySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['entry_type', 'is_posted', 'is_active']
     search_fields = ['entry_number', 'description', 'reference']
@@ -404,12 +404,12 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
 
 # Export API Views
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django.http import HttpResponse
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def export_report(request):
     """Export report to various formats."""
     from accounting.services.export_engine import ExportEngine
@@ -460,7 +460,7 @@ def export_report(request):
 
 # Advanced Reports API
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def advanced_report(request):
     """Generate advanced analytical reports."""
     from accounting.services.advanced_reports import AdvancedReportsService, ReportBuilderService
@@ -532,7 +532,7 @@ def advanced_report(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def report_options(request):
     """Get available report types and options."""
     return Response({

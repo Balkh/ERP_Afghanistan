@@ -92,6 +92,7 @@ class BaseReportScreen(QFrame):
 
     def _create_toolbar(self):
         toolbar = QGroupBox("Parameters")
+        toolbar.setObjectName("Parameters")
         layout = QHBoxLayout(toolbar)
 
         layout.addWidget(QLabel("As of:"))
@@ -135,20 +136,52 @@ class BaseReportScreen(QFrame):
         if not self.report_data:
             QMessageBox.warning(self, "Warning", "Run the report first.")
             return
+        self._do_export("csv", "CSV Files (*.csv)")
 
+    def export_excel(self):
+        if not self.report_data:
+            QMessageBox.warning(self, "Warning", "Run the report first.")
+            return
+        self._do_export("excel", "Excel Files (*.xlsx)")
+
+    def export_pdf(self):
+        if not self.report_data:
+            QMessageBox.warning(self, "Warning", "Run the report first.")
+            return
+        self._do_export("pdf", "PDF Files (*.pdf)")
+
+    def export_json(self):
+        if not self.report_data:
+            QMessageBox.warning(self, "Warning", "Run the report first.")
+            return
+        self._do_export("json", "JSON Files (*.json)")
+
+    def _do_export(self, fmt: str, file_filter: str):
+        ext_map = {"csv": "csv", "excel": "xlsx", "pdf": "pdf", "json": "json"}
+        ext = ext_map.get(fmt, fmt)
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save CSV", f"{self.report_title.replace(' ', '_')}.csv", "CSV Files (*.csv)"
+            self, f"Export as {fmt.upper()}",
+            f"{self.report_title.replace(' ', '_')}.{ext}", file_filter,
         )
         if file_path:
             try:
                 params = self._get_report_params()
-                params["format"] = "csv"
-                csv_data = self.api_client.get(self.report_api_endpoint, params=params)
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(csv_data if isinstance(csv_data, str) else str(csv_data))
-                QMessageBox.information(self, "Success", f"Report exported to {file_path}")
+                params["format"] = fmt
+                resp = self.api_client.get(self.report_api_endpoint, params=params)
+                if fmt in ("excel", "pdf"):
+                    if hasattr(resp, 'content'):
+                        with open(file_path, "wb") as f:
+                            f.write(resp.content)
+                    else:
+                        QMessageBox.critical(self, "Error", "Binary export not available from this endpoint. Use CSV instead.")
+                        return
+                else:
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        content = resp if isinstance(resp, str) else str(resp)
+                        f.write(content)
+                QMessageBox.information(self, "Success", f"Exported to {file_path}")
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export: {e}")
+                QMessageBox.critical(self, "Error", f"Export failed: {e}")
 
     def print_preview(self):
         if not self.report_data:

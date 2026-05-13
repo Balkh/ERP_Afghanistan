@@ -128,3 +128,27 @@ def get_endpoint(key, **kwargs):
         except KeyError:
             return url
     return url or ""
+
+
+def extract_list(response):
+    """Extract a list from any API response format.
+    
+    Handles:
+    - Direct list: [...]
+    - Paginated: {"data": {"count": N, "results": [...]}}
+    - Non-paginated: {"data": [...]}
+    - Plain dict with results: {"results": [...]}
+    """
+    if isinstance(response, list):
+        return response
+    if not isinstance(response, dict):
+        return []
+    data = response.get("data", response)
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        results = data.get("results", data.get("data", []))
+        if isinstance(results, list):
+            return results
+    results = response.get("results", [])
+    return results if isinstance(results, list) else []

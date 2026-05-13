@@ -1,0 +1,125 @@
+"""
+Phase 5B.16 — Payroll Reporting UI Screens.
+
+Professional payroll report screens using existing Payroll APIs.
+"""
+from PySide6.QtWidgets import QTableWidgetItem
+
+from ui.accounting.base_report_screen import BaseReportScreen
+
+
+class _BasePayrollScreen(BaseReportScreen):
+    def __init__(self, title: str, api_endpoint: str, parent=None):
+        super().__init__(title, parent)
+        self.report_api_endpoint = api_endpoint
+        self._is_loading = False
+
+    def export_csv(self): self._do_export("csv", "CSV Files (*.csv)")
+
+    def _safe_data(self):
+        return self.report_data.get("data", self.report_data) if isinstance(self.report_data, dict) else {}
+
+
+class PayrollSummaryScreen(_BasePayrollScreen):
+    def __init__(self, parent=None):
+        super().__init__("Payroll Summary", "/api/payroll/reports/yearly-summary/")
+
+    def run_report(self):
+        self._show_loading(True)
+        try:
+            resp = self.api_client.get(self.report_api_endpoint)
+            self.report_data = resp
+            self._populate_table()
+            self._show_loading(False)
+        except Exception as e:
+            self._show_error(f"Error: {e}")
+
+    def _populate_table(self):
+        d = self._safe_data()
+        rows = [("Gross Pay", d.get("total_gross", 0)), ("Deductions", d.get("total_deductions", 0)),
+                ("Net Pay", d.get("total_net", 0)), ("Employee Count", d.get("employee_count", 0))]
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(["Metric", "Value"])
+        self.table.setRowCount(len(rows))
+        for i, (label, val) in enumerate(rows):
+            self.table.setItem(i, 0, self._item(label))
+            self.table.setItem(i, 1, self._item(f"{val:,.2f}" if isinstance(val, (int, float)) else str(val)))
+
+
+class PayrollTrendScreen(_BasePayrollScreen):
+    def __init__(self, parent=None):
+        super().__init__("Payroll Trend", "/api/payroll/reports/trend/")
+
+    def run_report(self):
+        self._show_loading(True)
+        try:
+            resp = self.api_client.get(self.report_api_endpoint)
+            self.report_data = resp
+            self._populate_table()
+            self._show_loading(False)
+        except Exception as e:
+            self._show_error(f"Error: {e}")
+
+    def _populate_table(self):
+        d = self._safe_data()
+        records = d.get("trend", d.get("records", []))
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Period", "Gross", "Net"])
+        self.table.setRowCount(len(records) if isinstance(records, list) else 0)
+        for i, r in enumerate(records if isinstance(records, list) else []):
+            self.table.setItem(i, 0, self._item(r.get("period", "")))
+            self.table.setItem(i, 1, self._item(f"{r.get('gross', r.get('total_gross', 0)):,.2f}"))
+            self.table.setItem(i, 2, self._item(f"{r.get('net', r.get('total_net', 0)):,.2f}"))
+
+
+class PayrollDepartmentCostScreen(_BasePayrollScreen):
+    def __init__(self, parent=None):
+        super().__init__("Department Payroll Cost", "/api/payroll/reports/department-cost/")
+
+    def run_report(self):
+        self._show_loading(True)
+        try:
+            resp = self.api_client.get(self.report_api_endpoint)
+            self.report_data = resp
+            self._populate_table()
+            self._show_loading(False)
+        except Exception as e:
+            self._show_error(f"Error: {e}")
+
+    def _populate_table(self):
+        d = self._safe_data()
+        records = d.get("departments", d.get("records", []))
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Department", "Cost", "Employees"])
+        self.table.setRowCount(len(records) if isinstance(records, list) else 0)
+        for i, r in enumerate(records if isinstance(records, list) else []):
+            self.table.setItem(i, 0, self._item(r.get("department", r.get("name", ""))))
+            self.table.setItem(i, 1, self._item(f"{r.get('cost', r.get('total_cost', 0)):,.2f}"))
+            self.table.setItem(i, 2, self._item(str(r.get("employees", r.get("count", 0)))))
+
+
+class PayrollEmployeeHistoryScreen(_BasePayrollScreen):
+    def __init__(self, parent=None):
+        super().__init__("Employee Payroll History", "/api/payroll/reports/employee-history/")
+
+    def run_report(self):
+        self._show_loading(True)
+        try:
+            resp = self.api_client.get(self.report_api_endpoint)
+            self.report_data = resp
+            self._populate_table()
+            self._show_loading(False)
+        except Exception as e:
+            self._show_error(f"Error: {e}")
+
+    def _populate_table(self):
+        d = self._safe_data()
+        records = d.get("history", d.get("records", []))
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["Employee", "Period", "Amount", "Type"])
+        self.table.setRowCount(len(records) if isinstance(records, list) else 0)
+        for i, r in enumerate(records if isinstance(records, list) else []):
+            self.table.setItem(i, 0, self._item(r.get("employee", r.get("name", ""))))
+            self.table.setItem(i, 1, self._item(r.get("period", "")))
+            self.table.setItem(i, 2, self._item(f"{r.get('amount', r.get('net_pay', 0)):,.2f}"))
+            self.table.setItem(i, 3, self._item(r.get("type", "Payroll")))

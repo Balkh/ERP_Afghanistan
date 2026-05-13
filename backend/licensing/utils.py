@@ -181,7 +181,7 @@ def get_disk_serial() -> str:
                     text=True,
                     check=True
                 )
-                lines = stdout.strip().split('\n')
+                lines = result.stdout.strip().split('\n')
                 # Skip header
                 for line in lines[1:]:
                     if line.strip():

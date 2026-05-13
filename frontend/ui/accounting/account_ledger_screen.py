@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel, QTableW
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
 from api.client import APIClient
-from api.endpoints import get_endpoint
+from api.endpoints import get_endpoint, extract_list
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
@@ -169,16 +169,7 @@ class AccountLedgerScreen(QFrame):
         try:
             endpoint = get_endpoint("leaf_accounts")
             response = self.api_client.get(endpoint)
-            if isinstance(response, list):
-                self.accounts = [a for a in response if isinstance(a, dict)]
-            elif isinstance(response, dict):
-                data = response.get('data', [])
-                if isinstance(data, list):
-                    self.accounts = [a for a in data if isinstance(a, dict)]
-                else:
-                    self.accounts = []
-            else:
-                self.accounts = []
+            self.accounts = [a for a in extract_list(response) if isinstance(a, dict)]
             self.account_combo.clear()
             self.account_combo.addItem("Select an account...", None)
             for acc in sorted(self.accounts, key=lambda x: x.get("code") or ""):

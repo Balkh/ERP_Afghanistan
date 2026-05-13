@@ -55,11 +55,13 @@ from ui.components.loading_spinner import LoadingOverlay
 from ui.components.navigation_header import NavigationHeader
 from ui.theme.theme_manager import ThemeManager
 from theme.theme_engine import ThemeEngine
-from utils.logger import get_logger, set_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id, record_screen_load, record_error, detect_error_bursts, generate_operational_insight_report, emit_event
+from utils.logger import get_logger, set_active_screen, get_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id, record_screen_load, record_error, detect_error_bursts, generate_operational_insight_report, emit_event
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 
 log = get_logger('ui')
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+
+from runtime.timer_registry import shutdown_all_timers
 
 class MainWindow(QMainWindow):
     def __init__(self, license_validator=None, user_data: dict = None, api_client=None):
@@ -214,9 +216,27 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
 
-        main_layout = QHBoxLayout(central_widget)
+        # Outer vertical layout: global bar on top, content below
+        self._outer_layout = QVBoxLayout(central_widget)
+        self._outer_layout.setContentsMargins(0, 0, 0, 0)
+        self._outer_layout.setSpacing(0)
+
+        # Global Intelligence Bar
+        from ui.cognitive.global_bar import GlobalIntelligenceBar
+        self.cognitive_bar = GlobalIntelligenceBar(api_client=self.api_client)
+        self.cognitive_bar.cognitive_dashboard_clicked.connect(
+            lambda: self.navigate_to("cognitive_dashboard")
+        )
+        self.cognitive_bar.anomaly_clicked.connect(
+            lambda: self.navigate_to("anomaly_warning_center")
+        )
+        self._outer_layout.addWidget(self.cognitive_bar)
+
+        # Inner horizontal layout: sidebar + content
+        main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+        self._outer_layout.addLayout(main_layout)
         
         # Create toast manager (positioned at top-right)
         self.toast_manager = get_toast_manager()
@@ -249,15 +269,10 @@ class MainWindow(QMainWindow):
         # Connection check timer
         self.connection_timer = QTimer()
         self.connection_timer.timeout.connect(self.check_connection)
-        self.connection_timer.start(5000)  # Check every 5 seconds
-        
-        # Initial connection check
+        self.connection_timer.start(5000)
+
         self.check_connection()
-
-        # Update device ID display
         self.update_device_id_display()
-
-        # Create menu bar
         self.create_menu_bar()
         
         # Update license status display
@@ -519,6 +534,93 @@ class MainWindow(QMainWindow):
         from ui.observability.observability_screen import ObservabilityScreen
         self.observability_screen = ObservabilityScreen(api_client=self.api_client)
         self.pages.addWidget(self.observability_screen)
+
+        # ═══════════════════════════════════════════════════════════════
+        # Phase 5B.9 — Intelligence UI Exposure Layer (indices 40-44)
+        # ═══════════════════════════════════════════════════════════════
+
+        # 40: Forecast Intelligence Dashboard
+        from ui.autonomous.forecast_dashboard import ForecastDashboard
+        self.forecast_dashboard = ForecastDashboard(api_client=self.api_client)
+        self.pages.addWidget(self.forecast_dashboard)
+
+        # 41: Decision Options Screen
+        from ui.autonomous.decision_options_screen import DecisionOptionsScreen
+        self.decision_options_screen = DecisionOptionsScreen(api_client=self.api_client)
+        self.pages.addWidget(self.decision_options_screen)
+
+        # 42: Anomaly Warning Center
+        from ui.autonomous.anomaly_warning_center import AnomalyWarningCenterScreen
+        self.anomaly_warning_center = AnomalyWarningCenterScreen(api_client=self.api_client)
+        self.pages.addWidget(self.anomaly_warning_center)
+
+        # 43: Autonomous Intelligence Dashboard (Master View)
+        from ui.autonomous.master_dashboard import MasterIntelligenceDashboard
+        self.master_intelligence_dashboard = MasterIntelligenceDashboard(api_client=self.api_client)
+        self.pages.addWidget(self.master_intelligence_dashboard)
+
+        # 44: Replay Time-Travel
+        from ui.observability.replay_screen import ReplayTimeTravelScreen
+        self.replay_time_travel_screen = ReplayTimeTravelScreen(api_client=self.api_client)
+        self.pages.addWidget(self.replay_time_travel_screen)
+
+        # 45: Enterprise Cognitive Dashboard (Phase 5B.10)
+        from ui.cognitive.cognitive_dashboard import EnterpriseCognitiveDashboard
+        self.cognitive_dashboard = EnterpriseCognitiveDashboard(api_client=self.api_client)
+        self.pages.addWidget(self.cognitive_dashboard)
+
+        # 46: Causal Reasoning Dashboard (Phase 5B.11)
+        from ui.cognitive_reasoning.causal_dashboard import CausalReasoningDashboard
+        self.causal_reasoning_dashboard = CausalReasoningDashboard(api_client=self.api_client)
+        self.pages.addWidget(self.causal_reasoning_dashboard)
+
+        # 47: Decision Intelligence Dashboard (Phase 5B.12)
+        from ui.causal_scoring.decision_ranking_dashboard import DecisionIntelligenceDashboard
+        self.decision_intelligence_dashboard = DecisionIntelligenceDashboard(api_client=self.api_client)
+        self.pages.addWidget(self.decision_intelligence_dashboard)
+
+        # ═══════════════════════════════════════════════════════════════
+        # Phase 5B.16 — Enterprise Reporting Screens (indices 48-56)
+        # ═══════════════════════════════════════════════════════════════
+
+        # 48: Cash Flow Statement
+        from ui.accounting.cash_flow_screen import CashFlowScreen
+        self.cash_flow_screen = CashFlowScreen()
+        self.pages.addWidget(self.cash_flow_screen)
+
+        # 49-52: HR Reports
+        from ui.hr.report_screens import (
+            EmployeeSummaryScreen, AttendanceReportScreen,
+            LeaveReportScreen, OvertimeReportScreen,
+        )
+        self.employee_summary_screen = EmployeeSummaryScreen()
+        self.pages.addWidget(self.employee_summary_screen)
+
+        self.attendance_report_screen = AttendanceReportScreen()
+        self.pages.addWidget(self.attendance_report_screen)
+
+        self.leave_report_screen = LeaveReportScreen()
+        self.pages.addWidget(self.leave_report_screen)
+
+        self.overtime_report_screen = OvertimeReportScreen()
+        self.pages.addWidget(self.overtime_report_screen)
+
+        # 53-56: Payroll Reports
+        from ui.payroll.report_screens import (
+            PayrollSummaryScreen, PayrollTrendScreen,
+            PayrollDepartmentCostScreen, PayrollEmployeeHistoryScreen,
+        )
+        self.payroll_summary_screen = PayrollSummaryScreen()
+        self.pages.addWidget(self.payroll_summary_screen)
+
+        self.payroll_trend_screen = PayrollTrendScreen()
+        self.pages.addWidget(self.payroll_trend_screen)
+
+        self.payroll_dept_cost_screen = PayrollDepartmentCostScreen()
+        self.pages.addWidget(self.payroll_dept_cost_screen)
+
+        self.payroll_emp_history_screen = PayrollEmployeeHistoryScreen()
+        self.pages.addWidget(self.payroll_emp_history_screen)
 
         main_layout.addWidget(content_frame, 1)
 
@@ -1131,6 +1233,24 @@ class MainWindow(QMainWindow):
             "licensing": 36,
             "production": 37,
             "control_center": 38,
+            "observability": 39,
+            "forecast_dashboard": 40,
+            "decision_options": 41,
+            "anomaly_warning_center": 42,
+            "master_dashboard": 43,
+            "replay_time_travel": 44,
+            "cognitive_dashboard": 45,
+            "causal_reasoning": 46,
+            "decision_intelligence": 47,
+            "cash_flow": 48,
+            "employee_summary": 49,
+            "attendance_report": 50,
+            "leave_report": 51,
+            "overtime_report": 52,
+            "payroll_summary": 53,
+            "payroll_trend": 54,
+            "payroll_dept_cost": 55,
+            "payroll_emp_history": 56,
         }
         if page_id in page_map:
             self.pages.setCurrentIndex(page_map[page_id])
@@ -1216,6 +1336,11 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'loading_overlay'):
             self.loading_overlay.setGeometry(0, 0, self.width(), self.height())
     
+    def closeEvent(self, event):
+        """Ensure all timers are stopped on application exit."""
+        shutdown_all_timers()
+        super().closeEvent(event)
+
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts (Phase 12)."""
         from PySide6.QtGui import QKeySequence

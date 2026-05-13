@@ -10,6 +10,8 @@ import hashlib
 from datetime import datetime, date
 from typing import Dict, Any, Tuple, Optional
 import os
+from cryptography.hazmat.primitives import hashes, asymmetric, serialization
+from cryptography.hazmat.primitives.asymmetric import padding
 
 
 def generate_keypair(key_size: int = 2048) -> Tuple[rsa.PublicKey, rsa.PrivateKey]:
@@ -161,6 +163,30 @@ def verify_license(license_data: Dict[str, Any],
         rsa.verify(license_json.encode('utf-8'), signature, public_key)
         return True
     except (rsa.VerificationError, ValueError, base64.binascii.Error):
+        return False
+
+
+def verify_license_pss(license_data: Dict[str, Any],
+                       signature_b64: str,
+                       pub_pem: bytes) -> bool:
+    """
+    Verify license signature using RSA-PSS + SHA256 (preferred method).
+
+    Falls back to PKCS1v15 on failure for backward compatibility.
+    Uses cryptography.hazmat for PSS support.
+    """
+    try:
+        license_json = json.dumps(license_data, sort_keys=True, separators=(',', ':'))
+        sig = base64.b64decode(signature_b64)
+        pub_key = serialization.load_pem_public_key(pub_pem)
+        pub_key.verify(
+            sig,
+            license_json.encode('utf-8'),
+            padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+            hashes.SHA256(),
+        )
+        return True
+    except Exception:
         return False
 
 

@@ -30,6 +30,8 @@ class ARAPAgeingScreen(BaseReportScreen):
             params = self._get_report_params()
             params["format"] = "json"
             self.report_data = self.api_client.get(self.report_api_endpoint, params=params)
+            if isinstance(self.report_data, dict):
+                self.report_data = self.report_data.get("data", self.report_data)
             self._populate_table()
         except Exception as e:
             self._show_empty(f"Error loading report: {e}")

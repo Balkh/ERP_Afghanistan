@@ -9,6 +9,8 @@ from PySide6.QtGui import QFont, QColor, QPalette
 from typing import Optional, Dict, Any, Callable
 import logging
 
+from runtime.timer_registry import register_timer, unregister_owner
+
 logger = logging.getLogger(__name__)
 
 
@@ -127,16 +129,18 @@ class BaseScreen(QWidget):
     def set_auto_refresh(self, interval_seconds: int):
         """Set auto-refresh interval. 0 to disable."""
         self._auto_refresh_interval = interval_seconds
-        
+
         if self._refresh_timer:
             self._refresh_timer.stop()
+            unregister_owner(f"screen_{id(self)}")
             self._refresh_timer.deleteLater()
             self._refresh_timer = None
-            
+
         if interval_seconds > 0:
             self._refresh_timer = QTimer(self)
             self._refresh_timer.timeout.connect(self.refresh_data)
             self._refresh_timer.start(interval_seconds * 1000)
+            register_timer(f"screen_{id(self)}", self._refresh_timer)
             
     def cache_data(self, key: str, data: Any):
         """Cache data for quick access."""

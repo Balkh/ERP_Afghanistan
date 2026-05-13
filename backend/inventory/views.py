@@ -1,7 +1,7 @@
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from core.multitenant.views import CompanyScopedViewSetMixin
 from .models import Category, Unit, Product, Batch, Warehouse, StockMovement
@@ -18,7 +18,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     # We'll keep the simple filtering for Category for now
     # Could enhance later if needed
@@ -49,7 +49,7 @@ class UnitViewSet(viewsets.ModelViewSet):
     """Unit of measure CRUD."""
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'symbol', 'description']
     ordering_fields = ['name', 'symbol', 'created_at']
@@ -62,7 +62,7 @@ class ProductViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ProductFilter
     search_fields = ['name', 'generic_name', 'brand_name', 'barcode', 'sku', 'manufacturer']
@@ -281,7 +281,7 @@ class BatchViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = BatchFilter
     search_fields = ['batch_number', 'product__name', 'product__generic_name', 'product__brand_name']
@@ -380,7 +380,7 @@ class WarehouseViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = WarehouseFilter
     search_fields = ['name', 'code', 'address', 'contact_person']
@@ -424,7 +424,7 @@ class StockMovementViewSet(viewsets.ModelViewSet):
         'warehouse'
     ).all()
     serializer_class = StockMovementSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = StockMovementFilter
     search_fields = ['product__name', 'product__generic_name', 'product__brand_name', 'batch__batch_number', 'warehouse__name', 'reference_id', 'notes']

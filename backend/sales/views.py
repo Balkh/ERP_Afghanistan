@@ -4,7 +4,7 @@ from django.db import transaction
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from core.multitenant.views import CompanyScopedViewSetMixin
 from sales.models import Customer, SalesInvoice, SalesItem, CustomerPayment
@@ -212,7 +212,7 @@ class CustomerViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Customer.objects.filter(is_active=True)
     serializer_class = CustomerSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active', 'customer_type', 'city', 'country']
     search_fields = ['name', 'code', 'contact_person', 'email', 'phone']

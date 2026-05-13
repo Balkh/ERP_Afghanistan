@@ -229,7 +229,7 @@ def main():
         dev_token = os.environ.get('PHARMACY_ERP_DEV_TOKEN')
         if not dev_token:
             # Temporary dev token for testing
-            dev_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxLCJlbWFpbCI6IiIsInRva2VuX3R5cGUiOiJhY2Nlc3MiLCJleHAiOjE3Nzg1NjkyNjIsImlhdCI6MTc3ODQ4Mjg2Mn0.PoeK5R4CtA3GKk8baR3Ivy-OBDyycfSFNTUKUGhxgQI"
+            dev_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxODEwMjAwNjQyLCJpYXQiOjE3Nzg2NjQ2NDIsImp0aSI6IjdkNmIwM2ZlZWFjYzQ0NGM4OTAyMjUyZjYzMTY1YmJjIiwidXNlcl9pZCI6IjEifQ.sKjujPqPsQBuQR0PHeNUsmPOoJEmYdj12bJ8CKiFNeo"
         if dev_token:
             api_client.set_auth_token(dev_token)
 

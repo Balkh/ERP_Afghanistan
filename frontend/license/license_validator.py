@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.join(frontend_dir, 'license'))
 
 from license_service import LicenseService
 from utils.device_fingerprint import generate_device_id
+from trust_anchor import LicenseTrustAnchor, InstallationLock, verify_checksum
 
 
 class LicenseValidationResult:
@@ -182,6 +183,16 @@ class LicenseValidator(QObject):
                         "No license file found. Please install a valid license."
                     )
             
+            # Phase 5B.18: Trust anchor validation (anti-tamper + integrity chain + installation lock)
+            trust = LicenseTrustAnchor()
+            trust_result = trust.validate(license_data)
+            if not trust_result["passed"]:
+                return LicenseValidationResult(
+                    False,
+                    f"Trust anchor validation failed: {trust_result['reason']}",
+                    license_data,
+                )
+
             # Validate the license
             is_valid, message = self.license_service.validate_current_device_license(license_data)
             

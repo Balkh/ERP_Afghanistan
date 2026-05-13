@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from security.models import AuditLog, UserRole
@@ -170,7 +170,7 @@ def refresh_token_view(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def logout_view(request):
     """Logout user and invalidate session."""
     if not request.user or not request.user.is_authenticated:
@@ -194,7 +194,7 @@ def logout_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def user_profile(request):
     """Get current user profile."""
     if not request.user or not request.user.is_authenticated:
@@ -254,7 +254,7 @@ def user_profile(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def change_password(request):
     """Change user password."""
     from django.contrib.auth.password_validation import validate_password
@@ -300,7 +300,7 @@ def change_password(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def notifications_list(request):
     """Get all notifications for the current user."""
     from security.models import Notification
@@ -347,7 +347,7 @@ def notifications_list(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def notifications_mark_read(request):
     """Mark a notification as read."""
     from security.notification_service import NotificationService
@@ -382,7 +382,7 @@ def notifications_mark_read(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def notifications_unread_count(request):
     """Get unread notification count."""
     from security.notification_service import NotificationService
@@ -391,7 +391,7 @@ def notifications_unread_count(request):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def users_list(request):
     """List or create users."""
     from django.contrib.auth import get_user_model
@@ -504,7 +504,7 @@ def users_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def users_detail(request, user_id):
     """Get, update, or delete a user."""
     from django.contrib.auth.models import User
@@ -608,7 +608,7 @@ def users_detail(request, user_id):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def roles_list(request):
     """List or create roles."""
     from security.models import Role
@@ -666,7 +666,7 @@ def roles_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def roles_detail(request, role_id):
     """Get, update, or delete a role."""
     from security.models import Role, Permission, RolePermission
@@ -745,7 +745,7 @@ def roles_detail(request, role_id):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def permissions_list(request):
     """List all permissions."""
     if not request.user.is_superuser:

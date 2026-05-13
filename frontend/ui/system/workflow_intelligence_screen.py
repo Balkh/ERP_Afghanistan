@@ -20,6 +20,7 @@ from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG,
                           FONT_SIZE_SM, FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL,
                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
 from api.client import APIClient
+from runtime.timer_registry import register_timer, unregister_owner
 
 
 class WorkflowPipelineWidget(QWidget):
@@ -215,7 +216,8 @@ class WorkflowIntelligenceScreen(BaseScreen):
 
     def _on_screen_shown(self):
         self._load_data()
-        self._refresh_timer.start(8000)
+        self._refresh_timer.start(15000)
+        register_timer("workflow_intel", self._refresh_timer)
 
     def _on_screen_hidden(self):
         self._refresh_timer.stop()

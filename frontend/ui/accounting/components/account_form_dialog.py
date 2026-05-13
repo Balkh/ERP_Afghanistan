@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.client import APIClient
+from api.endpoints import extract_list
 from ui.utils.validation import FormValidator
 from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
                           FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL, FONT_SIZE_TITLE,
@@ -119,12 +120,11 @@ class AccountFormDialog(QDialog):
 
     def load_parent_accounts(self):
         try:
-            self.parent_accounts = self.api_client.get("/api/accounting/accounts/")
-            if isinstance(self.parent_accounts, list):
-                self.parent_combo.clear()
-                self.parent_combo.addItem("None (Top Level)", None)
-                for acc in sorted(self.parent_accounts, key=lambda x: x.get("code", "")):
-                    self.parent_combo.addItem(f"{acc['code']} - {acc['name']}", acc["id"])
+            self.parent_accounts = extract_list(self.api_client.get("/api/accounting/accounts/"))
+            self.parent_combo.clear()
+            self.parent_combo.addItem("None (Top Level)", None)
+            for acc in sorted(self.parent_accounts, key=lambda x: x.get("code", "")):
+                self.parent_combo.addItem(f"{acc['code']} - {acc['name']}", acc["id"])
         except Exception:
             pass
 

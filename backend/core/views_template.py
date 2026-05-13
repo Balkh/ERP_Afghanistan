@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from core.models.invoice_template import InvoiceTemplate
 from core.serializers import InvoiceTemplateSerializer
 from core.multitenant.views import CompanyScopedViewSetMixin
@@ -12,7 +12,7 @@ class InvoiceTemplateViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = InvoiceTemplate.objects.all()
     serializer_class = InvoiceTemplateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def perform_create(self, serializer):
         # Auto-assign company from context

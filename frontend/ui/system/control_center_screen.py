@@ -23,6 +23,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
                           MARGIN_PAGE, PADDING_CARD)
 from api.control_center_service import ControlCenterService
+from runtime.timer_registry import register_timer, unregister_owner
 
 
 class DataFetchThread(QThread):
@@ -445,7 +446,8 @@ class ControlCenterScreen(BaseScreen):
     def _on_screen_shown(self):
         """Called when screen is shown."""
         self._fetch_data()
-        self._refresh_timer.start(5000)  # Auto-refresh every 5 seconds
+        self._refresh_timer.start(15000)
+        register_timer("control_center", self._refresh_timer)
 
     def _on_screen_hidden(self):
         """Called when screen is hidden."""

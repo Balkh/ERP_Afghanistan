@@ -4,7 +4,7 @@ Payroll API Views - Thin API layer, business logic in services
 from datetime import date
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -28,7 +28,7 @@ class PayrollCycleViewSet(viewsets.ModelViewSet):
     """API for Payroll Cycle CRUD"""
     queryset = PayrollCycle.objects.all()
     serializer_class = PayrollCycleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         queryset = PayrollCycle.objects.all()
@@ -74,7 +74,7 @@ class PayrollRecordViewSet(viewsets.ModelViewSet):
     """API for Payroll Record CRUD"""
     queryset = PayrollRecord.objects.all()
     serializer_class = PayrollRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
         queryset = PayrollRecord.objects.all()
@@ -91,18 +91,18 @@ class AllowanceViewSet(viewsets.ModelViewSet):
     """API for Allowance CRUD"""
     queryset = Allowance.objects.all()
     serializer_class = AllowanceSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 
 class DeductionViewSet(viewsets.ModelViewSet):
     """API for Deduction CRUD"""
     queryset = Deduction.objects.all()
     serializer_class = DeductionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def generate_payroll(request):
     """Generate payroll for a cycle"""
     cycle_id = request.data.get('cycle_id')
@@ -130,7 +130,7 @@ def generate_payroll(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def approve_payroll(request):
     """Approve payroll cycle"""
     cycle_id = request.data.get('cycle_id')
@@ -153,7 +153,7 @@ def approve_payroll(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def payroll_summary(request):
     """Get payroll summary"""
     cycles = PayrollCycle.objects.all()[:12]  # Last 12 months
@@ -181,7 +181,7 @@ from payroll.services.reports import PayrollReportService
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def payroll_yearly_summary(request):
     """Get yearly payroll summary"""
     year = request.query_params.get('year')
@@ -195,7 +195,7 @@ def payroll_yearly_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def payroll_monthly_detail(request):
     """Get monthly payroll detail"""
     month = int(request.query_params.get('month', timezone.now().month))
@@ -209,7 +209,7 @@ def payroll_monthly_detail(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def payroll_department_cost(request):
     """Get payroll cost by department"""
     start = request.query_params.get('start_date')
@@ -228,7 +228,7 @@ def payroll_department_cost(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def payroll_employee_history(request):
     """Get employee payment history"""
     employee_id = request.query_params.get('employee_id')
@@ -240,7 +240,7 @@ def payroll_employee_history(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def payroll_trend(request):
     """Get payroll trend"""
     months = int(request.query_params.get('months', 12))
