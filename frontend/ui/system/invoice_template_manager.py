@@ -1,16 +1,20 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit, QComboBox, QGroupBox,
                                   QFormLayout, QCheckBox, QColorDialog, 
                                   QFileDialog, QMessageBox, QScrollArea, QFrame)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QColor
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, SPACING_LG, FONT_SIZE_LG, FONT_SIZE_XL,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, BORDER_RADIUS_MD,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from utils.invoice_template_engine import InvoiceTemplateEngine
 from api.client import APIClient
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 class InvoiceTemplateManager(BaseScreen):
     """Manager for dynamic invoice templates and branding."""
@@ -32,12 +36,12 @@ class InvoiceTemplateManager(BaseScreen):
         # Header
         header_layout = QHBoxLayout()
         title_label = QLabel("Invoice Template Manager")
-        title_label.setFont(QFont("Segoe UI", FONT_SIZE_XL, QFont.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(title_label)
         
         header_layout.addStretch()
         
-        self.save_btn = QPushButton("Save Changes")
+        self.save_btn = EnterpriseButton(text="Save Changes", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.save_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
         self.save_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
         self.save_btn.clicked.connect(self._save_template)
@@ -72,15 +76,15 @@ class InvoiceTemplateManager(BaseScreen):
         brand_group = QGroupBox("Branding")
         brand_layout = QFormLayout(brand_group)
         
-        self.primary_color_btn = QPushButton("Select Primary Color")
+        self.primary_color_btn = EnterpriseButton(text="Select Primary Color", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
         self.primary_color_btn.clicked.connect(lambda: self._pick_color("primary"))
         
-        self.accent_color_btn = QPushButton("Select Accent Color")
+        self.accent_color_btn = EnterpriseButton(text="Select Accent Color", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
         self.accent_color_btn.clicked.connect(lambda: self._pick_color("accent"))
         
         self.logo_path = QLineEdit()
         self.logo_path.setReadOnly(True)
-        self.logo_btn = QPushButton("Browse Logo")
+        self.logo_btn = EnterpriseButton(text="Browse Logo", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
         self.logo_btn.clicked.connect(self._browse_logo)
         
         logo_layout = QHBoxLayout()

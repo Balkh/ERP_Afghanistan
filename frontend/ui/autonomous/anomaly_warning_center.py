@@ -21,7 +21,7 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, SPACING_6, TEXT_PAGE_TITLE, BORDER_RADIUS_MD)
 
 
 SEVERITY_COLORS = {
@@ -48,13 +48,15 @@ class AnomalyWarningCenterScreen(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("Anomaly Warning Center")
-        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_PAGE_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(["All", "inventory", "accounting", "hr", "sales_purchase"])
-        self.filter_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: 6px;")
+        self.filter_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: {SPACING_6}px;")
         self.filter_combo.currentTextChanged.connect(self._refresh)
         header.addWidget(QLabel("Filter:"))
         header.addWidget(self.filter_combo)
@@ -62,7 +64,7 @@ class AnomalyWarningCenterScreen(QWidget):
         self.refresh_btn = QPushButton("⟳ Refresh")
         self.refresh_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         self.refresh_btn.clicked.connect(self._refresh)
         header.addWidget(self.refresh_btn)
@@ -80,7 +82,7 @@ class AnomalyWarningCenterScreen(QWidget):
             QTableWidget {{ background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
             gridline-color: {COLOR_BORDER}; }}
             QHeaderView::section {{ background: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: 6px; font-weight: bold; }}
+            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
         """)
         self.table.itemDoubleClicked.connect(self._on_warning_clicked)
         layout.addWidget(self.table)

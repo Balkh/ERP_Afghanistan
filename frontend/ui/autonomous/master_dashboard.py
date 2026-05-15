@@ -19,7 +19,7 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY_SMALL, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
 from runtime.timer_registry import register_timer, unregister_owner
 
 
@@ -28,18 +28,18 @@ class _KPIWidget(QFrame):
         super().__init__()
         self.setStyleSheet(f"""
             QFrame {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {color};
-            border-radius: 8px; padding: 12px; }}
+            border-radius: {BORDER_RADIUS_LG}; padding: {SPACING_MD}px; }}
         """)
         layout = QVBoxLayout(self)
         layout.setSpacing(4)
-        QLabel(title).setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
+        QLabel(title).setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px;")
         layout.addWidget(QLabel(title))
         v = QLabel(value)
-        v.setStyleSheet(f"color: {color}; font-size: 28px; font-weight: bold;")
+        v.setStyleSheet(f"color: {color}; font-size: {TEXT_DISPLAY}px; font-weight: bold;")
         layout.addWidget(v)
         if subtitle:
             s = QLabel(subtitle)
-            s.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px;")
+            s.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}px;")
             layout.addWidget(s)
 
 
@@ -63,18 +63,20 @@ class MasterIntelligenceDashboard(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("Enterprise Intelligence Dashboard")
-        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_PAGE_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         self.status_label = QLabel("● Checking...")
-        self.status_label.setStyleSheet(f"color: {COLOR_INFO}; font-size: 12px;")
+        self.status_label.setStyleSheet(f"color: {COLOR_INFO}; font-size: {TEXT_CARD_TITLE}px;")
         header.addWidget(self.status_label, alignment=Qt.AlignRight)
 
         refresh_btn = QPushButton("⟳ Refresh")
         refresh_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         refresh_btn.clicked.connect(self._refresh)
         header.addWidget(refresh_btn)
@@ -88,8 +90,8 @@ class MasterIntelligenceDashboard(QWidget):
         self.detail_text.setReadOnly(True)
         self.detail_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px;
-            font-family: 'Consolas', monospace; font-size: 12px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_CARD_TITLE}px; }}
         """)
         layout.addWidget(self.detail_text)
 
@@ -142,11 +144,11 @@ class MasterIntelligenceDashboard(QWidget):
             )
 
             self.status_label.setText(f"● Live | {forecast_count} forecasts · {warning_count} warnings")
-            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: 12px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_CARD_TITLE}px;")
 
         except Exception as e:
             self.status_label.setText(f"● Error: {e}")
-            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: 12px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_CARD_TITLE}px;")
 
     def _clear_grid(self):
         while self.kpi_grid.count():

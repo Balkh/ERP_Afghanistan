@@ -167,14 +167,18 @@ class ReturnOrder(TimeStampedUUIDModel):
     @transaction.atomic
     def approve(self, employee):
         """
-        Approve return - triggers inventory and accounting updates.
+        Approve return — triggers inventory and accounting updates.
         MUST be atomic: ALL OR NOTHING.
+        select_for_update ensures no concurrent approval race.
         """
+        # Lock the return order FIRST — prevents race conditions
+        locked = ReturnOrder.objects.select_for_update().get(pk=self.pk)
+        self.status = locked.status
+        self.invoice = locked.invoice
+        self.purchase_invoice = locked.purchase_invoice
+
         if self.status != 'PENDING':
             raise ValidationError(_('Only pending returns can be approved.'))
-        
-        # Lock the return order
-        self = ReturnOrder.objects.select_for_update().get(pk=self.pk)
         
         # 1. Update Inventory - restore stock based on item conditions
         for item in self.items.all():
@@ -192,7 +196,23 @@ class ReturnOrder(TimeStampedUUIDModel):
         rec_service = ReconciliationService(company_id=self.invoice.company_id if self.invoice else self.purchase_invoice.company_id)
         rec_service.create_return_reconciliation(self, self.journal_entry)
         
-        # 4. Update status
+        # 4. Execute refund for sale returns that have payments
+        if self.return_type == 'SALE_RETURN':
+            try:
+                from returns.services.refund_service import RefundExecutionService, RefundRequest
+                refund_service = RefundExecutionService()
+                refund_request = RefundRequest(
+                    return_order=self,
+                    refund_amount=self.total_amount,
+                    reason_code="CUSTOMER_RETURN",
+                    performed_by=str(employee.id) if hasattr(employee, 'id') else 'system',
+                    notes=self.reason,
+                )
+                refund_service.execute_return_refund(refund_request)
+            except Exception:
+                pass
+
+        # 5. Update status
         self.status = 'APPROVED'
         self.approved_by = employee
         from django.utils import timezone
@@ -416,9 +436,12 @@ class ReturnItem(TimeStampedUUIDModel):
             return self.purchase_invoice_item.quantity
         return Decimal('0.00')
     
-    @transaction.atomic
     def restore_inventory(self):
-        """Restore inventory quantity for this return item based on condition."""
+        """
+        Restore inventory for this return item based on condition.
+        Used inside the approve() atomic transaction — NOT independently atomic.
+        StockMovement.save() handles batch quantity updates automatically via _update_batch_quantity().
+        """
         from inventory.models import StockMovement, Batch
         
         # Determine warehouse
@@ -436,25 +459,23 @@ class ReturnItem(TimeStampedUUIDModel):
             movement_type = 'RETURN_IN' if self.return_order.return_type == 'SALE_RETURN' else 'RETURN_PURCHASE'
         elif self.condition == 'DAMAGED':
             movement_type = 'RETURN_DAMAGED'
-        else: # EXPIRED
+        else:
             movement_type = 'RETURN_EXPIRED'
 
-        # Create stock movement
+        # Create stock movement (StockMovement.save() auto-updates batch via _update_batch_quantity)
+        # Do NOT manually update batch here — _update_batch_quantity() sums all movements
         movement = StockMovement.objects.create(
             product=self.product,
             warehouse=warehouse,
             batch=self.batch,
             movement_type=movement_type,
+            reference_type='RETURN',
             quantity=self.return_quantity,
             reference=f"Return {self.return_order.return_number}",
+            reference_id=self.return_order.return_number,
             company_id=warehouse.company_id,
             notes=f"Condition: {self.get_condition_display()}. {self.notes}"
         )
-        
-        # Update batch remaining quantity ONLY if condition is GOOD
-        if self.batch and self.condition == 'GOOD':
-            self.batch.remaining_quantity += self.return_quantity
-            self.batch.save()
         
         return movement
 

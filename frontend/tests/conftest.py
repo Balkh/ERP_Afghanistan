@@ -82,11 +82,9 @@ def mock_license_validator():
 def sidebar_widget(qtbot):
     """Create a sidebar widget for testing."""
     from ui.sidebar import Sidebar
-    from unittest.mock import patch
-    with patch('ui.sidebar.ThemeManager'):
-        widget = Sidebar()
-        qtbot.addWidget(widget)
-        return widget
+    widget = Sidebar()
+    qtbot.addWidget(widget)
+    return widget
 
 
 @pytest.fixture(scope="function")

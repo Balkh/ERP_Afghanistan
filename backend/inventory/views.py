@@ -274,6 +274,61 @@ class ProductViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+    @action(detail=False, methods=['get'])
+    def generate_barcode(self, request):
+        """
+        Generate barcode image for a product.
+        Query params: barcode (or sku), format (ean13, code128, code39, qr)
+        """
+        from inventory.services.barcode_generator import (
+            BarcodeGenerator,
+            BarcodeFormat,
+            BarcodeGenerationError,
+        )
+
+        code = request.query_params.get('barcode') or request.query_params.get('sku', '')
+        fmt = request.query_params.get('format', BarcodeFormat.CODE128)
+        include_text = request.query_params.get('text', 'true').lower() == 'true'
+
+        if not code:
+            return Response(
+                {'error': 'barcode or sku parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            b64 = BarcodeGenerator.generate(code, fmt=fmt, include_text=include_text)
+            return Response({
+                'success': True,
+                'barcode': code,
+                'format': fmt,
+                'image_base64': b64,
+            })
+        except BarcodeGenerationError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'])
+    def validate_barcode(self, request):
+        """
+        Validate a barcode checksum (EAN-13).
+        """
+        from inventory.services.barcode_generator import BarcodeGenerator
+
+        code = request.query_params.get('barcode', '')
+        fmt = request.query_params.get('format', '')
+
+        if not code:
+            return Response(
+                {'error': 'barcode parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if fmt.lower() == 'ean13':
+            is_valid = BarcodeGenerator.validate_ean13(code)
+            return Response({'valid': is_valid, 'format': 'ean13', 'barcode': code})
+
+        return Response({'valid': True, 'format': fmt, 'barcode': code, 'note': 'Validation only for EAN-13'})
+
 
 class BatchViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
@@ -372,6 +427,41 @@ class BatchViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         
         serializer = self.get_serializer(fefo_batches, many=True)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def by_batch_barcode(self, request):
+        """
+        Look up batch by its barcode or batch_number.
+        Returns batch + product info for POS scanning.
+        """
+        barcode = request.query_params.get('barcode', '')
+
+        if not barcode:
+            return Response(
+                {'error': 'barcode parameter is required'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            from django.db.models import Q
+            batch = Batch.objects.select_related('product').get(
+                Q(barcode=barcode) | Q(batch_number=barcode),
+                remaining_quantity__gt=0,
+                is_active=True,
+            )
+            batch_serializer = BatchSerializer(batch)
+            product_serializer = ProductSerializer(batch.product)
+
+            return Response({
+                'batch': batch_serializer.data,
+                'product': product_serializer.data,
+                'source': 'batch_barcode',
+            })
+        except Batch.DoesNotExist:
+            return Response(
+                {'error': 'Batch not found', 'barcode': barcode},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
 
 class WarehouseViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):

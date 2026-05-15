@@ -7,7 +7,7 @@ from api.client import APIClient
 from api.endpoints import extract_list
 from ui.utils.validation import FormValidator
 from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL, FONT_SIZE_TITLE,
+                          TEXT_SECTION_TITLE,
                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, BORDER_RADIUS_MD)
 import re
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
@@ -39,7 +39,9 @@ class AccountFormDialog(QDialog):
         layout.setSpacing(SPACING_MD)
 
         title = QLabel("Edit Account" if self.is_editing else "New Account")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_TITLE, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         layout.addWidget(title)
 
         form_group = QGroupBox("Account Details")

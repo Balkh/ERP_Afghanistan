@@ -1,31 +1,54 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
                                QPushButton, QLabel, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QTextDocument, QPrinter
+from PySide6.QtGui import QFont, QTextDocument, QPrinter, QPixmap
 from api.document_action_service import DocumentActionService
+from utils.qr_generator import QRCodeGenerator
+from ui.constants import TEXT_DISPLAY, TEXT_MONO, TEXT_BODY, COLOR_WHATSAPP
 
 
 class ReportPreviewDialog(QDialog):
     """Dialog to preview a report in text format with print/PDF support."""
 
-    def __init__(self, parent=None, title="", text_content=""):
+    def __init__(self, parent=None, title="", text_content="", report_meta=None):
         super().__init__(parent)
         self.title = title
         self.setWindowTitle(f"Report Preview - {title}")
         self.setMinimumSize(800, 600)
         self.text_content = text_content
+        self.report_meta = report_meta or {}
+        self.qr_pixmap = None
         self.setup_ui()
+        self._generate_qr_code()
+
+    def _generate_qr_code(self):
+        """Generate QR code for the report."""
+        if self.report_meta:
+            qr_data = QRCodeGenerator.generate_report_qr_data(self.report_meta)
+            if qr_data:
+                self.qr_pixmap = QRCodeGenerator.generate_pixmap(qr_data, size=80)
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
 
+        header_layout = QHBoxLayout()
         header = QLabel(f"Report: {self.windowTitle()}")
-        header.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        layout.addWidget(header)
+        header_font = QFont("Segoe UI", TEXT_DISPLAY)
+        header_font.setWeight(QFont.Weight.Bold)
+        header.setFont(header_font)
+        header_layout.addWidget(header)
+
+        if self.qr_pixmap:
+            qr_label = QLabel()
+            qr_label.setPixmap(self.qr_pixmap)
+            qr_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+            header_layout.addWidget(qr_label)
+
+        layout.addLayout(header_layout)
 
         self.preview = QTextEdit()
         self.preview.setReadOnly(True)
-        self.preview.setFont(QFont("Courier New", 10))
+        self.preview.setFont(QFont("Courier New", TEXT_BODY))
         self.preview.setPlainText(self.text_content)
         layout.addWidget(self.preview)
 
@@ -44,7 +67,7 @@ class ReportPreviewDialog(QDialog):
 
         self.btn_share = QPushButton("Share to WhatsApp")
         self.btn_share.setMinimumHeight(32)
-        self.btn_share.setStyleSheet("background-color: #25D366; color: white; font-weight: bold;")
+        self.btn_share.setStyleSheet(f"background-color: {COLOR_WHATSAPP}; color: white; font-weight: bold;")
         self.btn_share.clicked.connect(self.share_report)
         buttons.addWidget(self.btn_share)
 
@@ -61,7 +84,7 @@ class ReportPreviewDialog(QDialog):
         if dialog.exec():
             doc = QTextDocument()
             doc.setPlainText(self.text_content)
-            doc.setDefaultFont(QFont("Courier New", 10))
+            doc.setDefaultFont(QFont("Courier New", TEXT_BODY))
             doc.print_(printer)
 
     def save_pdf(self):
@@ -75,7 +98,7 @@ class ReportPreviewDialog(QDialog):
 
             doc = QTextDocument()
             doc.setPlainText(self.text_content)
-            doc.setDefaultFont(QFont("Courier New", 10))
+            doc.setDefaultFont(QFont("Courier New", TEXT_BODY))
             doc.print_(printer)
 
             QMessageBox.information(self, "Success", f"PDF saved to {file_path}")

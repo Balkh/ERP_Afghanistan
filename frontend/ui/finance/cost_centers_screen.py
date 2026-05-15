@@ -1,16 +1,23 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Cost Centers management screen."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
-                                  QHeaderView, QMessageBox, QComboBox, QGroupBox,
-                                  QFormLayout, QDialog, QDialogButtonBox, QTextEdit,
-                                  QAbstractItemView)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
+                                  QMessageBox, QComboBox, QGroupBox,
+                                  QFormLayout, QDialog, QDialogButtonBox, QTextEdit)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, FONT_SIZE_XL, BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 from api.client import APIClient
@@ -34,55 +41,40 @@ class CostCentersScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Cost Centers Management")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER_LIGHT};
-                border-radius: 5px;
-                padding: {SPACING_XS} {SPACING_MD};
-                color: {COLOR_TEXT_SECONDARY};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BG_ELEVATED};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_data)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading cost centers...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No cost centers found")
-        self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading cost centers")
-        self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: 40px;")
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
         
         filter_bar = QGroupBox("Filters")
-        filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; }}")
+        filter_font = QFont("Segoe UI", TEXT_LABEL)
+        filter_font.setWeight(QFont.Weight.Bold)
+        filter_bar.setFont(filter_font)
+        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: 10px; padding-top: 10px; }}")
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
@@ -111,18 +103,12 @@ class CostCentersScreen(BaseScreen):
         
         action_layout = QHBoxLayout()
         
-        self.add_btn = QPushButton("+ Add Cost Center")
-        self.add_btn.setMinimumHeight(38)
-        self.add_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        self.add_btn = EnterpriseButton(text="+ Add Cost Center", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.add_btn.clicked.connect(self._add_cost_center)
         
-        self.edit_btn = QPushButton("Edit")
-        self.edit_btn.setMinimumHeight(38)
-        self.edit_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; padding: 0 15px;")
+        self.edit_btn = EnterpriseButton(text="Edit", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         
-        self.deactivate_btn = QPushButton("Deactivate")
-        self.deactivate_btn.setMinimumHeight(38)
-        self.deactivate_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: 5px; padding: 0 15px;")
+        self.deactivate_btn = EnterpriseButton(text="Deactivate", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
         
         action_layout.addWidget(self.add_btn)
         action_layout.addWidget(self.edit_btn)
@@ -131,25 +117,19 @@ class CostCentersScreen(BaseScreen):
         
         layout.addLayout(action_layout)
         
-        self.table = self._create_modern_table()
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["Code", "Name", "Type", "Manager", "Budget", "Actual Spend", "Status"])
+        columns = [
+            TableColumn("code", "Code", width=80),
+            TableColumn("name", "Name", width=150),
+            TableColumn("cost_type", "Type", width=100),
+            TableColumn("manager", "Manager", width=120),
+            TableColumn("budget", "Budget", width=100, align="right"),
+            TableColumn("actual_spend", "Actual Spend", width=100, align="right"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.table = EnterpriseTable(columns)
         layout.addWidget(self.table)
         
         self._load_cost_centers()
-
-    def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }}
-            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {COLOR_BORDER_LIGHT}; font-weight: bold; }}
-            QTableWidget::item {{ padding: {SPACING_SM}; }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(True)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        return table
 
     def _show_loading(self, show=True):
         """Show/hide loading state."""
@@ -205,18 +185,18 @@ class CostCentersScreen(BaseScreen):
             data = self._get_mock_cost_centers()
             self._show_data()
         
+        cost_data = []
         for item in data:
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            self.table.setItem(row, 0, QTableWidgetItem(item.get("code", "")))
-            self.table.setItem(row, 1, QTableWidgetItem(item.get("name", "")))
-            self.table.setItem(row, 2, QTableWidgetItem(item.get("cost_type", "")))
-            self.table.setItem(row, 3, QTableWidgetItem(item.get("manager", "")))
-            self.table.setItem(row, 4, QTableWidgetItem(str(item.get("budget", "0"))))
-            self.table.setItem(row, 5, QTableWidgetItem(str(item.get("actual_spend", "0"))))
-            self.table.setItem(row, 6, QTableWidgetItem("Active" if item.get("is_active") else "Inactive"))
-            
-            self.table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
+            cost_data.append({
+                "code": item.get("code", ""),
+                "name": item.get("name", ""),
+                "cost_type": item.get("cost_type", ""),
+                "manager": item.get("manager", ""),
+                "budget": str(item.get("budget", "0")),
+                "actual_spend": str(item.get("actual_spend", "0")),
+                "status": "Active" if item.get("is_active") else "Inactive",
+            })
+        self.table.set_data(cost_data)
     
     def _get_mock_cost_centers(self):
         return [

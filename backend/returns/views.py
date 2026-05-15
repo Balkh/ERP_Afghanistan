@@ -90,7 +90,31 @@ class ReturnOrderViewSet(viewsets.ModelViewSet):
         return_order.save()
         
         return Response(ReturnOrderSerializer(return_order).data)
-    
+
+    @action(detail=False, methods=['get'])
+    def by_invoice(self, request):
+        """Look up returns by invoice barcode/number. POS integration hook."""
+        invoice_ref = request.query_params.get('q', '')
+        if not invoice_ref:
+            return Response(
+                {'error': 'q parameter required (invoice number or barcode)'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        from django.db.models import Q
+        returns = self.get_queryset().filter(
+            Q(invoice__invoice_number__icontains=invoice_ref) |
+            Q(purchase_invoice__invoice_number__icontains=invoice_ref)
+        )
+
+        page = self.paginate_queryset(returns)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(returns, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'])
     def summary(self, request):
         """Get return order summary statistics."""

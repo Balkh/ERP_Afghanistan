@@ -300,6 +300,28 @@ python manage.py shell -c "from payments.models import PaymentMethod; print(Paym
 python manage.py shell -c "from accounting.models import Account; print(Account.objects.count())"
 ```
 
+### UI Architecture Standards (CANONICAL)
+**Single source of truth for all screen implementations.**
+
+**Screen inheritance:**
+- ALL new screens MUST inherit from `ui/screens/base_screen.py:BaseScreen`
+- Use `BaseFormScreen` for form-based screens, `BaseListScreen` for list/table screens
+- Do NOT use `QWidget` or `QFrame` directly — you will miss lifecycle features
+
+**Component usage (mandatory):**
+- Buttons: `EnterpriseButton` + `ButtonVariant` + `ButtonSize` — never raw `QPushButton`
+- Display tables: `EnterpriseTable` + `TableColumn` — never raw `QTableWidget` for read-only data
+- Editable grids: `DataEntryGrid` — for interactive line-item entry
+- Forms grouping: `FormSection` — wraps QGroupBox + QFormLayout with consistent spacing
+- Loading/error/empty states: `ScreenStateHelper` — standardized label management
+- Typography: Use `TEXT_PAGE_TITLE`, `TEXT_CARD_TITLE`, `TEXT_BODY`, `TEXT_HELPER` only
+- Spacing: Use `MARGIN_PAGE`, `SPACING_SM/MD/LG/XL` only
+
+**Forbidden:**
+- Raw hex colors (must use `COLOR_*` tokens)
+- Renderer-layer classes (`ButtonRenderer`, `TableRenderer`, `DialogRenderer`, `CardRenderer`, `BadgeRenderer`)
+- Inline `setStyleSheet()` with hardcoded values (only with `COLOR_*`/`SPACING_*` tokens)
+
 ---
 
 ## Architecture Overview

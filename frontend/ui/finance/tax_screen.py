@@ -1,17 +1,25 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Tax management screen."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QGroupBox,
                                   QFormLayout, QDialog, QDialogButtonBox, QTabWidget,
-                                  QDoubleSpinBox, QCheckBox, QFrame, QAbstractItemView,
-                                  QApplication)
+                                  QDoubleSpinBox, QCheckBox, QFrame, QApplication)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QColor
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, FONT_SIZE_XL, BUTTON_HEIGHT_MD, TABLE_ROW_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 from api.client import APIClient
@@ -34,56 +42,39 @@ class TaxScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Tax Management")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER_LIGHT};
-                border-radius: 5px;
-                padding: {SPACING_XS} {SPACING_MD};
-                color: {COLOR_TEXT_SECONDARY};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BG_ELEVATED};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_data)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading tax data...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No tax data found")
-        self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading tax data")
-        self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("color: #e74c3c; padding: 40px;")
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
         
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: 5px; background: {COLOR_BG_SURFACE}; }}
-            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }}
+            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
+            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
         """)
         
@@ -106,35 +97,29 @@ class TaxScreen(BaseScreen):
     
     def _setup_config_tab(self):
         layout = QVBoxLayout(self.config_tab)
-        layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
+        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         action_layout = QHBoxLayout()
-        self.add_rate_btn = QPushButton("+ Add Tax Rate")
-        self.add_rate_btn.setMinimumHeight(38)
-        self.add_rate_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        self.add_rate_btn = EnterpriseButton(text="+ Add Tax Rate", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         action_layout.addWidget(self.add_rate_btn)
         action_layout.addStretch()
         layout.addLayout(action_layout)
         
-        self.config_table = self._create_modern_table()
-        self.config_table.setColumnCount(6)
-        self.config_table.setHorizontalHeaderLabels(["Tax Name", "Rate %", "Type", "Code", "Effective From", "Status"])
-        layout.addWidget(self.config_table)
+        columns = [
+            TableColumn("name", "Tax Name", width=150),
+            TableColumn("rate", "Rate %", width=60, align="center"),
+            TableColumn("type", "Type", width=100),
+            TableColumn("code", "Code", width=80),
+            TableColumn("effective_from", "Effective From", width=100, align="center"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.config_table = self._create_table(columns)
         
         self._load_config()
 
-    def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }}
-            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {COLOR_BORDER_LIGHT}; font-weight: bold; }}
-            QTableWidget::item {{ padding: {SPACING_SM}; }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(True)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+    def _create_table(self, columns):
+        table = EnterpriseTable(columns)
         return table
 
     def _show_loading(self, show=True):
@@ -171,7 +156,6 @@ class TaxScreen(BaseScreen):
         self._load_withholding()
 
     def _load_config(self):
-        self.config_table.setRowCount(0)
         self._show_loading()
         try:
             response = self.api_client.get('/api/tax/rates/')
@@ -184,20 +168,18 @@ class TaxScreen(BaseScreen):
                     return
                 
                 self._show_data()
-                self.config_table.setRowCount(len(rates))
-                for i, rate in enumerate(rates):
-                    self.config_table.setItem(i, 0, QTableWidgetItem(rate.get('name', '')))
-                    self.config_table.setItem(i, 1, QTableWidgetItem(f"{rate.get('rate_percentage', '0.00')}%"))
-                    self.config_table.setItem(i, 2, QTableWidgetItem(rate.get('tax_type', '')))
-                    self.config_table.setItem(i, 3, QTableWidgetItem(rate.get('code', '')))
-                    self.config_table.setItem(i, 4, QTableWidgetItem(rate.get('effective_from', '')))
-                    
+                config_data = []
+                for rate in rates:
                     status = "Active" if rate.get('is_active') else "Inactive"
-                    status_item = QTableWidgetItem(status)
-                    if not rate.get('is_active'): status_item.setForeground(QColor(COLOR_DANGER))
-                    self.config_table.setItem(i, 5, status_item)
-                    
-                    self.config_table.setRowHeight(i, TABLE_ROW_HEIGHT_MD)
+                    config_data.append({
+                        "name": rate.get('name', ''),
+                        "rate": f"{rate.get('rate_percentage', '0.00')}%",
+                        "type": rate.get('tax_type', ''),
+                        "code": rate.get('code', ''),
+                        "effective_from": rate.get('effective_from', ''),
+                        "status": status,
+                    })
+                self.config_table.set_data(config_data)
             else:
                 self._show_empty()
         except Exception as e:
@@ -207,7 +189,7 @@ class TaxScreen(BaseScreen):
     
     def _setup_returns_tab(self):
         layout = QVBoxLayout(self.returns_tab)
-        layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
+        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_layout = QHBoxLayout()
@@ -217,22 +199,27 @@ class TaxScreen(BaseScreen):
         filter_layout.addWidget(self.status_filter)
         filter_layout.addStretch()
         
-        self.generate_btn = QPushButton("Generate Return")
-        self.generate_btn.setMinimumHeight(38)
-        self.generate_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        self.generate_btn = EnterpriseButton(text="Generate Return", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         filter_layout.addWidget(self.generate_btn)
         layout.addLayout(filter_layout)
         
-        self.returns_table = self._create_modern_table()
-        self.returns_table.setColumnCount(7)
-        self.returns_table.setHorizontalHeaderLabels(["Period", "Taxable Sales", "Output Tax", "Input Tax", "Net Tax", "Due Date", "Status"])
+        columns = [
+            TableColumn("period", "Period", width=160),
+            TableColumn("taxable_sales", "Taxable Sales", width=100, align="right"),
+            TableColumn("output_tax", "Output Tax", width=100, align="right"),
+            TableColumn("input_tax", "Input Tax", width=100, align="right"),
+            TableColumn("net_tax", "Net Tax", width=100, align="right"),
+            TableColumn("due_date", "Due Date", width=90, align="center"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.returns_table = self._create_table(columns)
         layout.addWidget(self.returns_table)
         
         self._load_returns()
     
     def _setup_withholding_tab(self):
         layout = QVBoxLayout(self.withholding_tab)
-        layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
+        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         action_layout = QHBoxLayout()
@@ -240,15 +227,19 @@ class TaxScreen(BaseScreen):
         action_layout.addStretch()
         layout.addLayout(action_layout)
         
-        self.withholding_table = self._create_modern_table()
-        self.withholding_table.setColumnCount(5)
-        self.withholding_table.setHorizontalHeaderLabels(["Certificate No", "Vendor", "Amount", "Date", "Status"])
+        columns = [
+            TableColumn("cert_no", "Certificate No", width=120),
+            TableColumn("vendor", "Vendor", width=150),
+            TableColumn("amount", "Amount", width=100, align="right"),
+            TableColumn("date", "Date", width=90, align="center"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.withholding_table = self._create_table(columns)
         layout.addWidget(self.withholding_table)
         
         self._load_withholding()
     
     def _load_returns(self):
-        self.returns_table.setRowCount(0)
         params = {}
         status_f = self.status_filter.currentText()
         if status_f != "All Status":
@@ -260,34 +251,39 @@ class TaxScreen(BaseScreen):
                 data = response['data']
                 returns = data.get('results', data) if isinstance(data, dict) else data
                 
-                self.returns_table.setRowCount(len(returns))
-                for i, ret in enumerate(returns):
+                ret_data = []
+                for ret in returns:
                     period = f"{ret.get('period_start')} to {ret.get('period_end')}"
-                    self.returns_table.setItem(i, 0, QTableWidgetItem(period))
-                    self.returns_table.setItem(i, 1, QTableWidgetItem(f"{ret.get('taxable_sales', '0.00')} AFN"))
-                    self.returns_table.setItem(i, 2, QTableWidgetItem(f"{ret.get('output_tax', '0.00')} AFN"))
-                    self.returns_table.setItem(i, 3, QTableWidgetItem(f"{ret.get('input_tax', '0.00')} AFN"))
-                    self.returns_table.setItem(i, 4, QTableWidgetItem(f"{ret.get('net_tax', '0.00')} AFN"))
-                    self.returns_table.setItem(i, 5, QTableWidgetItem(ret.get('period_end', ''))) # Simplified due date
-                    
                     status = ret.get('status', '')
-                    status_item = QTableWidgetItem(status)
-                    if status == 'PAID': status_item.setForeground(QColor(COLOR_STATUS_VALID))
-                    elif status == 'DRAFT': status_item.setForeground(QColor(COLOR_WARNING))
-                    self.returns_table.setItem(i, 6, status_item)
-                    
-                    self.returns_table.setRowHeight(i, TABLE_ROW_HEIGHT_MD)
+                    ret_data.append({
+                        "period": period,
+                        "taxable_sales": f"{ret.get('taxable_sales', '0.00')} AFN",
+                        "output_tax": f"{ret.get('output_tax', '0.00')} AFN",
+                        "input_tax": f"{ret.get('input_tax', '0.00')} AFN",
+                        "net_tax": f"{ret.get('net_tax', '0.00')} AFN",
+                        "due_date": ret.get('period_end', ''),
+                        "status": status,
+                    })
+                self.returns_table.set_data(ret_data)
         except Exception as e:
             print(f"Error loading tax returns: {e}")
 
     def _load_withholding(self):
-        self.withholding_table.setRowCount(0)
         try:
             response = self.api_client.get('/api/tax/transactions/')
             if response and response.get('success'):
                 data = response['data']
                 withholding = data.get('results', data) if isinstance(data, dict) else data
-                self.withholding_table.setRowCount(len(withholding))
+                wh_data = []
+                for item in withholding:
+                    wh_data.append({
+                        "cert_no": item.get('certificate_no', ''),
+                        "vendor": item.get('vendor_name', ''),
+                        "amount": item.get('amount', ''),
+                        "date": item.get('transaction_date', ''),
+                        "status": item.get('status', ''),
+                    })
+                self.withholding_table.set_data(wh_data)
         except Exception as e:
             print(f"Error loading tax transactions: {e}")
     

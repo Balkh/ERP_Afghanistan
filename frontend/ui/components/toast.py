@@ -1,4 +1,5 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_LG)
+from ui.constants import (TEXT_LABEL, TEXT_BODY)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Toast notification system for ERP."""
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
@@ -15,13 +16,13 @@ class Toast(QFrame):
         self.setFixedHeight(50)
         self.setStyleSheet(f"""
             QFrame {{
-                border-radius: 8px;
-                padding: 10px;
-                margin: 5px;
+                border-radius: {BORDER_RADIUS_LG};
+                padding: {SPACING_SM}px;
+                margin: {SPACING_XS}px;
             }}
             QLabel {{
                 color: white;
-                font-size: 13px;
+                font-size: {TEXT_LABEL}px;
             }}
         """)
         
@@ -41,7 +42,6 @@ class Toast(QFrame):
         # Icon
         icon_label = QLabel()
         icon_label.setFixedSize(20, 20)
-        icon_label.setAlignment(Qt.AlignCenter)
         icons = {
             "success": "✓",
             "error": "✕",
@@ -49,12 +49,12 @@ class Toast(QFrame):
             "info": "ℹ"
         }
         icon_label.setText(icons.get(toast_type, "ℹ"))
-        icon_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        icon_label.setAlignment(Qt.AlignCenter)
-        icon_layout.addWidget(icon_label)
+        icon_label.setFont(QFont("Segoe UI", TEXT_BODY, QFont.Weight.Bold))
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(icon_label)
 
         self.message_label = QLabel(message)
-        self.message_label.setFont(QFont("Segoe UI", 11))
+        self.message_label.setFont(QFont("Segoe UI", TEXT_BODY))
         layout.addWidget(self.message_label)
         layout.addStretch()
         
@@ -84,7 +84,7 @@ class ToastManager(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         self.toasts = []
         self.setup_ui()
     

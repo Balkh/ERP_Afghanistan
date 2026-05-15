@@ -25,34 +25,9 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, TEXT_SECTION_TITLE, TEXT_BODY_SMALL, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+from ui.components.kpi_cards import KPICard
 from runtime.timer_registry import register_timer, unregister_owner
-
-
-class _MetricCard(QFrame):
-    """Single metric card widget."""
-
-    def __init__(self, title: str, value: str, color: str, status: str = ""):
-        super().__init__()
-        self.setStyleSheet(f"""
-            QFrame {{ background-color: {COLOR_BG_ELEVATED}; border-radius: 8px;
-            border: 1px solid {COLOR_BORDER}; padding: 12px; }}
-        """)
-        layout = QVBoxLayout(self)
-        layout.setSpacing(4)
-
-        self.title_label = QLabel(title)
-        self.title_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
-        layout.addWidget(self.title_label)
-
-        self.value_label = QLabel(value)
-        self.value_label.setStyleSheet(f"color: {color}; font-size: 24px; font-weight: bold;")
-        layout.addWidget(self.value_label)
-
-        if status:
-            s = QLabel(status)
-            s.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px;")
-            layout.addWidget(s)
 
 
 class ControlTowerDashboard(QWidget):
@@ -84,18 +59,20 @@ class ControlTowerDashboard(QWidget):
         # Header
         header = QHBoxLayout()
         title = QLabel("Enterprise Control Tower")
-        title.setFont(QFont("Segoe UI", 22, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         self.status_label = QLabel("● Checking...")
-        self.status_label.setStyleSheet(f"color: {COLOR_WARNING}; font-size: 12px;")
+        self.status_label.setStyleSheet(f"color: {COLOR_WARNING}; font-size: {TEXT_CARD_TITLE}px;")
         header.addWidget(self.status_label, alignment=Qt.AlignRight)
 
         refresh_btn = QPushButton("⟳ Refresh All")
         refresh_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         refresh_btn.clicked.connect(self._refresh)
         header.addWidget(refresh_btn)
@@ -109,7 +86,9 @@ class ControlTowerDashboard(QWidget):
 
         # Workflow launcher buttons
         workflow_header = QLabel("Enterprise Workflows")
-        workflow_header.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        wf_font = QFont("Segoe UI", TEXT_CARD_TITLE)
+        wf_font.setWeight(QFont.Weight.Bold)
+        workflow_header.setFont(wf_font)
         workflow_header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; padding-top: 8px;")
         layout.addWidget(workflow_header)
 
@@ -131,8 +110,8 @@ class ControlTowerDashboard(QWidget):
             btn = QPushButton(label)
             btn.setStyleSheet(f"""
                 QPushButton {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {color}; border-radius: 8px; padding: 16px 20px;
-                font-size: 13px; font-weight: bold; text-align: left; }}
+                border: 1px solid {color}; border-radius: {BORDER_RADIUS_LG}; padding: {SPACING_LG}px 20px;
+                font-size: {TEXT_CARD_TITLE}px; font-weight: bold; text-align: left; }}
                 QPushButton:hover {{ background-color: {COLOR_BG_ELEVATED}; }}
             """)
             btn.setMinimumHeight(60)
@@ -161,26 +140,26 @@ class ControlTowerDashboard(QWidget):
             # Clear and rebuild metrics
             self._clear_grid()
             metrics = [
-                ("Total Events", str(results.get("total_events", "?")), COLOR_PRIMARY),
-                ("Health", results.get("integrity_status", "UNKNOWN"), COLOR_SUCCESS if results.get("integrity_status") == "PASS" else COLOR_WARNING),
-                ("Stream", results.get("stream_health", "UNKNOWN"), COLOR_INFO),
+                ("Total Events", str(results.get("total_events", "?")), "primary"),
+                ("Health", results.get("integrity_status", "UNKNOWN"), "success" if results.get("integrity_status") == "PASS" else "warning"),
+                ("Stream", results.get("stream_health", "UNKNOWN"), "info"),
             ]
 
             try:
                 wf_count = len(self._gov.list_workflows())
-                metrics.append(("Pending Approvals", str(wf_count), COLOR_WARNING))
+                metrics.append(("Pending Approvals", str(wf_count), "warning"))
             except Exception:
-                metrics.append(("Pending Approvals", "?", COLOR_TEXT_MUTED))
+                metrics.append(("Pending Approvals", "?", "info"))
 
-            for i, (title, value, color) in enumerate(metrics):
-                card = _MetricCard(title, value, color)
+            for i, (title, value, severity) in enumerate(metrics):
+                card = KPICard(title, value, severity=severity)
                 self.metrics_grid.addWidget(card, 0, i)
 
             self.status_label.setText(f"● Online | {datetime.utcnow().strftime('%H:%M:%S')} UTC")
-            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: 12px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_CARD_TITLE}px;")
         except Exception as e:
             self.status_label.setText(f"● Error: {e}")
-            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: 12px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_CARD_TITLE}px;")
 
     def _clear_grid(self):
         while self.metrics_grid.count():

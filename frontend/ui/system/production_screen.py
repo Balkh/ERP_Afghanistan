@@ -1,13 +1,18 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, 
-                                  QHeaderView, QMessageBox, QGroupBox, QAbstractItemView)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, 
+                                  QHeaderView, QMessageBox, QGroupBox)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, SPACING_LG, FONT_SIZE_LG, FONT_SIZE_XL,
-                          BUTTON_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, BORDER_RADIUS_MD,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 from api.client import APIClient
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 
 class ProductionScreen(BaseScreen):
     """Screen for managing pharmaceutical production and manufacturing."""
@@ -21,20 +26,17 @@ class ProductionScreen(BaseScreen):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
-        layout.setSpacing(SPACING_MD)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
 
         # Header
         header_layout = QHBoxLayout()
         title_label = QLabel("Production & Manufacturing")
-        title_label.setFont(QFont("Segoe UI", FONT_SIZE_XL, QFont.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(title_label)
         
         header_layout.addStretch()
         
-        self.new_order_btn = QPushButton("+ New Production Order")
-        self.new_order_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.new_order_btn.setStyleSheet("background-color: #9b59b6; color: white; font-weight: bold;")
+        self.new_order_btn = EnterpriseButton(text="+ New Production Order", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.new_order_btn.clicked.connect(self.show_new_order_dialog)
         header_layout.addWidget(self.new_order_btn)
         
@@ -42,6 +44,22 @@ class ProductionScreen(BaseScreen):
 
         # Status Summary
         summary_group = QGroupBox("Production Summary")
+        summary_group.setStyleSheet(f"""
+            QGroupBox {{
+                font-size: {TEXT_CARD_TITLE}pt;
+                font-weight: 700;
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 5px;
+            }}
+        """)
         summary_layout = QHBoxLayout(summary_group)
         summary_layout.addWidget(QLabel("Active Orders: 0"))
         summary_layout.addWidget(QLabel("Completed Today: 0"))
@@ -49,15 +67,15 @@ class ProductionScreen(BaseScreen):
         layout.addWidget(summary_group)
 
         # Table
-        self.table = QTableWidget()
-        self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels([
-            "Order #", "Product", "Quantity", "Start Date", "End Date", "Status"
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.setAlternatingRowColors(True)
+        columns = [
+            TableColumn("order_no", "Order #", width=100),
+            TableColumn("product", "Product", width=200),
+            TableColumn("quantity", "Quantity", width=80, align="right"),
+            TableColumn("start_date", "Start Date", width=100, align="center"),
+            TableColumn("end_date", "End Date", width=100, align="center"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.table = EnterpriseTable(columns)
         layout.addWidget(self.table)
 
     def load_orders(self):

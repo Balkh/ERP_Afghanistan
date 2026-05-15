@@ -17,7 +17,7 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, SPACING_6, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, BORDER_RADIUS_MD)
 
 
 _CHAIN_COLORS = [COLOR_DANGER, COLOR_WARNING, COLOR_INFO]
@@ -40,20 +40,22 @@ class CausalStrengthPanel(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("📊 Causal Strength Path Analyzer")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         self.domain_combo = QComboBox()
         self.domain_combo.addItems(["inventory", "accounting", "hr", "sales_purchase"])
-        self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: 6px;")
+        self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: {SPACING_6}px;")
         header.addWidget(QLabel("Domain:"))
         header.addWidget(self.domain_combo)
 
         analyze_btn = QPushButton("⟳ Analyze Paths")
         analyze_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         analyze_btn.clicked.connect(self._analyze)
         header.addWidget(analyze_btn)
@@ -65,8 +67,8 @@ class CausalStrengthPanel(QWidget):
             group = QGroupBox(f"Path #{i + 1}")
             group.setStyleSheet(f"""
                 QGroupBox {{ color: {_CHAIN_COLORS[i]}; font-weight: bold;
-                border: 1px solid {COLOR_BORDER}; border-radius: 6px;
-                padding: 8px; padding-top: 18px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px; padding-top: 18px; }}
             """)
             g_layout = QVBoxLayout(group)
             text = QTextEdit()
@@ -74,7 +76,7 @@ class CausalStrengthPanel(QWidget):
             text.setObjectName(f"path_{i}")
             text.setStyleSheet(f"""
                 QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: none; font-family: 'Consolas', monospace; font-size: 12px; }}
+                border: none; font-family: 'Consolas', monospace; font-size: {TEXT_CARD_TITLE}px; }}
             """)
             text.setMaximumHeight(100)
             g_layout.addWidget(text)
@@ -84,7 +86,7 @@ class CausalStrengthPanel(QWidget):
         summary_group = QGroupBox("All Nodes — Scored & Ranked")
         summary_group.setStyleSheet(f"""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
-            border-radius: 6px; padding: 8px; padding-top: 18px; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; padding-top: 18px; }}
         """)
         summary_layout = QVBoxLayout(summary_group)
         self.table = QTableWidget()
@@ -95,7 +97,7 @@ class CausalStrengthPanel(QWidget):
             QTableWidget {{ background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
             gridline-color: {COLOR_BORDER}; }}
             QHeaderView::section {{ background: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: 6px; font-weight: bold; }}
+            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
         """)
         summary_layout.addWidget(self.table)
         layout.addWidget(summary_group)

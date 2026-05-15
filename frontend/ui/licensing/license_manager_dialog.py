@@ -1,4 +1,4 @@
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, BORDER_RADIUS_MD, BORDER_RADIUS_LG, SPACING_SM)
 """
 License manager dialog for Pharmacy ERP.
 Provides a tabbed interface for license activation and status viewing.
@@ -41,7 +41,7 @@ class LicenseManagerDialog(QDialog):
             QGroupBox {{
                 color: {COLOR_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 8px;
+                border-radius: {BORDER_RADIUS_LG};
                 margin-top: 12px;
                 padding-top: 12px;
             }}
@@ -57,7 +57,7 @@ class LicenseManagerDialog(QDialog):
             QTabBar::tab {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
-                padding: 8px 16px;
+                padding: {SPACING_SM}px 16px;
                 border: none;
             }}
             QTabBar::tab:selected {{
@@ -67,8 +67,8 @@ class LicenseManagerDialog(QDialog):
                 background-color: {COLOR_PRIMARY};
                 color: {COLOR_BG_MAIN};
                 border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px 16px;
                 font-weight: bold;
             }}
             QPushButton:hover {{

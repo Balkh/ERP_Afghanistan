@@ -9,62 +9,27 @@ from PySide6.QtGui import QFont, QAction, QPixmap
 from ui.licensing.license_manager_dialog import LicenseManagerDialog
 from ui.sidebar import Sidebar
 from ui.dashboard import Dashboard
-from ui.inventory.product_screen import ProductScreen
-from ui.inventory.category_screen import CategoryScreen
-from ui.inventory.warehouse_screen import WarehouseScreen
-from ui.inventory.batch_screen import BatchScreen
-from ui.sales.sales_invoice_screen import SalesInvoiceScreen
-from ui.sales.customer_screen import CustomerScreen
-from ui.purchases.purchase_invoice_screen import PurchaseInvoiceScreen
-from ui.purchases.supplier_screen import SupplierScreen
-from ui.returns.returns_screen import ReturnsScreen
-from ui.accounting.accounting_dashboard import AccountingDashboard
-from ui.accounting.chart_of_accounts_screen import ChartOfAccountsScreen
 from api.client import APIClient
 from security.session_store import clear_session as encrypted_clear_session
-from ui.accounting.journal_entry_screen import JournalEntryScreen
-from ui.accounting.account_ledger_screen import AccountLedgerScreen
-from ui.accounting.trial_balance_screen import TrialBalanceScreen
-from ui.accounting.profit_loss_screen import ProfitAndLossScreen
-from ui.accounting.balance_sheet_screen import BalanceSheetScreen
-from ui.accounting.arap_ageing_screen import ARAPAgeingScreen
-from ui.finance.payment_screen import PaymentScreen
-from ui.finance.expense_screen import ExpenseScreen
-from ui.hr.employee_screen import EmployeeScreen
-from ui.hr.attendance_screen import AttendanceScreen
-from ui.hr.leave_screen import LeaveScreen
-from ui.hr.payroll_screen import PayrollScreen
-from ui.finance.payment_screen import PaymentScreen
-from ui.finance.budgeting_screen import BudgetingScreen
-from ui.finance.tax_screen import TaxScreen
-from ui.finance.cost_centers_screen import CostCentersScreen
-from ui.finance.cashflow_screen import CashflowScreen
-from ui.system.backup_screen import BackupScreen
-from ui.system.control_center_screen import ControlCenterScreen
-from ui.system.intelligence_hub_screen import IntelligenceHubScreen
-from ui.system.settings_screen import SettingsScreen
-from ui.system.fixed_assets_screen import FixedAssetsScreen
-from ui.system.audit_screen import AuditScreen
-from ui.system.user_management_screen import UserManagementScreen
-from ui.system.invoice_template_manager import InvoiceTemplateManager
-from ui.system.entity_management_screen import EntityManagementScreen
-from ui.system.licensing_screen import LicensingScreen
-from ui.system.production_screen import ProductionScreen
+from security.auth_manager import AuthManager
+from ui.role_renderer import RoleRenderer
 from ui.components.toast import get_toast_manager
 from ui.components.loading_spinner import LoadingOverlay
 from ui.components.navigation_header import NavigationHeader
-from ui.theme.theme_manager import ThemeManager
 from theme.theme_engine import ThemeEngine
+from ui.utils.lazy_loader import LazyScreenManager
 from utils.logger import get_logger, set_active_screen, get_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id, record_screen_load, record_error, detect_error_bursts, generate_operational_insight_report, emit_event
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL
 
 log = get_logger('ui')
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_FOCUS, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+import ui.constants as _constants
 
 from runtime.timer_registry import shutdown_all_timers
 
 class MainWindow(QMainWindow):
-    def __init__(self, license_validator=None, user_data: dict = None, api_client=None):
+    def __init__(self, license_validator=None, user_data: dict = None, api_client=None, auth_manager=None):
         super().__init__()
         self.setWindowTitle("Pharmacy ERP")
         self.setGeometry(100, 100, 1400, 900)
@@ -73,16 +38,33 @@ class MainWindow(QMainWindow):
         # Store license validator
         self.license_validator = license_validator
         
-        # Store user data and determine role
-        self.user_data = user_data or {}
+        # Initialize AuthManager (primary auth state source)
+        self.auth_manager = auth_manager or AuthManager(api_client)
+        
+        # Sync user_data into auth_manager if provided from login
+        if user_data:
+            self.auth_manager._user_data = user_data
+            self.auth_manager._roles = user_data.get("roles", [])
+            self.auth_manager._ui_scopes = user_data.get("ui_scopes", self.auth_manager._ui_scopes)
+            self.auth_manager._is_authenticated = True
+        
+        # Store user_data for backward compatibility
+        self.user_data = self.auth_manager.user or user_data or {}
         self.user_role = self._determine_role()
         
         # Initialize API client
-        self.api_client = api_client if api_client else APIClient()
+        self.api_client = api_client if api_client else self.auth_manager.api_client
         
-        # Initialize theme manager
-        self.theme_manager = ThemeManager()
-        self.theme_manager.theme_changed.connect(self.on_theme_changed)
+        # Initialize RoleRenderer (sidebar set after _build_ui)
+        self.role_renderer = RoleRenderer(
+            auth_manager=self.auth_manager,
+            sidebar=None,  # Set after sidebar creation
+            main_window=self,
+        )
+        
+        # Initialize unified theme engine (single source of truth)
+        self.theme_engine = ThemeEngine.instance()
+        self.theme_engine.theme_changed.connect(self.on_theme_changed)
         
         # --- Navigation System (Phase 4-5) ---
         self.navigation_history = []  # Stack of visited pages
@@ -211,6 +193,55 @@ class MainWindow(QMainWindow):
         role = get_role_from_user_data(self.user_data)
         return role
 
+    def _on_ui_scopes_changed(self, ui_scopes: dict) -> None:
+        """Handle ui_scopes update from AuthManager (e.g., after login or role change)."""
+        if hasattr(self, 'role_renderer'):
+            self.role_renderer.apply_scopes()
+        if hasattr(self, 'sidebar'):
+            self._apply_sidebar_scopes(ui_scopes)
+        self._update_status_bar_user_info()
+
+    def _apply_sidebar_scopes(self, ui_scopes: dict) -> None:
+        """Hide sidebar items the user cannot access based on ui_scopes."""
+        visible_modules = set(ui_scopes.get("sidebar", []))
+        hidden_modules = set(ui_scopes.get("hidden", []))
+
+        group_items_map = {
+            "inventory": {"inventory"},
+            "sales": {"sales"},
+            "purchases": {"purchases"},
+            "returns": {"returns"},
+            "accounting": {"accounting"},
+            "reports": {"reports"},
+            "finance": {"finance"},
+            "hr": {"hr"},
+            "hr_reports": {"hr"},
+            "payroll_reports": {"hr"},
+            "system": {"system"},
+        }
+
+        for group_name, group_widget in self.sidebar._group_widgets.items():
+            group_modules = group_items_map.get(group_name, set())
+            any_visible = any(mod in visible_modules for mod in group_modules)
+            header_frame = getattr(self.sidebar, f"_{group_name}_header", None)
+            if header_frame:
+                header_frame.setVisible(any_visible)
+            if group_widget:
+                group_widget.setVisible(any_visible)
+
+        # Dashboard button always visible
+        if hasattr(self.sidebar, 'dashboard_btn'):
+            self.sidebar.dashboard_btn.setVisible(True)
+
+    def _update_status_bar_user_info(self) -> None:
+        """Update status bar with current user info from auth_manager."""
+        user = self.auth_manager.user or self.user_data
+        user_name = user.get('username', user.get('full_name', 'User'))
+        roles = self.auth_manager.roles or [self.user_role.name]
+        role_display = roles[0] if roles else self.user_role.name
+        if hasattr(self, 'user_label'):
+            self.user_label.setText(f"👤 User: {user_name} ({role_display})")
+
     def _build_ui(self):
         """Build the main window UI."""
         central_widget = QWidget()
@@ -224,8 +255,8 @@ class MainWindow(QMainWindow):
         # Global Intelligence Bar
         from ui.cognitive.global_bar import GlobalIntelligenceBar
         self.cognitive_bar = GlobalIntelligenceBar(api_client=self.api_client)
-        self.cognitive_bar.cognitive_dashboard_clicked.connect(
-            lambda: self.navigate_to("cognitive_dashboard")
+        self.cognitive_bar.anomaly_clicked.connect(
+            lambda: self.anomaly_warning_center.show() if hasattr(self, 'anomaly_warning_center') else None
         )
         self.cognitive_bar.anomaly_clicked.connect(
             lambda: self.navigate_to("anomaly_warning_center")
@@ -253,23 +284,23 @@ class MainWindow(QMainWindow):
 
         # Add device ID label to status bar
         self.device_id_label = QLabel()
-        self.device_id_label.setStyleSheet(f"font-size: 10px; color: {COLOR_TEXT_MUTED};")
+        self.device_id_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_TEXT_MUTED};")
         self.status_bar.addPermanentWidget(self.device_id_label)
 
         # Add license status label to status bar
         self.license_status_label = QLabel()
-        self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;")
+        self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;")
         self.status_bar.addPermanentWidget(self.license_status_label)
         
         # Add connection status label to status bar
         self.connection_status_label = QLabel()
-        self.connection_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;")
+        self.connection_status_label.setStyleSheet(f"font-size: {TEXT_TABLE}px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;")
         self.status_bar.addPermanentWidget(self.connection_status_label)
         
-        # Connection check timer
+        # Connection check timer (throttled to reduce UI thread pressure)
         self.connection_timer = QTimer()
         self.connection_timer.timeout.connect(self.check_connection)
-        self.connection_timer.start(5000)
+        self.connection_timer.start(30000)
 
         self.check_connection()
         self.update_device_id_display()
@@ -281,6 +312,10 @@ class MainWindow(QMainWindow):
         # Create sidebar with role-based navigation
         self.sidebar = Sidebar(role=self.user_role)
         main_layout.addWidget(self.sidebar)
+
+        # Wire RoleRenderer to sidebar
+        self.role_renderer.sidebar = self.sidebar
+        self.role_renderer.apply_scopes()
 
         content_frame = QFrame()
         content_frame.setFrameStyle(QFrame.NoFrame)
@@ -295,7 +330,7 @@ class MainWindow(QMainWindow):
                 color: {COLOR_TEXT_PRIMARY};
                 font-weight: bold;
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 8px;
+                border-radius: {BORDER_RADIUS_LG};
                 margin-top: 10px;
                 padding-top: 10px;
             }}
@@ -311,12 +346,12 @@ class MainWindow(QMainWindow):
                 border: 1px solid {COLOR_BORDER};
             }}
             QTableWidget::item {{
-                padding: 8px;
+                padding: {SPACING_SM}px;
             }}
             QHeaderView::section {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
-                padding: 8px;
+                padding: {SPACING_SM}px;
                 border: none;
                 font-weight: bold;
             }}
@@ -324,22 +359,26 @@ class MainWindow(QMainWindow):
                 background-color: {COLOR_PRIMARY};
                 color: {COLOR_BG_MAIN};
                 border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px 16px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_PRIMARY_HOVER};
             }}
+            QPushButton:focus {{
+                border: 2px solid {COLOR_BORDER_FOCUS};
+                outline: none;
+            }}
             QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 6px;
-                padding: 8px;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px;
             }}
-            QLineEdit:focus, QComboBox:focus {{
-                border: 1px solid {COLOR_PRIMARY};
+            QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
+                border: 2px solid {COLOR_BORDER_FOCUS};
             }}
             QScrollArea {{
                 background-color: transparent;
@@ -351,7 +390,7 @@ class MainWindow(QMainWindow):
         content_layout.addStretch(1)  # Make content expand to fill available space
 
         self.header = QLabel("Pharmacy ERP Dashboard")
-        self.header.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        self.header.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         self.header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.header.setFixedHeight(60)
         self.header.setStyleSheet(f"""
@@ -374,253 +413,129 @@ class MainWindow(QMainWindow):
         self.pages.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         content_layout.addWidget(self.pages)
 
-        # 0: Dashboard
+        # 0: Dashboard (always loaded first)
         self.dashboard = Dashboard(role=self.user_role, api_client=self.api_client)
         self.pages.addWidget(self.dashboard)
 
-        # 1: Products
-        self.product_screen = ProductScreen(api_client=self.api_client)
-        self.pages.addWidget(self.product_screen)
+        # ── Lazy Screen Registration ─────────────────────────────────
+        # Screens are registered with factory functions that are called
+        # on first navigation. This avoids 57+ widget trees at startup.
+        self._lazy_screens = LazyScreenManager(self.pages, self.api_client)
 
-        # 2: Categories
-        self.category_screen = CategoryScreen(api_client=self.api_client)
-        self.pages.addWidget(self.category_screen)
+        def _register(index, builder, label="Loading..."):
+            self._lazy_screens.register(index, builder, label)
 
-        # 3: Warehouses
-        self.warehouse_screen = WarehouseScreen(api_client=self.api_client)
-        self.pages.addWidget(self.warehouse_screen)
+        def _b(getter):
+            return lambda api_client=None, **kw: getter(api_client=api_client)
 
-        # 4: Batches
-        self.batch_screen = BatchScreen(api_client=self.api_client)
-        self.pages.addWidget(self.batch_screen)
+        # Indices 1-9: Inventory & Sales
+        from ui.inventory.product_screen import ProductScreen
+        from ui.inventory.category_screen import CategoryScreen
+        from ui.inventory.warehouse_screen import WarehouseScreen
+        from ui.inventory.batch_screen import BatchScreen
+        from ui.sales.sales_invoice_screen import SalesInvoiceScreen
+        from ui.pos.pos_screen import POSScreen
+        from ui.sales.customer_screen import CustomerScreen
+        from ui.purchases.purchase_invoice_screen import PurchaseInvoiceScreen
+        from ui.purchases.supplier_screen import SupplierScreen
+        from ui.returns.returns_screen import ReturnsScreen
+        _register(1, _b(ProductScreen))
+        _register(2, _b(CategoryScreen))
+        _register(3, _b(WarehouseScreen))
+        _register(4, _b(BatchScreen))
+        _register(5, lambda api_client=None: SalesInvoiceScreen(api_client=api_client, auth_manager=self.auth_manager))
+        _register(6, lambda api_client=None: PurchaseInvoiceScreen(api_client=api_client, auth_manager=self.auth_manager))
+        _register(7, _b(CustomerScreen))
+        _register(8, _b(SupplierScreen))
+        _register(9, _b(ReturnsScreen))
+        _register(10, lambda api_client=None: POSScreen(api_client=api_client, auth_manager=self.auth_manager))
 
-        # 5: Sales Invoice
-        self.sales_invoice_screen = SalesInvoiceScreen(api_client=self.api_client)
-        self.pages.addWidget(self.sales_invoice_screen)
+        # Indices 10-17: Accounting
+        from ui.accounting.chart_of_accounts_screen import ChartOfAccountsScreen
+        from ui.accounting.journal_entry_screen import JournalEntryScreen
+        from ui.accounting.account_ledger_screen import AccountLedgerScreen
+        _register(10, lambda api_client=None: ChartOfAccountsScreen())
+        _register(11, lambda api_client=None: JournalEntryScreen())
+        _register(12, lambda api_client=None: AccountLedgerScreen())
+        from ui.accounting.report_browser import ReportBrowser
+        _register(13, lambda api_client=None: ReportBrowser(report_type="trial_balance"))
+        _register(14, lambda api_client=None: ReportBrowser(report_type="profit_loss"))
+        _register(15, lambda api_client=None: ReportBrowser(report_type="balance_sheet"))
+        _register(16, lambda api_client=None: ReportBrowser(report_type="ar_aging"))
+        _register(17, lambda api_client=None: ReportBrowser(report_type="ap_aging"))
 
-        # 6: Purchase Invoice
-        self.purchase_invoice_screen = PurchaseInvoiceScreen(api_client=self.api_client)
-        self.pages.addWidget(self.purchase_invoice_screen)
+        # Indices 18-22: Finance
+        from ui.finance.payment_screen import PaymentScreen
+        from ui.finance.expense_screen import ExpenseScreen
+        from ui.finance.budgeting_screen import BudgetingScreen
+        from ui.finance.tax_screen import TaxScreen
+        from ui.finance.cost_centers_screen import CostCentersScreen
+        from ui.finance.cashflow_screen import CashflowScreen
+        _register(18, _b(PaymentScreen))
+        _register(19, _b(BudgetingScreen))
+        _register(20, _b(TaxScreen))
+        _register(21, _b(CostCentersScreen))
+        _register(22, _b(CashflowScreen))
+        _register(34, _b(ExpenseScreen))
 
-        # 7: Customers
-        self.customer_screen = CustomerScreen(api_client=self.api_client)
-        self.pages.addWidget(self.customer_screen)
+        # Indices 23-26: HR
+        from ui.hr.employee_screen import EmployeeScreen
+        from ui.hr.attendance_screen import AttendanceScreen
+        from ui.hr.leave_screen import LeaveScreen
+        from ui.hr.payroll_screen import PayrollScreen
+        _register(23, _b(EmployeeScreen))
+        _register(24, _b(AttendanceScreen))
+        _register(25, _b(LeaveScreen))
+        _register(26, _b(PayrollScreen))
 
-        # 8: Suppliers
-        self.supplier_screen = SupplierScreen(api_client=self.api_client)
-        self.pages.addWidget(self.supplier_screen)
+        # Indices 27-39: System (consolidated)
+        from ui.system.backup_screen import BackupScreen
+        from ui.system.settings_screen import SettingsScreen
+        from ui.system.fixed_assets_screen import FixedAssetsScreen
+        from ui.system.audit_screen import AuditScreen
+        from ui.system.user_management_screen import UserManagementScreen
+        from ui.system.invoice_template_manager import InvoiceTemplateManager
+        from ui.system.entity_management_screen import EntityManagementScreen
+        from ui.system.licensing_screen import LicensingScreen
+        from ui.system.production_screen import ProductionScreen
+        from ui.system.analytics_workspace import AnalyticsWorkspace
+        from ui.control_tower.operations_dashboard import OperationsDashboard
+        from ui.observability.observability_console import ObservabilityConsole
+        from ui.causal_scoring.decision_workspace import DecisionWorkspace
+        _register(27, _b(BackupScreen))
+        _register(28, _b(SettingsScreen))
+        _register(29, _b(FixedAssetsScreen))
+        _register(30, _b(AuditScreen))
+        _register(31, _b(UserManagementScreen))
+        _register(32, lambda api_client=None: AnalyticsWorkspace(api_client=api_client))
+        _register(33, _b(InvoiceTemplateManager))
+        _register(35, _b(EntityManagementScreen))
+        _register(36, _b(LicensingScreen))
+        _register(37, _b(ProductionScreen))
+        _register(38, lambda api_client=None: OperationsDashboard(api_client=api_client))
+        _register(39, lambda api_client=None: ObservabilityConsole(api_client=api_client))
 
-        # 9: Returns
-        self.returns_screen = ReturnsScreen(api_client=self.api_client)
-        self.pages.addWidget(self.returns_screen)
+        # Indices 40-47: Intelligence / Autonomous (consolidated into workspaces)
+        _register(40, lambda api_client=None: AnalyticsWorkspace(api_client=api_client))
+        _register(41, lambda api_client=None: AnalyticsWorkspace(api_client=api_client))
+        _register(42, lambda api_client=None: AnalyticsWorkspace(api_client=api_client))
+        _register(43, lambda api_client=None: OperationsDashboard(api_client=api_client))
+        _register(44, lambda api_client=None: ObservabilityConsole(api_client=api_client))
+        _register(45, lambda api_client=None: OperationsDashboard(api_client=api_client))
+        _register(46, lambda api_client=None: DecisionWorkspace(api_client=api_client))
+        _register(47, lambda api_client=None: DecisionWorkspace(api_client=api_client))
 
-        # 10: Chart of Accounts
-        self.chart_of_accounts = ChartOfAccountsScreen()
-        self.pages.addWidget(self.chart_of_accounts)
-
-        # 11: Journal Entries
-        self.journal_entries = JournalEntryScreen()
-        self.pages.addWidget(self.journal_entries)
-
-        # 12: Account Ledger
-        self.account_ledger = AccountLedgerScreen()
-        self.pages.addWidget(self.account_ledger)
-
-        # 13: Trial Balance
-        self.trial_balance = TrialBalanceScreen()
-        self.pages.addWidget(self.trial_balance)
-
-        # 14: Profit & Loss
-        self.profit_loss = ProfitAndLossScreen()
-        self.pages.addWidget(self.profit_loss)
-
-        # 15: Balance Sheet
-        self.balance_sheet = BalanceSheetScreen()
-        self.pages.addWidget(self.balance_sheet)
-
-        # 16: AR Ageing
-        self.ar_ageing = ARAPAgeingScreen(report_type="ar")
-        self.pages.addWidget(self.ar_ageing)
-
-        # 17: AP Ageing
-        self.ap_ageing = ARAPAgeingScreen(report_type="ap")
-        self.pages.addWidget(self.ap_ageing)
-
-        # 18: Payments
-        self.payment_screen = PaymentScreen(api_client=self.api_client)
-        self.pages.addWidget(self.payment_screen)
-
-        # 19: Budgeting
-        self.budgeting_screen = BudgetingScreen(api_client=self.api_client)
-        self.pages.addWidget(self.budgeting_screen)
-
-        # 20: Tax
-        self.tax_screen = TaxScreen(api_client=self.api_client)
-        self.pages.addWidget(self.tax_screen)
-
-        # 21: Cost Centers
-        self.cost_centers_screen = CostCentersScreen(api_client=self.api_client)
-        self.pages.addWidget(self.cost_centers_screen)
-
-        # 22: Cash Flow
-        self.cashflow_screen = CashflowScreen(api_client=self.api_client)
-        self.pages.addWidget(self.cashflow_screen)
-
-        # 23: Employees
-        self.employee_screen = EmployeeScreen(api_client=self.api_client)
-        self.pages.addWidget(self.employee_screen)
-
-        # 24: Attendance
-        self.attendance_screen = AttendanceScreen(api_client=self.api_client)
-        self.pages.addWidget(self.attendance_screen)
-
-        # 25: Leave
-        self.leave_screen = LeaveScreen(api_client=self.api_client)
-        self.pages.addWidget(self.leave_screen)
-
-        # 26: Payroll
-        self.payroll_screen = PayrollScreen(api_client=self.api_client)
-        self.pages.addWidget(self.payroll_screen)
-
-        # 27: Backup & Restore
-        self.backup_screen = BackupScreen(api_client=self.api_client)
-        self.pages.addWidget(self.backup_screen)
-
-        # 28: Settings
-        self.settings_screen = SettingsScreen(api_client=self.api_client)
-        self.pages.addWidget(self.settings_screen)
-
-        # 29: Fixed Assets
-        self.fixed_assets_screen = FixedAssetsScreen(api_client=self.api_client)
-        self.pages.addWidget(self.fixed_assets_screen)
-
-        # 30: Audit Log
-        self.audit_screen = AuditScreen(api_client=self.api_client)
-        self.pages.addWidget(self.audit_screen)
-        
-        # 31: User Management
-        self.user_management_screen = UserManagementScreen(api_client=self.api_client)
-        self.pages.addWidget(self.user_management_screen)
-
-        # 32: Intelligence Hub
-        self.intelligence_hub_screen = IntelligenceHubScreen(api_client=self.api_client)
-        self.pages.addWidget(self.intelligence_hub_screen)
-
-        # 33: Invoice Templates
-        self.invoice_template_manager = InvoiceTemplateManager(api_client=self.api_client)
-        self.pages.addWidget(self.invoice_template_manager)
-
-        # 34: Expenses
-        self.expense_screen = ExpenseScreen(api_client=self.api_client)
-        self.pages.addWidget(self.expense_screen)
-
-        # 35: Entity Management
-        self.entity_screen = EntityManagementScreen(api_client=self.api_client)
-        self.pages.addWidget(self.entity_screen)
-
-        # 36: Licensing
-        self.licensing_screen = LicensingScreen(api_client=self.api_client)
-        self.pages.addWidget(self.licensing_screen)
-
-        # 37: Production
-        self.production_screen = ProductionScreen(api_client=self.api_client)
-        self.pages.addWidget(self.production_screen)
-
-        # 38: Control Center
-        self.control_center_screen = ControlCenterScreen(api_client=self.api_client)
-        self.pages.addWidget(self.control_center_screen)
-
-        # 39: Observability
-        from ui.observability.observability_screen import ObservabilityScreen
-        self.observability_screen = ObservabilityScreen(api_client=self.api_client)
-        self.pages.addWidget(self.observability_screen)
-
-        # ═══════════════════════════════════════════════════════════════
-        # Phase 5B.9 — Intelligence UI Exposure Layer (indices 40-44)
-        # ═══════════════════════════════════════════════════════════════
-
-        # 40: Forecast Intelligence Dashboard
-        from ui.autonomous.forecast_dashboard import ForecastDashboard
-        self.forecast_dashboard = ForecastDashboard(api_client=self.api_client)
-        self.pages.addWidget(self.forecast_dashboard)
-
-        # 41: Decision Options Screen
-        from ui.autonomous.decision_options_screen import DecisionOptionsScreen
-        self.decision_options_screen = DecisionOptionsScreen(api_client=self.api_client)
-        self.pages.addWidget(self.decision_options_screen)
-
-        # 42: Anomaly Warning Center
-        from ui.autonomous.anomaly_warning_center import AnomalyWarningCenterScreen
-        self.anomaly_warning_center = AnomalyWarningCenterScreen(api_client=self.api_client)
-        self.pages.addWidget(self.anomaly_warning_center)
-
-        # 43: Autonomous Intelligence Dashboard (Master View)
-        from ui.autonomous.master_dashboard import MasterIntelligenceDashboard
-        self.master_intelligence_dashboard = MasterIntelligenceDashboard(api_client=self.api_client)
-        self.pages.addWidget(self.master_intelligence_dashboard)
-
-        # 44: Replay Time-Travel
-        from ui.observability.replay_screen import ReplayTimeTravelScreen
-        self.replay_time_travel_screen = ReplayTimeTravelScreen(api_client=self.api_client)
-        self.pages.addWidget(self.replay_time_travel_screen)
-
-        # 45: Enterprise Cognitive Dashboard (Phase 5B.10)
-        from ui.cognitive.cognitive_dashboard import EnterpriseCognitiveDashboard
-        self.cognitive_dashboard = EnterpriseCognitiveDashboard(api_client=self.api_client)
-        self.pages.addWidget(self.cognitive_dashboard)
-
-        # 46: Causal Reasoning Dashboard (Phase 5B.11)
-        from ui.cognitive_reasoning.causal_dashboard import CausalReasoningDashboard
-        self.causal_reasoning_dashboard = CausalReasoningDashboard(api_client=self.api_client)
-        self.pages.addWidget(self.causal_reasoning_dashboard)
-
-        # 47: Decision Intelligence Dashboard (Phase 5B.12)
-        from ui.causal_scoring.decision_ranking_dashboard import DecisionIntelligenceDashboard
-        self.decision_intelligence_dashboard = DecisionIntelligenceDashboard(api_client=self.api_client)
-        self.pages.addWidget(self.decision_intelligence_dashboard)
-
-        # ═══════════════════════════════════════════════════════════════
-        # Phase 5B.16 — Enterprise Reporting Screens (indices 48-56)
-        # ═══════════════════════════════════════════════════════════════
-
-        # 48: Cash Flow Statement
-        from ui.accounting.cash_flow_screen import CashFlowScreen
-        self.cash_flow_screen = CashFlowScreen()
-        self.pages.addWidget(self.cash_flow_screen)
-
-        # 49-52: HR Reports
-        from ui.hr.report_screens import (
-            EmployeeSummaryScreen, AttendanceReportScreen,
-            LeaveReportScreen, OvertimeReportScreen,
-        )
-        self.employee_summary_screen = EmployeeSummaryScreen()
-        self.pages.addWidget(self.employee_summary_screen)
-
-        self.attendance_report_screen = AttendanceReportScreen()
-        self.pages.addWidget(self.attendance_report_screen)
-
-        self.leave_report_screen = LeaveReportScreen()
-        self.pages.addWidget(self.leave_report_screen)
-
-        self.overtime_report_screen = OvertimeReportScreen()
-        self.pages.addWidget(self.overtime_report_screen)
-
-        # 53-56: Payroll Reports
-        from ui.payroll.report_screens import (
-            PayrollSummaryScreen, PayrollTrendScreen,
-            PayrollDepartmentCostScreen, PayrollEmployeeHistoryScreen,
-        )
-        self.payroll_summary_screen = PayrollSummaryScreen()
-        self.pages.addWidget(self.payroll_summary_screen)
-
-        self.payroll_trend_screen = PayrollTrendScreen()
-        self.pages.addWidget(self.payroll_trend_screen)
-
-        self.payroll_dept_cost_screen = PayrollDepartmentCostScreen()
-        self.pages.addWidget(self.payroll_dept_cost_screen)
-
-        self.payroll_emp_history_screen = PayrollEmployeeHistoryScreen()
-        self.pages.addWidget(self.payroll_emp_history_screen)
+        # Indices 48-56: Reports (consolidated)
+        from ui.accounting.report_browser import ReportBrowser
+        _register(48, lambda api_client=None: ReportBrowser(report_type="cash_flow"))
+        _register(49, lambda api_client=None: ReportBrowser(report_type="employee_summary"))
+        _register(50, lambda api_client=None: ReportBrowser(report_type="attendance_report"))
+        _register(51, lambda api_client=None: ReportBrowser(report_type="leave_report"))
+        _register(52, lambda api_client=None: ReportBrowser(report_type="overtime_report"))
+        _register(53, lambda api_client=None: ReportBrowser(report_type="payroll_summary"))
+        _register(54, lambda api_client=None: ReportBrowser(report_type="payroll_trend"))
+        _register(55, lambda api_client=None: ReportBrowser(report_type="payroll_dept_cost"))
+        _register(56, lambda api_client=None: ReportBrowser(report_type="payroll_emp_history"))
 
         main_layout.addWidget(content_frame, 1)
 
@@ -633,6 +548,28 @@ class MainWindow(QMainWindow):
 
     def change_page(self, index, page_title):
         """Change the current page based on sidebar selection."""
+        # Check ui_scopes — deny if user doesn't have access
+        page_to_module = {
+            0: "dashboard",
+            1: "inventory", 2: "inventory", 3: "inventory", 4: "inventory",
+            5: "sales", 6: "purchases", 7: "sales", 8: "purchases",
+            9: "returns",
+            10: "accounting", 11: "accounting", 12: "accounting",
+            13: "reports", 14: "reports", 15: "reports", 16: "reports", 17: "reports",
+            18: "finance", 19: "finance", 20: "finance", 21: "finance", 22: "finance", 34: "finance",
+            23: "hr", 24: "hr", 25: "hr", 26: "hr",
+            49: "hr", 50: "hr", 51: "hr", 52: "hr",
+            53: "hr", 54: "hr", 55: "hr", 56: "hr",
+            27: "system", 28: "system", 29: "system", 30: "system", 31: "system",
+            32: "system", 33: "system", 35: "system", 36: "system", 37: "system",
+            38: "system", 39: "system", 47: "system",
+            48: "reports",
+        }
+        module = page_to_module.get(index, "dashboard")
+        if not self.auth_manager.has_access(module):
+            self.toast_manager.show_warning(f"Access denied: you don't have permission to view {page_title.strip()}")
+            return
+
         _start = time.time()
         _corr = generate_correlation_id("nav")
         log.debug(f"Navigate to page {index}: {page_title.strip()}",
@@ -643,58 +580,43 @@ class MainWindow(QMainWindow):
 # --- Navigation History (Phase 4) ---
         if not self._disable_history:
             current = self.pages.currentIndex()
-            # Don't add if same page
             if current != index:
-                # Prevent duplicate consecutive entries
                 if not self.navigation_history or self.navigation_history[-1][0] != current:
                     self.navigation_history.append((current, page_title.strip()))
-                    # Limit history size
                     if len(self.navigation_history) > self._max_history:
                         self.navigation_history = self.navigation_history[-self._max_history:]
-        
-        # Update header FIRST, then page
+
+        # Lazy-load screen if not yet instantiated
+        if index != 0 and hasattr(self, '_lazy_screens'):
+            screen = self._lazy_screens.load(index)
+            if screen is None and index == 0:
+                pass
+
         self.header.setText(page_title.strip())
-        self.header.setVisible(False)  # Hide old header when nav header shows
+        self.header.setVisible(False)
         self.pages.setCurrentIndex(index)
-        
-        # Update navigation header (show except on dashboard)
         self._update_nav_header(index, page_title)
 
-        # Trigger data loading for specific pages (with safe boundaries)
         corr_id = generate_correlation_id("nav")
-        if index == 1: # Products
-            safe_execute(self.product_screen.load_products,
-                         log_context="change_page:products", tags=['ui', 'navigation', corr_id])
-        elif index == 2: # Categories
-            safe_execute(self.category_screen.load_categories,
-                         log_context="change_page:categories", tags=['ui', 'navigation', corr_id])
-        elif index == 3: # Warehouses
-            safe_execute(self.warehouse_screen.load_warehouses,
-                         log_context="change_page:warehouses", tags=['ui', 'navigation', corr_id])
-        elif index == 4: # Batches
-            safe_execute(self.batch_screen.load_batches,
-                         log_context="change_page:batches", tags=['ui', 'navigation', corr_id])
-        elif index == 7: # Customers
-            safe_execute(self.customer_screen.load_customers,
-                         log_context="change_page:customers", tags=['ui', 'navigation', corr_id])
-        elif index == 8: # Suppliers
-            safe_execute(self.supplier_screen.load_suppliers,
-                         log_context="change_page:suppliers", tags=['ui', 'navigation', corr_id])
-        elif index == 11: # Journal Entries
-            safe_execute(self.journal_entries.load_entries,
-                         log_context="change_page:journal_entries", tags=['ui', 'navigation', corr_id])
-        elif index == 12: # Account Ledger
-            safe_execute(self.account_ledger.load_accounts,
-                         log_context="change_page:account_ledger", tags=['ui', 'navigation', corr_id])
-        elif index == 34: # Expenses
-            safe_execute(self.expense_screen.load_expenses,
-                         log_context="change_page:expenses", tags=['ui', 'navigation', corr_id])
-        elif index == 35: # Entities
-            safe_execute(self.entity_screen.load_entities,
-                         log_context="change_page:entities", tags=['ui', 'navigation', corr_id])
-        elif index == 36: # Licensing
-            safe_execute(self.licensing_screen.load_license_info,
-                         log_context="change_page:licensing", tags=['ui', 'navigation', corr_id])
+        _load_map = {
+            1: ("load_products", "products"),
+            2: ("load_categories", "categories"),
+            3: ("load_warehouses", "warehouses"),
+            4: ("load_batches", "batches"),
+            7: ("load_customers", "customers"),
+            8: ("load_suppliers", "suppliers"),
+            11: ("load_entries", "journal_entries"),
+            12: ("load_accounts", "account_ledger"),
+            34: ("load_expenses", "expenses"),
+            35: ("load_entities", "entities"),
+            36: ("load_license_info", "licensing"),
+        }
+        if index in _load_map:
+            method_name, tag = _load_map[index]
+            screen = self._lazy_screens.get(index) if hasattr(self, '_lazy_screens') else None
+            if screen and hasattr(screen, method_name):
+                safe_execute(getattr(screen, method_name),
+                             log_context=f"change_page:{tag}", tags=['ui', 'navigation', corr_id])
 
         _duration = (time.time() - _start) * 1000
         record_screen_load(page_title.strip(), _duration)
@@ -807,10 +729,10 @@ class MainWindow(QMainWindow):
             status = self.license_validator.get_license_status()
             if status["is_valid"]:
                 self.license_status_label.setText(f"License: Valid ({status['message']})")
-                self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_SUCCESS}; margin-left: 10px;")  # Green
+                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: 10px;")  # Green
             else:
                 self.license_status_label.setText(f"License: Invalid ({status['message']})")
-                self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_DANGER}; margin-left: 10px;")  # Red
+                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: 10px;")  # Red
 
     def check_connection(self):
         """Check the connection to the backend and update the status bar."""
@@ -820,10 +742,10 @@ class MainWindow(QMainWindow):
             is_reachable = self.api_client.health_check()
             if is_reachable:
                 self.connection_status_label.setText("Connected")
-                self.connection_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_SUCCESS}; margin-left: 10px;")
+                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: 10px;")
             else:
                 self.connection_status_label.setText("Disconnected")
-                self.connection_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_DANGER}; margin-left: 10px;")
+                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: 10px;")
         except (RuntimeError, AttributeError) as e:
             log.debug(f"Connection check failed (expected during shutdown): {e}",
                        extra={'extra_fields': {'tags': ['ui', 'connection']}})
@@ -832,10 +754,10 @@ class MainWindow(QMainWindow):
         """Handle license validation change signals."""
         if is_valid:
             self.license_status_label.setText(f"License: Valid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_SUCCESS}; margin-left: 10px;")  # Green
+            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: 10px;")  # Green
         else:
             self.license_status_label.setText(f"License: Invalid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: 10px; color: {COLOR_DANGER}; margin-left: 10px;")  # Red
+            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: 10px;")  # Red
             
             # Show critical error message if validation fails
             if not is_valid and "too many times" in message:
@@ -856,7 +778,8 @@ class MainWindow(QMainWindow):
 
     def toggle_theme(self):
         """Toggle between light and dark themes."""
-        self.theme_manager.toggle_theme()
+        engine = ThemeEngine.instance()
+        engine.toggle()
 
     def on_theme_changed(self, theme_name):
         """Handle theme change — update constants and re-apply stylesheets."""
@@ -887,6 +810,7 @@ class MainWindow(QMainWindow):
         """Inner implementation of stylesheet refresh with safe boundary."""
         if not hasattr(self, 'pages'):
             return
+        C = _constants
         content_frame = self.sidebar.parent() if hasattr(self, 'sidebar') else None
         for child in self.findChildren(QFrame):
             if child.parent() is self.centralWidget():
@@ -895,16 +819,16 @@ class MainWindow(QMainWindow):
         if content_frame:
             content_frame.setStyleSheet(f"""
                 QFrame {{
-                    background-color: {COLOR_BG_MAIN};
+                    background-color: {C.COLOR_BG_MAIN};
                 }}
                 QLabel {{
-                    color: {COLOR_TEXT_PRIMARY};
+                    color: {C.COLOR_TEXT_PRIMARY};
                 }}
                 QGroupBox {{
-                    color: {COLOR_TEXT_PRIMARY};
+                    color: {C.COLOR_TEXT_PRIMARY};
                     font-weight: bold;
-                    border: 1px solid {COLOR_BORDER};
-                    border-radius: 8px;
+                    border: 1px solid {C.COLOR_BORDER};
+                    border-radius: {C.BORDER_RADIUS_LG};
                     margin-top: 10px;
                     padding-top: 10px;
                 }}
@@ -914,41 +838,45 @@ class MainWindow(QMainWindow):
                     padding: 0 5px;
                 }}
                 QTableWidget {{
-                    background-color: {COLOR_BG_SURFACE};
-                    color: {COLOR_TEXT_PRIMARY};
-                    gridline-color: {COLOR_BG_ELEVATED};
-                    border: 1px solid {COLOR_BORDER};
+                    background-color: {C.COLOR_BG_SURFACE};
+                    color: {C.COLOR_TEXT_PRIMARY};
+                    gridline-color: {C.COLOR_BG_ELEVATED};
+                    border: 1px solid {C.COLOR_BORDER};
                 }}
                 QTableWidget::item {{
-                    padding: 8px;
+                    padding: {C.SPACING_SM}px;
                 }}
                 QHeaderView::section {{
-                    background-color: {COLOR_BG_ELEVATED};
-                    color: {COLOR_TEXT_PRIMARY};
-                    padding: 8px;
+                    background-color: {C.COLOR_BG_ELEVATED};
+                    color: {C.COLOR_TEXT_PRIMARY};
+                    padding: {C.SPACING_SM}px;
                     border: none;
                     font-weight: bold;
                 }}
                 QPushButton {{
-                    background-color: {COLOR_PRIMARY};
-                    color: {COLOR_TEXT_ON_PRIMARY};
+                    background-color: {C.COLOR_PRIMARY};
+                    color: {C.COLOR_TEXT_ON_PRIMARY};
                     border: none;
-                    border-radius: 6px;
-                    padding: 8px 16px;
+                    border-radius: {C.BORDER_RADIUS_MD};
+                    padding: {C.SPACING_SM}px 16px;
                     font-weight: bold;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_PRIMARY_HOVER};
+                    background-color: {C.COLOR_PRIMARY_HOVER};
+                }}
+                QPushButton:focus {{
+                    border: 2px solid {C.COLOR_BORDER_FOCUS};
+                    outline: none;
                 }}
                 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
-                    background-color: {COLOR_BG_SURFACE};
-                    color: {COLOR_TEXT_PRIMARY};
-                    border: 1px solid {COLOR_BORDER};
-                    border-radius: 6px;
-                    padding: 8px;
+                    background-color: {C.COLOR_BG_SURFACE};
+                    color: {C.COLOR_TEXT_PRIMARY};
+                    border: 1px solid {C.COLOR_BORDER};
+                    border-radius: {C.BORDER_RADIUS_MD};
+                    padding: {C.SPACING_SM}px;
                 }}
-                QLineEdit:focus, QComboBox:focus {{
-                    border: 1px solid {COLOR_PRIMARY};
+                QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
+                    border: 2px solid {C.COLOR_BORDER_FOCUS};
                 }}
                 QScrollArea {{
                     background-color: transparent;
@@ -958,16 +886,21 @@ class MainWindow(QMainWindow):
 
     def _refresh_status_bar(self):
         """Re-apply status bar label colors on theme change."""
-        self.user_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: 15px;")
-        self.conn_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; margin-right: 15px; font-weight: bold;")
-        self.time_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: 15px;")
-        self.device_id_label.setStyleSheet(f"font-size: 10px; color: {COLOR_TEXT_MUTED};")
-        self.license_status_label.setStyleSheet(
-            f"font-size: 10px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;"
-        )
-        self.connection_status_label.setStyleSheet(
-            f"font-size: 10px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;"
-        )
+        C = _constants
+        for attr, ss in [
+            ('user_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: 15px;"),
+            ('conn_label', f"color: {C.COLOR_STATUS_VALID}; margin-right: 15px; font-weight: bold;"),
+            ('time_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: 15px;"),
+            ('device_id_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED};"),
+            ('license_status_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED}; margin-left: 10px;"),
+            ('connection_status_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED}; margin-left: 10px;"),
+        ]:
+            widget = getattr(self, attr, None)
+            if widget is not None:
+                try:
+                    widget.setStyleSheet(ss)
+                except RuntimeError:
+                    pass
         self.header.setStyleSheet(f"""
             QLabel {{
                 color: {COLOR_TEXT_PRIMARY};
@@ -980,9 +913,9 @@ class MainWindow(QMainWindow):
                 background-color: transparent;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 4px;
-                padding: 6px 10px;
-                font-size: 14px;
+                border-radius: {BORDER_RADIUS_SM};
+                padding: {SPACING_6}px 10px;
+                font-size: {TEXT_BODY}px;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};
@@ -1152,13 +1085,11 @@ class MainWindow(QMainWindow):
         about_action.triggered.connect(self.show_about)
         help_menu.addAction(about_action)
         
-        # Add theme toggle to View menu
-        view_menu = menubar.findChild(QMenu, 'View')
-        if view_menu:
-            self.theme_toggle_action = QAction('Toggle Dark/Light Mode', self)
-            self.theme_toggle_action.setStatusTip('Switch between light and dark themes')
-            self.theme_toggle_action.triggered.connect(self.toggle_theme)
-            view_menu.addAction(self.theme_toggle_action)
+        # Theme toggle button on menu bar
+        self.theme_toggle_action = QAction('Dark/Light', self)
+        self.theme_toggle_action.setStatusTip('Switch between light and dark themes')
+        self.theme_toggle_action.triggered.connect(self.toggle_theme)
+        menubar.addAction(self.theme_toggle_action)
 
     def show_license_manager(self):
         """Show the license manager dialog."""
@@ -1193,6 +1124,11 @@ class MainWindow(QMainWindow):
             self._do_navigate(page_id)
 
     def _do_navigate(self, page_id):
+        # Check ui_scopes — deny if user doesn't have access
+        if not self.auth_manager.has_access(page_id) and page_id not in ("dashboard", "settings"):
+            self.toast_manager.show_warning(f"Access denied: you don't have permission to view {page_id}")
+            return
+
         page_map = {
             "dashboard": 0,
             "products": 1,
@@ -1204,56 +1140,56 @@ class MainWindow(QMainWindow):
             "customers": 7,
             "suppliers": 8,
             "returns": 9,
-            "chart_of_accounts": 10,
-            "journal_entries": 11,
-            "account_ledger": 12,
-            "trial_balance": 13,
-            "profit_loss": 14,
-            "balance_sheet": 15,
-            "ar_ageing": 16,
-            "ap_ageing": 17,
-            "payments": 18,
-            "budgeting": 19,
-            "tax": 20,
-            "cost_centers": 21,
-            "cashflow": 22,
-            "employees": 23,
-            "attendance": 24,
-            "leave": 25,
-            "payroll": 26,
-            "backup": 27,
-            "settings": 28,
-            "fixed_assets": 29,
-            "audit": 30,
-            "user_management": 31,
-            "intelligence_hub": 32,
-            "invoice_templates": 33,
-            "expenses": 34,
-            "entities": 35,
-            "licensing": 36,
-            "production": 37,
-            "control_center": 38,
-            "observability": 39,
-            "forecast_dashboard": 40,
-            "decision_options": 41,
-            "anomaly_warning_center": 42,
-            "master_dashboard": 43,
-            "replay_time_travel": 44,
-            "cognitive_dashboard": 45,
-            "causal_reasoning": 46,
-            "decision_intelligence": 47,
-            "cash_flow": 48,
-            "employee_summary": 49,
-            "attendance_report": 50,
-            "leave_report": 51,
-            "overtime_report": 52,
-            "payroll_summary": 53,
-            "payroll_trend": 54,
-            "payroll_dept_cost": 55,
-            "payroll_emp_history": 56,
+            "pos": 10,
+            "chart_of_accounts": 11,
+            "journal_entries": 12,
+            "account_ledger": 13,
+            "trial_balance": 14,
+            "profit_loss": 15,
+            "balance_sheet": 16,
+            "ar_ageing": 17,
+            "ap_ageing": 18,
+            "payments": 19,
+            "budgeting": 20,
+            "tax": 21,
+            "cost_centers": 22,
+            "cashflow": 23,
+            "employees": 24,
+            "attendance": 25,
+            "leave": 26,
+            "payroll": 27,
+            "backup": 28,
+            "settings": 29,
+            "fixed_assets": 30,
+            "audit": 31,
+            "user_management": 32,
+            "intelligence_hub": 33,
+            "analytics": 33,
+            "invoice_templates": 34,
+            "expenses": 35,
+            "entities": 36,
+            "licensing": 37,
+            "production": 38,
+            "control_center": 39,
+            "operations": 39,
+            "observability": 40,
+            "decision_workspace": 48,
+            "cash_flow": 49,
+            "employee_summary": 50,
+            "attendance_report": 51,
+            "leave_report": 52,
+            "overtime_report": 53,
+            "payroll_summary": 54,
+            "payroll_trend": 55,
+            "payroll_dept_cost": 56,
+            "payroll_emp_history": 57,
         }
         if page_id in page_map:
-            self.pages.setCurrentIndex(page_map[page_id])
+            index = page_map[page_id]
+            if index != 0 and hasattr(self, '_lazy_screens'):
+                self._lazy_screens.load(index)
+            self.pages.setCurrentIndex(index)
+            self._update_nav_header(index, page_id.replace('_', ' ').title())
             self.status_bar.showMessage(f"Navigated to {page_id.replace('_', ' ').title()}", 2000)
     
     def new_product(self):
@@ -1290,7 +1226,7 @@ class MainWindow(QMainWindow):
         )
         
         if reply == QMessageBox.Yes:
-            username = self.user_data.get('username', 'unknown')
+            username = self.auth_manager.user.get('username', 'unknown') if self.auth_manager.user else 'unknown'
             _cid = generate_correlation_id("auth")
             try:
                 hs = capture_health_snapshot()
@@ -1302,6 +1238,10 @@ class MainWindow(QMainWindow):
             emit_event('auth_event', module='main_window', action='logout',
                        metadata={'username': username, 'screen': get_active_screen()},
                        correlation_id=_cid)
+            
+            # Logout via AuthManager
+            self.auth_manager._clear_session()
+            self.auth_manager._is_authenticated = False
             encrypted_clear_session()
             self.api_client.clear_auth_token()
             
@@ -1309,7 +1249,7 @@ class MainWindow(QMainWindow):
             self.close()
             # Re-run main to show login
             import subprocess
-            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "main.py")])
+            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "..", "main.py")])
     
     def refresh_current_view(self):
         """Refresh the current view data."""

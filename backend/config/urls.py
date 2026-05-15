@@ -90,7 +90,8 @@ urlpatterns = [
     path('api/payments/', include('payments.urls')),
     path('api/expenses/', include('expenses.urls')),
     path('api/licensing/', include('licensing.urls')),
-    path('api/reports/', include('reports.urls')),
+    # path('api/reports/', include('reports.urls')),  # Removed: empty scaffold
+
     path('api/backup/', include('backup.urls')),
     path('api/hr/', include('hr.urls')),
     path('api/payroll/', include('payroll.urls')),
@@ -101,8 +102,10 @@ urlpatterns = [
     path('api/entities/', include('entities.urls')),
     path('api/audit/', include('audit.urls')),
     path('api/cashflow/', include('cashflow.urls')),
-    path('api/dashboard/', include('dashboard.urls')),
-    path('api/analytics/', include('analytics.urls')),
+    # path('api/dashboard/', include('dashboard.urls')),  # Removed: zero frontend consumers
+
+    # path('api/analytics/', include('analytics.urls')),  # Removed: logic consolidated into control-center + native apps
+
     path('api/workflows/', include('workflows.urls')),
     path('api/jobs/', include('jobs.urls')),
     path('api/core/', include('core.urls')),

@@ -1,15 +1,22 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 Activation screen for Pharmacy ERP license management.
 Allows users to activate the software using license files.
 """
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QPushButton, QFileDialog, QMessageBox, QGroupBox,
+                               QFileDialog, QMessageBox, QGroupBox,
                                QTextEdit, QFrame, QApplication)
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont, QPixmap
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_SM,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 import os
 import sys
 
@@ -44,14 +51,13 @@ class ActivationScreen(QWidget):
         
         # Title
         title_label = QLabel("Pharmacy ERP License Activation")
-        title_label.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title_label)
 
         # Subtitle
         subtitle_label = QLabel("Activate your copy of Pharmacy ERP using a valid license file")
-        subtitle_label.setFont(QFont("Segoe UI", 12))
+        subtitle_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}pt;")
         subtitle_label.setAlignment(Qt.AlignCenter)
         subtitle_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         layout.addWidget(subtitle_label)
@@ -60,12 +66,12 @@ class ActivationScreen(QWidget):
         
         # Device Information Group
         device_group = QGroupBox("Device Information")
-        device_group.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        device_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: 10px; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
         device_layout = QVBoxLayout()
 
         device_id_label = QLabel(f"Device ID: {self.device_id}")
-        device_id_label.setFont(QFont("Consolas", 10))
-        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: 8px; border-radius: 4px;")
+        device_id_label.setStyleSheet(f"font-family: Consolas; font-size: {TEXT_BODY}pt; color: {COLOR_TEXT_PRIMARY};")
+        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_SM}px; border-radius: {BORDER_RADIUS_SM};")
         device_layout.addWidget(device_id_label)
         
         device_group.setLayout(device_layout)
@@ -75,7 +81,7 @@ class ActivationScreen(QWidget):
         
         # License File Group
         license_group = QGroupBox("License File")
-        license_group.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        license_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: 10px; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
         license_layout = QVBoxLayout()
 
         # Instructions
@@ -87,54 +93,11 @@ class ActivationScreen(QWidget):
         # Button layout
         button_layout = QHBoxLayout()
         
-        self.select_button = QPushButton("Select License File")
-        self.select_button.setMinimumHeight(40)
-        self.select_button.setFont(QFont("Segoe UI", 10))
-        self.select_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BORDER};
-                color: {COLOR_TEXT_PRIMARY};
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BORDER_LIGHT};
-            }}
-            QPushButton:pressed {{
-                background-color: {COLOR_BG_ELEVATED};
-            }}
-            QPushButton:disabled {{
-                background-color: {COLOR_BG_ELEVATED};
-                color: {COLOR_TEXT_MUTED};
-            }}
-        """)
+        self.select_button = EnterpriseButton(text="Select License File", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.select_button.clicked.connect(self.select_license_file)
         button_layout.addWidget(self.select_button)
 
-        self.activate_button = QPushButton("Activate License")
-        self.activate_button.setMinimumHeight(40)
-        self.activate_button.setFont(QFont("Segoe UI", 10))
-        self.activate_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_PRIMARY};
-                color: {COLOR_BG_MAIN};
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_PRIMARY_HOVER};
-            }}
-            QPushButton:pressed {{
-                background-color: {COLOR_PRIMARY_ACTIVE};
-            }}
-            QPushButton:disabled {{
-                background-color: {COLOR_BG_ELEVATED};
-                color: {COLOR_TEXT_MUTED};
-            }}
-        """)
+        self.activate_button = EnterpriseButton(text="Activate License", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.activate_button.setEnabled(False)
         self.activate_button.clicked.connect(self.activate_license)
         button_layout.addWidget(self.activate_button)
@@ -143,8 +106,8 @@ class ActivationScreen(QWidget):
         
         # Selected file display
         self.file_label = QLabel("No file selected")
-        self.file_label.setFont(QFont("Consolas", 9))
-        self.file_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: 8px;")
+        self.file_label.setStyleSheet(f"font-family: Consolas; font-size: {TEXT_HELPER}pt; color: {COLOR_TEXT_PRIMARY};")
+        self.file_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_SM}px;")
         self.file_label.setWordWrap(True)
         license_layout.addWidget(self.file_label)
         
@@ -155,12 +118,12 @@ class ActivationScreen(QWidget):
         
         # Status Group
         status_group = QGroupBox("Activation Status")
-        status_group.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        status_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: 10px; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
         status_layout = QVBoxLayout()
 
         self.status_label = QLabel("Ready to activate")
-        self.status_label.setFont(QFont("Segoe UI", 10))
-        self.status_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: 8px;")
+        self.status_label.setStyleSheet(f"font-size: {TEXT_BODY}pt; color: {COLOR_TEXT_SECONDARY};")
+        self.status_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: {SPACING_SM}px;")
         self.status_label.setWordWrap(True)
         status_layout.addWidget(self.status_label)
         
@@ -185,10 +148,10 @@ class ActivationScreen(QWidget):
             self.selected_license_file = file_path
             file_name = os.path.basename(file_path)
             self.file_label.setText(f"Selected: {file_name}")
-            self.file_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-family: Consolas; font-size: 9px; padding: 8px;")
+            self.file_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-family: Consolas; font-size: {TEXT_HELPER}px; padding: {SPACING_SM}px;")
             self.activate_button.setEnabled(True)
             self.status_label.setText("License file selected. Ready to activate.")
-            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: 8px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: {SPACING_SM}px;")
     
     def activate_license(self):
         """Activate the license using the selected file."""
@@ -198,7 +161,7 @@ class ActivationScreen(QWidget):
         
         # Update UI
         self.status_label.setText("Activating license...")
-        self.status_label.setStyleSheet(f"color: {COLOR_WARNING}; font-weight: bold; padding: 8px;")
+        self.status_label.setStyleSheet(f"color: {COLOR_WARNING}; font-weight: bold; padding: {SPACING_SM}px;")
         self.activate_button.setEnabled(False)
         self.select_button.setEnabled(False)
         
@@ -217,7 +180,7 @@ class ActivationScreen(QWidget):
                 self.license_service.save_license_to_file(license_data, default_license_path)
                 
                 self.status_label.setText("Activation successful!")
-                self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: 8px;")
+                self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: {SPACING_SM}px;")
                 
                 QMessageBox.information(
                     self,
@@ -229,7 +192,7 @@ class ActivationScreen(QWidget):
                 self.activation_success.emit()
             else:
                 self.status_label.setText(f"Activation failed: {message}")
-                self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; padding: 8px;")
+                self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; padding: {SPACING_SM}px;")
                 
                 QMessageBox.warning(
                     self,
@@ -242,7 +205,7 @@ class ActivationScreen(QWidget):
                 
         except Exception as e:
             self.status_label.setText(f"Activation error: {str(e)}")
-            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; padding: 8px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; padding: {SPACING_SM}px;")
             
             QMessageBox.critical(
                 self,

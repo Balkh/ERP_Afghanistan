@@ -1,17 +1,26 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Cashflow management screen."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
-                                  QHeaderView, QMessageBox, QComboBox, QGroupBox,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
+                                  QMessageBox, QComboBox, QGroupBox,
                                   QFormLayout, QDialog, QDialogButtonBox, QTabWidget,
-                                  QDateEdit, QProgressBar, QApplication, QFrame, QAbstractItemView)
+                                  QDateEdit, QProgressBar, QApplication, QFrame)
 from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QColor
 from api.endpoints import get_endpoint
 from api.client import APIClient
 from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_MD, FONT_SIZE_XL, FONT_SIZE_LG, BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class CashflowScreen(BaseScreen):
@@ -35,26 +44,12 @@ class CashflowScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Cash Flow Management")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER_LIGHT};
-                border-radius: 5px;
-                padding: {SPACING_XS} {SPACING_MD};
-                color: {COLOR_TEXT_SECONDARY};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BG_ELEVATED};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_data)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
@@ -75,20 +70,20 @@ class CashflowScreen(BaseScreen):
         # Loading and Empty labels
         self.loading_label = QLabel("Loading cash flow data...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("color: #888; font-style: italic; padding: 20px;")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_XL}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No cash flow data available")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("color: #888; font-style: italic; padding: 20px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_XL}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: 5px; background: {COLOR_BG_SURFACE}; }}
-            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }}
+            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
+            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
         """)
 
@@ -115,7 +110,7 @@ class CashflowScreen(BaseScreen):
             QFrame {{
                 background-color: white;
                 border-left: 5px solid {color};
-                border-radius: 8px;
+                border-radius: {BORDER_RADIUS_LG};
                 border-top: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-right: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-bottom: 1px solid {COLOR_TABLE_BORDER_LIGHT};
@@ -130,8 +125,7 @@ class CashflowScreen(BaseScreen):
         
         value_label = QLabel(value)
         value_label.setObjectName("value_label")
-        value_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        value_label.setStyleSheet(f"color: {color};")
+        value_label.setStyleSheet(f"color: {color}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         value_label.setWordWrap(True)
         
         layout.addWidget(title_label)
@@ -144,18 +138,8 @@ class CashflowScreen(BaseScreen):
         if label:
             label.setText(value)
 
-    def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }}
-            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: 8px; border: none; border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; font-weight: bold; }}
-            QTableWidget::item {{ padding: 10px; }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(True)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        return table
+    def _create_table(self, columns):
+        return EnterpriseTable(columns)
 
     def _show_loading(self, show=True):
         """Show/hide loading state."""
@@ -190,7 +174,7 @@ class CashflowScreen(BaseScreen):
         try:
             endpoint = get_endpoint("cashflow")
             if not endpoint:
-                endpoint = "/api/analytics/cash-flow/"
+                endpoint = "/api/cashflow/items/"
 
             response = self.api_client.get(endpoint)
             if response and isinstance(response, dict) and response.get('success'):
@@ -231,10 +215,13 @@ class CashflowScreen(BaseScreen):
         filter_layout.addStretch()
         layout.addLayout(filter_layout)
         
-        self.statement_table = self._create_modern_table()
-        self.statement_table.setColumnCount(4)
-        self.statement_table.setHorizontalHeaderLabels(["Category", "This Period", "Previous Period", "Change"])
-        layout.addWidget(self.statement_table)
+        columns = [
+            TableColumn("category", "Category", width=200),
+            TableColumn("this_str", "This Period", width=120, align="right"),
+            TableColumn("prev_str", "Previous Period", width=120, align="right"),
+            TableColumn("change_str", "Change", width=80, align="center"),
+        ]
+        self.statement_table = self._create_table(columns)
     
     def _setup_forecast_tab(self):
         layout = QVBoxLayout(self.forecast_tab)
@@ -250,38 +237,43 @@ class CashflowScreen(BaseScreen):
         forecast_group.setLayout(forecast_layout)
         layout.addWidget(forecast_group)
         
-        self.forecast_table = self._create_modern_table()
-        self.forecast_table.setColumnCount(5)
-        self.forecast_table.setHorizontalHeaderLabels(["Date", "Expected Inflows", "Expected Outflows", "Net", "Running Balance"])
+        columns = [
+            TableColumn("date", "Date", width=90, align="center"),
+            TableColumn("inflow", "Expected Inflows", width=120, align="right"),
+            TableColumn("outflow", "Expected Outflows", width=120, align="right"),
+            TableColumn("net", "Net", width=100, align="right"),
+            TableColumn("balance", "Running Balance", width=120, align="right"),
+        ]
+        self.forecast_table = self._create_table(columns)
         layout.addWidget(self.forecast_table)
     
     def _setup_position_tab(self):
         layout = QVBoxLayout(self.position_tab)
         layout.setSpacing(SPACING_MD)
         
-        self.position_table = self._create_modern_table()
-        self.position_table.setColumnCount(7)
-        self.position_table.setHorizontalHeaderLabels(["Date", "Description", "Reference", "Type", "Amount", "Balance", "Status"])
+        columns = [
+            TableColumn("date", "Date", width=90, align="center"),
+            TableColumn("desc", "Description", width=200),
+            TableColumn("ref", "Reference", width=100),
+            TableColumn("type", "Type", width=80),
+            TableColumn("amount", "Amount", width=100, align="right"),
+            TableColumn("balance", "Balance", width=100, align="right"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.position_table = self._create_table(columns)
         layout.addWidget(self.position_table)
 
     def _load_statement(self):
-        self.statement_table.setRowCount(0)
         if not self._cashflow_data:
             mock_data = [
-                {"category": "Operating Activities", "this": "1,800,000", "prev": "1,500,000", "change": "+20%"},
-                {"category": "Investing Activities", "this": "-150,000", "prev": "-200,000", "change": "-25%"},
-                {"category": "Financing Activities", "this": "-50,000", "prev": "-50,000", "change": "0%"},
+                {"category": "Operating Activities", "this_str": "1,800,000", "prev_str": "1,500,000", "change_str": "+20%"},
+                {"category": "Investing Activities", "this_str": "-150,000", "prev_str": "-200,000", "change_str": "-25%"},
+                {"category": "Financing Activities", "this_str": "-50,000", "prev_str": "-50,000", "change_str": "0%"},
             ]
         else:
             mock_data = [] # Use real data mapping here
             
-        for item in mock_data:
-            row = self.statement_table.rowCount()
-            self.statement_table.insertRow(row)
-            self.statement_table.setItem(row, 0, QTableWidgetItem(item["category"]))
-            self.statement_table.setItem(row, 1, QTableWidgetItem(item["this"]))
-            self.statement_table.setItem(row, 2, QTableWidgetItem(item["prev"]))
-            self.statement_table.setItem(row, 3, QTableWidgetItem(item["change"]))
+        self.statement_table.set_data(mock_data)
 
     def _load_forecast(self):
         self.forecast_table.setRowCount(0)
@@ -289,30 +281,14 @@ class CashflowScreen(BaseScreen):
             {"date": "2026-05-06", "inflow": "50000", "outflow": "30000", "net": "20000", "balance": "620000"},
             {"date": "2026-05-07", "inflow": "80000", "outflow": "45000", "net": "35000", "balance": "655000"},
         ]
-        for item in mock_data:
-            row = self.forecast_table.rowCount()
-            self.forecast_table.insertRow(row)
-            self.forecast_table.setItem(row, 0, QTableWidgetItem(item["date"]))
-            self.forecast_table.setItem(row, 1, QTableWidgetItem(item["inflow"]))
-            self.forecast_table.setItem(row, 2, QTableWidgetItem(item["outflow"]))
-            self.forecast_table.setItem(row, 3, QTableWidgetItem(item["net"]))
-            self.forecast_table.setItem(row, 4, QTableWidgetItem(item["balance"]))
+        self.forecast_table.set_data(mock_data)
 
     def _load_position(self):
         self.position_table.setRowCount(0)
         mock_data = [
             {"date": "2026-05-05", "desc": "Sales Invoice Payment", "ref": "INV-001", "type": "Inflow", "amount": "50000", "balance": "600000", "status": "Cleared"},
         ]
-        for item in mock_data:
-            row = self.position_table.rowCount()
-            self.position_table.insertRow(row)
-            self.position_table.setItem(row, 0, QTableWidgetItem(item["date"]))
-            self.position_table.setItem(row, 1, QTableWidgetItem(item["desc"]))
-            self.position_table.setItem(row, 2, QTableWidgetItem(item["ref"]))
-            self.position_table.setItem(row, 3, QTableWidgetItem(item["type"]))
-            self.position_table.setItem(row, 4, QTableWidgetItem(item["amount"]))
-            self.position_table.setItem(row, 5, QTableWidgetItem(item["balance"]))
-            self.position_table.setItem(row, 6, QTableWidgetItem(item["status"]))
+        self.position_table.set_data(mock_data)
 
     def _on_screen_shown(self):
         """Called when screen is shown."""

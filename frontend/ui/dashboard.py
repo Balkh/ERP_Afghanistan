@@ -3,19 +3,15 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from ui.role_manager import UserRole
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import (TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY_SMALL, TEXT_TABLE, TEXT_HELPER)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.kpi_cards import KPICard, MiniMetricCard, StatusBadge
 from theme.theme_engine import ThemeEngine
 
 
 class Dashboard(QWidget):
     """Role-aware Dashboard widget fetching real data from /api/control-center/."""
-
-    C = {
-        'blue': COLOR_PRIMARY, 'green': COLOR_STATUS_VALID, 'red': COLOR_DANGER,
-        'yellow': COLOR_WARNING, 'peach': COLOR_STATUS_WARNING, 'mauve': '#cba6f7',
-        'pink': '#f5c2e7', 'teal': COLOR_INFO,
-    }
 
     def __init__(self, role=None, api_client=None):
         super().__init__()
@@ -29,7 +25,7 @@ class Dashboard(QWidget):
 
         self._refresh_timer = QTimer(self)
         self._refresh_timer.timeout.connect(self.refresh_data)
-        self._refresh_timer.start(60000)
+        self._refresh_timer.start(120000)
 
         self._theme_token = ThemeEngine.instance().register(self.refresh_theme)
 
@@ -55,27 +51,11 @@ class Dashboard(QWidget):
             break
         self._subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
 
-        # Re-apply KPI card frame backgrounds
-        for pair in self._kpi_labels.values():
-            _, v_lbl = pair
-            parent = v_lbl.parent()
-            if parent:
-                border_color = self.C.get(
-                    [k for k, v in self.C.items() if v == v_lbl.styleSheet().split('color:')[1].strip().rstrip(';')][0]
-                    if 'color:' in v_lbl.styleSheet() else 'blue', COLOR_PRIMARY)
-                parent.setStyleSheet(f"""
-                    QFrame {{
-                        background-color: {COLOR_BG_ELEVATED};
-                        border-left: 4px solid {border_color};
-                        border-radius: 8px;
-                    }}
-                """)
-
         # Re-apply role + alert card backgrounds
         for name in ('roleCard', 'alertCard', 'actionsCard'):
             for child in self.findChildren(QFrame):
                 if child.objectName() == name:
-                    child.setStyleSheet(f"QFrame#{name} {{ background: {COLOR_BG_ELEVATED}; border-radius: 10px; }}")
+                    child.setStyleSheet(f"QFrame#{name} {{ background: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; }}")
         self._rebuild_alerts()
 
     def cleanup(self):
@@ -110,13 +90,15 @@ class Dashboard(QWidget):
         content = QWidget()
         content.setObjectName("dashboardContent")
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(24, 20, 24, 20)
-        layout.setSpacing(16)
+        layout.setContentsMargins(SPACING_XXL, SPACING_XL, SPACING_XXL, SPACING_XL)
+        layout.setSpacing(SPACING_LG)
 
         # -- Header row --
         hdr = QHBoxLayout()
         title = QLabel("Dashboard")
-        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_PAGE_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         hdr.addWidget(title)
         hdr.addStretch()
@@ -125,8 +107,8 @@ class Dashboard(QWidget):
         refresh_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_BORDER}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: 6px;
-                padding: 8px 16px; font-weight: bold;
+                border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px {SPACING_LG}px; font-weight: bold;
             }}
             QPushButton:hover {{ background-color: {COLOR_BORDER_LIGHT}; }}
         """)
@@ -135,7 +117,7 @@ class Dashboard(QWidget):
         layout.addLayout(hdr)
 
         self._subtitle = QLabel("Loading…")
-        self._subtitle.setFont(QFont("Segoe UI", 10))
+        self._subtitle.setFont(QFont("Segoe UI", TEXT_BODY_SMALL))
         self._subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         layout.addWidget(self._subtitle)
 
@@ -144,25 +126,27 @@ class Dashboard(QWidget):
         kg.setSpacing(SPACING_MD)
 
         specs = [
-            (0, 0, "Products",       'blue',  'kpi_products'),
-            (0, 1, "Customers",       'green', 'kpi_customers'),
-            (0, 2, "Suppliers",       'mauve', 'kpi_suppliers'),
-            (1, 0, "Cash Balance",    'green', 'kpi_cash'),
-            (1, 1, "Revenue (MTD)",   'teal',  'kpi_revenue'),
-            (1, 2, "Working Capital", 'peach', 'kpi_wc'),
+            (0, 0, "Products",       'info',    'kpi_products'),
+            (0, 1, "Customers",      'success', 'kpi_customers'),
+            (0, 2, "Suppliers",      'primary', 'kpi_suppliers'),
+            (1, 0, "Cash Balance",   'success', 'kpi_cash'),
+            (1, 1, "Revenue (MTD)",  'primary', 'kpi_revenue'),
+            (1, 2, "Working Capital",'warning', 'kpi_wc'),
         ]
-        for r, c, t, ck, key in specs:
-            self._kpi_labels[key] = self._add_kpi_card(kg, r, c, t, ck)
+        for r, c, t, sev, key in specs:
+            card = KPICard(t, "\u2014", severity=sev)
+            kg.addWidget(card, r, c)
+            self._kpi_labels[key] = (card.title_label, card.value_label)
 
         layout.addLayout(kg)
 
         # -- Middle: role section (left) + alerts (right) --
         mid = QHBoxLayout()
-        mid.setSpacing(16)
+        mid.setSpacing(SPACING_LG)
 
         self._role_frame = QFrame()
         self._role_frame.setObjectName("roleCard")
-        self._role_frame.setStyleSheet(f"QFrame#roleCard {{ background: {COLOR_BG_ELEVATED}; border-radius: 10px; }}")
+        self._role_frame.setStyleSheet(f"QFrame#roleCard {{ background: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; }}")
         self._role_stack = QVBoxLayout(self._role_frame)
         self._role_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self._role_stack.setSpacing(SPACING_SM + SPACING_XS)
@@ -170,7 +154,7 @@ class Dashboard(QWidget):
 
         self._alert_frame = QFrame()
         self._alert_frame.setObjectName("alertCard")
-        self._alert_frame.setStyleSheet(f"QFrame#alertCard {{ background: {COLOR_BG_ELEVATED}; border-radius: 10px; }}")
+        self._alert_frame.setStyleSheet(f"QFrame#alertCard {{ background: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; }}")
         self._alert_stack = QVBoxLayout(self._alert_frame)
         self._alert_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self._alert_stack.setSpacing(SPACING_SM)
@@ -181,13 +165,13 @@ class Dashboard(QWidget):
         # -- Quick actions --
         af = QFrame()
         af.setObjectName("actionsCard")
-        af.setStyleSheet(f"QFrame#actionsCard {{ background: {COLOR_BG_ELEVATED}; border-radius: 10px; }}")
+        af.setStyleSheet(f"QFrame#actionsCard {{ background: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; }}")
         al = QHBoxLayout(af)
         al.setContentsMargins(20, 12, 20, 12)
         al.setSpacing(SPACING_MD)
 
         al_title = QLabel("Quick Actions")
-        al_title.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        al_title.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
         al_title.setStyleSheet(f"color: {COLOR_PRIMARY};")
         al.addWidget(al_title)
 
@@ -200,35 +184,6 @@ class Dashboard(QWidget):
         scroll.setWidget(content)
         root.addWidget(scroll)
 
-    def _add_kpi_card(self, grid, row, col, label, color_key):
-        card = QFrame()
-        c = self.C.get(color_key, COLOR_PRIMARY)
-        card.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLOR_BG_ELEVATED};
-                border-left: 4px solid {c};
-                border-radius: 8px;
-            }}
-        """)
-        card.setMinimumHeight(82)
-        lay = QVBoxLayout(card)
-        lay.setContentsMargins(16, 10, 16, 10)
-        lay.setSpacing(SPACING_XS)
-
-        t = QLabel(label)
-        t.setFont(QFont("Segoe UI", 9))
-        t.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
-        lay.addWidget(t)
-
-        v = QLabel("—")
-        v.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        v.setStyleSheet(f"color: {c};")
-        v.setWordWrap(True)
-        lay.addWidget(v)
-
-        grid.addWidget(card, row, col)
-        return (t, v)
-
     def _mk_action_btn(self, text, page_index):
         btn = QPushButton(text)
         btn.setCursor(Qt.PointingHandCursor)
@@ -236,8 +191,8 @@ class Dashboard(QWidget):
         btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_BORDER}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: 6px;
-                padding: 8px 18px; font-weight: bold; font-size: 10pt;
+                border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px 18px; font-weight: bold; font-size: 10pt;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_BORDER_LIGHT}; border: 1px solid {COLOR_PRIMARY};
@@ -353,7 +308,7 @@ class Dashboard(QWidget):
             UserRole.HR: "HR Overview",
         }
         t = QLabel(titles.get(self._role, "Overview"))
-        t.setFont(QFont("Segoe UI", 13, QFont.Bold))
+        t.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         t.setStyleSheet(f"color: {COLOR_PRIMARY};")
         self._role_stack.addWidget(t)
 
@@ -431,13 +386,13 @@ class Dashboard(QWidget):
     def _mini_card(self, label, value, color_key, is_currency):
         c = self.C.get(color_key, COLOR_PRIMARY)
         f = QFrame()
-        f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: 6px; }}")
+        f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; }}")
         lay = QVBoxLayout(f)
         lay.setContentsMargins(12, 8, 12, 8)
         lay.setSpacing(SPACING_XS)
 
         lbl = QLabel(label)
-        lbl.setFont(QFont("Segoe UI", 8))
+        lbl.setFont(QFont("Segoe UI", TEXT_HELPER))
         lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         lay.addWidget(lbl)
 
@@ -450,7 +405,7 @@ class Dashboard(QWidget):
             display = str(value)
 
         v = QLabel(display)
-        v.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        v.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
         v.setStyleSheet(f"color: {c};")
         v.setWordWrap(True)
         lay.addWidget(v)
@@ -460,11 +415,13 @@ class Dashboard(QWidget):
     # ------------------------------------------------------------------
     # Alerts
     # ------------------------------------------------------------------
-    def _rebuild_alerts(self, data):
+    def _rebuild_alerts(self, data=None):
+        if data is None:
+            data = {}
         self._clear_layout(self._alert_stack)
 
         t = QLabel("Alerts")
-        t.setFont(QFont("Segoe UI", 13, QFont.Bold))
+        t.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         t.setStyleSheet(f"color: {COLOR_WARNING};")
         self._alert_stack.addWidget(t)
 
@@ -500,7 +457,7 @@ class Dashboard(QWidget):
                 background-color: {COLOR_BORDER};
                 border: 1px solid {COLOR_BORDER_LIGHT};
                 border-left: 3px solid {c};
-                border-radius: 4px;
+                border-radius: {BORDER_RADIUS_SM};
             }}
         """)
         row = QHBoxLayout(box)
@@ -508,13 +465,13 @@ class Dashboard(QWidget):
         row.setSpacing(SPACING_SM)
 
         dot = QLabel("●")
-        dot.setFont(QFont("Segoe UI", 10))
+        dot.setFont(QFont("Segoe UI", TEXT_TABLE))
         dot.setStyleSheet(f"color: {c};")
         row.addWidget(dot)
 
         txt = f"{label}: {status}" if label else status
         lbl = QLabel(txt)
-        lbl.setFont(QFont("Segoe UI", 9))
+        lbl.setFont(QFont("Segoe UI", TEXT_TABLE))
         lbl.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         row.addWidget(lbl)
         row.addStretch()

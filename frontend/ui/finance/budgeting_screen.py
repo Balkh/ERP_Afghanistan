@@ -1,18 +1,25 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Budgeting management screen."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QGroupBox,
                                   QFormLayout, QDialog, QDialogButtonBox, QTabWidget,
-                                  QDoubleSpinBox, QApplication, QFrame, QAbstractItemView)
+                                  QDoubleSpinBox, QApplication, QFrame)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from api.endpoints import get_endpoint
 from api.client import APIClient
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, SPACING_LG, FONT_SIZE_XL, FONT_SIZE_LG,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 from api.client import APIClient
@@ -38,56 +45,39 @@ class BudgetingScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Budget Management")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER_LIGHT};
-                border-radius: 5px;
-                padding: {SPACING_XS} {SPACING_MD};
-                color: {COLOR_TEXT_SECONDARY};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BG_ELEVATED};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_data)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading budgets...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No budgets found")
-        self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading budgets")
-        self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: 40px;")
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
         
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: 5px; background: {COLOR_BG_SURFACE}; }}
-            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }}
+            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
+            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
         """)
 
@@ -110,11 +100,11 @@ class BudgetingScreen(BaseScreen):
 
     def _setup_budgets_tab(self):
         layout = QVBoxLayout(self.budgets_tab)
-        layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
+        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_bar = QFrame()
-        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: 8px; border: 1px solid {COLOR_BORDER_LIGHT};")
+        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}; border: 1px solid {COLOR_BORDER_LIGHT};")
         filter_layout = QHBoxLayout(filter_bar)
         
         self.year_filter = QComboBox()
@@ -135,14 +125,10 @@ class BudgetingScreen(BaseScreen):
         
         action_layout = QHBoxLayout()
         
-        self.btn_create = QPushButton("+ Create Budget")
-        self.btn_create.setMinimumHeight(38)
-        self.btn_create.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        self.btn_create = EnterpriseButton(text="+ Create Budget", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.btn_create.clicked.connect(self._create_budget)
         
-        self.btn_approve = QPushButton("Approve")
-        self.btn_approve.setMinimumHeight(38)
-        self.btn_approve.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; padding: 0 15px;")
+        self.btn_approve = EnterpriseButton(text="Approve", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         
         action_layout.addWidget(self.btn_create)
         action_layout.addWidget(self.btn_approve)
@@ -150,25 +136,19 @@ class BudgetingScreen(BaseScreen):
         
         layout.addLayout(action_layout)
         
-        self.budgets_table = self._create_modern_table()
-        self.budgets_table.setColumnCount(7)
-        self.budgets_table.setHorizontalHeaderLabels(["Budget Name", "Year", "Total Budget", "Total Spent", "Remaining", "Variance %", "Status"])
+        columns = [
+            TableColumn("name", "Budget Name", width=180),
+            TableColumn("year", "Year", width=60, align="center"),
+            TableColumn("total_budget", "Total Budget", width=100, align="right"),
+            TableColumn("total_spent", "Total Spent", width=100, align="right"),
+            TableColumn("remaining", "Remaining", width=100, align="right"),
+            TableColumn("variance", "Variance %", width=80, align="right"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.budgets_table = EnterpriseTable(columns)
         layout.addWidget(self.budgets_table)
         
         self._load_budgets()
-
-    def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }}
-            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {COLOR_BORDER_LIGHT}; font-weight: bold; }}
-            QTableWidget::item {{ padding: {SPACING_SM}; }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(True)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        return table
     
     def _setup_allocations_tab(self):
         layout = QVBoxLayout(self.allocations_tab)

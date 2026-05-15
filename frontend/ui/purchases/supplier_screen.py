@@ -1,18 +1,23 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Suppliers screen for ERP."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QFormLayout, QDialog,
-                                  QDialogButtonBox, QComboBox, QTextEdit, QSpinBox)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+                                  QDialogButtonBox, QComboBox, QTextEdit)
+from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
-from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL, FONT_SIZE_TITLE,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                          BORDER_RADIUS_MD)
+from ui.screens.base_screen import BaseScreen
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class SupplierScreen(BaseScreen):
@@ -27,24 +32,22 @@ class SupplierScreen(BaseScreen):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
 
         # Header
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, SPACING_SM)
         title = QLabel("Suppliers")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_TITLE, QFont.Bold))
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header.addWidget(title)
         header.addStretch()
 
-        add_btn = QPushButton("Add Supplier")
-        add_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        add_btn = EnterpriseButton(text="Add Supplier", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         add_btn.clicked.connect(self.add_supplier)
         header.addWidget(add_btn)
 
-        refresh_btn = QPushButton("Refresh")
-        refresh_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        refresh_btn = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         refresh_btn.clicked.connect(self.load_suppliers)
         header.addWidget(refresh_btn)
 
@@ -63,50 +66,34 @@ class SupplierScreen(BaseScreen):
         # Loading indicator
         self.loading_label = QLabel("Loading suppliers...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("""
-            QLabel {
-                color: #666;
-                font-style: italic;
-                padding: 12px;
-            }
-        """)
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         # Error indicator
         self.error_label = QLabel()
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("""
-            QLabel {
-                color: #d32f2f;
-                padding: 12px;
-            }
-        """)
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 
         # Empty state indicator
         self.empty_label = QLabel("No suppliers found")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("""
-            QLabel {
-                color: #666;
-                font-style: italic;
-                padding: 12px;
-            }
-        """)
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         # Table
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["ID", "Name", "Phone", "Email", "Address"])
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.table.setMinimumHeight(TABLE_ROW_HEIGHT_MD * 5)  # Show about 5 rows
-        self.table.verticalHeader().setDefaultSectionSize(TABLE_ROW_HEIGHT_MD)
+        columns = [
+            TableColumn("id", "ID", width=50),
+            TableColumn("name", "Name", width=200),
+            TableColumn("phone", "Phone", width=120),
+            TableColumn("email", "Email", width=200),
+            TableColumn("address", "Address", width=250),
+        ]
+        self.table = EnterpriseTable(columns)
+        self.table.setMinimumHeight(TABLE_ROW_HEIGHT_MD * 5)
         self.table.setVisible(False)
         layout.addWidget(self.table)
 
@@ -164,20 +151,23 @@ class SupplierScreen(BaseScreen):
     def update_table(self):
         """Update table with supplier data and show appropriate state indicators."""
         valid_suppliers = [s for s in self.suppliers if isinstance(s, dict)]
-        self.table.setRowCount(len(valid_suppliers))
-        for i, supplier in enumerate(valid_suppliers):
-            self.table.setItem(i, 0, QTableWidgetItem(str(supplier.get('id', ''))))
-            self.table.setItem(i, 1, QTableWidgetItem(supplier.get('name', '')))
-            self.table.setItem(i, 2, QTableWidgetItem(supplier.get('phone', '')))
-            self.table.setItem(i, 3, QTableWidgetItem(supplier.get('email', '')))
-            self.table.setItem(i, 4, QTableWidgetItem(supplier.get('address', '')))
-        
-        # Show/hide indicators based on state
+
         state = self.state
         self.loading_label.setVisible(state == ScreenState.LOADING)
         self.error_label.setVisible(state == ScreenState.ERROR)
         self.empty_label.setVisible(state == ScreenState.EMPTY and len(valid_suppliers) == 0)
         self.table.setVisible(state == ScreenState.READY and len(valid_suppliers) > 0)
+
+        data = []
+        for supplier in valid_suppliers:
+            data.append({
+                "id": str(supplier.get('id', '')),
+                "name": supplier.get('name', ''),
+                "phone": supplier.get('phone', ''),
+                "email": supplier.get('email', ''),
+                "address": supplier.get('address', ''),
+            })
+        self.table.set_data(data)
 
     def filter_suppliers(self, text):
         """Filter suppliers by search text."""
@@ -199,42 +189,41 @@ class SupplierScreen(BaseScreen):
 
 class SupplierDialog(QDialog):
     """Supplier add/edit dialog with full features."""
-    
-    _SUBMIT_STYLESHEET = """
-        QPushButton {
-            background-color: COLOR_SUCCESS;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 12px 24px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        QPushButton:hover {
-            background-color: #219653;
-        }
-        QPushButton:pressed {
-            background-color: #1e8449;
-        }
-        QPushButton:disabled {
-            background-color: COLOR_TEXT_MUTED;
-            color: #7f8c8d;
-        }
-    """
-    
-    _INPUT_STYLESHEET = """
-        QLineEdit, QTextEdit, QComboBox {
-            background-color: #2d2d3d;
-            color: #e0e0e0;
-            border: 1px solid COLOR_BORDER;
-            border-radius: 6px;
-            padding: 10px;
-            font-size: 13px;
-        }
-        QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
-            border: 1px solid COLOR_PRIMARY;
-        }
-    """
+
+    @staticmethod
+    def _submit_style():
+        from ui.constants import COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY, TEXT_CARD_TITLE
+        return f"""
+            QPushButton {{
+                background-color: {COLOR_SUCCESS};
+                color: {COLOR_TEXT_ON_PRIMARY};
+                border: none;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_MD}px 24px;
+                font-weight: bold;
+                font-size: {TEXT_CARD_TITLE}px;
+            }}
+            QPushButton:hover {{ background-color: {COLOR_SUCCESS_HOVER}; }}
+            QPushButton:pressed {{ background-color: {COLOR_SUCCESS_ACTIVE}; }}
+            QPushButton:disabled {{ background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_MUTED}; }}
+        """
+
+    @staticmethod
+    def _input_style():
+        from ui.constants import COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER, COLOR_BORDER_FOCUS, TEXT_BODY, PADDING_INPUT_H
+        return f"""
+            QLineEdit, QTextEdit, QComboBox {{
+                background-color: {COLOR_BG_SURFACE};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {PADDING_INPUT_H}px;
+                font-size: {TEXT_BODY}px;
+            }}
+            QLineEdit:focus, QTextEdit:focus, QComboBox:focus {{
+                border: 1px solid {COLOR_BORDER_FOCUS};
+            }}
+        """
 
     def __init__(self, api_client=None, supplier=None):
         super().__init__()
@@ -245,7 +234,7 @@ class SupplierDialog(QDialog):
         self.resize(550, 650)
         self.setMinimumHeight(650)
         self.setMaximumHeight(750)
-        self.setStyleSheet(self._INPUT_STYLESHEET)
+        self.setStyleSheet(self._input_style())
         self.setup_ui()
 
     def setup_ui(self):
@@ -451,19 +440,19 @@ class SupplierDialog(QDialog):
                 background-color: {COLOR_TEXT_MUTED};
                 color: white;
                 border: none;
-                border-radius: 6px;
-                padding: 12px 24px;
-                font-size: 14px;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_MD}px 24px;
+                font-size: {TEXT_CARD_TITLE}px;
             }}
             QPushButton:hover {{
-                background-color: #7f8c8d;
+                background-color: {COLOR_TEXT_MUTED};
             }}
         """)
         self.btn_cancel.clicked.connect(self.reject)
         
         self.btn_save = QPushButton("Save Supplier")
         self.btn_save.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.btn_save.setStyleSheet(self._SUBMIT_STYLESHEET)
+        self.btn_save.setStyleSheet(self._submit_style())
         self.btn_save.clicked.connect(self.save)
         
         buttons_layout.addStretch()

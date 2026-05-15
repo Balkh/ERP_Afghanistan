@@ -2,7 +2,7 @@ from api.client import APIClient
 from api.endpoints import get_endpoint
 from PySide6.QtCore import Slot
 
-from PySide6.QtWidgets import QHeaderView, QAbstractItemView, QTableWidgetItem
+from ui.components.tables import EnterpriseTable, TableColumn
 from .base_screen import BaseInventoryScreen
 
 class WarehouseScreen(BaseInventoryScreen):
@@ -26,16 +26,14 @@ class WarehouseScreen(BaseInventoryScreen):
 
     def setup_table(self):
         """Setup the warehouses table."""
-        from PySide6.QtWidgets import QTableWidget
-
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels([
-            "ID", "Name", "Location", "Capacity", "Is Active"
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        columns = [
+            TableColumn("id", "ID", width=50),
+            TableColumn("name", "Name", width=150),
+            TableColumn("location", "Location", width=200),
+            TableColumn("capacity", "Capacity", width=100, align="right"),
+            TableColumn("is_active", "Is Active", width=80, align="center"),
+        ]
+        self.table = EnterpriseTable(columns)
         self.table.itemSelectionChanged.connect(self.on_selection_changed)
 
         self.set_table_widget(self.table)
@@ -85,14 +83,17 @@ class WarehouseScreen(BaseInventoryScreen):
 
     def update_table(self):
         """Update the table with current warehouses."""
-        self.table.setRowCount(len(self.warehouses))
-        for row, warehouse in enumerate(self.warehouses):
-            self.table.setItem(row, 0, QTableWidgetItem(str(warehouse.get("id", ""))))
-            self.table.setItem(row, 1, QTableWidgetItem(warehouse.get("name", "")))
-            self.table.setItem(row, 2, QTableWidgetItem(warehouse.get("location", "")))
-            self.table.setItem(row, 3, QTableWidgetItem(str(warehouse.get("capacity", ""))))
+        data = []
+        for warehouse in self.warehouses:
             is_active = warehouse.get("is_active", False)
-            self.table.setItem(row, 4, QTableWidgetItem("Yes" if is_active else "No"))
+            data.append({
+                "id": str(warehouse.get("id", "")),
+                "name": warehouse.get("name", ""),
+                "location": warehouse.get("location", ""),
+                "capacity": str(warehouse.get("capacity", "")),
+                "is_active": "Yes" if is_active else "No",
+            })
+        self.table.set_data(data)
 
     @Slot()
     def on_selection_changed(self):

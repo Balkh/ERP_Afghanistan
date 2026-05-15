@@ -5,13 +5,14 @@ from PySide6.QtGui import QFont, QPainter, QColor, QPen, QBrush
 from typing import List, Dict, Any, Optional, Callable
 
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-                          FONT_SIZE_XS, FONT_SIZE_SM, FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL,
                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
                           COLOR_BORDER, COLOR_BORDER_LIGHT,
-                          BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_PILL)
+                          BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_PILL, BORDER_RADIUS_SM)
 from ui.constants import COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_STATUS_PENDING
+from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL, TEXT_SECTION_TITLE
+from ui.components.kpi_cards import KPICard as MetricCard
 
 
 class StatusIndicator(QFrame):
@@ -30,7 +31,7 @@ class StatusIndicator(QFrame):
         layout.addWidget(self.dot, 0, Qt.AlignVCenter)
 
         self.label = QLabel(label_text)
-        self.label.setFont(QFont("Segoe UI", FONT_SIZE_SM))
+        self.label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
         layout.addWidget(self.label, 0, Qt.AlignVCenter)
 
@@ -53,7 +54,7 @@ class StatusIndicator(QFrame):
             text = "Unknown"
 
         self.dot.setStyleSheet(
-            f"background-color: {color}; border-radius: 5px; min-width: 10px; min-height: 10px;"
+            f"background-color: {color}; border-radius: {BORDER_RADIUS_SM}px; min-width: 10px; min-height: 10px;"
         )
         self.label.setText(text)
 
@@ -61,9 +62,9 @@ class StatusIndicator(QFrame):
 class SeverityBadge(QLabel):
     SEVERITY_COLORS = {
         "info": (COLOR_INFO, COLOR_BG_SURFACE),
-        "low": ("#89b4fa", COLOR_BG_SURFACE),
+        "low": (COLOR_INFO, COLOR_BG_SURFACE),
         "medium": (COLOR_STATUS_WARNING, COLOR_BG_SURFACE),
-        "high": ("#fab387", COLOR_BG_SURFACE),
+        "high": (COLOR_STATUS_WARNING, COLOR_BG_SURFACE),
         "critical": (COLOR_DANGER, COLOR_BG_SURFACE),
     }
 
@@ -86,68 +87,14 @@ class SeverityBadge(QLabel):
             f"""
             background-color: {bg};
             color: {COLOR_BG_MAIN};
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: {FONT_SIZE_XS}px;
+            padding: {SPACING_XS}px {SPACING_SM}px;
+            border-radius: {BORDER_RADIUS_SM};
+            font-size: {TEXT_TABLE}px;
             font-weight: bold;
             """
         )
-        self.setFont(QFont("Segoe UI", FONT_SIZE_XS, QFont.Bold))
+        self.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))
         self.setAlignment(Qt.AlignCenter)
-
-
-class MetricCard(QFrame):
-    def __init__(self, title, value="--", subtitle="", color=COLOR_PRIMARY, parent=None):
-        super().__init__(parent)
-        self.setObjectName("metricCard")
-        self.setMinimumSize(160, 90)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self._color = color
-
-        self.setStyleSheet(f"""
-            QFrame#metricCard {{
-                background-color: {COLOR_BG_SURFACE};
-                border: 1px solid {COLOR_BG_ELEVATED};
-                border-radius: {BORDER_RADIUS_LG}px;
-                border-left: 3px solid {color};
-            }}
-        """)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_MD, SPACING_SM)
-        layout.setSpacing(SPACING_XS)
-
-        self.title_label = QLabel(title)
-        self.title_label.setFont(QFont("Segoe UI", FONT_SIZE_XS, QFont.Bold))
-        self.title_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; border: none;")
-
-        self.value_label = QLabel(str(value))
-        self.value_label.setFont(QFont("Segoe UI", FONT_SIZE_XL, QFont.Bold))
-        self.value_label.setStyleSheet(f"color: {color}; border: none;")
-
-        self.subtitle_label = QLabel(subtitle)
-        self.subtitle_label.setFont(QFont("Segoe UI", FONT_SIZE_XS))
-        self.subtitle_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; border: none;")
-
-        layout.addWidget(self.title_label)
-        layout.addWidget(self.value_label)
-        layout.addWidget(self.subtitle_label)
-
-    def update_value(self, value, subtitle=None, color=None):
-        self.value_label.setText(str(value))
-        if subtitle is not None:
-            self.subtitle_label.setText(subtitle)
-        if color:
-            self._color = color
-            self.value_label.setStyleSheet(f"color: {color}; border: none;")
-            self.setStyleSheet(f"""
-                QFrame#metricCard {{
-                    background-color: {COLOR_BG_SURFACE};
-                    border: 1px solid {COLOR_BG_ELEVATED};
-                    border-radius: {BORDER_RADIUS_LG}px;
-                    border-left: 3px solid {color};
-                }}
-            """)
 
 
 class TrendArrow(QLabel):
@@ -157,7 +104,7 @@ class TrendArrow(QLabel):
         arrow = "▲" if direction == "up" else "▼"
         c = color or (COLOR_SUCCESS if direction == "up" else COLOR_DANGER)
         self.setText(arrow)
-        self.setStyleSheet(f"color: {c}; font-size: {FONT_SIZE_MD}px; font-weight: bold; border: none;")
+        self.setStyleSheet(f"color: {c}; font-size: {TEXT_BODY}px; font-weight: bold; border: none;")
         self.setAlignment(Qt.AlignCenter)
         self.setFixedWidth(20)
 
@@ -194,7 +141,7 @@ class HealthBar(QProgressBar):
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_PILL}px;
                 text-align: center;
-                font-size: {FONT_SIZE_XS}px;
+                font-size: {TEXT_TABLE}px;
                 font-weight: bold;
                 color: {COLOR_TEXT_PRIMARY};
                 padding: 1px;
@@ -230,7 +177,7 @@ class TimelineEventWidget(QFrame):
         layout.addWidget(self.badge)
 
         self.desc_label = QLabel(description)
-        self.desc_label.setFont(QFont("Segoe UI", FONT_SIZE_SM))
+        self.desc_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.desc_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none;")
         self.desc_label.setWordWrap(True)
         layout.addWidget(self.desc_label, 1)
@@ -267,7 +214,7 @@ class IncidentCard(QFrame):
 
         header = QHBoxLayout()
         id_label = QLabel(f"#{incident_id}")
-        id_label.setFont(QFont("Segoe UI", FONT_SIZE_SM, QFont.Bold))
+        id_label.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         id_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none;")
         header.addWidget(id_label)
         header.addStretch()
@@ -276,19 +223,19 @@ class IncidentCard(QFrame):
         layout.addLayout(header)
 
         self.desc_label = QLabel(description)
-        self.desc_label.setFont(QFont("Segoe UI", FONT_SIZE_SM))
+        self.desc_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.desc_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; border: none;")
         self.desc_label.setWordWrap(True)
         layout.addWidget(self.desc_label)
 
         footer = QHBoxLayout()
         status_label = QLabel(f"Status: {status}")
-        status_label.setFont(QFont("Segoe UI", FONT_SIZE_XS))
+        status_label.setFont(QFont("Segoe UI", TEXT_TABLE))
         status_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; border: none;")
         footer.addWidget(status_label)
         footer.addStretch()
         esc_label = QLabel(f"Escalation: L{escalation}")
-        esc_label.setFont(QFont("Segoe UI", FONT_SIZE_XS))
+        esc_label.setFont(QFont("Segoe UI", TEXT_TABLE))
         esc_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; border: none;")
         footer.addWidget(esc_label)
         layout.addLayout(footer)
@@ -320,7 +267,7 @@ class LoadingOverlay(QWidget):
         y = (rect.height() - box_h) // 2
         painter.drawRoundedRect(x, y, box_w, box_h, 8, 8)
         painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-        painter.setFont(QFont("Segoe UI", 11))
+        painter.setFont(QFont("Segoe UI", TEXT_BODY))
         painter.drawText(QRect(x, y, box_w, box_h), Qt.AlignCenter, "Loading...")
 
     def resizeEvent(self, event):
@@ -345,18 +292,18 @@ class SectionHeader(QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.title_label = QLabel(title)
-        self.title_label.setFont(QFont("Segoe UI", FONT_SIZE_MD, QFont.Bold))
+        self.title_label.setFont(QFont("Segoe UI", TEXT_BODY, QFont.Weight.Bold))
         self.title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none;")
         layout.addWidget(self.title_label)
         layout.addStretch()
 
         if action_text:
             self.action_btn = QLabel(action_text)
-            self.action_btn.setFont(QFont("Segoe UI", FONT_SIZE_XS))
+            self.action_btn.setFont(QFont("Segoe UI", TEXT_TABLE))
             self.action_btn.setStyleSheet(f"""
                 color: {COLOR_INFO};
                 border: none;
-                padding: 2px 8px;
+            padding: {SPACING_XS}px {SPACING_SM}px;
             """)
             self.action_btn.setCursor(Qt.PointingHandCursor)
             layout.addWidget(self.action_btn)

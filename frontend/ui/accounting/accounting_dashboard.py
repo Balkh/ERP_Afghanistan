@@ -1,16 +1,21 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                                QLabel, QFrame, QPushButton, QScrollArea,
-                                QGroupBox, QProgressBar)
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
+                                QLabel, QFrame, QScrollArea,
+                                QGroupBox)
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import extract_list
 from datetime import date
 from runtime.timer_registry import register_timer, unregister_owner
 
-# Design tokens
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)  # noqa: F401
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO, COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class AccountingDashboard(QWidget):
@@ -34,7 +39,7 @@ class AccountingDashboard(QWidget):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
         scroll = QScrollArea()
@@ -89,47 +94,52 @@ class AccountingDashboard(QWidget):
         return card_widget
 
     def _create_summary_card(self, key, title, value, accent_color):
-        frame = QFrame()
-        frame.setFrameShape(QFrame.StyledPanel)
-        frame.setMinimumHeight(90)
-
-        layout = QVBoxLayout(frame)
-        layout.setContentsMargins(SPACING_MD,  SPACING_SM,  SPACING_MD,  SPACING_SM)
-
-        title_label = QLabel(title)
-        title_label.setFont(QFont("Segoe UI", 10, QFont.Medium))
-        title_label.setStyleSheet(f"color: {accent_color};")
-
-        value_label = QLabel(value)
-        value_label.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        value_label.setObjectName(f"value_{key}")
-        value_label.setAlignment(Qt.AlignRight)
-        value_label.setWordWrap(True)
-
-        layout.addWidget(title_label)
-        layout.addWidget(value_label)
-
-        frame.setStyleSheet(f"""
+        card = QFrame()
+        card.setMinimumHeight(82)
+        card.setStyleSheet(f"""
             QFrame {{
-                background-color: {COLOR_BG_MAIN};
-                border-radius: 8px;
-                border-left: 4px solid {accent_color};
+                background-color: {COLOR_BG_SURFACE};
+                border-radius: {BORDER_RADIUS_MD}px;
             }}
         """)
-
-        return frame
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(MARGIN_CARD, 10, MARGIN_CARD, 10)
+        title_lbl = QLabel(title)
+        title_lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_HELPER}pt;")
+        layout.addWidget(title_lbl)
+        value_lbl = QLabel(value)
+        value_lbl.setStyleSheet(f"color: {accent_color}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        value_lbl.setWordWrap(True)
+        value_lbl.setObjectName(f"value_{key}")
+        layout.addWidget(value_lbl)
+        return card
 
     def _create_inventory_valuation(self):
         group = QGroupBox("Inventory Valuation")
-        group.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        group.setStyleSheet(f"""
+            QGroupBox {{
+                font-size: {TEXT_CARD_TITLE}pt;
+                font-weight: 700;
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 5px;
+            }}
+        """)
         layout = QVBoxLayout(group)
 
         self.inventory_value_label = QLabel("Loading...")
-        self.inventory_value_label.setFont(QFont("Segoe UI", 14))
+        self.inventory_value_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(self.inventory_value_label)
 
         self.inventory_diff_label = QLabel("")
-        self.inventory_diff_label.setFont(QFont("Segoe UI", 10))
+        self.inventory_diff_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}pt;")
         layout.addWidget(self.inventory_diff_label)
 
         return group
@@ -160,41 +170,62 @@ class AccountingDashboard(QWidget):
 
     def _create_quick_actions(self):
         group = QGroupBox("Quick Actions")
-        group.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        group.setStyleSheet(f"""
+            QGroupBox {{
+                font-size: {TEXT_CARD_TITLE}pt;
+                font-weight: 700;
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 5px;
+            }}
+        """)
         layout = QHBoxLayout(group)
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
         actions = [
-            ("New Journal Entry", COLOR_PRIMARY),
-            ("Trial Balance", COLOR_SUCCESS),
-            ("Profit & Loss", COLOR_WARNING),
-            ("Balance Sheet", COLOR_INFO),
-            ("Account Ledger", COLOR_INFO),
-            ("AR Aging", COLOR_DANGER),
+            ("New Journal Entry", ButtonVariant.PRIMARY),
+            ("Trial Balance", ButtonVariant.SUCCESS),
+            ("Profit & Loss", ButtonVariant.WARNING),
+            ("Balance Sheet", ButtonVariant.GHOST),
+            ("Account Ledger", ButtonVariant.GHOST),
+            ("AR Aging", ButtonVariant.DANGER),
         ]
 
-        for title, color in actions:
-            btn = QPushButton(title)
-            btn.setMinimumHeight(40)
-            btn.setFont(QFont("Segoe UI", 10))
-            btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {color};
-                    color: white;
-                    border-radius: 6px;
-                    padding: 8px 16px;
-                }}
-                QPushButton:hover {{
-                    background-color: {color}dd;
-                }}
-            """)
+        for title, variant in actions:
+            btn = EnterpriseButton(
+                text=title,
+                variant=variant,
+                size=ButtonSize.MEDIUM
+            )
             layout.addWidget(btn)
 
         return group
 
     def _create_recent_entries(self):
         group = QGroupBox("Recent Journal Entries")
-        group.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        group.setStyleSheet(f"""
+            QGroupBox {{
+                font-size: {TEXT_CARD_TITLE}pt;
+                font-weight: 700;
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 5px;
+            }}
+        """)
         layout = QVBoxLayout(group)
         layout.setSpacing(SPACING_XS + 1)
 
@@ -204,19 +235,15 @@ class AccountingDashboard(QWidget):
         return group
 
     def _create_entries_table(self):
-        from PySide6.QtWidgets import QTableWidget, QHeaderView, QAbstractItemView
-
-        table = QTableWidget()
-        table.setColumnCount(6)
-        table.setHorizontalHeaderLabels([
-            "Entry #", "Date", "Type", "Description", "Debit", "Credit"
-        ])
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setSelectionMode(QAbstractItemView.SingleSelection)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.setAlternatingRowColors(True)
-
+        columns = [
+            TableColumn("entry_number", "Entry #", width=100),
+            TableColumn("entry_date", "Date", width=100),
+            TableColumn("entry_type", "Type", width=80),
+            TableColumn("description", "Description", width=200),
+            TableColumn("debit", "Debit", width=100, align="right"),
+            TableColumn("credit", "Credit", width=100, align="right"),
+        ]
+        table = EnterpriseTable(columns, density="compact")
         return table
 
     def load_data(self):
@@ -284,16 +311,15 @@ class AccountingDashboard(QWidget):
                     "reconciliation_status",
                     f"{summary.get('passed', 0)}/{summary.get('total_checks', 0)}"
                 )
-                # Update card color based on health
                 if "reconciliation_status" in self.card_labels:
                     label = self.card_labels["reconciliation_status"]
                     if is_healthy:
                         label.setStyleSheet(
-                            f"color: {COLOR_SUCCESS}; font-weight: bold; font-size: 20px;"
+                            f"color: {COLOR_SUCCESS}; font-weight: bold; font-size: {TEXT_PAGE_TITLE}pt;"
                         )
                     else:
                         label.setStyleSheet(
-                            f"color: {COLOR_DANGER}; font-weight: bold; font-size: 20px;"
+                            f"color: {COLOR_DANGER}; font-weight: bold; font-size: {TEXT_PAGE_TITLE}pt;"
                         )
         except Exception as e:
             print(f"Error loading reconciliation status: {e}")
@@ -315,25 +341,20 @@ class AccountingDashboard(QWidget):
             entries = self.api_client.get("/api/accounting/journal-entries/", params={"page_size": 10})
             results = extract_list(entries)
 
-            self.entries_table.setRowCount(len(results))
-            for row, entry in enumerate(results):
-                self.entries_table.setItem(row, 0, self._item(entry.get("entry_number", "")))
-                self.entries_table.setItem(row, 1, self._item(entry.get("entry_date", "")))
-                self.entries_table.setItem(row, 2, self._item(entry.get("entry_type", "")))
-                self.entries_table.setItem(row, 3, self._item(entry.get("description", "")))
-                self.entries_table.setItem(row, 4, self._item(str(entry.get("total_debit", "0.00"))))
-                self.entries_table.setItem(row, 5, self._item(str(entry.get("total_credit", "0.00"))))
+            entries_data = []
+            for entry in results:
+                entries_data.append({
+                    "entry_number": entry.get("entry_number", ""),
+                    "entry_date": entry.get("entry_date", ""),
+                    "entry_type": entry.get("entry_type", ""),
+                    "description": entry.get("description", ""),
+                    "debit": str(entry.get("total_debit", "0.00")),
+                    "credit": str(entry.get("total_credit", "0.00")),
+                    "id": entry.get("id"),
+                    "is_posted": entry.get("is_posted", False),
+                })
 
-                posted = entry.get("is_posted", False)
-                status_color = COLOR_SUCCESS if posted else COLOR_WARNING
-                for col in range(6):
-                    item = self.entries_table.item(row, col)
-                    if item:
-                        item.setData(Qt.UserRole, {"id": entry.get("id"), "is_posted": posted})
+            self.entries_table.set_data(entries_data)
 
         except Exception as e:
             print(f"Error loading recent entries: {e}")
-
-    def _item(self, text):
-        from PySide6.QtWidgets import QTableWidgetItem
-        return QTableWidgetItem(str(text))

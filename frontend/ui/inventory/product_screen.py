@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QHeaderView, QAbstractItemView, QTableWidgetItem
+from ui.components.tables import EnterpriseTable, TableColumn
 from .base_screen import BaseInventoryScreen
 from api.client import APIClient
 from api.endpoints import get_endpoint
@@ -25,16 +25,17 @@ class ProductScreen(BaseInventoryScreen):
         
     def setup_table(self):
         """Setup the products table."""
-        from PySide6.QtWidgets import QTableWidget
-        
-        self.table = QTableWidget()
-        self.table.setColumnCount(8)
-        self.table.setHorizontalHeaderLabels([
-            "ID", "Name", "Generic Name", "Brand", "Category", "Unit", "Barcode", "SKU"
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        columns = [
+            TableColumn("id", "ID", width=50),
+            TableColumn("name", "Name", width=150),
+            TableColumn("generic_name", "Generic Name", width=120),
+            TableColumn("brand_name", "Brand", width=100),
+            TableColumn("category_name", "Category", width=100),
+            TableColumn("unit_name", "Unit", width=60),
+            TableColumn("barcode", "Barcode", width=120),
+            TableColumn("sku", "SKU", width=100),
+        ]
+        self.table = EnterpriseTable(columns)
         self.table.itemSelectionChanged.connect(self.on_selection_changed)
         
         self.set_table_widget(self.table)
@@ -91,20 +92,23 @@ class ProductScreen(BaseInventoryScreen):
     def update_table(self):
         """Update the table with current products."""
         if not self.products:
-            self.table.setRowCount(0)
+            self.table.set_data([])
             return
-        self.table.setRowCount(len(self.products))
-        for row, product in enumerate(self.products):
+        data = []
+        for product in self.products:
             if not isinstance(product, dict):
                 continue
-            self.table.setItem(row, 0, QTableWidgetItem(str(product.get("id") or "")))
-            self.table.setItem(row, 1, QTableWidgetItem(product.get("name") or ""))
-            self.table.setItem(row, 2, QTableWidgetItem(product.get("generic_name") or ""))
-            self.table.setItem(row, 3, QTableWidgetItem(product.get("brand_name") or ""))
-            self.table.setItem(row, 4, QTableWidgetItem(product.get("category_name") or ""))
-            self.table.setItem(row, 5, QTableWidgetItem(product.get("unit_name") or ""))
-            self.table.setItem(row, 6, QTableWidgetItem(product.get("barcode") or ""))
-            self.table.setItem(row, 7, QTableWidgetItem(product.get("sku") or ""))
+            data.append({
+                "id": str(product.get("id") or ""),
+                "name": product.get("name") or "",
+                "generic_name": product.get("generic_name") or "",
+                "brand_name": product.get("brand_name") or "",
+                "category_name": product.get("category_name") or "",
+                "unit_name": product.get("unit_name") or "",
+                "barcode": product.get("barcode") or "",
+                "sku": product.get("sku") or "",
+            })
+        self.table.set_data(data)
     
     @Slot()
     def on_selection_changed(self):

@@ -523,10 +523,10 @@ UserRole.ADMIN: {
         "sales_invoice", "purchase_invoice", "customers", "suppliers", "returns",
     },
     UserRole.CASHIER: {
-        "dashboard", "sales_invoice", "customers", "products", "batches", "returns"
+        "dashboard", "pos", "sales_invoice", "customers", "products", "batches", "returns"
     },
     UserRole.PHARMACIST: {
-        "dashboard", "sales_invoice", "customers", "products", "batches", "returns",
+        "dashboard", "pos", "sales_invoice", "customers", "products", "batches", "returns",
         "categories", "warehouses"
     },
     UserRole.GENERAL: {
@@ -546,13 +546,31 @@ UserRole.ADMIN: {
 
 def get_role_from_user_data(user_data: dict) -> UserRole:
     """Determine user role from user data returned by login API."""
+    # Backend sends "roles": ["Admin", "Manager"] (list, Title Case)
+    roles_list = user_data.get("roles", [])
+    if roles_list:
+        primary_role = roles_list[0].lower().strip()
+        role_map = {
+            "admin": UserRole.ADMIN,
+            "manager": UserRole.SUPERVISOR,
+            "accountant": UserRole.ACCOUNTANT,
+            "pharmacist": UserRole.PHARMACIST,
+            "cashier": UserRole.CASHIER,
+            "warehouse": UserRole.WAREHOUSE,
+            "hr officer": UserRole.HR,
+            "view only": UserRole.GENERAL,
+        }
+        if primary_role in role_map:
+            return role_map[primary_role]
+
+    # Fallback: check singular "role" key
     role_str = user_data.get("role", "").lower().strip()
     if role_str:
         try:
             return UserRole(role_str)
         except ValueError:
             pass
-    
+
     # Fallback to permissions-based detection
     permissions = set(user_data.get("permissions", []))
     if any("admin" in p for p in permissions):

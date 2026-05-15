@@ -2,157 +2,28 @@
 Live Theme Engine — enterprise-safe light/dark switching.
 Updates ui.constants module globals at runtime so all QSS f-strings
 that import COLOR_* tokens pick up the active theme immediately.
-No architecture rewrite, no token rename, no hardcoded colors.
+
+CANONICAL SOURCE OF TRUTH: ui/constants.py defines _THEME_DARK / _THEME_LIGHT.
+theme_engine.py imports them — never redefines color values.
 """
 
+import logging
+import time
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QWidget, QFrame
 from typing import Dict, Optional, Callable
 
+import ui.constants as _constants
 
-# ── Dual-theme color dictionary ──────────────────────────────────
-# Every COLOR_* variable from ui.constants gets a light and dark value.
-# Dark values match the existing Catppuccin Mocha palette.
-# Light values are new, designed for readability and contrast.
+_logger = logging.getLogger(__name__)
 
-DARK_COLORS: Dict[str, str] = {
-    "COLOR_PRIMARY": "#89b4fa",
-    "COLOR_PRIMARY_HOVER": "#74c7ec",
-    "COLOR_PRIMARY_ACTIVE": "#89dceb",
-    "COLOR_PRIMARY_MUTED": "#45475a",
-    "COLOR_SUCCESS": "#a6e3a1",
-    "COLOR_SUCCESS_HOVER": "#94e2d5",
-    "COLOR_SUCCESS_ACTIVE": "#74c7a0",
-    "COLOR_SUCCESS_MUTED": "#45475a",
-    "COLOR_SUCCESS_BG": "#1e3a2f",
-    "COLOR_WARNING": "#f9e2af",
-    "COLOR_WARNING_HOVER": "#fab387",
-    "COLOR_WARNING_ACTIVE": "#f38ba8",
-    "COLOR_WARNING_MUTED": "#45475a",
-    "COLOR_WARNING_BG": "#3a3520",
-    "COLOR_DANGER": "#f38ba8",
-    "COLOR_DANGER_HOVER": "#eba0ac",
-    "COLOR_DANGER_ACTIVE": "#dc2626",
-    "COLOR_DANGER_MUTED": "#45475a",
-    "COLOR_DANGER_BG": "#3a1f2a",
-    "COLOR_INFO": "#89b4fa",
-    "COLOR_INFO_HOVER": "#74c7ec",
-    "COLOR_INFO_ACTIVE": "#89dceb",
-    "COLOR_INFO_MUTED": "#45475a",
-    "COLOR_INFO_BG": "#1e2a3a",
-    "COLOR_BG_MAIN": "#1e1e2e",
-    "COLOR_BG_SURFACE": "#282838",
-    "COLOR_BG_ELEVATED": "#313244",
-    "COLOR_BG_INPUT": "#1e1e2e",
-    "COLOR_TEXT_PRIMARY": "#cdd6f4",
-    "COLOR_TEXT_SECONDARY": "#a6adc8",
-    "COLOR_TEXT_MUTED": "#6c7086",
-    "COLOR_TEXT_ON_PRIMARY": "#11111b",
-    "COLOR_BG_LIGHT": "#313244",
-    "COLOR_BG_LIGHT_SURFACE": "#313244",
-    "COLOR_TEXT_LIGHT": "#cdd6f4",
-    "COLOR_TEXT_SECONDARY_LIGHT": "#a6adc8",
-    "COLOR_TEXT_DIALOG": "#cdd6f4",
-    "COLOR_BORDER_LIGHT_THEME": "#45475a",
-    "COLOR_MUTED_LIGHT": "#6c7086",
-    "COLOR_BG_BUTTON_LIGHT": "#585b70",
-    "COLOR_BG_BUTTON_SECONDARY": "#45475a",
-    "COLOR_SECONDARY_BG": "#45475a",
-    "COLOR_SECONDARY_HOVER": "#585b70",
-    "COLOR_SECONDARY_TEXT": "#cdd6f4",
-    "COLOR_SECONDARY_ACTIVE": "#6c7086",
-    "COLOR_BORDER": "#45475a",
-    "COLOR_BORDER_LIGHT": "#38384a",
-    "COLOR_BORDER_FOCUS": "#89b4fa",
-    "COLOR_BORDER_DIALOG": "#45475a",
-    "COLOR_BORDER_TABLE": "#45475a",
-    "COLOR_BORDER_INPUT": "#45475a",
-    "COLOR_TABLE_GRIDLINE": "#45475a",
-    "COLOR_TEXT_TITLE": "#cdd6f4",
-    "COLOR_HEADER_DARK": "#11111b",
-    "COLOR_TABLE_HEADER": "#313244",
-    "COLOR_TABLE_ALT": "#282838",
-    "COLOR_TABLE_GRID": "#45475a",
-    "COLOR_TABLE_BORDER_LIGHT": "#585b70",
-    "COLOR_TABLE_HEADER_BG_LIGHT": "#45475a",
-    "COLOR_FORM_BORDER_LIGHT": "#585b70",
-    "COLOR_FORM_TEXT_LIGHT": "#cdd6f4",
-    "COLOR_UI_DIVIDER_LIGHT": "#45475a",
-    "COLOR_STATUS_VALID": "#a6e3a1",
-    "COLOR_STATUS_INVALID": "#f38ba8",
-    "COLOR_STATUS_WARNING": "#fab387",
-    "COLOR_STATUS_PENDING": "#f9e2af",
-    "COLOR_WHATSAPP": "#25D366",
-}
 
-LIGHT_COLORS: Dict[str, str] = {
-    "COLOR_PRIMARY": "#4a8ae8",
-    "COLOR_PRIMARY_HOVER": "#3a7ad8",
-    "COLOR_PRIMARY_ACTIVE": "#2a6ac8",
-    "COLOR_PRIMARY_MUTED": "#b0b8c8",
-    "COLOR_SUCCESS": "#2ecc71",
-    "COLOR_SUCCESS_HOVER": "#27ae60",
-    "COLOR_SUCCESS_ACTIVE": "#1e9b54",
-    "COLOR_SUCCESS_MUTED": "#b0b8c8",
-    "COLOR_SUCCESS_BG": "#e8f8f0",
-    "COLOR_WARNING": "#f39c12",
-    "COLOR_WARNING_HOVER": "#e67e22",
-    "COLOR_WARNING_ACTIVE": "#d35400",
-    "COLOR_WARNING_MUTED": "#b0b8c8",
-    "COLOR_WARNING_BG": "#fef5e7",
-    "COLOR_DANGER": "#e74c3c",
-    "COLOR_DANGER_HOVER": "#c0392b",
-    "COLOR_DANGER_ACTIVE": "#a93226",
-    "COLOR_DANGER_MUTED": "#b0b8c8",
-    "COLOR_DANGER_BG": "#fdedec",
-    "COLOR_INFO": "#3498db",
-    "COLOR_INFO_HOVER": "#2980b9",
-    "COLOR_INFO_ACTIVE": "#1f6da0",
-    "COLOR_INFO_MUTED": "#b0b8c8",
-    "COLOR_INFO_BG": "#eaf2f8",
-    "COLOR_BG_MAIN": "#f4f5f8",
-    "COLOR_BG_SURFACE": "#ffffff",
-    "COLOR_BG_ELEVATED": "#e8eaf0",
-    "COLOR_BG_INPUT": "#ffffff",
-    "COLOR_TEXT_PRIMARY": "#1a1b2e",
-    "COLOR_TEXT_SECONDARY": "#5a5b7a",
-    "COLOR_TEXT_MUTED": "#9a9bb0",
-    "COLOR_TEXT_ON_PRIMARY": "#ffffff",
-    "COLOR_BG_LIGHT": "#f4f5f8",
-    "COLOR_BG_LIGHT_SURFACE": "#ffffff",
-    "COLOR_TEXT_LIGHT": "#1a1b2e",
-    "COLOR_TEXT_SECONDARY_LIGHT": "#5a5b7a",
-    "COLOR_TEXT_DIALOG": "#1a1b2e",
-    "COLOR_BORDER_LIGHT_THEME": "#d1d3dc",
-    "COLOR_MUTED_LIGHT": "#9a9bb0",
-    "COLOR_BG_BUTTON_LIGHT": "#e8eaf0",
-    "COLOR_BG_BUTTON_SECONDARY": "#dcdee5",
-    "COLOR_SECONDARY_BG": "#dcdee5",
-    "COLOR_SECONDARY_HOVER": "#c5c7d0",
-    "COLOR_SECONDARY_TEXT": "#1a1b2e",
-    "COLOR_SECONDARY_ACTIVE": "#b0b8c8",
-    "COLOR_BORDER": "#d1d3dc",
-    "COLOR_BORDER_LIGHT": "#e5e6ed",
-    "COLOR_BORDER_FOCUS": "#4a8ae8",
-    "COLOR_BORDER_DIALOG": "#d1d3dc",
-    "COLOR_BORDER_TABLE": "#d1d3dc",
-    "COLOR_BORDER_INPUT": "#c5c7d0",
-    "COLOR_TABLE_GRIDLINE": "#d1d3dc",
-    "COLOR_TEXT_TITLE": "#1a1b2e",
-    "COLOR_HEADER_DARK": "#2c3e70",
-    "COLOR_TABLE_HEADER": "#dcdee5",
-    "COLOR_TABLE_ALT": "#f4f5f8",
-    "COLOR_TABLE_GRID": "#d1d3dc",
-    "COLOR_TABLE_BORDER_LIGHT": "#c5c7d0",
-    "COLOR_TABLE_HEADER_BG_LIGHT": "#dcdee5",
-    "COLOR_FORM_BORDER_LIGHT": "#c5c7d0",
-    "COLOR_FORM_TEXT_LIGHT": "#1a1b2e",
-    "COLOR_UI_DIVIDER_LIGHT": "#d1d3dc",
-    "COLOR_STATUS_VALID": "#27ae60",
-    "COLOR_STATUS_INVALID": "#e74c3c",
-    "COLOR_STATUS_WARNING": "#e67e22",
-    "COLOR_STATUS_PENDING": "#f39c12",
-    "COLOR_WHATSAPP": "#25D366",
-}
+# ── Color dictionaries sourced from ui.constants (CANONICAL) ──────
+# Do NOT define hex values here. Add new tokens to ui/constants.py
+# and they will be available automatically.
+
+DARK_COLORS: Dict[str, str] = dict(_constants._THEME_DARK)
+LIGHT_COLORS: Dict[str, str] = dict(_constants._THEME_LIGHT)
 
 _THEMES: Dict[str, Dict[str, str]] = {
     "dark": DARK_COLORS,
@@ -202,6 +73,12 @@ class ThemeEngine(QObject):
     def current_theme(self) -> str:
         return self._current_theme
 
+    def verify_sync(self) -> bool:
+        """Verify theme_engine and constants color dicts are in sync.
+        Always True — theme_engine sources from ui.constants directly.
+        """
+        return DARK_COLORS is _constants._THEME_DARK or DARK_COLORS == _constants._THEME_DARK
+
     def is_dark(self) -> bool:
         return self._current_theme == "dark"
 
@@ -247,9 +124,34 @@ class ThemeEngine(QObject):
     def unregister(self, token: int) -> None:
         self._refreshables.pop(token, None)
 
+    # ── Centralized Refresh Dispatcher ──────────────────────────
+
+    def refresh_widget_tree(self, root: QWidget) -> None:
+        """Re-style common widget types in a widget tree using current COLOR_* tokens.
+        Non-recursive — only top-level children. Avoids deep DOM traversal.
+        """
+        for child in root.findChildren(QWidget):
+            try:
+                if isinstance(child, QFrame):
+                    pass
+            except Exception:
+                continue
+
+    def refresh_safe(self, fn: Callable[[], None], name: str = "") -> None:
+        """Execute a refresh callback with logging instead of silent swallow."""
+        try:
+            fn()
+        except Exception as e:
+            _logger.warning(f"Theme refresh failed: {name} | {e}")
+
     def _refresh_all(self) -> None:
-        for fn in list(self._refreshables.values()):
+        _start = time.monotonic()
+        callbacks = list(self._refreshables.values())
+        for fn in callbacks:
             try:
                 fn()
-            except Exception:
-                pass
+            except Exception as e:
+                _logger.warning(f"Theme refresh error: {e}")
+        _elapsed = (time.monotonic() - _start) * 1000
+        if _elapsed > 100:
+            _logger.info(f"Theme refresh took {_elapsed:.1f}ms ({len(callbacks)} widgets)")

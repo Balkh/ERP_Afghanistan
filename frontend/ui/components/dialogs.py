@@ -1,4 +1,5 @@
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V, COLOR_HEADER_DARK)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V, COLOR_HEADER_DARK, BORDER_RADIUS_SM)
+from ui.constants import TEXT_BODY, TEXT_LABEL, TEXT_DISPLAY
 """
 Enterprise Dialog Components.
 Professional dialog windows with standard patterns.
@@ -99,7 +100,7 @@ class EnterpriseDialog(QDialog):
         layout.setContentsMargins(MARGIN_COMPACT_H, MARGIN_COMPACT_V, MARGIN_COMPACT_H, MARGIN_COMPACT_V)
         
         title_label = QLabel(self._title)
-        title_label.setFont(QFont("Segoe UI", 14, QFont.Weight.Bold))
+        title_label.setFont(QFont("Segoe UI", TEXT_DISPLAY, QFont.Weight.Bold))
         layout.addWidget(title_label)
         
         layout.addStretch()
@@ -161,8 +162,8 @@ class EnterpriseDialog(QDialog):
                 border-bottom-right-radius: 8px;
             }}
             QPushButton {{
-                padding: 8px 20px;
-                border-radius: 4px;
+                padding: {SPACING_SM}px 20px;
+                border-radius: {BORDER_RADIUS_SM};
                 font-weight: 600;
             }}
             QPushButton[text="Save"] {{
@@ -230,7 +231,7 @@ class ConfirmDialog(EnterpriseDialog):
         # Add message
         message_label = QLabel(message)
         message_label.setWordWrap(True)
-        message_label.setFont(QFont("Segoe UI", 11))
+        message_label.setFont(QFont("Segoe UI", TEXT_BODY))
         self.set_content(message_label)
         
         # Connect signals
@@ -269,7 +270,7 @@ class AlertDialog(EnterpriseDialog):
         # Add message with styling
         message_label = QLabel(message)
         message_label.setWordWrap(True)
-        message_label.setFont(QFont("Segoe UI", 11))
+        message_label.setFont(QFont("Segoe UI", TEXT_BODY))
         self.set_content(message_label)
         
     @staticmethod
@@ -312,7 +313,7 @@ class LoadingDialog(EnterpriseDialog):
         # Add message
         self._message_label = QLabel(message)
         self._message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._message_label.setFont(QFont("Segoe UI", 12))
+        self._message_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.set_content(self._message_label)
         
         self.setMinimumWidth(200)

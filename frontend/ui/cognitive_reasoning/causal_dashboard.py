@@ -16,8 +16,8 @@ from ui.cognitive_reasoning.what_if_impact_panel import WhatIfImpactPanel
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XL,
+                           MARGIN_PAGE, BORDER_RADIUS_MD)
 
 
 class CausalReasoningDashboard(QWidget):
@@ -38,8 +38,8 @@ class CausalReasoningDashboard(QWidget):
         tabs.setStyleSheet(f"""
             QTabWidget::pane {{ border: none; background: {COLOR_BG_MAIN}; }}
             QTabBar::tab {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            padding: 10px 20px; border: 1px solid {COLOR_BORDER};
-            border-bottom: none; border-top-left-radius: 6px; border-top-right-radius: 6px;
+            padding: {SPACING_MD}px {SPACING_XL}px; border: 1px solid {COLOR_BORDER};
+            border-bottom: none; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px;
             margin-right: 2px; font-weight: bold; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_ELEVATED}; }}
         """)

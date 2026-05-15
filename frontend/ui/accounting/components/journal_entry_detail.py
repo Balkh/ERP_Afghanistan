@@ -3,8 +3,11 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
                                QAbstractItemView, QGroupBox, QFrame, QPushButton)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import (TEXT_LABEL, TEXT_BODY, TEXT_SECTION_TITLE)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT)
+from ui.rendering.button_renderer import ButtonRenderer, ButtonStyle
+from ui.rendering.table_renderer import TableRenderer
 
 
 class JournalEntryDetailDialog(QDialog):
@@ -27,10 +30,10 @@ class JournalEntryDetailDialog(QDialog):
             QGroupBox {{ 
                 font-weight: bold; 
                 border: 1px solid {COLOR_BORDER}; 
-                border-radius: 8px; 
+                border-radius: {BORDER_RADIUS_LG}; 
                 margin-top: 15px;
                 padding-top: 15px;
-                background-color: white;
+                background-color: {COLOR_BG_SURFACE};
             }}
             QLabel {{ color: {COLOR_TEXT_PRIMARY}; }}
         """)
@@ -40,7 +43,9 @@ class JournalEntryDetailDialog(QDialog):
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
         title = QLabel("Journal Entry Details")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title)
 
@@ -51,7 +56,7 @@ class JournalEntryDetailDialog(QDialog):
         info_layout.setSpacing(SPACING_SM + SPACING_XS)
 
         self.entry_number = QLabel("")
-        self.entry_number.setStyleSheet("font-weight: bold; color: #2980b9;")
+        self.entry_number.setStyleSheet(f"font-weight: bold; color: {COLOR_PRIMARY};")
         info_layout.addRow("Entry #:", self.entry_number)
 
         self.entry_date = QLabel("")
@@ -68,7 +73,9 @@ class JournalEntryDetailDialog(QDialog):
         info_layout.addRow("Reference:", self.reference)
 
         self.is_posted = QLabel("")
-        self.is_posted.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        status_font = QFont("Segoe UI", TEXT_LABEL)
+        status_font.setWeight(QFont.Weight.Bold)
+        self.is_posted.setFont(status_font)
         info_layout.addRow("Status:", self.is_posted)
 
         layout.addWidget(info_group)
@@ -87,24 +94,20 @@ class JournalEntryDetailDialog(QDialog):
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         
-        self.lines_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.lines_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.lines_table.setAlternatingRowColors(True)
-        self.lines_table.setStyleSheet(f"""
-            QTableWidget {{ border: 1px solid {COLOR_TABLE_BORDER_LIGHT}; border-radius: 4px; }}
-            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: 5px; font-weight: bold; }}
-        """)
+        TableRenderer.style(self.lines_table)
         lines_layout.addWidget(self.lines_table)
 
         # Totals
         totals_frame = QFrame()
-        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: 4px; padding: 5px;")
+        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_XS}px;")
         totals_layout = QHBoxLayout(totals_frame)
         totals_layout.addStretch()
         
         totals_layout.addWidget(QLabel("Total Debit:"))
         self.total_debit_label = QLabel("0.00")
-        self.total_debit_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        debit_font = QFont("Segoe UI", TEXT_BODY)
+        debit_font.setWeight(QFont.Weight.Bold)
+        self.total_debit_label.setFont(debit_font)
         self.total_debit_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
         totals_layout.addWidget(self.total_debit_label)
         
@@ -112,7 +115,9 @@ class JournalEntryDetailDialog(QDialog):
         
         totals_layout.addWidget(QLabel("Total Credit:"))
         self.total_credit_label = QLabel("0.00")
-        self.total_credit_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        credit_font = QFont("Segoe UI", TEXT_BODY)
+        credit_font.setWeight(QFont.Weight.Bold)
+        self.total_credit_label.setFont(credit_font)
         self.total_credit_label.setStyleSheet(f"color: {COLOR_DANGER};")
         totals_layout.addWidget(self.total_credit_label)
         
@@ -123,18 +128,7 @@ class JournalEntryDetailDialog(QDialog):
         buttons = QHBoxLayout()
         buttons.addStretch()
         close_btn = QPushButton("Close")
-        close_btn.setMinimumHeight(35)
-        close_btn.setMinimumWidth(100)
-        close_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_TEXT_SECONDARY};
-                color: white;
-                border-radius: 5px;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_TEXT_PRIMARY};
-            }}
-        """)
+        ButtonRenderer.style(close_btn, ButtonStyle.PRIMARY, "sm")
         close_btn.clicked.connect(self.reject)
         buttons.addWidget(close_btn)
         layout.addLayout(buttons)
@@ -149,7 +143,7 @@ class JournalEntryDetailDialog(QDialog):
         posted = self.entry_data.get("is_posted", False)
         self.is_posted.setText("Posted" if posted else "Draft")
         if posted:
-            self.is_posted.setStyleSheet("color: #2ecc71;")
+            self.is_posted.setStyleSheet(f"color: {COLOR_SUCCESS};")
         else:
             self.is_posted.setStyleSheet(f"color: {COLOR_WARNING};")
 

@@ -4,6 +4,7 @@ Provides unified export interface for all report types.
 """
 import io
 import json
+import base64
 from datetime import date
 from decimal import Decimal
 from typing import Optional, Dict, Any
@@ -431,6 +432,17 @@ class PDFExporter(BaseExporter):
             # Footer
             story.append(Spacer(1, 0.5*inch))
             story.append(Paragraph(f'Generated: {date.today()}', normal_style))
+            
+            # QR Code for verification
+            qr_b64 = ReportExporter.generate_qr_code_base64(data, report_type)
+            if qr_b64:
+                from reportlab.platypus import Image
+                from io import BytesIO
+                qr_data = BytesIO(base64.b64decode(qr_b64))
+                qr_img = Image(qr_data, width=60, height=60)
+                story.append(Spacer(1, 0.15*inch))
+                story.append(qr_img)
+                story.append(Paragraph('Scan to verify report', normal_style))
             
             doc.build(story)
             return buffer.getvalue()

@@ -18,7 +18,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
+from ui.constants import TEXT_SECTION_TITLE
 
 
 class AnomalyInvestigationScreen(QWidget):
@@ -39,7 +40,7 @@ class AnomalyInvestigationScreen(QWidget):
         layout.setSpacing(SPACING_LG)
 
         header = QLabel("Anomaly Investigation")
-        header.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        header.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(header)
 
@@ -48,13 +49,13 @@ class AnomalyInvestigationScreen(QWidget):
         sel_layout.addWidget(QLabel("Domain:"))
         self.domain_combo = QComboBox()
         self.domain_combo.addItems(["inventory", "accounting", "hr", "sales_purchase"])
-        self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: 6px;")
+        self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: {SPACING_6}px;")
         sel_layout.addWidget(self.domain_combo)
 
         refresh_btn = QPushButton("⟳ Analyze")
         refresh_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_WARNING}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         refresh_btn.clicked.connect(self._analyze)
         sel_layout.addWidget(refresh_btn)
@@ -70,7 +71,7 @@ class AnomalyInvestigationScreen(QWidget):
         self.drift_text.setPlaceholderText("Drift & anomaly data...")
         self.drift_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px;
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
         """)
         left_layout.addWidget(QLabel("Drift & Patterns"))
@@ -84,7 +85,7 @@ class AnomalyInvestigationScreen(QWidget):
         self.replay_text.setPlaceholderText("Replay & root cause data...")
         self.replay_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px;
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
         """)
         right_layout.addWidget(QLabel("Replay & Root Cause"))
@@ -105,7 +106,7 @@ class AnomalyInvestigationScreen(QWidget):
             btn = QPushButton(label)
             btn.setStyleSheet(f"""
                 QPushButton {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 8px 16px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}
                 QPushButton:hover {{ background: {COLOR_INFO}; color: white; }}
             """)
             btn.clicked.connect(cb)

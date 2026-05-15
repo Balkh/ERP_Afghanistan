@@ -2,10 +2,13 @@
 Standardized JSON Renderer.
 Automatically wraps all DRF responses in standardized format.
 """
+import logging
 import uuid
 from datetime import datetime
 from rest_framework.renderers import JSONRenderer
 from core.multitenant.context import TenantContext
+
+logger = logging.getLogger('erp.api')
 
 
 class StandardizedJSONRenderer(JSONRenderer):
@@ -44,6 +47,12 @@ class StandardizedJSONRenderer(JSONRenderer):
         
         if hasattr(response, 'observability_meta_extras') and response.observability_meta_extras:
             meta.update(response.observability_meta_extras)
+        
+        # Slow request detection (>2s)
+        if renderer_context and 'request' in renderer_context:
+            request = renderer_context['request']
+            if hasattr(request, 'request_id'):
+                meta['request_id'] = str(request.request_id) if request.request_id else meta.get('request_id', '')
         
         if hasattr(response, 'status_code'):
             if 200 <= response.status_code < 300:

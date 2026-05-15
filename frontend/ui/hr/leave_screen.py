@@ -1,19 +1,22 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_BG_BUTTON_LIGHT, COLOR_SECONDARY_BG)
 """Leave management screen for ERP."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                 QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
-                                 QHeaderView, QAbstractItemView, QComboBox, QGroupBox,
-                                 QDateEdit, QMessageBox)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                 QLabel, QLineEdit,
+                                 QComboBox, QGroupBox,
+                                 QMessageBox)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL, FONT_SIZE_TITLE,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                          BORDER_RADIUS_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class LeaveScreen(BaseScreen):
@@ -28,51 +31,24 @@ class LeaveScreen(BaseScreen):
     
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
          
         header = QLabel("Leave Management")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header.setContentsMargins(0, 0, 0, SPACING_SM)
         layout.addWidget(header)
          
         toolbar = QHBoxLayout()
         toolbar.setSpacing(SPACING_SM)
          
-        refresh_btn = QPushButton("⟳ Refresh")
-        refresh_btn.setMinimumHeight(38)
-        refresh_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_BUTTON_LIGHT};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_SECONDARY_BG};
-            }}
-        """)
+        refresh_btn = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         refresh_btn.clicked.connect(self.load_leave)
         toolbar.addWidget(refresh_btn)
          
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search...")
         self.search_input.setMinimumHeight(35)
-        self.search_input.setStyleSheet(f"""
-            QLineEdit {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: 6px;
-                padding: 8px;
-            }}
-            QLineEdit:focus {{
-                border-color: {COLOR_PRIMARY};
-            }}
-        """)
         self.search_input.textChanged.connect(self.filter_leave)
         toolbar.addWidget(self.search_input)
          
@@ -81,82 +57,35 @@ class LeaveScreen(BaseScreen):
         # Loading indicator
         self.loading_label = QLabel("Loading leave records...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("""
-            QLabel {
-                color: #9ca3af;
-                font-style: italic;
-                padding: 12px;
-            }
-        """)
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
         
         # Error indicator
         self.error_label = QLabel()
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("""
-            QLabel {
-                color: #d32f2f;
-                padding: 12px;
-            }
-        """)
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: {SPACING_MD}px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
         
         # Empty state indicator
         self.empty_label = QLabel("No leave records found")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("""
-            QLabel {
-                color: #666;
-                font-style: italic;
-                padding: 12px;
-            }
-        """)
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
          
-        self.table = QTableWidget()
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels([
-            "ID", "Employee", "Type", "Start Date", "End Date", "Days", "Status"
-        ])
-        self.table.setStyleSheet(f"""
-            QTableWidget {{ 
-                background-color: {COLOR_BG_MAIN}; 
-                color: {COLOR_TEXT_PRIMARY}; 
-                border: none; 
-                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
-            }}
-            QHeaderView::section {{ 
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; 
-                color: {COLOR_TEXT_PRIMARY};
-                padding: 10px; 
-                border: none; 
-                border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; 
-                font-weight: bold;
-                font-size: 12px;
-            }}
-            QTableWidget::item {{ 
-                padding: 10px; 
-                border-bottom: 1px solid {COLOR_TEXT_SECONDARY};
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QTableWidget::item:selected {{
-                background-color: {COLOR_PRIMARY_HOVER} !important;
-                color: white !important;
-            }}
-            QTableWidget::item:hover:!selected {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-            }}
-        """)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setAlternatingRowColors(False)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        columns = [
+            TableColumn("id", "ID", width=60),
+            TableColumn("employee_name", "Employee", width=150),
+            TableColumn("leave_type", "Type", width=100),
+            TableColumn("start_date", "Start Date", width=100, align="center"),
+            TableColumn("end_date", "End Date", width=100, align="center"),
+            TableColumn("total_days", "Days", width=50, align="center"),
+            TableColumn("status", "Status", width=80),
+        ]
+        self.table = EnterpriseTable(columns)
         self.table.setMinimumHeight(TABLE_ROW_HEIGHT_MD * 5)
-        self.table.verticalHeader().setDefaultSectionSize(TABLE_ROW_HEIGHT_MD)
         self.table.setVisible(False)
         layout.addWidget(self.table)
     
@@ -196,30 +125,42 @@ class LeaveScreen(BaseScreen):
     
     def update_table(self):
         """Update table with leave data and show appropriate state indicators."""
-        self.table.setRowCount(len(self.leave_records))
-        for row, record in enumerate(self.leave_records):
-            self.table.setItem(row, 0, QTableWidgetItem(str(record.get('id', ''))[:8]))
-            self.table.setItem(row, 1, QTableWidgetItem(record.get('employee_name', '')))
-            self.table.setItem(row, 2, QTableWidgetItem(record.get('leave_type', '')))
-            self.table.setItem(row, 3, QTableWidgetItem(str(record.get('start_date', ''))[:10]))
-            self.table.setItem(row, 4, QTableWidgetItem(str(record.get('end_date', ''))[:10]))
-            self.table.setItem(row, 5, QTableWidgetItem(str(record.get('total_days', 0))))
-            self.table.setItem(row, 6, QTableWidgetItem(record.get('status', '')))
-        
-        # Show/hide indicators based on state
         state = self.state
         self.loading_label.setVisible(state == ScreenState.LOADING)
         self.error_label.setVisible(state == ScreenState.ERROR)
         self.empty_label.setVisible(state == ScreenState.EMPTY and len(self.leave_records) == 0)
         self.table.setVisible(state == ScreenState.READY and len(self.leave_records) > 0)
+
+        data = []
+        for record in self.leave_records:
+            data.append({
+                "id": str(record.get('id', ''))[:8],
+                "employee_name": record.get('employee_name', ''),
+                "leave_type": record.get('leave_type', ''),
+                "start_date": str(record.get('start_date', ''))[:10],
+                "end_date": str(record.get('end_date', ''))[:10],
+                "total_days": str(record.get('total_days', 0)),
+                "status": record.get('status', ''),
+            })
+        self.table.set_data(data)
     
     def filter_leave(self, text):
         """Filter leave records by search text."""
-        for row in range(self.table.rowCount()):
-            match = False
-            for col in range(self.table.columnCount()):
-                item = self.table.item(row, col)
-                if item and text.lower() in item.text().lower():
-                    match = True
-                    break
-            self.table.setRowHidden(row, not match and text != "")
+        all_data = []
+        for record in self.leave_records:
+            all_data.append({
+                "id": str(record.get('id', ''))[:8],
+                "employee_name": record.get('employee_name', ''),
+                "leave_type": record.get('leave_type', ''),
+                "start_date": str(record.get('start_date', ''))[:10],
+                "end_date": str(record.get('end_date', ''))[:10],
+                "total_days": str(record.get('total_days', 0)),
+                "status": record.get('status', ''),
+            })
+
+        if not text:
+            self.table.set_data(all_data)
+            return
+
+        filtered = [r for r in all_data if text.lower() in str(r.get('employee_name', '')).lower() or text.lower() in str(r.get('leave_type', '')).lower()]
+        self.table.set_data(filtered)

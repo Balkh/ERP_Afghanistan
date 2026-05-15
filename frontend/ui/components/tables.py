@@ -11,7 +11,13 @@ from PySide6.QtCore import Signal, Qt, QModelIndex, QSortFilterProxyModel, QTime
 from PySide6.QtGui import QColor, QFont
 from typing import List, Dict, Any, Callable, Optional, Tuple
 from enum import Enum
-from ui.constants import SPACING_XS
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD,
+                           COLOR_BG_SURFACE, COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_PRIMARY,
+                           BORDER_RADIUS_SM, BORDER_RADIUS_MD,
+                           TABLE_ROW_HEIGHT_COMPACT, TABLE_ROW_HEIGHT_MD, TABLE_ROW_HEIGHT_RELAXED,
+                           INPUT_HEIGHT_MD, BUTTON_HEIGHT_MD)
 
 
 class TableSelectionMode(Enum):
@@ -47,8 +53,13 @@ class TableColumn:
 class EnterpriseTable(QTableWidget):
     """
     Enterprise-grade data table with advanced features.
+
+    Density tiers:
+    - "compact" (26px): Financial tables, dense numerical data
+    - "medium" (32px): Standard operational tables (default)
+    - "relaxed" (40px): Touch/kiosk interfaces
     """
-    
+
     # Signals
     row_selected = Signal(int, object)
     row_double_clicked = Signal(int, object)
@@ -56,15 +67,23 @@ class EnterpriseTable(QTableWidget):
     sort_changed = Signal(str, str)  # column, order
     filter_changed = Signal(dict)
     data_requested = Signal(int, int)  # page, page_size
-    
+
+    DENSITY_HEIGHTS = {
+        "compact": TABLE_ROW_HEIGHT_COMPACT,
+        "medium": TABLE_ROW_HEIGHT_MD,
+        "relaxed": TABLE_ROW_HEIGHT_RELAXED,
+    }
+
     def __init__(
         self,
         columns: List[TableColumn],
+        density: str = "medium",
         parent: Optional[QWidget] = None
     ):
         super().__init__(parent)
-        
+
         self._columns = columns
+        self._density = density
         self._data: List[Dict] = []
         self._filtered_data: List[Dict] = []
         self._current_sort_column: str = ""
@@ -110,7 +129,7 @@ class EnterpriseTable(QTableWidget):
                 
         # Configure vertical header
         self.verticalHeader().setVisible(True)
-        self.verticalHeader().setDefaultSectionSize(30)
+        self._apply_density()
         
         # Set selection behavior
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -128,6 +147,9 @@ class EnterpriseTable(QTableWidget):
         self.itemSelectionChanged.connect(self._on_selection_changed)
         self.itemDoubleClicked.connect(self._on_item_double_clicked)
         
+        # Keyboard navigation: Enter activates row
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        
         # Set table properties
         self.setShowGrid(True)
         self.setCornerButtonEnabled(True)
@@ -142,7 +164,22 @@ class EnterpriseTable(QTableWidget):
             TableSelectionMode.NONE: QAbstractItemView.SelectionMode.NoSelection
         }
         return modes.get(self._selection_mode, QAbstractItemView.SelectionMode.ExtendedSelection)
-        
+
+    def _apply_density(self):
+        """Apply current density tier to row heights."""
+        height = self.DENSITY_HEIGHTS.get(self._density, TABLE_ROW_HEIGHT_MD)
+        self.verticalHeader().setDefaultSectionSize(height)
+
+    def set_density(self, density: str):
+        """Change table density tier: 'compact', 'medium', or 'relaxed'."""
+        if density in self.DENSITY_HEIGHTS:
+            self._density = density
+            self._apply_density()
+
+    @property
+    def density(self) -> str:
+        return self._density
+
     def set_data(self, data: List[Dict], total_count: Optional[int] = None):
         """Set table data."""
         self._data = data
@@ -190,14 +227,29 @@ class EnterpriseTable(QTableWidget):
                 
         self.blockSignals(False)
         
+    def keyPressEvent(self, event):
+        """Handle keyboard navigation: Enter/Return activates current row."""
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            rows = self.get_selected_rows()
+            if rows:
+                row = rows[0]
+                data = self.get_row_data(row)
+                if data is not None:
+                    self.row_double_clicked.emit(row, data)
+            return
+        super().keyPressEvent(event)
+
     def set_selection_mode(self, mode: TableSelectionMode):
         """Set selection mode."""
         self._selection_mode = mode
         self.setSelectionMode(self._get_selection_mode())
         
     def get_selected_rows(self) -> List[int]:
-        """Get selected row indices."""
-        return [index.row() for index in self.selectedIndexes()]
+        """Get selected row indices (unique, sorted)."""
+        rows = set()
+        for index in self.selectedIndexes():
+            rows.add(index.row())
+        return sorted(rows)
         
     def get_selected_data(self) -> List[Dict]:
         """Get selected row data."""
@@ -323,6 +375,10 @@ class PaginationWidget(QWidget):
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         
+        self._current_page = 1
+        self._total_pages = 1
+        self._total_count = 0
+        
         self._setup_ui()
         
     def _setup_ui(self):
@@ -362,6 +418,10 @@ class PaginationWidget(QWidget):
         
     def update_pagination(self, current_page: int, total_pages: int, total_count: int):
         """Update pagination display."""
+        self._current_page = current_page
+        self._total_pages = total_pages
+        self._total_count = total_count
+        
         self.info_label.setText(
             f"Page {current_page} of {total_pages} ({total_count} items)"
         )
@@ -380,13 +440,105 @@ class PaginationWidget(QWidget):
             
     def _on_prev_page(self):
         """Go to previous page."""
-        # This should be connected to current page - 1
-        pass
+        if self._current_page > 1:
+            self.page_changed.emit(self._current_page - 1)
         
     def _on_next_page(self):
         """Go to next page."""
-        pass
+        if self._current_page < self._total_pages:
+            self.page_changed.emit(self._current_page + 1)
         
     def _on_last_page(self):
         """Go to last page."""
-        pass
+        self.page_changed.emit(self._total_pages)
+
+
+class DataEntryGrid(QTableWidget):
+    """
+    Lightweight editable ERP grid.
+
+    Standardized QTableWidget wrapper for interactive line-item data entry.
+    Supports add/remove rows, cell editing, setCellWidget, and itemChanged signal.
+    NOT a display table — use EnterpriseTable for read-only data display.
+
+    Column spec: list of (title, width) tuples or dict keys.
+
+    Usage:
+        grid = DataEntryGrid(["Product", "Qty", "Price"])
+        grid.add_row(["Item A", "1", "10.00"])
+        grid.itemChanged.connect(self.on_cell_changed)
+        grid.add_remove_column()
+        layout.addWidget(grid)
+    """
+
+    def __init__(self, columns: List, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self._column_keys = []
+        headers = []
+        for col in columns:
+            if isinstance(col, (list, tuple)):
+                headers.append(col[0])
+                self._column_keys.append(len(self._column_keys))
+            else:
+                headers.append(str(col))
+                self._column_keys.append(len(self._column_keys))
+
+        self.setColumnCount(len(headers))
+        self.setHorizontalHeaderLabels(headers)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.DoubleClicked)
+        self.setAlternatingRowColors(True)
+        self.verticalHeader().setDefaultSectionSize(TABLE_ROW_HEIGHT_MD)
+        self.setStyleSheet(f"""
+            QTableWidget {{
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_SM};
+                background-color: {COLOR_BG_SURFACE};
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
+                padding: {SPACING_SM}px;
+                font-weight: bold;
+                border: none;
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+        """)
+
+    def add_remove_column(self, header: str = "") -> int:
+        """Append a column with a 'Remove' button per row. Returns column index."""
+        col = self.columnCount()
+        self.setColumnCount(col + 1)
+        self.setHorizontalHeaderItem(col, QTableWidgetItem(header or "Remove"))
+        return col
+
+    def add_row(self, values: List[str]) -> int:
+        """Append a row with string values. Returns row index."""
+        row = self.rowCount()
+        self.insertRow(row)
+        for col, val in enumerate(values):
+            if col < self.columnCount():
+                item = QTableWidgetItem(str(val))
+                self.setItem(row, col, item)
+        return row
+
+    def remove_row(self, row: int) -> None:
+        """Remove a row."""
+        self.removeRow(row)
+
+    def get_row_values(self, row: int) -> List[str]:
+        """Get all cell values for a row as strings."""
+        return [
+            self.item(row, col).text() if self.item(row, col) else ""
+            for col in range(self.columnCount())
+        ]
+
+    def set_row_values(self, row: int, values: List[str]) -> None:
+        """Set cell values for a row."""
+        for col, val in enumerate(values):
+            if col < self.columnCount():
+                item = self.item(row, col)
+                if item:
+                    item.setText(str(val))
+                else:
+                    self.setItem(row, col, QTableWidgetItem(str(val)))

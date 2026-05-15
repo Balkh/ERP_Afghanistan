@@ -17,7 +17,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
+from ui.constants import TEXT_SECTION_TITLE, TEXT_BODY
 
 
 class WhatIfImpactPanel(QWidget):
@@ -41,12 +42,14 @@ class WhatIfImpactPanel(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("🔮 What-If Impact Explorer (READ-ONLY)")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         info = QLabel("No simulation execution · Analysis only")
-        info.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px; font-style: italic;")
+        info.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px; font-style: italic;")
         header.addWidget(info, alignment=Qt.AlignRight)
 
         layout.addLayout(header)
@@ -63,7 +66,7 @@ class WhatIfImpactPanel(QWidget):
         ])
         self.scenario_combo.setStyleSheet(f"""
             QComboBox {{ color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE};
-            padding: 6px; border: 1px solid {COLOR_BORDER}; border-radius: 4px; }}
+            padding: {SPACING_6}px; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; }}
         """)
         sel_layout.addWidget(QLabel("Scenario:"))
         sel_layout.addWidget(self.scenario_combo)
@@ -71,7 +74,7 @@ class WhatIfImpactPanel(QWidget):
         analyze_btn = QPushButton("🔍 Analyze Impact")
         analyze_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         analyze_btn.clicked.connect(self._analyze)
         sel_layout.addWidget(analyze_btn)
@@ -82,15 +85,15 @@ class WhatIfImpactPanel(QWidget):
         result_group = QGroupBox("Impact Analysis (Estimated from Existing Data)")
         result_group.setStyleSheet(f"""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
-            border-radius: 6px; padding: 12px; padding-top: 20px; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px; padding-top: 20px; }}
         """)
         result_layout = QVBoxLayout(result_group)
         self.result_text = QTextEdit()
         self.result_text.setReadOnly(True)
         self.result_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px;
-            font-family: 'Consolas', monospace; font-size: 12px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         result_layout.addWidget(self.result_text)
         layout.addWidget(result_group)
@@ -99,15 +102,15 @@ class WhatIfImpactPanel(QWidget):
         data_group = QGroupBox("Supporting Intelligence Data")
         data_group.setStyleSheet(f"""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
-            border-radius: 6px; padding: 12px; padding-top: 20px; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px; padding-top: 20px; }}
         """)
         data_layout = QVBoxLayout(data_group)
         self.data_text = QTextEdit()
         self.data_text.setReadOnly(True)
         self.data_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px;
-            font-family: 'Consolas', monospace; font-size: 11px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         data_layout.addWidget(self.data_text)
         layout.addWidget(data_group)

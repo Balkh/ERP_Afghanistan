@@ -5,6 +5,7 @@ from ui.accounting.base_report_screen import BaseReportScreen
 # Design tokens
 from ui.constants import COLOR_DANGER
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import TEXT_TABLE
 
 
 class ARAPAgeingScreen(BaseReportScreen):
@@ -13,7 +14,7 @@ class ARAPAgeingScreen(BaseReportScreen):
     def __init__(self, report_type="ar", parent=None):
         self.report_type = report_type
         title = "Accounts Receivable Ageing" if report_type == "ar" else "Accounts Payable Ageing"
-        self.report_api_endpoint = "/api/accounting/accounts/ar_ageing/" if report_type == "ar" else "/api/accounting/accounts/ap_ageing/"
+        self.report_api_endpoint = "/api/accounting/accounts/ar_aging/" if report_type == "ar" else "/api/accounting/accounts/ap_aging/"
         super().__init__(title, parent)
         self._configure_table()
 
@@ -63,7 +64,9 @@ class ARAPAgeingScreen(BaseReportScreen):
             self.table.setItem(row, 4, self._item(f"{self._safe_float(entry.get('age_61_90')):,.2f}"))
             self.table.setItem(row, 5, self._item(f"{self._safe_float(entry.get('age_90_plus')):,.2f}"))
             total_item = self._item(f"{self._safe_float(entry.get('total')):,.2f}")
-            total_item.setFont(QFont("Segoe UI", 9, QFont.Bold))
+            total_font = QFont("Segoe UI", TEXT_TABLE)
+            total_font.setWeight(QFont.Weight.Bold)
+            total_item.setFont(total_font)
             self.table.setItem(row, 6, total_item)
 
         last_row = len(rows)

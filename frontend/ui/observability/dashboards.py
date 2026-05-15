@@ -9,18 +9,17 @@ from PySide6.QtCore import Qt, Signal, Slot, QSize
 from PySide6.QtGui import QFont, QColor
 
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-                          FONT_SIZE_XS, FONT_SIZE_SM, FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL,
-                          FONT_SIZE_TITLE, FONT_SIZE_HEADER,
                           MARGIN_PAGE, PADDING_CARD,
                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_FOCUS,
-                          COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_STATUS_PENDING,
-                          BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_STATUS_PENDING,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, SPACING_6, BORDER_RADIUS_SM)
 from ui.constants import (COLOR_TABLE_HEADER, COLOR_TABLE_ALT, COLOR_TABLE_GRIDLINE,
                           TABLE_ROW_HEIGHT_MD)
+from ui.constants import TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_HELPER
 from ui.observability.widgets import (StatusIndicator, MetricCard, SeverityBadge,
                                        HealthBar, LoadingOverlay, SectionHeader,
                                        VirtualTimelineWidget, TrendArrow, IncidentCard,
@@ -43,10 +42,10 @@ def _make_styled_table(headers, parent=None):
             color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER};
             gridline-color: {COLOR_TABLE_GRIDLINE};
-            font-size: {FONT_SIZE_SM}px;
+            font-size: {TEXT_LABEL}px;
         }}
         QTableWidget::item {{
-            padding: 4px 8px;
+            padding: {SPACING_XS}px 8px;
             border-bottom: 1px solid {COLOR_BORDER_LIGHT};
         }}
         QTableWidget::item:selected {{
@@ -56,10 +55,10 @@ def _make_styled_table(headers, parent=None):
         QHeaderView::section {{
             background-color: {COLOR_TABLE_HEADER};
             color: {COLOR_PRIMARY};
-            padding: 6px 8px;
+            padding: {SPACING_6}px 8px;
             border: none;
             font-weight: bold;
-            font-size: {FONT_SIZE_XS}px;
+            font-size: {TEXT_TABLE}px;
         }}
     """)
     return table
@@ -166,7 +165,7 @@ class ObservabilityMainScreen(_BaseDashboard):
 
         header = QHBoxLayout()
         title = QLabel("Observability Dashboard")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_HEADER, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         header.addStretch()
@@ -175,7 +174,7 @@ class ObservabilityMainScreen(_BaseDashboard):
         header.addWidget(self.status_indicator)
 
         self.last_update_label = QLabel("Last update: --")
-        self.last_update_label.setFont(QFont("Segoe UI", FONT_SIZE_XS))
+        self.last_update_label.setFont(QFont("Segoe UI", TEXT_TABLE))
         self.last_update_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         header.addWidget(self.last_update_label)
         layout.addLayout(header)
@@ -197,7 +196,7 @@ class ObservabilityMainScreen(_BaseDashboard):
         hb_layout = QVBoxLayout(health_bar_frame)
         hb_layout.setContentsMargins(SPACING_MD, SPACING_MD, SPACING_MD, SPACING_MD)
         hb_label = QLabel("System Health Score")
-        hb_label.setFont(QFont("Segoe UI", FONT_SIZE_SM, QFont.Bold))
+        hb_label.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         hb_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; border: none;")
         hb_layout.addWidget(hb_label)
         self.health_bar = HealthBar()
@@ -209,7 +208,7 @@ class ObservabilityMainScreen(_BaseDashboard):
         links_layout = QVBoxLayout(links_frame)
         links_layout.setContentsMargins(SPACING_MD, SPACING_MD, SPACING_MD, SPACING_MD)
         links_title = QLabel("Quick Navigation")
-        links_title.setFont(QFont("Segoe UI", FONT_SIZE_SM, QFont.Bold))
+        links_title.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         links_title.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; border: none;")
         links_layout.addWidget(links_title)
         nav_items = [
@@ -222,8 +221,8 @@ class ObservabilityMainScreen(_BaseDashboard):
         ]
         for name, _ in nav_items:
             lbl = QLabel(f"  {name}")
-            lbl.setFont(QFont("Segoe UI", FONT_SIZE_SM))
-            lbl.setStyleSheet(f"color: {COLOR_INFO}; border: none; padding: 2px 0px;")
+            lbl.setFont(QFont("Segoe UI", TEXT_LABEL))
+            lbl.setStyleSheet(f"color: {COLOR_INFO}; border: none; padding: {SPACING_XS}px 0px;")
             links_layout.addWidget(lbl)
         grid.addWidget(links_frame, 1, 2)
         layout.addLayout(grid)
@@ -270,7 +269,7 @@ class ControlCenterDashboard(_BaseDashboard):
 
         header = QHBoxLayout()
         title = QLabel("Control Center")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_HEADER, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         header.addStretch()
@@ -279,7 +278,7 @@ class ControlCenterDashboard(_BaseDashboard):
         header.addWidget(self.status_indicator)
 
         self.last_update = QLabel("--")
-        self.last_update.setFont(QFont("Segoe UI", FONT_SIZE_XS))
+        self.last_update.setFont(QFont("Segoe UI", TEXT_TABLE))
         self.last_update.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         header.addWidget(self.last_update)
         layout.addLayout(header)
@@ -355,7 +354,7 @@ class UnifiedTimelineView(_BaseDashboard):
 
         header = QHBoxLayout()
         title = QLabel("Unified Timeline")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_HEADER, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         header.addStretch()
@@ -388,7 +387,7 @@ class UnifiedTimelineView(_BaseDashboard):
         pagination.addWidget(self.prev_btn)
         pagination.addStretch()
         self.page_label = QLabel("Page 1")
-        self.page_label.setFont(QFont("Segoe UI", FONT_SIZE_SM))
+        self.page_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.page_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
         pagination.addWidget(self.page_label)
         pagination.addStretch()
@@ -461,7 +460,7 @@ class IncidentIntelligenceView(_BaseDashboard):
 
         header = QHBoxLayout()
         title = QLabel("Incident Intelligence")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_HEADER, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         header.addStretch()
@@ -492,7 +491,7 @@ class IncidentIntelligenceView(_BaseDashboard):
         detail_panel.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border-radius: {BORDER_RADIUS_MD}px; border: 1px solid {COLOR_BORDER_LIGHT};")
         detail_layout = QVBoxLayout(detail_panel)
         self.detail_label = QLabel("Select an incident to view details")
-        self.detail_label.setFont(QFont("Segoe UI", FONT_SIZE_SM))
+        self.detail_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.detail_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; border: none;")
         self.detail_label.setWordWrap(True)
         detail_layout.addWidget(self.detail_label)
@@ -569,7 +568,7 @@ class PredictiveDriftDashboard(_BaseDashboard):
 
         header = QHBoxLayout()
         title = QLabel("Predictive Drift")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_HEADER, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         header.addStretch()
@@ -645,16 +644,16 @@ class ReplayTimeTravelView(_BaseDashboard):
 
         header = QHBoxLayout()
         title = QLabel("Replay / Time Travel")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_HEADER, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         header.addStretch()
         readonly_tag = QLabel("VIEW ONLY")
-        readonly_tag.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_MUTED}; padding: 2px 8px; border-radius: 4px; font-size: {FONT_SIZE_XS}px; font-weight: bold;")
+        readonly_tag.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_MUTED}; padding: {SPACING_XS}px {SPACING_SM}px; border-radius: {BORDER_RADIUS_SM}; font-size: {TEXT_TABLE}px; font-weight: bold;")
         header.addWidget(readonly_tag)
 
         self.last_update = QLabel("")
-        self.last_update.setFont(QFont("Segoe UI", FONT_SIZE_XS))
+        self.last_update.setFont(QFont("Segoe UI", TEXT_TABLE))
         self.last_update.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         header.addWidget(self.last_update)
         layout.addLayout(header)
@@ -673,7 +672,7 @@ class ReplayTimeTravelView(_BaseDashboard):
         left_layout.addWidget(self.session_list)
 
         bookmarks_title = QLabel("Bookmarks")
-        bookmarks_title.setFont(QFont("Segoe UI", FONT_SIZE_SM, QFont.Bold))
+        bookmarks_title.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         bookmarks_title.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; border: none; padding-top: 8px;")
         left_layout.addWidget(bookmarks_title)
 
@@ -699,7 +698,7 @@ class ReplayTimeTravelView(_BaseDashboard):
         cursor_layout.setContentsMargins(SPACING_SM, SPACING_XS, SPACING_SM, SPACING_XS)
         cursor_layout.addWidget(QLabel("Timeline Cursor:"))
         self.cursor_label = QLabel("--:--:--")
-        self.cursor_label.setFont(QFont("Segoe UI", FONT_SIZE_SM, QFont.Bold))
+        self.cursor_label.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         self.cursor_label.setStyleSheet(f"color: {COLOR_PRIMARY}; border: none;")
         cursor_layout.addWidget(self.cursor_label)
         cursor_layout.addStretch()
@@ -755,13 +754,13 @@ class DigitalTwinTelemetryView(_BaseDashboard):
 
         header = QHBoxLayout()
         title = QLabel("Digital Twin Telemetry")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_HEADER, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         header.addStretch()
 
         self.last_update = QLabel("")
-        self.last_update.setFont(QFont("Segoe UI", FONT_SIZE_XS))
+        self.last_update.setFont(QFont("Segoe UI", TEXT_TABLE))
         self.last_update.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         header.addWidget(self.last_update)
         layout.addLayout(header)
@@ -788,9 +787,9 @@ class DigitalTwinTelemetryView(_BaseDashboard):
             QTabBar::tab {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_SECONDARY};
-                padding: 6px 16px;
+                padding: {SPACING_6}px 16px;
                 border: none;
-                font-size: {FONT_SIZE_SM}px;
+                font-size: {TEXT_LABEL}px;
             }}
             QTabBar::tab:selected {{
                 background-color: {COLOR_BG_SURFACE};

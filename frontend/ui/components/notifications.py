@@ -1,5 +1,6 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_LG)
 from ui.constants import (COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
+from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_CARD_TITLE
 """
 Enterprise Notifications System.
 Toast notifications and notification center.
@@ -81,14 +82,14 @@ class NotificationItem(QWidget):
         self.setStyleSheet(f"""
             QWidget {{
                 background-color: {bg_color};
-                border-radius: 8px;
+                border-radius: {BORDER_RADIUS_LG};
                 color: white;
             }}
             QPushButton {{
                 background-color: transparent;
                 border: none;
                 color: white;
-                font-size: 16px;
+                font-size: {TEXT_CARD_TITLE}px;
             }}
             QPushButton:hover {{
                 background-color: rgba(255,255,255,0.2);
@@ -104,11 +105,11 @@ class NotificationItem(QWidget):
         content.setSpacing(SPACING_XS)
         
         title_label = QLabel(self._title)
-        title_label.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        title_label.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         content.addWidget(title_label)
         
         message_label = QLabel(self._message)
-        message_label.setFont(QFont("Segoe UI", 9))
+        message_label.setFont(QFont("Segoe UI", TEXT_TABLE))
         message_label.setWordWrap(True)
         message_label.setMaximumWidth(320)
         content.addWidget(message_label)

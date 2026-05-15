@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
                                QLabel, QFrame)
 from PySide6.QtCore import Qt, Slot
 from PySide6.QtGui import QFont
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_DISPLAY)
 
 class CategoryFormDialog(QDialog):
     """Dialog for adding/editing categories."""
@@ -27,7 +27,9 @@ class CategoryFormDialog(QDialog):
         
         # Title
         title_label = QLabel(self.windowTitle())
-        title_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_DISPLAY)
+        title_font.setWeight(QFont.Weight.Bold)
+        title_label.setFont(title_font)
         layout.addWidget(title_label)
         
         # Form layout

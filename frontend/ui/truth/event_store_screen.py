@@ -14,7 +14,8 @@ from api.truth_client import TruthAPIClient
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_SUCCESS,
                            COLOR_WARNING, COLOR_DANGER, COLOR_BORDER,
-                           SPACING_LG, SPACING_MD, SPACING_SM, MARGIN_PAGE)
+                           SPACING_LG, SPACING_MD, SPACING_SM, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD)
+from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL
 
 
 class EventStoreScreen(QWidget):
@@ -32,7 +33,7 @@ class EventStoreScreen(QWidget):
         layout.setSpacing(SPACING_LG)
 
         header = QLabel("Event Store Browser")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        header.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(header)
 
@@ -40,23 +41,23 @@ class EventStoreScreen(QWidget):
         toolbar = QHBoxLayout()
         self.domain_combo = QComboBox()
         self.domain_combo.addItems(["", "inventory", "accounting", "hr", "sales_purchase", "fixed_assets"])
-        self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: 6px;")
+        self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: {SPACING_6}px;")
         toolbar.addWidget(QLabel("Domain:"))
         toolbar.addWidget(self.domain_combo)
 
         self.agg_input = QLineEdit()
         self.agg_input.setPlaceholderText("Aggregate ID...")
-        self.agg_input.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: 6px; border: 1px solid {COLOR_BORDER};")
+        self.agg_input.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: {SPACING_6}px; border: 1px solid {COLOR_BORDER};")
         toolbar.addWidget(QLabel("Aggregate:"))
         toolbar.addWidget(self.agg_input)
 
         refresh_btn = QPushButton("⟳ Refresh")
-        refresh_btn.setStyleSheet(f"QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none; border-radius: 6px; padding: 8px 16px; }}")
+        refresh_btn.setStyleSheet(f"QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}")
         refresh_btn.clicked.connect(self._refresh)
         toolbar.addWidget(refresh_btn)
 
         verify_btn = QPushButton("✓ Verify Claim")
-        verify_btn.setStyleSheet(f"QPushButton {{ background: {COLOR_WARNING}; color: white; border: none; border-radius: 6px; padding: 8px 16px; }}")
+        verify_btn.setStyleSheet(f"QPushButton {{ background: {COLOR_WARNING}; color: white; border: none; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}")
         verify_btn.clicked.connect(self._verify)
         toolbar.addWidget(verify_btn)
 
@@ -64,7 +65,7 @@ class EventStoreScreen(QWidget):
 
         # Summary bar
         self.summary_label = QLabel("Loading...")
-        self.summary_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 12px;")
+        self.summary_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_LABEL}px;")
         layout.addWidget(self.summary_label)
 
         # Event table
@@ -77,7 +78,7 @@ class EventStoreScreen(QWidget):
             QTableWidget {{ background-color: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
             gridline-color: {COLOR_BORDER}; }}
             QHeaderView::section {{ background-color: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: 6px; font-weight: bold; }}
+            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
         """)
         layout.addWidget(self.table)
 

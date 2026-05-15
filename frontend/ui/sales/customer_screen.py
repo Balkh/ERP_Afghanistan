@@ -1,19 +1,24 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Customers screen for ERP."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QFormLayout, QGroupBox,
-                                  QDialog, QDialogButtonBox, QTextEdit, QComboBox, QFrame, QScrollArea)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+                                  QDialog, QDialogButtonBox, QTextEdit, QComboBox, QFrame)
+from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
-from ui.screens.base_screen import BaseScreen, ScreenState
+from ui.screens.base_screen import BaseScreen
 from utils.cache import cached
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL, FONT_SIZE_TITLE,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                          BORDER_RADIUS_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class CustomerScreen(BaseScreen):
@@ -28,24 +33,22 @@ class CustomerScreen(BaseScreen):
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
 
         # Header
         header = QHBoxLayout()
         header.setContentsMargins(0, 0, 0, SPACING_SM)
         title = QLabel("Customers")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_TITLE, QFont.Bold))
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header.addWidget(title)
         header.addStretch()
 
-        add_btn = QPushButton("Add Customer")
-        add_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        add_btn = EnterpriseButton(text="Add Customer", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         add_btn.clicked.connect(self.add_customer)
         header.addWidget(add_btn)
 
-        refresh_btn = QPushButton("Refresh")
-        refresh_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        refresh_btn = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         refresh_btn.clicked.connect(self.load_customers)
         header.addWidget(refresh_btn)
 
@@ -64,50 +67,34 @@ class CustomerScreen(BaseScreen):
         # Loading indicator
         self.loading_label = QLabel("Loading customers...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"""
-            QLabel {{
-                color: #666;
-                font-style: italic;
-                padding: 12px;
-            }}
-        """)
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         # Error indicator
         self.error_label = QLabel()
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"""
-            QLabel {{
-                color: {COLOR_DANGER};
-                padding: {SPACING_MD};
-            }}
-        """)
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 
         # Empty state indicator
         self.empty_label = QLabel("No customers found")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"""
-            QLabel {{
-                color: {COLOR_TEXT_MUTED};
-                font-style: italic;
-                padding: {SPACING_MD};
-            }}
-        """)
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         # Table
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["ID", "Name", "Phone", "Email", "Address"])
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.table.setMinimumHeight(TABLE_ROW_HEIGHT_MD * 5)  # Show about 5 rows
-        self.table.verticalHeader().setDefaultSectionSize(TABLE_ROW_HEIGHT_MD)
+        columns = [
+            TableColumn("id", "ID", width=50),
+            TableColumn("name", "Name", width=200),
+            TableColumn("phone", "Phone", width=120),
+            TableColumn("email", "Email", width=200),
+            TableColumn("address", "Address", width=250),
+        ]
+        self.table = EnterpriseTable(columns)
+        self.table.setMinimumHeight(TABLE_ROW_HEIGHT_MD * 5)
         self.table.setVisible(False)
         layout.addWidget(self.table)
 
@@ -166,24 +153,23 @@ class CustomerScreen(BaseScreen):
     def update_table(self):
         """Update table with customer data and show appropriate state indicators."""
         valid_customers = [c for c in self.customers if isinstance(c, dict)]
-        
-        if not valid_customers:
-            self.table.setRowCount(0)
-        
-        self.table.setRowCount(len(valid_customers))
-        for i, customer in enumerate(valid_customers):
-            self.table.setItem(i, 0, QTableWidgetItem(str(customer.get('id') or '')))
-            self.table.setItem(i, 1, QTableWidgetItem(customer.get('name') or ''))
-            self.table.setItem(i, 2, QTableWidgetItem(customer.get('phone') or ''))
-            self.table.setItem(i, 3, QTableWidgetItem(customer.get('email') or ''))
-            self.table.setItem(i, 4, QTableWidgetItem(customer.get('address') or ''))
-        
-        # Show/hide indicators based on state
+
         state = self.state
         self.loading_label.setVisible(state == ScreenState.LOADING)
         self.error_label.setVisible(state == ScreenState.ERROR)
         self.empty_label.setVisible(state == ScreenState.EMPTY and len(valid_customers) == 0)
         self.table.setVisible(state == ScreenState.READY and len(valid_customers) > 0)
+
+        data = []
+        for customer in valid_customers:
+            data.append({
+                "id": str(customer.get('id') or ''),
+                "name": customer.get('name') or '',
+                "phone": customer.get('phone') or '',
+                "email": customer.get('email') or '',
+                "address": customer.get('address') or '',
+            })
+        self.table.set_data(data)
 
     def filter_customers(self, text):
         """Filter customers by search text."""
@@ -205,45 +191,44 @@ class CustomerScreen(BaseScreen):
 
 class CustomerDialog(QDialog):
     """Customer add/edit dialog with Individual/Company support."""
-    
-    _SUBMIT_STYLESHEET = """
-        QPushButton {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 12px 24px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        QPushButton:hover {
-            background-color: #2980b9;
-        }
-        QPushButton:pressed {
-            background-color: #1f618d;
-        }
-        QPushButton:disabled {
-            background-color: COLOR_TEXT_MUTED;
-            color: #7f8c8d;
-        }
-    """
-    
-    _INPUT_STYLESHEET = """
-        QLineEdit, QTextEdit, QComboBox {
-            background-color: #2d2d3d;
-            color: #e0e0e0;
-            border: 1px solid COLOR_BORDER;
-            border-radius: 6px;
-            padding: 10px;
-            font-size: 13px;
-        }
-        QLineEdit:focus, QTextEdit:focus, QComboBox:focus {
-            border: 1px solid COLOR_PRIMARY;
-        }
-        QLineEdit:invalid, QTextEdit:invalid {
-            border: 1px solid #f44336;
-        }
-    """
+
+    @staticmethod
+    def _submit_style():
+        from ui.constants import COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY, TEXT_CARD_TITLE
+        return f"""
+            QPushButton {{
+                background-color: {COLOR_PRIMARY};
+                color: {COLOR_TEXT_ON_PRIMARY};
+                border: none;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_MD}px 24px;
+                font-weight: bold;
+                font-size: {TEXT_CARD_TITLE}px;
+            }}
+            QPushButton:hover {{ background-color: {COLOR_PRIMARY_HOVER}; }}
+            QPushButton:pressed {{ background-color: {COLOR_PRIMARY_ACTIVE}; }}
+            QPushButton:disabled {{ background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_MUTED}; }}
+        """
+
+    @staticmethod
+    def _input_style():
+        from ui.constants import (COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER, COLOR_BORDER_FOCUS, COLOR_DANGER, TEXT_BODY, PADDING_INPUT_H)
+        return f"""
+            QLineEdit, QTextEdit, QComboBox {{
+                background-color: {COLOR_BG_SURFACE};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {PADDING_INPUT_H}px;
+                font-size: {TEXT_BODY}px;
+            }}
+            QLineEdit:focus, QTextEdit:focus, QComboBox:focus {{
+                border: 1px solid {COLOR_BORDER_FOCUS};
+            }}
+            QLineEdit:invalid, QTextEdit:invalid {{
+                border: 1px solid {COLOR_DANGER};
+            }}
+        """
 
     def __init__(self, api_client=None, customer=None):
         super().__init__()
@@ -254,7 +239,7 @@ class CustomerDialog(QDialog):
         self.resize(550, 650)
         self.setMinimumHeight(650)
         self.setMaximumHeight(750)
-        self.setStyleSheet(self._INPUT_STYLESHEET)
+        self.setStyleSheet(self._input_style())
         self.setup_ui()
 
     def setup_ui(self):
@@ -416,19 +401,19 @@ class CustomerDialog(QDialog):
                 background-color: {COLOR_TEXT_MUTED};
                 color: white;
                 border: none;
-                border-radius: 6px;
-                padding: 12px 24px;
-                font-size: 14px;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_MD}px 24px;
+                font-size: {TEXT_CARD_TITLE}px;
             }}
             QPushButton:hover {{
-                background-color: #7f8c8d;
+                background-color: {COLOR_TEXT_MUTED};
             }}
         """)
         self.btn_cancel.clicked.connect(self.reject)
         
         self.btn_save = QPushButton("Save Customer")
         self.btn_save.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.btn_save.setStyleSheet(self._SUBMIT_STYLESHEET)
+        self.btn_save.setStyleSheet(self._submit_style())
         self.btn_save.clicked.connect(self.save)
         
         buttons_layout.addStretch()

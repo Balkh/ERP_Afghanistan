@@ -17,7 +17,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
+from ui.constants import TEXT_SECTION_TITLE, TEXT_BODY
 
 
 class WhyAnalysisPanel(QWidget):
@@ -41,7 +42,9 @@ class WhyAnalysisPanel(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("🔍 WHY Analysis — Root Cause Investigation")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         layout.addLayout(header)
@@ -51,19 +54,19 @@ class WhyAnalysisPanel(QWidget):
         sel_layout.addWidget(QLabel("Analyze:"))
         self.target_combo = QComboBox()
         self.target_combo.addItems(["anomaly", "risk", "forecast", "decision"])
-        self.target_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: 6px;")
+        self.target_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: {SPACING_6}px;")
         sel_layout.addWidget(self.target_combo)
 
         self.domain_combo = QComboBox()
         self.domain_combo.addItems(["all", "inventory", "accounting", "hr", "sales_purchase"])
-        self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: 6px;")
+        self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: {SPACING_6}px;")
         sel_layout.addWidget(QLabel("Domain:"))
         sel_layout.addWidget(self.domain_combo)
 
         analyze_btn = QPushButton("🔍 Analyze WHY")
         analyze_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_DANGER}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         analyze_btn.clicked.connect(self._analyze)
         sel_layout.addWidget(analyze_btn)
@@ -74,15 +77,15 @@ class WhyAnalysisPanel(QWidget):
         chain_group = QGroupBox("Root Cause Chain (↓ flows downward)")
         chain_group.setStyleSheet(f"""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-weight: bold;
-            border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px; padding-top: 20px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px; padding-top: 20px; }}
         """)
         chain_layout = QVBoxLayout(chain_group)
         self.chain_text = QTextEdit()
         self.chain_text.setReadOnly(True)
         self.chain_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px;
-            font-family: 'Consolas', monospace; font-size: 12px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         self.chain_text.setMaximumHeight(200)
         chain_layout.addWidget(self.chain_text)
@@ -92,25 +95,25 @@ class WhyAnalysisPanel(QWidget):
         split_layout = QHBoxLayout()
 
         left_group = QGroupBox("Contributing Factors")
-        left_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px; padding-top: 20px; }}")
+        left_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px; padding-top: 20px; }}")
         left_layout = QVBoxLayout(left_group)
         self.contrib_text = QTextEdit()
         self.contrib_text.setReadOnly(True)
         self.contrib_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px; font-family: 'Consolas', monospace; font-size: 11px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         left_layout.addWidget(self.contrib_text)
         split_layout.addWidget(left_group)
 
         right_group = QGroupBox("Cross-Domain Impacts")
-        right_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px; padding-top: 20px; }}")
+        right_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px; padding-top: 20px; }}")
         right_layout = QVBoxLayout(right_group)
         self.impact_text = QTextEdit()
         self.impact_text.setReadOnly(True)
         self.impact_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px; font-family: 'Consolas', monospace; font-size: 11px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         right_layout.addWidget(self.impact_text)
         split_layout.addWidget(right_group)

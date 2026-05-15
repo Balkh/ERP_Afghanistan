@@ -8,7 +8,7 @@ from PySide6.QtCore import Signal, QSize, Qt
 from PySide6.QtGui import QPainter, QColor, QFontMetrics
 from enum import Enum
 from typing import Optional
-from ui.constants import SPACING_SM
+from ui.constants import SPACING_SM, BORDER_RADIUS_SM
 
 
 class ButtonVariant(Enum):
@@ -97,7 +97,9 @@ class EnterpriseButton(QPushButton):
                                   COLOR_WARNING, COLOR_WARNING_HOVER, COLOR_WARNING_ACTIVE,
                                   COLOR_WARNING_MUTED,
                                   COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_MUTED,
-                                  COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BG_ELEVATED)
+                                  COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BG_ELEVATED,
+                                  COLOR_SECONDARY_BG, COLOR_SECONDARY_TEXT,
+                                  COLOR_SECONDARY_HOVER, COLOR_SECONDARY_ACTIVE)
         variant_styles = {
             ButtonVariant.PRIMARY: f"""
                 QPushButton {{
@@ -119,16 +121,16 @@ class EnterpriseButton(QPushButton):
             """,
             ButtonVariant.SECONDARY: f"""
                 QPushButton {{
-                    background-color: {COLOR_PRIMARY};
-                    color: {COLOR_TEXT_ON_PRIMARY};
+                    background-color: {COLOR_SECONDARY_BG};
+                    color: {COLOR_SECONDARY_TEXT};
                     border: none;
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_PRIMARY_HOVER};
+                    background-color: {COLOR_SECONDARY_HOVER};
                 }}
                 QPushButton:pressed {{
-                    background-color: {COLOR_PRIMARY_ACTIVE};
+                    background-color: {COLOR_SECONDARY_ACTIVE};
                 }}
                 QPushButton:disabled {{
                     background-color: {COLOR_BORDER};
@@ -320,7 +322,7 @@ class SplitButton(QPushButton):
                 color: {COLOR_TEXT_ON_PRIMARY};
                 border: none;
                 padding: {SPACING_SM} 16px;
-                border-radius: 4px;
+                border-radius: {BORDER_RADIUS_SM};
                 font-weight: 600;
             }}
             QPushButton:hover {{

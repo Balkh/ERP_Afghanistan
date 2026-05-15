@@ -1,5 +1,3 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT)
 """
 System Correlation Screen - Unified Decision Ecosystem.
 Visualizes end-to-end business event chains and ERP-wide consistency.
@@ -7,10 +5,21 @@ Visualizes end-to-end business event chains and ERP-wide consistency.
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                QLabel, QFrame, QScrollArea, QListWidget, 
-                               QListWidgetItem, QTableWidget, QTableWidgetItem,
-                               QHeaderView, QSizePolicy, QGroupBox, QPushButton)
+                               QListWidgetItem, QHeaderView, QSizePolicy, QGroupBox)
 from PySide6.QtCore import Qt, QPointF, QTimer, QRectF
-from PySide6.QtGui import QFont, QColor, QPainter, QPen, QBrush, QLinearGradient
+from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QLinearGradient
+from ui.screens.base_screen import BaseScreen
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, SPACING_6,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+                           BORDER_RADIUS_XL, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
@@ -94,11 +103,9 @@ class EcosystemGraphWidget(QWidget):
             
             # Text
             painter.setPen(QColor(COLOR_TEXT_SECONDARY))
-            painter.setFont(QFont("Segoe UI", 7))
-            painter.drawText(x + 20, y + 15, n['type'])
+            painter.setFont(QFont("Segoe UI", TEXT_HELPER))
 
-            painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-            painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
+            painter.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))
             painter.drawText(x + 10, y + 35, n['label'])
 
 
@@ -118,20 +125,19 @@ class SystemCorrelationScreen(BaseScreen):
         # Header
         header = QHBoxLayout()
         title = QLabel("Cross-System Correlation")
-        title.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         
         self.consistency_card = QFrame()
         self.consistency_card.setFixedWidth(220)
-        self.consistency_card.setStyleSheet(f"background: {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 15px; border: 1px solid {COLOR_PRIMARY};")
+        self.consistency_card.setStyleSheet(f"background: {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: {BORDER_RADIUS_PILL}px; border: 1px solid {COLOR_PRIMARY};")
         cc_layout = QHBoxLayout(self.consistency_card)
         self.score_label = QLabel("ERP CONSISTENCY: 100%")
-        self.score_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-weight: bold; font-size: 11px;")
+        self.score_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-weight: 700; font-size: {TEXT_BODY}pt;")
         cc_layout.addStretch()
         cc_layout.addWidget(self.score_label)
         cc_layout.addStretch()
         
-        self.refresh_btn = QPushButton("Re-Correlate")
+        self.refresh_btn = EnterpriseButton(text="Re-Correlate", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.refresh_btn.clicked.connect(self._load_correlation)
         
         header.addWidget(title)
@@ -146,15 +152,15 @@ class SystemCorrelationScreen(BaseScreen):
         
         # 1. Business Event Chains (Left)
         chains_group = self._create_group("Active Business Event Chains", 400)
-        self.chains_table = QTableWidget()
-        self.chains_table.setColumnCount(4)
-        self.chains_table.setHorizontalHeaderLabels(["ID", "Type", "Health", "Status"])
-        self.chains_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        columns = [
+            TableColumn("id", "ID", width=50),
+            TableColumn("type", "Type", width=150),
+            TableColumn("health", "Health", width=80, align="center"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.chains_table = EnterpriseTable(columns)
         self.chains_table.verticalHeader().setVisible(False)
-        self.chains_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.chains_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.chains_table.cellClicked.connect(self._on_chain_selected)
-        self.chains_table.setStyleSheet(f"QTableWidget {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; }} QHeaderView::section {{ background: {COLOR_TABLE_HEADER_BG_LIGHT}; color: {COLOR_PRIMARY}; border: none; padding: 6px; font-weight: bold; }}")
         chains_group.layout().addWidget(self.chains_table)
         grid.addWidget(chains_group, 0, 0)
         
@@ -167,7 +173,7 @@ class SystemCorrelationScreen(BaseScreen):
         # 3. Impact Analysis (Bottom)
         impact_group = self._create_group("Impact Propagation & Root Cause Analysis", 250)
         self.impact_list = QListWidget()
-        self.impact_list.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
+        self.impact_list.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: none; border-radius: {BORDER_RADIUS_LG};")
         impact_group.layout().addWidget(self.impact_list)
         grid.addWidget(impact_group, 1, 0, 1, 2)
         
@@ -176,7 +182,7 @@ class SystemCorrelationScreen(BaseScreen):
     def _create_group(self, title, min_h):
         group = QGroupBox(title)
         group.setMinimumHeight(min_h)
-        group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
+        group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: {BORDER_RADIUS_XL}; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
         QVBoxLayout(group)
         group.layout().setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         return group

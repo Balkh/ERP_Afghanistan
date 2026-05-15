@@ -1,13 +1,22 @@
-from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget,
-                               QTableWidgetItem, QHeaderView, QAbstractItemView,
-                               QPushButton, QComboBox, QLineEdit, QDateEdit,
+from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
+                               QHeaderView, QDateTimeEdit,
+                               QComboBox, QLineEdit, QDateEdit,
                                QMessageBox, QGroupBox, QFormLayout, QDialog, QApplication)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QColor
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BORDER_RADIUS_SM, BORDER_RADIUS_MD,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class AccountLedgerScreen(QFrame):
@@ -27,7 +36,7 @@ class AccountLedgerScreen(QFrame):
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
         header = QLabel("Account Ledger")
-        header.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(header)
 
         filter_group = QGroupBox("Filters")
@@ -53,19 +62,14 @@ class AccountLedgerScreen(QFrame):
 
         filter_layout.addStretch()
 
-        self.btn_load = QPushButton("Load Ledger")
-        self.btn_load.setMinimumHeight(32)
+        self.btn_load = EnterpriseButton(text="Load Ledger", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_load.clicked.connect(self.load_ledger)
         filter_layout.addWidget(self.btn_load)
 
-        self.btn_export_csv = QPushButton("Export CSV")
-        self.btn_export_csv.setMinimumHeight(32)
-        self.btn_export_csv.clicked.connect(self.export_csv)
+        self.btn_export_csv = EnterpriseButton(text="Export CSV", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         filter_layout.addWidget(self.btn_export_csv)
 
-        self.btn_print = QPushButton("Print Preview")
-        self.btn_print.setMinimumHeight(32)
-        self.btn_print.clicked.connect(self.print_preview)
+        self.btn_print = EnterpriseButton(text="Print Preview", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         filter_layout.addWidget(self.btn_print)
 
         layout.addWidget(filter_group)
@@ -80,7 +84,7 @@ class AccountLedgerScreen(QFrame):
         self.info_closing = QLabel("Closing: 0.00")
 
         for label in [self.info_code, self.info_name, self.info_type]:
-            label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+            label.setStyleSheet(f"font-size: {TEXT_BODY}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY};")
             info_layout.addWidget(label)
         info_layout.addStretch()
         info_layout.addWidget(self.info_opening)
@@ -88,17 +92,16 @@ class AccountLedgerScreen(QFrame):
 
         layout.addWidget(info_group)
 
+        # Loading and Empty states
         self.loading_label = QLabel("Loading ledger...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 20px;")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
-        self.empty_label = QLabel("Select an account and click Load Ledger")
-        self.empty_label.setFont(QFont("Segoe UI", 11))
+        self.empty_label = QLabel("Select an account and load the ledger.")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 20px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -139,30 +142,16 @@ class AccountLedgerScreen(QFrame):
             return default
 
     def _create_table(self):
-        table = QTableWidget()
-        table.setColumnCount(7)
-        table.setHorizontalHeaderLabels([
-            "Entry #", "Date", "Type", "Description", "Debit", "Credit", "Running Balance"
-        ])
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.setAlternatingRowColors(True)
-        table.setStyleSheet(f"""
-            QTableWidget {{
-                border: 1px solid {COLOR_BORDER};
-                border-radius: 4px;
-                background-color: {COLOR_BG_SURFACE};
-                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                padding: 8px;
-                font-weight: bold;
-                border: none;
-            }}
-        """)
-
+        columns = [
+            TableColumn("entry_number", "Entry #", width=80),
+            TableColumn("entry_date", "Date", width=100, align="center"),
+            TableColumn("entry_type", "Type", width=80),
+            TableColumn("description", "Description", width=250),
+            TableColumn("debit", "Debit", width=100, align="right"),
+            TableColumn("credit", "Credit", width=100, align="right"),
+            TableColumn("balance", "Balance", width=100, align="right"),
+        ]
+        table = EnterpriseTable(columns, density="compact")
         return table
 
     def load_accounts(self):
@@ -238,37 +227,23 @@ class AccountLedgerScreen(QFrame):
             entries = []
 
         self._show_data()
-        self.table.setRowCount(len(entries))
-
-        for row, entry in enumerate(entries):
+        ledger_data = []
+        for entry in entries:
             if not isinstance(entry, dict):
                 continue
-            self.table.setItem(row, 0, QTableWidgetItem(entry.get("entry_number") or ""))
-            self.table.setItem(row, 1, QTableWidgetItem(entry.get("entry_date") or ""))
-            self.table.setItem(row, 2, QTableWidgetItem(entry.get("entry_type") or ""))
-            self.table.setItem(row, 3, QTableWidgetItem(entry.get("description") or ""))
-
             debit = self._safe_float(entry.get("debit"))
             credit = self._safe_float(entry.get("credit"))
             balance = self._safe_float(entry.get("running_balance"))
-
-            debit_item = QTableWidgetItem(f"{debit:,.2f}")
-            debit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            if debit > 0:
-                debit_item.setForeground(QColor(COLOR_SUCCESS))
-            self.table.setItem(row, 4, debit_item)
-
-            credit_item = QTableWidgetItem(f"{credit:,.2f}")
-            credit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            if credit > 0:
-                credit_item.setForeground(QColor(COLOR_DANGER))
-            self.table.setItem(row, 5, credit_item)
-
-            balance_item = QTableWidgetItem(f"{balance:,.2f}")
-            balance_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            if balance < 0:
-                balance_item.setForeground(QColor(COLOR_DANGER))
-            self.table.setItem(row, 6, balance_item)
+            ledger_data.append({
+                "entry_number": entry.get("entry_number") or "",
+                "entry_date": entry.get("entry_date") or "",
+                "entry_type": entry.get("entry_type") or "",
+                "description": entry.get("description") or "",
+                "debit": f"{debit:,.2f}",
+                "credit": f"{credit:,.2f}",
+                "balance": f"{balance:,.2f}",
+            })
+        self.table.set_data(ledger_data)
 
     def export_csv(self):
         if not hasattr(self, 'ledger_data') or not self.ledger_data:
@@ -320,7 +295,14 @@ class AccountLedgerScreen(QFrame):
             text_data = self.api_client.get(endpoint, params=params)
 
             from ui.accounting.components.report_preview_dialog import ReportPreviewDialog
-            dialog = ReportPreviewDialog(self, f"Ledger - {self.ledger_data.get('account_name')}", text_data)
+            from datetime import datetime
+            report_meta = {
+                "report_name": f"Ledger - {self.ledger_data.get('account_name', 'N/A')}",
+                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "company": "Pharmacy ERP",
+                "period": f"{self.date_from.date().toString('yyyy-MM-dd')} to {self.date_to.date().toString('yyyy-MM-dd')}" if self.date_from.date() != QDate() else "All time",
+            }
+            dialog = ReportPreviewDialog(self, f"Ledger - {self.ledger_data.get('account_name')}", text_data, report_meta)
             dialog.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to generate preview: {e}")

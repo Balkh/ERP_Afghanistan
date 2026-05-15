@@ -1,8 +1,21 @@
+"""
+DEPRECATED — Legacy theme manager.
+Use ``theme.theme_engine.ThemeEngine`` instead.
+This module will be removed in a future release.
+"""
+import warnings
+warnings.warn(
+    "theme.theme_manager is deprecated. Use theme.theme_engine.ThemeEngine instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from PySide6.QtCore import QObject, Signal, Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication
 
 class ThemeManager(QObject):
+    """DEPRECATED — Use ThemeEngine instead."""
     theme_changed = Signal(str)  # Emits the theme name when changed
 
     def __init__(self):

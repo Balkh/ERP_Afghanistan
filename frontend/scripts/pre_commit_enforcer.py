@@ -60,6 +60,15 @@ FORBIDDEN_FONTS = [
     (r"\bTahoma\b", "FORBIDDEN_FONT", "Use Typography.FONT_FAMILY_PRIMARY (Segoe UI)"),
 ]
 
+# RENDERER LAYER DEPRECATION - STRICT PATTERNS
+RENDERER_PATTERNS = [
+    (r"ButtonRenderer\.", "RENDERER_LAYER", "Use EnterpriseButton component instead"),
+    (r"TableRenderer\.", "RENDERER_LAYER", "Use EnterpriseTable component instead"),
+    (r"DialogRenderer\.", "RENDERER_LAYER", "Use EnterpriseDialog component instead"),
+    (r"CardRenderer\.", "RENDERER_LAYER", "Use EnterpriseCard or inline styling with tokens instead"),
+    (r"BadgeRenderer\.", "RENDERER_LAYER", "Use inline QLabel styling with tokens instead"),
+]
+
 # HARDCODED SPACING - STRICT PATTERNS
 SPACING_PATTERNS = [
     # setContentsMargins with raw numbers (not variables)
@@ -86,8 +95,16 @@ ALLOWED_TOKENS = {
     "COLOR_TEXT_PRIMARY", "COLOR_TEXT_SECONDARY", "COLOR_TEXT_MUTED", "COLOR_TEXT_ON_PRIMARY",
     "COLOR_BORDER", "COLOR_BORDER_LIGHT", "COLOR_BORDER_FOCUS",
     "COLOR_TABLE_HEADER", "COLOR_TABLE_ALT", "COLOR_TABLE_GRID",
+    "COLOR_TABLE_GRIDLINE", "COLOR_TABLE_BORDER_LIGHT", "COLOR_TABLE_HEADER_BG_LIGHT",
     "COLOR_STATUS_VALID", "COLOR_STATUS_INVALID", "COLOR_STATUS_WARNING", "COLOR_STATUS_PENDING",
     "COLOR_WHATSAPP",
+    # Secondary button tokens
+    "COLOR_SECONDARY_BG", "COLOR_SECONDARY_HOVER", "COLOR_SECONDARY_TEXT", "COLOR_SECONDARY_ACTIVE",
+    # Status
+    "COLOR_STATUS_VALID", "COLOR_STATUS_INVALID", "COLOR_STATUS_WARNING", "COLOR_STATUS_PENDING",
+    # Form and border tokens
+    "COLOR_FORM_BORDER_LIGHT", "COLOR_FORM_TEXT_LIGHT", "COLOR_UI_DIVIDER_LIGHT",
+    "COLOR_BORDER_DIALOG", "COLOR_BORDER_TABLE", "COLOR_BORDER_INPUT",
     # Legacy aliases
     "COLOR_TEXT", "COLOR_BACKGROUND",
     # From enterprise_styling.py - Spacing
@@ -121,6 +138,7 @@ class DesignSystemEnforcer:
             "color_violations": 0,
             "spacing_violations": 0,
             "font_violations": 0,
+            "renderer_violations": 0,
             "exceptions_allowed": 0,
         }
         
@@ -236,6 +254,23 @@ class DesignSystemEnforcer:
                     })
                     self.stats["font_violations"] += 1
             
+            # Check RENDERER LAYER DEPRECATION
+            for pattern, vtype, suggestion in RENDERER_PATTERNS:
+                if re.search(pattern, line):
+                    if is_exception:
+                        self.stats["exceptions_allowed"] += 1
+                        continue
+                    violations.append({
+                        "file": str(file_path.relative_to(FRONTEND_DIR)),
+                        "line": i,
+                        "content": line.strip()[:100],
+                        "type": vtype,
+                        "suggestion": suggestion,
+                        "severity": "MEDIUM",
+                        "value": re.search(pattern, line).group(0)
+                    })
+                    self.stats["renderer_violations"] += 1
+
             # Check HARDCODED SPACING
             for pattern, vtype, suggestion in SPACING_PATTERNS:
                 if re.search(pattern, line):
@@ -335,12 +370,13 @@ class DesignSystemEnforcer:
         print("-" * 70)
         print("SUMMARY")
         print("-" * 70)
-        print(f"Files Checked:    {self.stats['files_checked']}")
-        print(f"Color Violations: {self.stats['color_violations']}")
-        print(f"Font Violations:  {self.stats['font_violations']}")
-        print(f"Spacing Viol.:   {self.stats['spacing_violations']}")
-        print(f"Exceptions:      {self.stats['exceptions_allowed']}")
-        print(f"Total Violations: {len(self.violations)}")
+        print(f"Files Checked:      {self.stats['files_checked']}")
+        print(f"Color Violations:   {self.stats['color_violations']}")
+        print(f"Font Violations:    {self.stats['font_violations']}")
+        print(f"Spacing Viol.:     {self.stats['spacing_violations']}")
+        print(f"Renderer Viol.:    {self.stats['renderer_violations']}")
+        print(f"Exceptions:        {self.stats['exceptions_allowed']}")
+        print(f"Total Violations:   {len(self.violations)}")
         print()
 
 

@@ -10,8 +10,10 @@ from api.client import APIClient
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
     COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_WARNING,
     COLOR_DANGER, COLOR_INFO, COLOR_BG_MAIN, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
-    COLOR_BORDER_LIGHT_THEME, COLOR_TEXT_ON_PRIMARY, BORDER_RADIUS_SM, BORDER_RADIUS_MD)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BG_LIGHT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_SUCCESS_BG, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+    COLOR_BORDER_LIGHT_THEME, COLOR_TEXT_ON_PRIMARY, BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, TEXT_SECTION_TITLE, TEXT_CARD_TITLE)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BG_LIGHT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_SUCCESS_BG, COLOR_WARNING, COLOR_DANGER, COLOR_DANGER_BG, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.rendering.button_renderer import ButtonRenderer, ButtonStyle
+from ui.rendering.table_renderer import TableRenderer
 
 
 class JournalEntryFormDialog(QDialog):
@@ -33,73 +35,22 @@ class JournalEntryFormDialog(QDialog):
             QDialog {{ background-color: {COLOR_BG_LIGHT}; }}
             QGroupBox {{
                 font-weight: bold;
-                border: 1px solid {COLOR_TEXT_SECONDARY_LIGHT};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_MD};
                 margin-top: {SPACING_LG};
                 padding-top: {SPACING_LG};
                 background-color: {COLOR_BG_MAIN};
             }}
-            QLabel {{ color: {COLOR_TEXT_LIGHT}; }}
-            QPushButton#save_btn {{
-                background-color: {COLOR_SUCCESS};
-                color: {COLOR_TEXT_ON_PRIMARY};
-                font-weight: bold;
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_LG} {SPACING_XL * 2};
-            }}
-            QPushButton#save_btn:hover {{
-                background-color: {COLOR_SUCCESS_HOVER};
-            }}
-            QPushButton#cancel_btn {{
-                background-color: {COLOR_MUTED_LIGHT};
-                color: white;
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_LG} {SPACING_XL * 2};
-            }}
-            QPushButton#cancel_btn:hover {{
-                background-color: {COLOR_TEXT_SECONDARY_LIGHT};
-            }}
-            QPushButton {{
-                background-color: {COLOR_PRIMARY};
-                color: {COLOR_TEXT_ON_PRIMARY};
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM} {SPACING_LG};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_PRIMARY_HOVER};
-            }}
+            QLabel {{ color: {COLOR_TEXT_PRIMARY}; }}
             QLineEdit, QComboBox, QTextEdit, QDateEdit, QDoubleSpinBox {{
                 background-color: {COLOR_BG_INPUT};
                 color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_LIGHT_THEME};
+                border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_MD};
                 padding: {SPACING_SM};
             }}
             QLineEdit:focus, QComboBox:focus, QTextEdit:focus {{
                 border-color: {COLOR_PRIMARY};
-            }}
-            QTableWidget {{
-                background-color: {COLOR_BG_MAIN};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_TEXT_SECONDARY};
-                gridline-color: {COLOR_TEXT_SECONDARY};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_TEXT_SECONDARY};
-                color: {COLOR_TEXT_PRIMARY};
-                padding: {SPACING_SM};
-                border: none;
-                font-weight: bold;
-            }}
-            QTableWidget::item {{
-                padding: {SPACING_SM};
-                border-bottom: 1px solid {COLOR_TEXT_SECONDARY};
-            }}
-            QTableWidget::item:selected {{
-                background-color: {COLOR_PRIMARY};
             }}
         """)
 
@@ -108,8 +59,10 @@ class JournalEntryFormDialog(QDialog):
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
         title = QLabel("Create Journal Entry")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        title.setStyleSheet(f"color: #2c3e50;")
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title)
 
         # Header Information
@@ -155,43 +108,20 @@ class JournalEntryFormDialog(QDialog):
         self.lines_table = QTableWidget()
         self.lines_table.setColumnCount(5)
         self.lines_table.setHorizontalHeaderLabels(["Account", "Line Description", "Debit", "Credit", ""])
-        
-        header = self.lines_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.Fixed)
+        TableRenderer.style(self.lines_table)
+        self.lines_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.lines_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        self.lines_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.lines_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.lines_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.Fixed)
         self.lines_table.setColumnWidth(4, 40)
-        
-        self.lines_table.setAlternatingRowColors(True)
-        self.lines_table.setStyleSheet(f"""
-            QTableWidget {{ border: 1px solid {COLOR_BORDER}; border-radius: 4px; }}
-            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: 5px; font-weight: bold; }}
-        """)
         lines_layout.addWidget(self.lines_table)
 
         line_buttons = QHBoxLayout()
         self.btn_add_line = QPushButton("+ Add Line")
-        self.btn_add_line.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_PRIMARY};
-                color: white;
-                border-radius: 4px;
-                padding: 5px 15px;
-                font-weight: bold;
-            }}
-        """)
+        ButtonRenderer.style(self.btn_add_line, ButtonStyle.PRIMARY, "sm")
         self.btn_remove_line = QPushButton("- Remove Selected Lines")
-        self.btn_remove_line.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_INPUT};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: 4px;
-                padding: 5px 15px;
-            }}
-        """)
+        ButtonRenderer.style(self.btn_remove_line, ButtonStyle.GHOST, "sm")
         line_buttons.addWidget(self.btn_add_line)
         line_buttons.addWidget(self.btn_remove_line)
         line_buttons.addStretch()
@@ -203,12 +133,14 @@ class JournalEntryFormDialog(QDialog):
         bottom_layout = QHBoxLayout()
         
         totals_frame = QFrame()
-        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: 8px;")
+        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG};")
         totals_layout = QHBoxLayout(totals_frame)
         
         totals_layout.addWidget(QLabel("Total Debit:"))
         self.total_debit_label = QLabel("0.00")
-        self.total_debit_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        debit_font = QFont("Segoe UI", TEXT_CARD_TITLE)
+        debit_font.setWeight(QFont.Weight.Bold)
+        self.total_debit_label.setFont(debit_font)
         self.total_debit_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
         totals_layout.addWidget(self.total_debit_label)
 
@@ -216,15 +148,19 @@ class JournalEntryFormDialog(QDialog):
 
         totals_layout.addWidget(QLabel("Total Credit:"))
         self.total_credit_label = QLabel("0.00")
-        self.total_credit_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        self.total_credit_label.setStyleSheet("color: #c0392b;")
+        credit_font = QFont("Segoe UI", TEXT_CARD_TITLE)
+        credit_font.setWeight(QFont.Weight.Bold)
+        self.total_credit_label.setFont(credit_font)
+        self.total_credit_label.setStyleSheet(f"color: {COLOR_DANGER};")
         totals_layout.addWidget(self.total_credit_label)
 
         totals_layout.addSpacing(30)
 
         self.balance_label = QLabel("BALANCED")
-        self.balance_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
-        self.balance_label.setStyleSheet("color: #2ecc71; padding: 5px 15px; border-radius: 4px; background-color: #e8f5e9;")
+        balance_font = QFont("Segoe UI", TEXT_CARD_TITLE)
+        balance_font.setWeight(QFont.Weight.Bold)
+        self.balance_label.setFont(balance_font)
+        self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_SUCCESS_BG};")
         totals_layout.addWidget(self.balance_label)
         
         bottom_layout.addWidget(totals_frame)
@@ -235,14 +171,12 @@ class JournalEntryFormDialog(QDialog):
         action_buttons.addStretch()
 
         cancel_btn = QPushButton("Cancel")
-        cancel_btn.setObjectName("cancel_btn")
-        cancel_btn.setCursor(Qt.PointingHandCursor)
+        ButtonRenderer.style(cancel_btn, ButtonStyle.GHOST)
         cancel_btn.clicked.connect(self.reject)
 
         save_btn = QPushButton("Save Entry")
-        save_btn.setObjectName("save_btn")
+        ButtonRenderer.style(save_btn, ButtonStyle.SUCCESS)
         save_btn.setMinimumWidth(150)
-        save_btn.setCursor(Qt.PointingHandCursor)
         save_btn.clicked.connect(self.save)
 
         action_buttons.addWidget(cancel_btn)
@@ -344,14 +278,14 @@ class JournalEntryFormDialog(QDialog):
 
         if total_debit == total_credit and total_debit > 0:
             self.balance_label.setText("BALANCED")
-            self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: 5px 15px; border-radius: 4px; background-color: {COLOR_SUCCESS_BG};")
+            self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_SUCCESS_BG};")
         elif total_debit == 0 and total_credit == 0:
             self.balance_label.setText("EMPTY")
-            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 5px 15px; border-radius: 4px; background-color: {COLOR_BG_LIGHT};")
+            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_BG_LIGHT};")
         else:
             diff = abs(total_debit - total_credit)
             self.balance_label.setText(f"UNBALANCED ({diff:,.2f})")
-            self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: 5px 15px; border-radius: 4px; background-color: #fdecea;")
+            self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_DANGER_BG};")
 
     def save(self):
         data = self.get_entry_data()

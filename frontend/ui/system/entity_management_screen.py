@@ -1,16 +1,21 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, 
                                   QGroupBox, QFormLayout, QDialog, QDialogButtonBox,
-                                  QTextEdit, QAbstractItemView)
+                                  QTextEdit)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QColor
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, SPACING_LG, FONT_SIZE_LG, FONT_SIZE_XL,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 from api.client import APIClient
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 class EntityManagementScreen(BaseScreen):
     """Screen for managing business entities and branches."""
@@ -30,29 +35,27 @@ class EntityManagementScreen(BaseScreen):
         # Header
         header_layout = QHBoxLayout()
         title_label = QLabel("Business Entities & Branches")
-        title_label.setFont(QFont("Segoe UI", FONT_SIZE_XL, QFont.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(title_label)
         
         header_layout.addStretch()
         
-        self.add_btn = QPushButton("+ Add Entity")
-        self.add_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.add_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
+        self.add_btn = EnterpriseButton(text="+ Add Entity", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.add_btn.clicked.connect(self.show_add_entity_dialog)
         header_layout.addWidget(self.add_btn)
         
         layout.addLayout(header_layout)
 
         # Table
-        self.table = QTableWidget()
-        self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels([
-            "Code", "Name", "Type", "Phone", "Status", "Default"
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.setAlternatingRowColors(True)
+        columns = [
+            TableColumn("code", "Code", width=80),
+            TableColumn("name", "Name", width=200),
+            TableColumn("type", "Type", width=100),
+            TableColumn("phone", "Phone", width=120),
+            TableColumn("status", "Status", width=80, align="center"),
+            TableColumn("is_default", "Default", width=60, align="center"),
+        ]
+        self.table = EnterpriseTable(columns)
         layout.addWidget(self.table)
 
     def load_entities(self):
@@ -65,24 +68,17 @@ class EntityManagementScreen(BaseScreen):
             print(f"Failed to load entities: {e}")
 
     def _populate_table(self):
-        self.table.setRowCount(0)
+        data = []
         for ent in self.entities_data:
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            
-            self.table.setItem(row, 0, QTableWidgetItem(ent.get('code', '')))
-            self.table.setItem(row, 1, QTableWidgetItem(ent.get('name', '')))
-            self.table.setItem(row, 2, QTableWidgetItem(ent.get('entity_type', '')))
-            self.table.setItem(row, 3, QTableWidgetItem(ent.get('phone', '')))
-            
-            status = "Active" if ent.get('is_active') else "Inactive"
-            status_item = QTableWidgetItem(status)
-            if not ent.get('is_active'):
-                status_item.setForeground(QColor(COLOR_DANGER))
-            self.table.setItem(row, 4, status_item)
-            
-            default_item = QTableWidgetItem("Yes" if ent.get('is_default') else "No")
-            self.table.setItem(row, 5, default_item)
+            data.append({
+                "code": ent.get('code', ''),
+                "name": ent.get('name', ''),
+                "type": ent.get('entity_type', ''),
+                "phone": ent.get('phone', ''),
+                "status": "Active" if ent.get('is_active') else "Inactive",
+                "is_default": "Yes" if ent.get('is_default') else "No",
+            })
+        self.table.set_data(data)
 
     def show_add_entity_dialog(self):
         QMessageBox.information(self, "Entity Management", "Entity creation is available in the admin panel.")

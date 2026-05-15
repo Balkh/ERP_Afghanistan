@@ -4,14 +4,14 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-                          FONT_SIZE_XS, FONT_SIZE_SM, FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL,
-                          FONT_SIZE_TITLE, FONT_SIZE_HEADER, MARGIN_PAGE,
+                          MARGIN_PAGE,
                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER,
                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
                           COLOR_BORDER, COLOR_BORDER_LIGHT,
-                          BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+                          BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_SM)
+from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_TABLE
 from ui.observability.widgets import LoadingOverlay
 from ui.observability.dashboards import (ObservabilityMainScreen,
                                           ControlCenterDashboard,
@@ -41,7 +41,7 @@ class ObservabilityScreen(QWidget):
         header_layout.setContentsMargins(MARGIN_PAGE, SPACING_SM, MARGIN_PAGE, SPACING_SM)
 
         title = QLabel("Observability")
-        title.setFont(QFont("Segoe UI", FONT_SIZE_TITLE, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none;")
         header_layout.addWidget(title)
         header_layout.addStretch()
@@ -50,9 +50,9 @@ class ObservabilityScreen(QWidget):
         self.status_label.setStyleSheet(f"""
             background-color: {COLOR_BG_ELEVATED};
             color: {COLOR_TEXT_MUTED};
-            padding: 2px 10px;
-            border-radius: 4px;
-            font-size: {FONT_SIZE_XS}px;
+            padding: {SPACING_XS}px {SPACING_MD}px;
+            border-radius: {BORDER_RADIUS_SM};
+            font-size: {TEXT_TABLE}px;
             font-weight: bold;
             border: none;
         """)
@@ -68,9 +68,9 @@ class ObservabilityScreen(QWidget):
             QTabBar::tab {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_SECONDARY};
-                padding: 8px 18px;
+                padding: {SPACING_SM}px {SPACING_LG}px;
                 border: none;
-                font-size: {FONT_SIZE_SM}px;
+                font-size: {TEXT_LABEL}px;
                 font-weight: bold;
             }}
             QTabBar::tab:selected {{
@@ -104,7 +104,7 @@ class ObservabilityScreen(QWidget):
         layout = QVBoxLayout(placeholder)
         layout.setContentsMargins(0, 0, 0, 0)
         loading = QLabel("Loading...")
-        loading.setFont(QFont("Segoe UI", FONT_SIZE_SM))
+        loading.setFont(QFont("Segoe UI", TEXT_LABEL))
         loading.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; background: transparent;")
         loading.setAlignment(Qt.AlignCenter)
         layout.addWidget(loading)

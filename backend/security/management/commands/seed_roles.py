@@ -129,16 +129,25 @@ class Command(BaseCommand):
         user_count = User.objects.count()
         if user_count == 0:
             self.stdout.write(self.style.WARNING('No users exist. Creating default admin user...'))
+            import secrets
+            import string
+            alphabet = string.ascii_letters + string.digits + "!@#$%"
+            temp_password = ''.join(secrets.choice(alphabet) for _ in range(16))
             admin_user = User.objects.create_superuser(
                 username='admin',
                 email='admin@pharmacy.local',
-                password='admin123',
+                password=temp_password,
                 first_name='System',
                 last_name='Administrator'
             )
             admin_role = Role.objects.get(name='Admin')
             from security.models import UserRole
             UserRole.objects.create(user=admin_user, role=admin_role)
-            self.stdout.write(self.style.SUCCESS('Created default admin user (username: admin, password: admin123)'))
+            self.stdout.write(self.style.SUCCESS(
+                f'Created default admin user (username: admin, password: {temp_password})'
+            ))
+            self.stdout.write(self.style.WARNING(
+                '⚠️  CHANGE THIS PASSWORD IMMEDIATELY via /api/auth/change-password/'
+            ))
         else:
             self.stdout.write(f'Users exist: {user_count} users')

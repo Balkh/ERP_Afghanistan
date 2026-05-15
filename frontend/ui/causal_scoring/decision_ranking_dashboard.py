@@ -20,8 +20,9 @@ from ui.causal_scoring.decision_impact_engine import DecisionImpactEngine
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XL,
+                           MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD)
+from ui.constants import TEXT_PAGE_TITLE, TEXT_BODY
 
 
 class DecisionIntelligenceDashboard(QWidget):
@@ -42,14 +43,16 @@ class DecisionIntelligenceDashboard(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("🎯 Decision Intelligence Dashboard")
-        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_PAGE_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         self.refresh_btn = QPushButton("⟳ Refresh All")
         self.refresh_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px {SPACING_LG}px; font-weight: bold; }}
         """)
         self.refresh_btn.clicked.connect(self._refresh_all)
         header.addWidget(self.refresh_btn, alignment=Qt.AlignRight)
@@ -60,8 +63,8 @@ class DecisionIntelligenceDashboard(QWidget):
         tabs.setStyleSheet(f"""
             QTabWidget::pane {{ border: none; background: {COLOR_BG_MAIN}; }}
             QTabBar::tab {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            padding: 10px 20px; border: 1px solid {COLOR_BORDER};
-            border-bottom: none; border-top-left-radius: 6px; border-top-right-radius: 6px;
+            padding: {SPACING_MD}px {SPACING_XL}px; border: 1px solid {COLOR_BORDER};
+            border-bottom: none; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px;
             margin-right: 2px; font-weight: bold; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_ELEVATED}; }}
         """)
@@ -79,7 +82,7 @@ class DecisionIntelligenceDashboard(QWidget):
             QTableWidget {{ background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
             gridline-color: {COLOR_BORDER}; }}
             QHeaderView::section {{ background: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: 6px; font-weight: bold; }}
+            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
         """)
         t1l.addWidget(self.ranked_table)
         tabs.addTab(tab1, "① Ranked Decisions")
@@ -91,8 +94,8 @@ class DecisionIntelligenceDashboard(QWidget):
         self.causal_text.setReadOnly(True)
         self.causal_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px;
-            font-family: 'Consolas', monospace; font-size: 12px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         t2l.addWidget(self.causal_text)
         tabs.addTab(tab2, "② Causal Strength Paths")
@@ -104,8 +107,8 @@ class DecisionIntelligenceDashboard(QWidget):
         self.matrix_text.setReadOnly(True)
         self.matrix_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px;
-            font-family: 'Consolas', monospace; font-size: 12px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         t3l.addWidget(self.matrix_text)
         tabs.addTab(tab3, "③ Risk vs Impact Matrix")
@@ -117,8 +120,8 @@ class DecisionIntelligenceDashboard(QWidget):
         self.compare_text.setReadOnly(True)
         self.compare_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px;
-            font-family: 'Consolas', monospace; font-size: 12px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         t4l.addWidget(self.compare_text)
         tabs.addTab(tab4, "④ Decision Comparison")

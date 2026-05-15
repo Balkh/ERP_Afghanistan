@@ -1,7 +1,25 @@
 """
-Multi-Company Architecture Service
-Provides company-aware data access and isolation.
+DEPRECATED — Multi-Company Architecture Service.
+Use ``core.multitenant`` instead.
+
+This module will be removed in a future release.
+All functionality is duplicated in:
+  - core.multitenant.context.TenantContext  (replaces CompanyContext)
+  - core.multitenant.service                (replaces CompanyService)
+  - core.multitenant.middleware             (replaces MultiCompanyMiddleware)
+  - core.multitenant.models.CompanyScopedMixin  (replaces CompanyRequiredMixin)
+
+IMPORTANT: Entity and Company are different concepts.
+Entity = operational location (branch, pharmacy, warehouse)
+Company = legal/organizational tenant boundary
+This file incorrectly conflated them — fix applied.
 """
+import warnings
+warnings.warn(
+    "entities.services.company_service is deprecated. Use core.multitenant instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import uuid
 from decimal import Decimal
@@ -10,6 +28,7 @@ from typing import Optional, List, Dict
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
+from core.models.system import Company
 
 
 class CompanyContext:
@@ -95,15 +114,13 @@ class CompanyService:
         Returns:
             True if user has access
         """
-        from entities.models import Entity
-        
         if user.is_superuser:
             return True
             
         try:
-            entity = Entity.objects.get(id=company_id)
+            company = Company.objects.get(id=company_id)
             return True
-        except Entity.DoesNotExist:
+        except Company.DoesNotExist:
             return False
 
     @staticmethod
@@ -117,12 +134,10 @@ class CompanyService:
         Returns:
             List of company IDs
         """
-        from entities.models import Entity
-        
         if user.is_superuser:
-            return list(Entity.objects.filter(is_active=True).values_list('id', flat=True))
+            return list(Company.objects.filter(is_active=True).values_list('id', flat=True))
         
-        return list(Entity.objects.filter(is_active=True).values_list('id', flat=True))
+        return list(Company.objects.filter(is_active=True).values_list('id', flat=True))
 
     @staticmethod
     def create_company_isolation_filter(

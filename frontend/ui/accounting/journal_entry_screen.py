@@ -1,13 +1,20 @@
-from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget,
-                               QTableWidgetItem, QHeaderView, QAbstractItemView,
-                               QPushButton, QComboBox, QLineEdit, QDateEdit,
+from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
+                               QHeaderView, QAbstractItemView,
+                               QComboBox, QLineEdit, QDateEdit,
                                QMessageBox, QGroupBox, QApplication)
-from PySide6.QtCore import Qt, Slot, Signal, QTimer
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class JournalEntryScreen(QFrame):
@@ -34,27 +41,16 @@ class JournalEntryScreen(QFrame):
         # Header section with title and refresh button
         header_layout = QHBoxLayout()
         header = QLabel("Journal Entries")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton("⟳ Refresh")
-        self.btn_refresh.setMinimumHeight(38)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_TEXT_MUTED};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: {SPACING_XS} {SPACING_MD};
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BORDER};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(
+            text="\u27f3 Refresh",
+            variant=ButtonVariant.SECONDARY,
+            size=ButtonSize.MEDIUM
+        )
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
 
@@ -68,16 +64,14 @@ class JournalEntryScreen(QFrame):
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading journal entries...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No journal entries found")
-        self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -87,96 +81,19 @@ class JournalEntryScreen(QFrame):
 
     def _create_toolbar(self):
         toolbar = QFrame()
-        toolbar.setStyleSheet(f"background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-radius: 8px;")
+        toolbar.setStyleSheet(f"background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG};")
         layout = QHBoxLayout(toolbar)
         layout.setContentsMargins(SPACING_SM, SPACING_SM, SPACING_SM, SPACING_SM)
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
-        self.btn_new = QPushButton(" New Entry")
-        self.btn_view = QPushButton(" View Details")
-        self.btn_post = QPushButton(" Post")
-        self.btn_unpost = QPushButton(" Unpost")
-        self.btn_reverse = QPushButton(" Reverse")
-
-        # Style buttons with modern dark theme colors
-        self.btn_new.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_SUCCESS};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-                padding: {SPACING_SM} {SPACING_MD};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_SUCCESS};
-            }}
-        """)
-        self.btn_view.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_PRIMARY};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: {SPACING_SM} {SPACING_MD};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_PRIMARY};
-            }}
-        """)
-        self.btn_post.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_WARNING};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: {SPACING_SM} {SPACING_MD};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_WARNING};
-            }}
-        """)
-        self.btn_unpost.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_WARNING};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: {SPACING_SM} {SPACING_MD};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_WARNING};
-            }}
-        """)
-        self.btn_reverse.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_DANGER};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: {SPACING_SM} {SPACING_MD};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_DANGER};
-            }}
-        """)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_TEXT_MUTED};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: {SPACING_SM} {SPACING_MD};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BORDER};
-            }}
-        """)
+        self.btn_new = EnterpriseButton(text="New Entry", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.btn_view = EnterpriseButton(text="View Details", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.btn_post = EnterpriseButton(text="Post", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)
+        self.btn_unpost = EnterpriseButton(text="Unpost", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)
+        self.btn_reverse = EnterpriseButton(text="Reverse", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
 
         for btn in [self.btn_new, self.btn_view, self.btn_post, self.btn_unpost, self.btn_reverse]:
-            btn.setMinimumHeight(38)
             btn.setMinimumWidth(130)
-            btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
             layout.addWidget(btn)
 
         for btn in [self.btn_view, self.btn_post, self.btn_unpost, self.btn_reverse]:
@@ -195,8 +112,17 @@ class JournalEntryScreen(QFrame):
 
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
-        bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar.setStyleSheet(f"""
+            QGroupBox {{
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_LG};
+                margin-top: 10px;
+                padding-top: 10px;
+                color: {COLOR_TEXT_PRIMARY};
+                font-size: {TEXT_LABEL}pt;
+                font-weight: 700;
+            }}
+        """)
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -250,10 +176,11 @@ class JournalEntryScreen(QFrame):
         layout.addLayout(search_layout)
 
         # Apply button
-        self.btn_apply = QPushButton("Apply Filters")
-        self.btn_apply.setMinimumHeight(35)
-        self.btn_apply.setMinimumWidth(100)
-        self.btn_apply.setStyleSheet(f"background-color: {COLOR_TEXT_SECONDARY}; color: white; border-radius: 5px;")
+        self.btn_apply = EnterpriseButton(
+            text="Apply Filters",
+            variant=ButtonVariant.SECONDARY,
+            size=ButtonSize.MEDIUM
+        )
         self.btn_apply.clicked.connect(self.load_entries)
         
         btn_layout = QVBoxLayout()
@@ -264,15 +191,19 @@ class JournalEntryScreen(QFrame):
         return bar
 
     def _create_table(self):
-        table = QTableWidget()
-        table.setColumnCount(8)
-        table.setHorizontalHeaderLabels([
-            "Entry #", "Date", "Type", "Description", "Debit", "Credit", "Status", "Reference"
-        ])
+        columns = [
+            TableColumn("entry_number", "Entry #", width=80, align="center"),
+            TableColumn("entry_date", "Date", width=90, align="center"),
+            TableColumn("entry_type", "Type", width=80, align="center"),
+            TableColumn("description", "Description", width=300),
+            TableColumn("debit", "Debit", width=100, align="right"),
+            TableColumn("credit", "Credit", width=100, align="right"),
+            TableColumn("status", "Status", width=70, align="center"),
+            TableColumn("reference", "Reference", width=150),
+        ]
+        table = EnterpriseTable(columns, density="compact")
         
-        # Style header
         header = table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -280,28 +211,7 @@ class JournalEntryScreen(QFrame):
         header.setSectionResizeMode(5, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(6, QHeaderView.ResizeToContents)
         
-        table.setStyleSheet(f"""
-            QTableWidget {{
-                border: 1px solid {COLOR_BORDER_LIGHT};
-                border-radius: 5px;
-                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                padding: {SPACING_SM};
-                border: none;
-                border-bottom: 2px solid {COLOR_BORDER_LIGHT};
-                font-weight: bold;
-            }}
-            QTableWidget::item {{
-                padding: {SPACING_SM};
-            }}
-        """)
-        
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
         table.setSelectionMode(QAbstractItemView.SingleSelection)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.setAlternatingRowColors(True)
         table.itemSelectionChanged.connect(self._on_selection_changed)
         table.itemDoubleClicked.connect(self._on_view)
 
@@ -372,79 +282,69 @@ class JournalEntryScreen(QFrame):
 
     def _populate_table(self):
         if not self.entries:
-            self.table.setRowCount(0)
+            self.table.set_data([])
             self._show_empty("No journal entries found matching these criteria.")
             return
 
         self._show_data()
-        self.table.setRowCount(len(self.entries))
-        for row, entry in enumerate(self.entries):
+        entries_data = []
+        for entry in self.entries:
             if not isinstance(entry, dict):
                 continue
 
-            # Entry Number
-            num_item = QTableWidgetItem(entry.get("entry_number") or "")
-            num_item.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 0, num_item)
-            
-            # Date
-            date_item = QTableWidgetItem(entry.get("entry_date") or "")
-            date_item.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 1, date_item)
-            
-            # Type
-            type_item = QTableWidgetItem(entry.get("entry_type") or "")
-            type_item.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 2, type_item)
-
-            # Description
-            description = entry.get("description") or ""
-            self.table.setItem(row, 3, QTableWidgetItem(description[:60] if len(description) > 60 else description))
-
-            # Debit
-            debit = self._safe_float(entry.get("total_debit"))
-            debit_item = QTableWidgetItem(f"{debit:,.2f}")
-            debit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            debit_item.setForeground(QColor(COLOR_SUCCESS))
-            self.table.setItem(row, 4, debit_item)
-
-            # Credit
-            credit = self._safe_float(entry.get("total_credit"))
-            credit_item = QTableWidgetItem(f"{credit:,.2f}")
-            credit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            credit_item.setForeground(QColor({COLOR_DANGER}))
-            self.table.setItem(row, 5, credit_item)
-
-            # Status
             is_posted = entry.get("is_posted") or False
-            status = "Posted" if is_posted else "Draft"
-            status_item = QTableWidgetItem(status)
-            status_item.setTextAlignment(Qt.AlignCenter)
-            if is_posted:
-                status_item.setForeground(QColor({COLOR_SUCCESS}))
-                status_item.setFont(QFont("Segoe UI", 9, QFont.Bold))
-            else:
-                status_item.setForeground(QColor({COLOR_WARNING}))
-            self.table.setItem(row, 6, status_item)
+            debit = self._safe_float(entry.get("total_debit"))
+            credit = self._safe_float(entry.get("total_credit"))
+            description = entry.get("description") or ""
+            entries_data.append({
+                "entry_number": entry.get("entry_number") or "",
+                "entry_date": entry.get("entry_date") or "",
+                "entry_type": entry.get("entry_type") or "",
+                "description": description[:60] if len(description) > 60 else description,
+                "debit": f"{debit:,.2f}",
+                "credit": f"{credit:,.2f}",
+                "status": "Posted" if is_posted else "Draft",
+                "reference": entry.get("reference") or "",
+                "id": entry.get("id"),
+                "is_posted": is_posted,
+                "_debit_value": debit,
+                "_credit_value": credit,
+            })
 
-            # Reference
-            self.table.setItem(row, 7, QTableWidgetItem(entry.get("reference") or ""))
+        self.table.set_data(entries_data)
 
-            entry_id = entry.get("id")
-            if entry_id:
-                for col in range(8):
-                    item = self.table.item(row, col)
-                    if item:
-                        item.setData(Qt.UserRole, entry_id)
+        # Apply foreground colors after data is set
+        for row in range(self.table.rowCount()):
+            entry_data = self.table.get_row_data(row)
+            if not entry_data:
+                continue
+
+            # Debit (green)
+            debit_item = self.table.item(row, 4)
+            if debit_item:
+                debit_item.setForeground(QColor(COLOR_SUCCESS))
+
+            # Credit (red)
+            credit_item = self.table.item(row, 5)
+            if credit_item:
+                credit_item.setForeground(QColor(COLOR_DANGER))
+
+            # Status color
+            status_item = self.table.item(row, 6)
+            if status_item:
+                if entry_data.get("is_posted"):
+                    status_item.setForeground(QColor(COLOR_SUCCESS))
+                    status_item.setFont(self.table.font())
+                else:
+                    status_item.setForeground(QColor(COLOR_WARNING))
 
     def _on_selection_changed(self):
-        selected = self.table.selectedItems()
-        has_selection = bool(selected)
+        rows = self.table.get_selected_rows()
+        has_selection = bool(rows)
         self.btn_view.setEnabled(has_selection)
 
         if has_selection:
-            row = selected[0].row()
-            entry = self.entries[row] if row < len(self.entries) else None
+            entry = self.table.get_row_data(rows[0])
             is_posted = entry.get("is_posted", False) if entry else False
             self.btn_post.setEnabled(not is_posted)
             self.btn_unpost.setEnabled(is_posted)
@@ -456,21 +356,19 @@ class JournalEntryScreen(QFrame):
         if dialog.exec():
             self.load_entries()
 
+    def _get_selected_entry(self):
+        rows = self.table.get_selected_rows()
+        if not rows:
+            return None
+        return self.table.get_row_data(rows[0])
+
     def _on_view(self):
-        selected = self.table.selectedItems()
-        if not selected:
-            return
-        row = selected[0].row()
-        entry = self.entries[row] if row < len(self.entries) else None
+        entry = self._get_selected_entry()
         if entry:
             self._show_entry_detail(entry)
 
     def _on_post(self):
-        selected = self.table.selectedItems()
-        if not selected:
-            return
-        row = selected[0].row()
-        entry = self.entries[row] if row < len(self.entries) else None
+        entry = self._get_selected_entry()
         if not entry:
             return
 
@@ -487,11 +385,7 @@ class JournalEntryScreen(QFrame):
                 QMessageBox.critical(self, "Error", f"Failed to post entry: {e}")
 
     def _on_unpost(self):
-        selected = self.table.selectedItems()
-        if not selected:
-            return
-        row = selected[0].row()
-        entry = self.entries[row] if row < len(self.entries) else None
+        entry = self._get_selected_entry()
         if not entry:
             return
 
@@ -508,11 +402,7 @@ class JournalEntryScreen(QFrame):
                 QMessageBox.critical(self, "Error", f"Failed to unpost entry: {e}")
 
     def _on_reverse(self):
-        selected = self.table.selectedItems()
-        if not selected:
-            return
-        row = selected[0].row()
-        entry = self.entries[row] if row < len(self.entries) else None
+        entry = self._get_selected_entry()
         if not entry:
             return
 

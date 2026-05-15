@@ -19,7 +19,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
+from ui.constants import TEXT_SECTION_TITLE
 
 
 class EventInvestigationScreen(QWidget):
@@ -40,7 +41,7 @@ class EventInvestigationScreen(QWidget):
         layout.setSpacing(SPACING_LG)
 
         header = QLabel("Event Investigation")
-        header.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        header.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(header)
 
@@ -50,14 +51,14 @@ class EventInvestigationScreen(QWidget):
         self.event_id_input.setPlaceholderText("Event ID...")
         self.event_id_input.setStyleSheet(f"""
             QLineEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; }}
         """)
         search_layout.addWidget(self.event_id_input)
 
         search_btn = QPushButton("🔍 Investigate")
         search_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         search_btn.clicked.connect(self._investigate)
         search_layout.addWidget(search_btn)
@@ -75,7 +76,7 @@ class EventInvestigationScreen(QWidget):
         self.event_detail.setPlaceholderText("Event detail will appear here...")
         self.event_detail.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px;
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
         """)
         left_layout.addWidget(QLabel("Event Detail"))
@@ -89,7 +90,7 @@ class EventInvestigationScreen(QWidget):
         self.trace_view.setPlaceholderText("Trace chain will appear here...")
         self.trace_view.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px;
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
         """)
         right_layout.addWidget(QLabel("Trace & Causation"))
@@ -110,7 +111,7 @@ class EventInvestigationScreen(QWidget):
             btn = QPushButton(label)
             btn.setStyleSheet(f"""
                 QPushButton {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 8px 16px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}
                 QPushButton:hover {{ background: {COLOR_PRIMARY}; color: white; }}
             """)
             btn.clicked.connect(cb)

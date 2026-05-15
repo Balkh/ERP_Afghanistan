@@ -2,10 +2,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QListWidget, Q
                                  QLabel, QFrame, QPushButton, QSizePolicy, QToolButton, QScrollArea)
 from PySide6.QtCore import Qt, Signal, QSize, QTimer, QPropertyAnimation, QEasingCurve
 from PySide6.QtGui import QFont, QIcon
-from theme.theme_manager import ThemeManager
 from theme.theme_engine import ThemeEngine
 from ui.role_manager import UserRole, get_visible_navigation_items, is_navigation_item_visible
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import (TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY_SMALL)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 
@@ -45,15 +45,22 @@ class Sidebar(QWidget):
         if self._role:
             self.apply_role_filter(self._role)
         
-        # Connect theme changes (legacy ThemeManager + live ThemeEngine)
-        self.theme_manager = ThemeManager()
-        self.theme_manager.theme_changed.connect(self.update_theme)
+        # Connect theme changes (unified ThemeEngine — single source of truth)
         ThemeEngine.instance().theme_changed.connect(self.update_theme)
     
     def set_role(self, role: UserRole):
         """Set the role and update navigation visibility."""
         self._role = role
         self.apply_role_filter(role)
+
+    def set_module_visibility(self, module: str, visible: bool) -> None:
+        """Show/hide a module group in the sidebar. Used by RoleRenderer."""
+        group_widget = self._group_widgets.get(module)
+        header_frame = getattr(self, f"_{module}_header", None)
+        if group_widget:
+            group_widget.setVisible(visible)
+        if header_frame:
+            header_frame.setVisible(visible)
     
     def apply_role_filter(self, role: UserRole):
         """Apply role-based visibility filter to navigation items."""
@@ -69,7 +76,7 @@ class Sidebar(QWidget):
             # Get the items for this group
             group_items_map = {
                 "inventory": {"products", "categories", "warehouses", "batches"},
-                "sales": {"sales_invoice", "customers"},
+                "sales": {"sales_invoice", "pos", "customers"},
                 "purchases": {"purchase_invoice", "suppliers"},
                 "returns": {"returns"},
                 "accounting": {"chart_of_accounts", "journal_entries", "account_ledger"},
@@ -78,7 +85,8 @@ class Sidebar(QWidget):
                 "hr": {"employees", "attendance", "leave", "payroll"},
                 "hr_reports": {"employee_summary", "attendance_report", "leave_report", "overtime_report"},
                 "payroll_reports": {"payroll_summary", "payroll_trend", "payroll_dept_cost", "payroll_emp_history"},
-                "system": {"cognitive_dashboard", "causal_reasoning", "decision_intelligence", "observability", "control_center", "intelligence_hub", "master_dashboard", "forecast_dashboard", "anomaly_warning_center", "decision_options", "replay_time_travel", "invoice_templates", "entities", "licensing", "production", "fixed_assets", "backup", "audit", "user_management"}
+                "cash_flow": {"cash_flow"},
+                "system": {"analytics", "operations", "observability", "decision_workspace", "invoice_templates", "entities", "licensing", "production", "fixed_assets", "backup", "audit", "user_management"}
             }
             group_items = group_items_map.get(group_name, set())
             any_visible = any(item in visible_items for item in group_items)
@@ -95,9 +103,9 @@ class Sidebar(QWidget):
     def setup_ui(self):
         """Setup the sidebar UI."""
         # Use scroll area for scrolling support
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-        scroll.setStyleSheet(f"""
+        self._scroll_area = QScrollArea()
+        self._scroll_area.setWidgetResizable(True)
+        self._scroll_area.setStyleSheet(f"""
             QScrollArea {{ 
                 border: none; 
                 background-color: {COLOR_BG_MAIN}; 
@@ -108,7 +116,7 @@ class Sidebar(QWidget):
             }}
             QScrollArea>QWidget>QScrollBar::handle:vertical {{
                 background: {COLOR_BORDER};
-                border-radius: 4px;
+                border-radius: {BORDER_RADIUS_SM};
             }}
             QScrollArea>QWidget>QScrollBar::add-line:vertical, 
             QScrollArea>QWidget>QScrollBar::sub-line:vertical {{
@@ -118,6 +126,7 @@ class Sidebar(QWidget):
         
         scroll_content = QWidget()
         scroll_content.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
+        self._scroll_content = scroll_content
         
         layout = QVBoxLayout(scroll_content)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -131,16 +140,18 @@ class Sidebar(QWidget):
         brand_layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         
         brand_label = QLabel("💊 Pharmacy ERP")
-        brand_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        brand_label.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
         brand_label.setStyleSheet(f"color: {COLOR_BG_MAIN};")
         brand_layout.addWidget(brand_label)
+        self._brand_frame = brand_frame
+        self._brand_label = brand_label
         
         layout.addWidget(brand_frame)
         
         # Navigation section with proper spacing
-        nav_section = QWidget()
-        nav_section.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
-        nav_layout = QVBoxLayout(nav_section)
+        self._nav_section = QWidget()
+        self._nav_section.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
+        nav_layout = QVBoxLayout(self._nav_section)
         nav_layout.setContentsMargins(SPACING_SM,  SPACING_MD,  SPACING_SM,  SPACING_MD)
         nav_layout.setSpacing(SPACING_SM)
         
@@ -158,6 +169,7 @@ class Sidebar(QWidget):
         
         self._create_group(nav_layout, "Sales", "sales", [
             ("Sales Invoice", "sales_invoice", 5),
+            ("POS Terminal", "pos", 10),
             ("Customers", "customers", 7),
         ])
         
@@ -216,17 +228,10 @@ class Sidebar(QWidget):
         ])
         
         self._create_group(nav_layout, "System", "system", [
-            ("🧠 Cognitive Dashboard", "cognitive_dashboard", 45),
-            ("🔍 Causal Reasoning", "causal_reasoning", 46),
-            ("🎯 Decision Intelligence", "decision_intelligence", 47),
-            ("Control Center", "control_center", 38),
-            ("Observability", "observability", 39),
-            ("Intelligence Hub", "intelligence_hub", 32),
-            ("Intelligence Dashboard", "master_dashboard", 43),
-            ("Forecast Dashboard", "forecast_dashboard", 40),
-            ("Anomaly Warning Center", "anomaly_warning_center", 42),
-            ("Decision Options", "decision_options", 41),
-            ("Replay Time-Travel", "replay_time_travel", 44),
+            ("Analytics Workspace", "analytics", 32),
+            ("Operations Dashboard", "operations", 38),
+            ("Observability Console", "observability", 39),
+            ("Decision Support", "decision_workspace", 47),
             ("Invoice Templates", "invoice_templates", 33),
             ("Business Entities", "entities", 35),
             ("Licensing", "licensing", 36),
@@ -242,25 +247,25 @@ class Sidebar(QWidget):
         # Add stretch to push content up
         nav_layout.addStretch()
         
-        layout.addWidget(nav_section)
+        layout.addWidget(self._nav_section)
         
         # Bottom section
-        bottom_frame = QFrame()
-        bottom_frame.setFixedHeight(60)
-        bottom_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE};")
-        bottom_layout = QVBoxLayout(bottom_frame)
+        self._bottom_frame = QFrame()
+        self._bottom_frame.setFixedHeight(60)
+        self._bottom_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE};")
+        bottom_layout = QVBoxLayout(self._bottom_frame)
         bottom_layout.setContentsMargins(MARGIN_PAGE,  SPACING_SM,  MARGIN_PAGE,  SPACING_SM)
         
         self.logout_btn = QPushButton("Logout")
-        self.logout_btn.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        self.logout_btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         self.logout_btn.setFixedHeight(40)
         self.logout_btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_DANGER};
                 color: {COLOR_TEXT_ON_PRIMARY};
                 border: none;
-                border-radius: 8px;
-                padding: 10px;
+                border-radius: {BORDER_RADIUS_LG};
+                padding: {SPACING_MD}px;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_PRIMARY_HOVER};
@@ -268,21 +273,21 @@ class Sidebar(QWidget):
         """)
         bottom_layout.addWidget(self.logout_btn)
         
-        layout.addWidget(bottom_frame)
+        layout.addWidget(self._bottom_frame)
         
         # Set scroll area content
-        scroll.setWidget(scroll_content)
+        self._scroll_area.setWidget(scroll_content)
         
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
-        main_layout.addWidget(scroll)
+        main_layout.addWidget(self._scroll_area)
     
     def _create_nav_button(self, title, page_id, page_index):
         """Create a navigation button."""
         btn = QPushButton(f"  {title}")
-        btn.setFont(QFont("Segoe UI", 12))
+        btn.setFont(QFont("Segoe UI", TEXT_LABEL))
         btn.setFixedHeight(40)
         btn.setCursor(Qt.PointingHandCursor)
         btn.setStyleSheet(f"""
@@ -290,7 +295,7 @@ class Sidebar(QWidget):
                 background-color: transparent;
                 color: {COLOR_TEXT_PRIMARY};
                 border: none;
-                border-radius: 6px;
+                border-radius: {BORDER_RADIUS_MD};
                 text-align: left;
                 padding-left: 15px;
             }}
@@ -332,7 +337,7 @@ class Sidebar(QWidget):
                 padding-left: 10px;
                 color: {COLOR_TEXT_PRIMARY};
                 font-weight: bold;
-                font-size: 13px;
+                font-size: {TEXT_CARD_TITLE}px;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};
@@ -346,11 +351,11 @@ class Sidebar(QWidget):
         # Arrow indicator
         arrow_label = QLabel("▶")
         arrow_label.setFixedWidth(20)
-        arrow_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: 12px;")
+        arrow_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_LABEL}px;")
 
         # Title
         title_label = QLabel(title)
-        title_label.setFont(QFont("Segoe UI", 12, QFont.Bold))
+        title_label.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         title_label.setStyleSheet(f"color: {COLOR_PRIMARY};")
 
         header_layout.addWidget(arrow_label)
@@ -400,7 +405,7 @@ class Sidebar(QWidget):
                         padding-left: 10px;
                         color: {COLOR_TEXT_PRIMARY};
                         font-weight: bold;
-                        font-size: 13px;
+                        font-size: {TEXT_CARD_TITLE}px;
                     }}
                     QPushButton:hover {{
                         background-color: {COLOR_BG_ELEVATED};
@@ -479,9 +484,9 @@ class Sidebar(QWidget):
 
     def _refresh_all_styles(self):
         """Re-apply all sidebar stylesheets with current theme colors."""
-        # Scroll area
-        for child in self.findChildren(QScrollArea):
-            child.setStyleSheet(f"""
+        # Scroll area (cached ref — no findChildren)
+        if hasattr(self, '_scroll_area'):
+            self._scroll_area.setStyleSheet(f"""
                 QScrollArea {{ 
                     border: none; 
                     background-color: {COLOR_BG_MAIN}; 
@@ -492,42 +497,25 @@ class Sidebar(QWidget):
                 }}
                 QScrollArea>QWidget>QScrollBar::handle:vertical {{
                     background: {COLOR_BORDER};
-                    border-radius: 4px;
+                    border-radius: {BORDER_RADIUS_SM};
                 }}
                 QScrollArea>QWidget>QScrollBar::add-line:vertical, 
                 QScrollArea>QWidget>QScrollBar::sub-line:vertical {{
                     height: 0px;
                 }}
             """)
-            scroll_content = child.widget()
-            if scroll_content:
-                scroll_content.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
-            break
+            if hasattr(self, '_scroll_content'):
+                self._scroll_content.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
 
-        # Brand frame
-        for child in self.findChildren(QFrame):
-            cs = child.styleSheet()
-            if 'background-color' in cs and 'COLOR_PRIMARY' in cs:
-                child.setStyleSheet(f"background-color: {COLOR_PRIMARY};")
-                brand_label = child.findChild(QLabel)
-                if brand_label:
-                    brand_label.setStyleSheet(f"color: {COLOR_BG_MAIN};")
-                break
+        # Brand frame (cached ref)
+        if hasattr(self, '_brand_frame'):
+            self._brand_frame.setStyleSheet(f"background-color: {COLOR_PRIMARY};")
+        if hasattr(self, '_brand_label'):
+            self._brand_label.setStyleSheet(f"color: {COLOR_BG_MAIN};")
 
-        # Navigation section
-        for child in self.findChildren(QWidget):
-            if child is not self and hasattr(child, 'layout'):
-                cl = child.layout()
-                if cl and hasattr(cl, 'itemAt'):
-                    first = True
-                    for i in range(cl.count()):
-                        item = cl.itemAt(i)
-                        if item and item.widget():
-                            ws = item.widget().styleSheet()
-                            if first and ('background' in ws or 'background-color' in ws):
-                                if 'transparent' not in ws:
-                                    item.widget().setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
-                                    first = False
+        # Navigation section background (cached ref)
+        if hasattr(self, '_nav_section'):
+            self._nav_section.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
 
         # All navigation buttons
         for page_id, btn in self._navigation_items.items():
@@ -536,7 +524,7 @@ class Sidebar(QWidget):
                     background-color: transparent;
                     color: {COLOR_TEXT_PRIMARY};
                     border: none;
-                    border-radius: 6px;
+                    border-radius: {BORDER_RADIUS_MD};
                     text-align: left;
                     padding-left: 15px;
                 }}
@@ -560,7 +548,7 @@ class Sidebar(QWidget):
                         padding-left: 10px;
                         color: {COLOR_TEXT_PRIMARY};
                         font-weight: bold;
-                        font-size: 13px;
+                        font-size: {TEXT_CARD_TITLE}px;
                     }}
                     QPushButton:hover {{
                         background-color: {COLOR_BG_ELEVATED};
@@ -568,34 +556,24 @@ class Sidebar(QWidget):
                 """)
                 arrow = getattr(header_btn, '_arrow', None)
                 if arrow:
-                    arrow.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: 12px;")
+                    arrow.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_BODY}px;")
                 for c in header_btn.findChildren(QLabel):
                     if c is not arrow:
                         c.setStyleSheet(f"color: {COLOR_PRIMARY};")
 
-        # Item containers inside groups
-        for group_name, group_widget in self._group_widgets.items():
-            for c in group_widget.findChildren(QWidget):
-                if c.styleSheet() and 'background-color' in c.styleSheet():
-                    c.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
-
-        # Bottom frame with logout
-        for child in self.findChildren(QFrame):
-            cs = child.styleSheet()
-            find_logout = child.findChild(QPushButton)
-            if find_logout and ('logout' in find_logout.text().lower() or 'Logout' in find_logout.text()):
-                find_logout.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {COLOR_DANGER};
-                        color: {COLOR_TEXT_ON_PRIMARY};
-                        border: none;
-                        border-radius: 8px;
-                        padding: 10px;
-                    }}
-                    QPushButton:hover {{
-                        background-color: {COLOR_PRIMARY_HOVER};
-                    }}
-                """)
-                child.setStyleSheet(f"background-color: {COLOR_BG_SURFACE};")
-                break
+        # Bottom frame with logout (cached ref)
+        if hasattr(self, '_bottom_frame') and hasattr(self, 'logout_btn'):
+            self.logout_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {COLOR_DANGER};
+                    color: {COLOR_TEXT_ON_PRIMARY};
+                    border: none;
+                    border-radius: {BORDER_RADIUS_LG};
+                padding: {SPACING_MD}px;
+                }}
+                QPushButton:hover {{
+                    background-color: {COLOR_PRIMARY_HOVER};
+                }}
+            """)
+            self._bottom_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE};")
 

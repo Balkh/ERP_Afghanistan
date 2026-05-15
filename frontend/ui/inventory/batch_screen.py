@@ -2,7 +2,7 @@ from api.client import APIClient
 from api.endpoints import get_endpoint
 from PySide6.QtCore import Slot
 
-from PySide6.QtWidgets import QHeaderView, QAbstractItemView, QTableWidgetItem
+from ui.components.tables import EnterpriseTable, TableColumn
 from .base_screen import BaseInventoryScreen
 
 class BatchScreen(BaseInventoryScreen):
@@ -26,16 +26,16 @@ class BatchScreen(BaseInventoryScreen):
 
     def setup_table(self):
         """Setup the batches table."""
-        from PySide6.QtWidgets import QTableWidget
-
-        self.table = QTableWidget()
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels([
-            "ID", "Product", "Batch No", "Expiry", "Qty", "Warehouse", "Status"
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        columns = [
+            TableColumn("id", "ID", width=50),
+            TableColumn("product_name", "Product", width=150),
+            TableColumn("batch_number", "Batch No", width=120),
+            TableColumn("expiry_date", "Expiry", width=100, align="center"),
+            TableColumn("quantity", "Qty", width=60, align="right"),
+            TableColumn("warehouse_name", "Warehouse", width=120),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.table = EnterpriseTable(columns)
         self.table.itemSelectionChanged.connect(self.on_selection_changed)
 
         self.set_table_widget(self.table)
@@ -89,20 +89,23 @@ class BatchScreen(BaseInventoryScreen):
     def update_table(self):
         """Update the table with current batches."""
         if not self.batches:
-            self.table.setRowCount(0)
+            self.table.set_data([])
             return
-        self.table.setRowCount(len(self.batches))
-        for row, batch in enumerate(self.batches):
+        data = []
+        for batch in self.batches:
             if not isinstance(batch, dict):
                 continue
-            self.table.setItem(row, 0, QTableWidgetItem(str(batch.get("id") or "")))
-            self.table.setItem(row, 1, QTableWidgetItem(batch.get("product_name") or ""))
-            self.table.setItem(row, 2, QTableWidgetItem(batch.get("batch_number") or ""))
-            self.table.setItem(row, 3, QTableWidgetItem(batch.get("expiry_date") or ""))
-            self.table.setItem(row, 4, QTableWidgetItem(str(batch.get("quantity") or "")))
-            self.table.setItem(row, 5, QTableWidgetItem(batch.get("warehouse_name") or ""))
             status = batch.get("status") or "unknown"
-            self.table.setItem(row, 6, QTableWidgetItem(status.capitalize()))
+            data.append({
+                "id": str(batch.get("id") or ""),
+                "product_name": batch.get("product_name") or "",
+                "batch_number": batch.get("batch_number") or "",
+                "expiry_date": batch.get("expiry_date") or "",
+                "quantity": str(batch.get("quantity") or ""),
+                "warehouse_name": batch.get("warehouse_name") or "",
+                "status": status.capitalize(),
+            })
+        self.table.set_data(data)
 
     @Slot()
     def on_selection_changed(self):

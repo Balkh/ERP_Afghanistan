@@ -1,18 +1,24 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Fixed Assets management screen."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QGroupBox,
                                   QFormLayout, QDialog, QDialogButtonBox, QTabWidget,
                                   QDoubleSpinBox, QDateEdit)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class FixedAssetsScreen(BaseScreen):
@@ -31,34 +37,20 @@ class FixedAssetsScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Fixed Assets Management")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_TABLE_BORDER_LIGHT};
-                border-radius: 5px;
-                padding: 5px 15px;
-                color: #495057;
-            }}
-            QPushButton:hover {{
-                background-color: #e9ecef;
-            }}
-        """)
-        self.btn_refresh.clicked.connect(self.on_show)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_refresh.clicked.connect(self._load_assets)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
         
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: 5px; background: {COLOR_BG_SURFACE}; }}
-            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: 10px 20px; border-top-left-radius: 5px; border-top-right-radius: 5px; }}
+            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
+            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
         """)
         
@@ -85,7 +77,7 @@ class FixedAssetsScreen(BaseScreen):
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_bar = QFrame()
-        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: 8px; border: 1px solid #dee2e6;")
+        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}; border: 1px solid {COLOR_BORDER};")
         filter_layout = QHBoxLayout(filter_bar)
         
         self.category_filter = QComboBox()
@@ -106,37 +98,32 @@ class FixedAssetsScreen(BaseScreen):
         action_layout = QHBoxLayout()
         add_btn = QPushButton("+ Add Asset")
         add_btn.setMinimumHeight(38)
-        add_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        add_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: {BORDER_RADIUS_MD}px; font-weight: bold; padding: 0 {SPACING_MD}px;")
         add_btn.clicked.connect(self._add_asset)
         
         dispose_btn = QPushButton("Dispose")
         dispose_btn.setMinimumHeight(38)
-        dispose_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: 5px; padding: 0 15px;")
+        dispose_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: {BORDER_RADIUS_MD}px; padding: 0 {SPACING_MD}px;")
         
         action_layout.addWidget(add_btn)
         action_layout.addWidget(dispose_btn)
         action_layout.addStretch()
         layout.addLayout(action_layout)
         
-        self.assets_table = self._create_modern_table()
-        self.assets_table.setColumnCount(9)
-        self.assets_table.setHorizontalHeaderLabels(["Asset Code", "Name", "Category", "Purchase Date", "Cost", "Depreciation", "Book Value", "Status", "Actions"])
+        columns = [
+            TableColumn("asset_code", "Asset Code", width=100),
+            TableColumn("name", "Name", width=200),
+            TableColumn("category", "Category", width=100),
+            TableColumn("purchase_date", "Purchase Date", width=100, align="center"),
+            TableColumn("cost", "Cost", width=100, align="right"),
+            TableColumn("depreciation", "Depreciation", width=100, align="right"),
+            TableColumn("book_value", "Book Value", width=100, align="right"),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.assets_table = EnterpriseTable(columns)
         layout.addWidget(self.assets_table)
         
         self._load_assets()
-
-    def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: #f1f2f6; }}
-            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: 8px; border: none; border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; font-weight: bold; }}
-            QTableWidget::item {{ padding: 10px; }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(True)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        return table
     
     def _setup_categories_tab(self):
         layout = QVBoxLayout(self.categories_tab)

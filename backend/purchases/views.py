@@ -16,6 +16,7 @@ from purchases.serializers import (
 )
 from inventory.service import StockIntegrationService
 from inventory.models import Warehouse
+from core.view_logging import log_business_event
 from accounting.models import Account
 from accounting.services.journal_engine import JournalEngine
 from security.permissions import RoleBasedPermission
@@ -248,12 +249,15 @@ class PurchaseInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Confirm a draft invoice."""
         invoice = self.get_object()
         if invoice.status != 'DRAFT':
+            log_business_event(request, 'invoice.purchase.confirm_blocked',
+                               {'invoice_id': str(pk), 'current_status': invoice.status, 'reason': 'not_draft'})
             return Response(
                 {'error': 'Only draft invoices can be confirmed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         invoice.status = 'CONFIRMED'
         invoice.save(update_fields=['status', 'updated_at'])
+        log_business_event(request, 'invoice.purchase.confirmed', {'invoice_id': str(pk)})
         serializer = self.get_serializer(invoice)
         return Response(serializer.data)
 

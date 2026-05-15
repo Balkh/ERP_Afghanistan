@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from security.models import AuditLog, UserRole
 from security.authentication import generate_jwt_token, generate_refresh_token, verify_jwt_token
+from security.ui_scopes import resolve_ui_scopes
 from core.api.responses import APIResponse
 from core.api.errors import ErrorCode, create_error_response, get_status_for_error
 from datetime import datetime, timedelta
@@ -30,12 +31,16 @@ def login_view(request):
     user = authenticate(username=username, password=password)
     
     if user is None:
+        ip_address = request.META.get('REMOTE_ADDR', 'unknown')
         AuditLog.objects.create(
             action='LOGIN_FAILED',
             username=username,
-            ip_address=request.META.get('REMOTE_ADDR', 'unknown'),
+            ip_address=ip_address,
             additional_data={'username': username}
         )
+        # Record failed login for rate limiting
+        from security.rate_limiter import record_failed_login
+        record_failed_login(ip_address)
         return Response(
             create_error_response(ErrorCode.AUTH_001, "Invalid credentials"),
             status=401
@@ -47,9 +52,6 @@ def login_view(request):
             status=401
         )
     
-    access_token = generate_jwt_token(user)
-    refresh_token = generate_refresh_token(user)
-    
     # Get user roles
     user_roles = UserRole.objects.filter(
         user=user,
@@ -59,6 +61,16 @@ def login_view(request):
         expires_at__gt=datetime.now()
     )
     roles = [ur.role.name for ur in user_roles]
+    
+    # Resolve UI scopes for frontend
+    ui_scopes = resolve_ui_scopes(roles)
+    
+    access_token = generate_jwt_token(user, ui_scopes=ui_scopes)
+    refresh_token = generate_refresh_token(user)
+    
+    # Reset rate limit on successful login
+    from security.rate_limiter import reset_login_limit
+    reset_login_limit(request.META.get('REMOTE_ADDR', 'unknown'))
     
     # Get user companies
     from core.models import Company
@@ -83,13 +95,16 @@ def login_view(request):
     if not any(c.get('is_default', False) for c in companies) and companies:
         companies[0]['is_default'] = True
     
+    # Resolve UI scopes for frontend
+    ui_scopes = resolve_ui_scopes(roles)
+    
     # Log successful login
     AuditLog.objects.create(
         action='LOGIN',
         user=user,
         username=user.username,
         ip_address=request.META.get('REMOTE_ADDR', 'unknown'),
-        additional_data={'username': username, 'roles': roles}
+        additional_data={'username': username, 'roles': roles, 'ui_scopes': ui_scopes}
     )
     
     # Create login notification
@@ -106,6 +121,7 @@ def login_view(request):
             "refresh_token": refresh_token,
             "token_type": "Bearer",
             "expires_in": 86400,  # 24 hours in seconds
+            "ui_scopes": ui_scopes,
             "user": {
                 "id": str(user.id),
                 "username": user.username,
@@ -155,7 +171,18 @@ def refresh_token_view(request):
             status=401
         )
     
-    new_access = generate_jwt_token(user)
+    # Get user roles for ui_scopes
+    user_roles = UserRole.objects.filter(
+        user=user,
+        expires_at__isnull=True
+    ) | UserRole.objects.filter(
+        user=user,
+        expires_at__gt=datetime.now()
+    )
+    roles = [ur.role.name for ur in user_roles]
+    ui_scopes = resolve_ui_scopes(roles)
+    
+    new_access = generate_jwt_token(user, ui_scopes=ui_scopes)
     new_refresh = generate_refresh_token(user)
     
     return Response(APIResponse.success(
@@ -164,6 +191,7 @@ def refresh_token_view(request):
             "refresh_token": new_refresh,
             "token_type": "Bearer",
             "expires_in": 86400,
+            "ui_scopes": ui_scopes,
         },
         message="Token refreshed successfully"
     ))
@@ -221,6 +249,9 @@ def user_profile(request):
             if rp.permission.codename not in permissions:
                 permissions.append(rp.permission.codename)
     
+    # Resolve UI scopes
+    ui_scopes = resolve_ui_scopes(role_names)
+    
     # Get companies
     from core.models.multitenant import UserCompanyMapping
     user_companies = UserCompanyMapping.objects.filter(
@@ -248,6 +279,7 @@ def user_profile(request):
             "is_superuser": user.is_superuser,
             "roles": role_names,
             "permissions": permissions,
+            "ui_scopes": ui_scopes,
             "companies": companies
         }
     ))
@@ -774,4 +806,157 @@ def permissions_list(request):
             }
             for p in permissions
         ]
+    ))
+
+
+# ── Password Reset Endpoints (Offline: Admin-initiated) ──
+
+@api_view(['POST'])
+def admin_reset_password(request, user_id):
+    """Admin resets a user's password. Returns temporary password."""
+    from security.password_reset_service import PasswordResetService
+    from django.contrib.auth.models import User
+
+    if not request.user.is_authenticated:
+        return Response(
+            create_error_response(ErrorCode.AUTH_003, "Authentication required"),
+            status=401
+        )
+    if not request.user.is_superuser:
+        return Response(
+            create_error_response(ErrorCode.AUTH_002, "Admin access required"),
+            status=403
+        )
+
+    try:
+        target_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            create_error_response(ErrorCode.AUTH_005, "User not found"),
+            status=404
+        )
+
+    result = PasswordResetService.admin_reset(request.user, target_user)
+    if result["success"]:
+        return Response(APIResponse.success(
+            data={
+                "username": target_user.username,
+                "temporary_password": result["temporary_password"],
+            },
+            message=result["message"]
+        ))
+    return Response(
+        create_error_response(ErrorCode.AUTH_002, result["message"]),
+        status=403
+    )
+
+
+@api_view(['POST'])
+def change_password(request):
+    """User changes their own password."""
+    from django.contrib.auth.password_validation import validate_password
+    from security.password_reset_service import PasswordResetService
+
+    old_password = request.data.get('old_password')
+    new_password = request.data.get('new_password')
+
+    if not old_password or not new_password:
+        return Response(
+            create_error_response(ErrorCode.VAL_001, "Old password and new password are required"),
+            status=400
+        )
+
+    if not request.user.check_password(old_password):
+        return Response(
+            create_error_response(ErrorCode.AUTH_001, "Invalid old password"),
+            status=400
+        )
+
+    result = PasswordResetService.force_change_password(request.user, new_password)
+    if result["success"]:
+        return Response(APIResponse.success(data=None, message=result["message"]))
+    return Response(
+        create_error_response(ErrorCode.VAL_002, result["message"]),
+        status=400
+    )
+
+
+# ── TOTP / 2FA Endpoints ──
+
+@api_view(['POST'])
+def totp_setup(request):
+    """Generate TOTP secret and QR code for current user."""
+    from security.totp_service import TOTPService
+    if not request.user.is_authenticated:
+        return Response(
+            create_error_response(ErrorCode.AUTH_003, "Authentication required"),
+            status=401
+        )
+    result = TOTPService.generate_secret(request.user)
+    return Response(APIResponse.success(
+        data={
+            "secret": result["secret"],
+            "provisioning_uri": result["provisioning_uri"],
+            "qr_code_base64": result["qr_code_base64"],
+        },
+        message="TOTP setup initiated. Verify with a code to confirm."
+    ))
+
+
+@api_view(['POST'])
+def totp_verify(request):
+    """Verify a TOTP code to confirm setup or authenticate."""
+    from security.totp_service import TOTPService
+    if not request.user.is_authenticated:
+        return Response(
+            create_error_response(ErrorCode.AUTH_003, "Authentication required"),
+            status=401
+        )
+    code = request.data.get('code')
+    if not code:
+        return Response(
+            create_error_response(ErrorCode.VAL_001, "TOTP code is required"),
+            status=400
+        )
+    if TOTPService.verify_code(request.user, code):
+        return Response(APIResponse.success(
+            data={"confirmed": True},
+            message="TOTP verified successfully. 2FA is now enabled."
+        ))
+    return Response(
+        create_error_response(ErrorCode.AUTH_001, "Invalid TOTP code"),
+        status=400
+    )
+
+
+@api_view(['POST'])
+def totp_disable(request):
+    """Disable TOTP 2FA for current user."""
+    from security.totp_service import TOTPService
+    if not request.user.is_authenticated:
+        return Response(
+            create_error_response(ErrorCode.AUTH_003, "Authentication required"),
+            status=401
+        )
+    TOTPService.disable(request.user)
+    return Response(APIResponse.success(
+        data=None,
+        message="TOTP 2FA has been disabled."
+    ))
+
+
+@api_view(['GET'])
+def totp_status(request):
+    """Get TOTP 2FA status for current user."""
+    from security.totp_service import TOTPService
+    if not request.user.is_authenticated:
+        return Response(
+            create_error_response(ErrorCode.AUTH_003, "Authentication required"),
+            status=401
+        )
+    return Response(APIResponse.success(
+        data={
+            "enabled": TOTPService.is_enabled(request.user),
+            "requires_2fa": TOTPService.requires_2fa(request.user),
+        }
     ))

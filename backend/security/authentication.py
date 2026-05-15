@@ -1,22 +1,25 @@
 import jwt
+import uuid
 import datetime
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.utils import timezone
 from rest_framework import authentication, exceptions
-from .models import Role, Permission
+from .models import Role, Permission, UserRole
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
     """
-    JWT Authentication backend for Django REST Framework
+    JWT Authentication backend for Django REST Framework.
+    Validates Bearer tokens, attaches roles/permissions to user.
     """
+
     def authenticate(self, request):
         auth_header = request.META.get('HTTP_AUTHORIZATION')
         if not auth_header:
             return None
 
         try:
-            # Extract token from "Bearer <token>" format
             prefix, token = auth_header.split(' ')
             if prefix.lower() != 'bearer':
                 return None
@@ -29,9 +32,6 @@ class JWTAuthentication(authentication.BaseAuthentication):
         return self.authenticate_credentials(token)
 
     def authenticate_credentials(self, token):
-        """
-        Validate JWT token and return user
-        """
         try:
             payload = jwt.decode(
                 token,
@@ -42,6 +42,10 @@ class JWTAuthentication(authentication.BaseAuthentication):
             raise exceptions.AuthenticationFailed('Token has expired')
         except jwt.InvalidTokenError:
             raise exceptions.AuthenticationFailed('Invalid token')
+
+        # Check token blacklist
+        if _is_token_blacklisted(payload.get('jti')):
+            raise exceptions.AuthenticationFailed('Token has been revoked')
 
         try:
             user = User.objects.get(id=payload['user_id'])
@@ -54,56 +58,80 @@ class JWTAuthentication(authentication.BaseAuthentication):
         # Attach roles and permissions to user for RBAC
         user.roles = self.get_user_roles(user)
         user.permissions = self.get_user_permissions(user)
+        user.tenant_id = payload.get('tenant_id')
+        user.ui_scopes = payload.get('ui_scopes', {})
 
         return (user, token)
 
-    def get_user_roles(self, user):
-        """Get roles for user"""
-        # This would be implemented with a UserProfile model linking to Role
-        # For now, returning empty list as placeholder
-        return []
+    @staticmethod
+    def get_user_roles(user):
+        """Get active role names for user from UserRole model."""
+        try:
+            now = timezone.now()
+            user_roles = UserRole.objects.filter(
+                user=user,
+                role__is_active=True,
+            ).exclude(
+                expires_at__lt=now
+            ).select_related('role')
+            return [ur.role.name for ur in user_roles]
+        except Exception:
+            return []
 
-    def get_user_permissions(self, user):
-        """Get permissions for user"""
-        # This would aggregate permissions from user's roles
-        # For now, returning empty list as placeholder
-        return []
+    @staticmethod
+    def get_user_permissions(user):
+        """Aggregate all permission codenames from user's active roles."""
+        try:
+            now = timezone.now()
+            perms = Permission.objects.filter(
+                permission_roles__role__role_users__user=user,
+                permission_roles__role__is_active=True,
+                permission_roles__role__role_users__expires_at__gt=now,
+                is_active=True,
+            ).distinct()
+            return [p.codename for p in perms]
+        except Exception:
+            return []
 
 
-def generate_jwt_token(user):
+def generate_jwt_token(user, tenant_id=None, ui_scopes=None):
     """
     Generate JWT access token for user.
-    Expires in 24 hours.
+    Expires in 24 hours. Includes jti for revocation.
     """
     payload = {
         'user_id': user.id,
         'email': user.email,
+        'username': user.username,
         'token_type': 'access',
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24),
-        'iat': datetime.datetime.utcnow(),
+        'jti': str(uuid.uuid4()),
+        'iat': timezone.now(),
+        'exp': timezone.now() + datetime.timedelta(hours=24),
     }
+    if tenant_id:
+        payload['tenant_id'] = tenant_id
+    if ui_scopes:
+        payload['ui_scopes'] = ui_scopes
     return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
 
 
 def generate_refresh_token(user):
     """
     Generate JWT refresh token for user.
-    Expires in 7 days.
+    Expires in 7 days. Includes jti for revocation.
     """
     payload = {
         'user_id': user.id,
         'token_type': 'refresh',
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7),
-        'iat': datetime.datetime.utcnow(),
+        'jti': str(uuid.uuid4()),
+        'iat': timezone.now(),
+        'exp': timezone.now() + datetime.timedelta(days=7),
     }
     return jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
 
 
 def verify_jwt_token(token, expected_type=None):
-    """
-    Verify and decode JWT token.
-    Optionally check token_type claim.
-    """
+    """Verify and decode JWT token. Optionally check token_type claim."""
     try:
         payload = jwt.decode(
             token,
@@ -112,8 +140,24 @@ def verify_jwt_token(token, expected_type=None):
         )
         if expected_type and payload.get('token_type') != expected_type:
             raise exceptions.AuthenticationFailed('Invalid token type')
+        if _is_token_blacklisted(payload.get('jti')):
+            raise exceptions.AuthenticationFailed('Token has been revoked')
         return payload
     except jwt.ExpiredSignatureError:
         raise exceptions.AuthenticationFailed('Token has expired')
     except jwt.InvalidTokenError:
         raise exceptions.AuthenticationFailed('Invalid token')
+
+
+# ── Token Blacklist (in-memory, Redis-backed in production) ──
+_token_blacklist: set = set()
+
+
+def blacklist_token(jti: str, exp: datetime.datetime = None) -> None:
+    """Add a token's jti to the blacklist."""
+    _token_blacklist.add(jti)
+
+
+def _is_token_blacklisted(jti: str) -> bool:
+    """Check if a token's jti is blacklisted."""
+    return jti in _token_blacklist

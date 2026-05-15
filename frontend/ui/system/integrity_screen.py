@@ -1,17 +1,27 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 System Integrity Screen - ERP-wide Validation Dashboard.
 Executes cross-module consistency tests and displays results.
 """
 
 import time
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QFrame, QScrollArea, QPushButton, QProgressBar,
-                               QTableWidget, QTableWidgetItem, QHeaderView,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, 
+                               QFrame, QScrollArea, QProgressBar,
+                               QTableWidgetItem, QHeaderView,
                                QSizePolicy, QGroupBox, QTextEdit)
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QColor
+from ui.screens.base_screen import BaseScreen
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_XL,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
@@ -72,10 +82,9 @@ class SystemIntegrityScreen(BaseScreen):
         # Header
         header = QHBoxLayout()
         title = QLabel("System Integrity & Validation")
-        title.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         
-        self.scan_btn = QPushButton("Run Full System Scan")
+        self.scan_btn = EnterpriseButton(text="Run Full System Scan", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
         self.scan_btn.setFixedWidth(200)
         self.scan_btn.clicked.connect(self._run_scan)
         
@@ -89,18 +98,18 @@ class SystemIntegrityScreen(BaseScreen):
         self.progress_container.setVisible(False)
         p_layout = QVBoxLayout(self.progress_container)
         self.progress_bar = QProgressBar()
-        self.progress_bar.setStyleSheet(f"QProgressBar {{ background: {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 5px; text-align: center; }} QProgressBar::chunk {{ background: {COLOR_PRIMARY}; border-radius: 5px; }}")
+        self.progress_bar.setStyleSheet(f"QProgressBar {{ background: {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: {BORDER_RADIUS_MD}px; text-align: center; }} QProgressBar::chunk {{ background: {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_MD}px; }}")
         self.progress_label = QLabel("Initializing...")
-        self.progress_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
+        self.progress_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px;")
         p_layout.addWidget(self.progress_bar)
         p_layout.addWidget(self.progress_label)
         layout.addWidget(self.progress_container)
         
         # Results Summary Cards
         summary_layout = QHBoxLayout()
-        self.pass_card = self._create_summary_card("Passed Tests", "0", {COLOR_SUCCESS})
-        self.fail_card = self._create_summary_card("Failed Tests", "0", {COLOR_DANGER})
-        self.warn_card = self._create_summary_card("Warnings", "0", {COLOR_WARNING})
+        self.pass_card = self._create_summary_card("Passed Tests", "0", COLOR_SUCCESS)
+        self.fail_card = self._create_summary_card("Failed Tests", "0", COLOR_DANGER)
+        self.warn_card = self._create_summary_card("Warnings", "0", COLOR_WARNING)
         summary_layout.addWidget(self.pass_card)
         summary_layout.addWidget(self.fail_card)
         summary_layout.addWidget(self.warn_card)
@@ -108,19 +117,19 @@ class SystemIntegrityScreen(BaseScreen):
         
         # Results Table
         results_group = QGroupBox("Validation Report")
-        results_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
+        results_group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: {BORDER_RADIUS_XL}px; margin-top: {SPACING_MD}px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: {SPACING_MD}px; padding: 0 {SPACING_XS}px; }}")
         rg_layout = QVBoxLayout(results_group)
         rg_layout.setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         
-        self.results_table = QTableWidget()
-        self.results_table.setColumnCount(4)
-        self.results_table.setHorizontalHeaderLabels(["Test Name", "Modules", "Status", "Severity"])
-        self.results_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        columns = [
+            TableColumn("test_name", "Test Name", width=250),
+            TableColumn("modules", "Modules", width=150),
+            TableColumn("status", "Status", width=80, align="center"),
+            TableColumn("severity", "Severity", width=80, align="center"),
+        ]
+        self.results_table = EnterpriseTable(columns)
         self.results_table.verticalHeader().setVisible(False)
-        self.results_table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.results_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.results_table.cellClicked.connect(self._show_details)
-        self.results_table.setStyleSheet(f"QTableWidget {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }} QHeaderView::section {{ background: {COLOR_TABLE_HEADER_BG_LIGHT}; color: {COLOR_PRIMARY}; border: none; padding: 8px; font-weight: bold; }}")
         rg_layout.addWidget(self.results_table)
         layout.addWidget(results_group)
         
@@ -131,7 +140,7 @@ class SystemIntegrityScreen(BaseScreen):
         dg_layout = QVBoxLayout(self.details_group)
         self.details_text = QTextEdit()
         self.details_text.setReadOnly(True)
-        self.details_text.setStyleSheet(f"background: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; border: none; font-family: 'Consolas'; font-size: 11px;")
+        self.details_text.setStyleSheet(f"background: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; border: none; font-family: 'Consolas'; font-size: {TEXT_BODY}px;")
         dg_layout.addWidget(self.details_text)
         layout.addWidget(self.details_group)
         
@@ -139,12 +148,12 @@ class SystemIntegrityScreen(BaseScreen):
 
     def _create_summary_card(self, title, val, color):
         card = QFrame()
-        card.setStyleSheet(f"background: {COLOR_BG_MAIN}; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 10px; border-left: 4px solid {color};")
+        card.setStyleSheet(f"background: {COLOR_BG_MAIN}; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: {BORDER_RADIUS_LG}px; border-left: 4px solid {color};")
         l = QVBoxLayout(card)
         t_label = QLabel(title)
-        t_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
+        t_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px;")
         v_label = QLabel(val)
-        v_label.setStyleSheet(f"color: {color}; font-size: 24px; font-weight: bold;")
+        v_label.setStyleSheet(f"color: {color}; font-size: {TEXT_DISPLAY}px; font-weight: bold;")
         l.addWidget(t_label)
         l.addWidget(v_label)
         return card

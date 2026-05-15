@@ -1,4 +1,7 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, COLOR_DANGER)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD, COLOR_DANGER, TEXT_ERROR,
+                           TEXT_CARD_TITLE, TEXT_LABEL,
+                           COLOR_TEXT_PRIMARY, COLOR_BORDER, BORDER_RADIUS_MD,
+                           INPUT_HEIGHT_MD)
 """
 Enterprise Form Components.
 Professional form widgets with validation.
@@ -143,7 +146,7 @@ class FormField(QWidget):
             
         # Create error label
         self._error_label = QLabel()
-        self._error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: 10px;")
+        self._error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_ERROR}px;")
         self._error_label.setVisible(False)
         layout.addWidget(self._error_label)
         
@@ -334,6 +337,13 @@ class FormField(QWidget):
 class EnterpriseForm(QWidget):
     """
     Enterprise form with multiple fields.
+    
+    Usage:
+        form = EnterpriseForm()
+        form.add_field("name", FieldType.TEXT, "Name", required=True)
+        form.add_field("email", FieldType.EMAIL, "Email")
+        form.add_action_buttons(save_text="Save", cancel_text="Cancel")
+        form.form_submitted.connect(self.on_submit)
     """
     
     form_submitted = Signal(dict)
@@ -345,6 +355,7 @@ class EnterpriseForm(QWidget):
         
         self._fields: Dict[str, FormField] = {}
         self._field_order: List[str] = []
+        self._input_widgets: List[QWidget] = []
         
         self._setup_ui()
         
@@ -357,8 +368,18 @@ class EnterpriseForm(QWidget):
         self._form_layout = QFormLayout()
         self._form_layout.setSpacing(SPACING_MD)
         self._form_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        self._form_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
         
-        layout.addLayout(self._form_layout)
+        self._scroll_content = QWidget()
+        self._scroll_content.setLayout(self._form_layout)
+        
+        from PySide6.QtWidgets import QScrollArea
+        self._scroll_area = QScrollArea()
+        self._scroll_area.setWidgetResizable(True)
+        self._scroll_area.setFrameShape(QFrame.NoFrame)
+        self._scroll_area.setWidget(self._scroll_content)
+        
+        layout.addWidget(self._scroll_area)
         
     def add_field(
         self,
@@ -378,14 +399,32 @@ class EnterpriseForm(QWidget):
             validators=kwargs.get('validators', [])
         )
         
+        # Apply standardized input height
+        if field._input_widget and hasattr(field._input_widget, 'setMinimumHeight'):
+            from ui.constants import INPUT_HEIGHT_MD
+            field._input_widget.setMinimumHeight(INPUT_HEIGHT_MD)
+        
         self._fields[name] = field
         self._field_order.append(name)
         
-        self._form_layout.addRow(label + (" *" if kwargs.get('required') else ""), field)
+        self._form_layout.addRow(field._label_widget, field)
+        
+        # Track input widgets for tab order
+        if field._input_widget:
+            self._input_widgets.append(field._input_widget)
         
         field.value_changed.connect(lambda v: self._on_field_changed(name, v))
         
+        # Update tab order
+        self._update_tab_order()
+        
         return field
+    
+    def _update_tab_order(self):
+        """Set tab order to match field insertion order."""
+        widgets = [w for w in self._input_widgets if w.isEnabled()]
+        for i in range(len(widgets) - 1):
+            self.setTabOrder(widgets[i], widgets[i + 1])
         
     def _on_field_changed(self, name: str, value: Any):
         """Handle field change."""
@@ -407,14 +446,24 @@ class EnterpriseForm(QWidget):
                 self._fields[name].set_value(value)
                 
     def validate(self) -> tuple[bool, Dict[str, str]]:
-        """Validate all fields."""
+        """Validate all fields. Scrolls to first error."""
         errors = {}
         is_valid = True
+        first_error_field = None
         
         for name, field in self._fields.items():
             if not field.validate():
                 errors[name] = field._error_message
                 is_valid = False
+                if first_error_field is None:
+                    first_error_field = field
+        
+        # Scroll to first error
+        if first_error_field is not None and hasattr(self, '_scroll_area'):
+            from PySide6.QtCore import QTimer
+            QTimer.singleShot(100, lambda: self._scroll_area.ensureWidgetVisible(first_error_field))
+            if first_error_field._input_widget:
+                first_error_field._input_widget.setFocus()
                 
         return is_valid, errors
         
@@ -429,9 +478,119 @@ class EnterpriseForm(QWidget):
             return True
             
         return False
+    
+    def add_action_buttons(self, save_text: str = "Save", cancel_text: str = "Cancel",
+                           save_callback=None, cancel_callback=None):
+        """Add standardized action button bar to form."""
+        from PySide6.QtWidgets import QHBoxLayout, QPushButton, QFrame, QSizePolicy
+        from ui.constants import BUTTON_HEIGHT_MD, SPACING_SM
+        from ui.constants import COLOR_BORDER, SPACING_MD
+        
+        button_bar = QFrame()
+        button_bar.setFrameShape(QFrame.NoFrame)
+        bar_layout = QHBoxLayout(button_bar)
+        bar_layout.setContentsMargins(0, SPACING_MD, 0, 0)
+        bar_layout.setSpacing(SPACING_SM)
+        
+        bar_layout.addStretch()
+        
+        if cancel_text:
+            cancel_btn = QPushButton(cancel_text)
+            cancel_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+            cancel_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            if cancel_callback:
+                cancel_btn.clicked.connect(cancel_callback)
+            else:
+                cancel_btn.clicked.connect(lambda: self.window().close() if self.window() else None)
+            bar_layout.addWidget(cancel_btn)
+        
+        if save_text:
+            save_btn = QPushButton(save_text)
+            save_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+            save_btn.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            from ui.constants import COLOR_PRIMARY, COLOR_TEXT_ON_PRIMARY, BORDER_RADIUS_MD
+            save_btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {COLOR_PRIMARY};
+                    color: {COLOR_TEXT_ON_PRIMARY};
+                    border: none;
+                    border-radius: {BORDER_RADIUS_MD}px;
+                    font-weight: 600;
+                    padding: {SPACING_SM}px {SPACING_XL}px;
+                }}
+            """)
+            if save_callback:
+                save_btn.clicked.connect(save_callback)
+            else:
+                save_btn.clicked.connect(self.submit)
+            bar_layout.addWidget(save_btn)
+        
+        # Add button bar to the main layout after the scroll area
+        from PySide6.QtWidgets import QVBoxLayout
+        parent_layout = self.layout()
+        if isinstance(parent_layout, QVBoxLayout):
+            parent_layout.addWidget(button_bar)
+        
+        return button_bar
         
     def reset(self):
         """Reset form."""
         for field in self._fields.values():
             field.set_value(field._default_value)
             field.clear_error()
+
+
+class FormSection(QGroupBox):
+    """
+    Lightweight structural grouping for ERP forms.
+
+    Wraps QGroupBox + QFormLayout for consistent spacing and label alignment.
+    Can be placed in any layout (QSplitter, QVBoxLayout, QHBoxLayout, etc.).
+    Does NOT enforce scroll containers, validation, or tab order.
+
+    Usage:
+        section = FormSection("Customer Information")
+        section.add_field(self.customer_combo, "Customer*")
+        section.add_field(self.phone_input, "Phone")
+        parent_layout.addWidget(section)
+    """
+
+    def __init__(self, title: str = "", parent: Optional[QWidget] = None):
+        super().__init__(title, parent)
+        self._form = QFormLayout(self)
+        self._form.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
+        self._form.setHorizontalSpacing(SPACING_LG)
+        self._form.setVerticalSpacing(SPACING_MD)
+        self._form.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
+        self.setStyleSheet(f"""
+            QGroupBox {{
+                font-size: {TEXT_CARD_TITLE}pt;
+                font-weight: 700;
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 5px;
+            }}
+        """)
+
+    def add_field(self, widget: QWidget, label: str = "") -> QWidget:
+        """Add a field row. Auto-applies INPUT_HEIGHT_MD to input widgets."""
+        if hasattr(widget, 'setMinimumHeight'):
+            current = widget.minimumHeight()
+            if current < INPUT_HEIGHT_MD:
+                widget.setMinimumHeight(INPUT_HEIGHT_MD)
+        self._form.addRow(label, widget)
+        return widget
+
+    def add_row(self, label: str, widget: QWidget) -> QWidget:
+        """Alias for add_field."""
+        return self.add_field(widget, label)
+
+    def layout(self) -> QFormLayout:
+        return self._form

@@ -8,6 +8,7 @@ from PySide6.QtGui import QFont, QColor
 from api.client import APIClient
 from datetime import date
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (TEXT_SECTION_TITLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 
@@ -28,23 +29,25 @@ class BaseReportScreen(QFrame):
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
         header = QLabel(self.report_title)
-        header.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        header_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        header_font.setWeight(QFont.Weight.Bold)
+        header.setFont(header_font)
         layout.addWidget(header)
 
         toolbar = self._create_toolbar()
         layout.addWidget(toolbar)
 
         self.loading_label = QLabel("Loading...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
+        self.loading_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 20px;")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No data available. Run the report to generate data.")
-        self.empty_label.setFont(QFont("Segoe UI", 11))
+        self.empty_label.setFont(QFont("Segoe UI", TEXT_BODY))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: 20px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -52,7 +55,7 @@ class BaseReportScreen(QFrame):
         layout.addWidget(self.table)
 
         self.summary_label = QLabel("")
-        self.summary_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        self.summary_label.setFont(QFont("Segoe UI", TEXT_BODY, QFont.Weight.Bold))
         self.summary_label.setAlignment(Qt.AlignRight)
         layout.addWidget(self.summary_label)
 
@@ -122,11 +125,9 @@ class BaseReportScreen(QFrame):
         return toolbar
 
     def _create_table(self):
+        from ui.rendering.table_renderer import TableRenderer
         table = QTableWidget()
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.setAlternatingRowColors(True)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        TableRenderer.style(table)
         return table
 
     def run_report(self):
@@ -194,7 +195,19 @@ class BaseReportScreen(QFrame):
             text_data = self.api_client.get(self.report_api_endpoint, params=params)
 
             from ui.accounting.components.report_preview_dialog import ReportPreviewDialog
-            dialog = ReportPreviewDialog(self, self.report_title, text_data)
+            from datetime import datetime
+            from PySide6.QtCore import QDate
+            period_str = "All time"
+            if hasattr(self, 'date_from') and hasattr(self, 'date_to'):
+                if self.date_from.date() != QDate() and self.date_to.date() != QDate():
+                    period_str = f"{self.date_from.date().toString('yyyy-MM-dd')} to {self.date_to.date().toString('yyyy-MM-dd')}"
+            report_meta = {
+                "report_name": self.report_title,
+                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "company": "Pharmacy ERP",
+                "period": period_str,
+            }
+            dialog = ReportPreviewDialog(self, self.report_title, text_data, report_meta)
             dialog.exec()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to generate preview: {e}")

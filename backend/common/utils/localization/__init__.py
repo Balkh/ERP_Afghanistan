@@ -1,1 +1,0 @@
-# Persian Localization Utilities

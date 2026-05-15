@@ -4,9 +4,8 @@ Phase 5B.7 — System Health Overview Screen.
 Real-time health monitoring across all system layers.
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QTextEdit, QGridLayout, QFrame)
+                                 QTextEdit, QGridLayout, QFrame)
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont
 
 from api.client import APIClient
 from api.observability_client import ObservabilityAPIClient
@@ -16,7 +15,7 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_HELPER, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
 from runtime.timer_registry import register_timer, unregister_owner
 
 
@@ -25,16 +24,16 @@ class _HealthCard(QFrame):
         super().__init__()
         self.setStyleSheet(f"""
             QFrame {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {color};
-            border-radius: 8px; padding: 12px; }}
+            border-radius: {BORDER_RADIUS_LG}; padding: {SPACING_MD}px; }}
         """)
         layout = QVBoxLayout(self)
-        QLabel(title).setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
+        QLabel(title).setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}pt;")
         layout.addWidget(QLabel(title))
         s = QLabel(status)
-        s.setStyleSheet(f"color: {color}; font-size: 18px; font-weight: bold;")
+        s.setStyleSheet(f"color: {color}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(s)
         d = QLabel(detail)
-        d.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px;")
+        d.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt;")
         layout.addWidget(d)
 
 
@@ -61,8 +60,7 @@ class SystemHealthOverviewScreen(QWidget):
         layout.setSpacing(SPACING_LG)
 
         header = QLabel("System Health Overview")
-        header.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(header)
 
         self.grid = QGridLayout()
@@ -73,7 +71,7 @@ class SystemHealthOverviewScreen(QWidget):
         self.detail_text.setReadOnly(True)
         self.detail_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px;
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; }}
         """)
         layout.addWidget(self.detail_text)

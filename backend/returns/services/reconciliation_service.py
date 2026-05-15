@@ -410,13 +410,164 @@ class MismatchDetector:
     
     def run_full_detection(self) -> Dict:
         """Run all detection checks."""
+        issues = []
+        issues.extend(self.detect_invoice_without_entry())
+        issues.extend(self.detect_return_without_credit_note())
+        issues.extend(self.detect_duplicate_postings())
+        issues.extend(self.detect_accounting_without_inventory())
+        issues.extend(self.detect_inventory_without_accounting())
+        issues.extend(self.detect_refund_without_approval())
+        issues.extend(self.detect_quantity_mismatch())
+        issues.extend(self.detect_duplicate_return())
+        issues.extend(self.detect_orphan_reconciliation())
         return {
             'invoice_without_entry': self.detect_invoice_without_entry(),
             'return_without_credit_note': self.detect_return_without_credit_note(),
             'duplicate_postings': self.detect_duplicate_postings(),
-            'total_issues': (
-                len(self.detect_invoice_without_entry()) +
-                len(self.detect_return_without_credit_note()) +
-                len(self.detect_duplicate_postings())
-            )
+            'accounting_without_inventory': self.detect_accounting_without_inventory(),
+            'inventory_without_accounting': self.detect_inventory_without_accounting(),
+            'refund_without_approval': self.detect_refund_without_approval(),
+            'quantity_mismatch': self.detect_quantity_mismatch(),
+            'duplicate_return': self.detect_duplicate_return(),
+            'orphan_reconciliation': self.detect_orphan_reconciliation(),
+            'total_issues': len(issues),
         }
+
+    def detect_accounting_without_inventory(self) -> List[Dict]:
+        """Detect journal entries for returns with no stock movement."""
+        from accounting.models import JournalEntry
+        from inventory.models import StockMovement
+
+        issues = []
+        query = JournalEntry.objects.filter(description__icontains='Return')
+        if self.company_id:
+            query = query.filter(company_id=self.company_id)
+
+        for entry in query:
+            has_movement = StockMovement.objects.filter(
+                reference_id__icontains=entry.description[-20:],
+                reference_type='RETURN',
+            ).exists()
+            if not has_movement:
+                issues.append({
+                    'entry_id': str(entry.id),
+                    'description': entry.description,
+                    'issue': 'Accounting entry exists but no inventory movement found',
+                })
+        return issues
+
+    def detect_inventory_without_accounting(self) -> List[Dict]:
+        """Detect stock movements for returns with no journal entry."""
+        from inventory.models import StockMovement
+        from accounting.models import JournalEntry
+
+        issues = []
+        query = StockMovement.objects.filter(reference_type='RETURN')
+        if self.company_id:
+            query = query.filter(company_id=self.company_id)
+
+        for movement in query:
+            has_entry = JournalEntry.objects.filter(
+                description__icontains=movement.reference,
+            ).exists()
+            if not has_entry:
+                issues.append({
+                    'movement_id': str(movement.id),
+                    'reference': movement.reference,
+                    'issue': 'Inventory movement exists but no accounting entry found',
+                })
+        return issues
+
+    def detect_refund_without_approval(self) -> List[Dict]:
+        """Detect refunds processed without a corresponding approved return."""
+        from payments.models import FinancialTransaction
+
+        issues = []
+        query = FinancialTransaction.objects.filter(
+            description__icontains='Refund',
+            status='COMPLETED',
+        )
+        if self.company_id:
+            query = query.filter(company_id=self.company_id)
+
+        for txn in query:
+            from returns.models import ReturnOrder
+            has_return = ReturnOrder.objects.filter(
+                return_number__in=txn.description,
+                status='APPROVED',
+            ).exists()
+            if not has_return:
+                issues.append({
+                    'transaction': txn.transaction_number,
+                    'description': txn.description,
+                    'amount': str(txn.amount),
+                    'issue': 'Refund processed without approved return order',
+                })
+        return issues
+
+    def detect_quantity_mismatch(self) -> List[Dict]:
+        """Detect return items where returned qty exceeds invoice qty."""
+        from returns.models import ReturnOrder
+
+        issues = []
+        query = ReturnOrder.objects.filter(status='APPROVED')
+        if self.company_id:
+            query = query.filter(company_id=self.company_id)
+
+        for return_order in query:
+            for item in return_order.items.all():
+                original_qty = item.get_original_quantity()
+                if original_qty > 0 and item.return_quantity > original_qty:
+                    issues.append({
+                        'return_number': return_order.return_number,
+                        'product': item.product.name,
+                        'return_qty': str(item.return_quantity),
+                        'original_qty': str(original_qty),
+                        'issue': 'Return quantity exceeds original invoice quantity',
+                    })
+        return issues
+
+    def detect_duplicate_return(self) -> List[Dict]:
+        """Detect duplicate return processing (same invoice items returned more than once)."""
+        from returns.models import ReturnOrder
+
+        issues = []
+        query = ReturnOrder.objects.filter(status='APPROVED')
+        if self.company_id:
+            query = query.filter(company_id=self.company_id)
+
+        seen = {}
+        for return_order in query:
+            for item in return_order.items.all():
+                if not item.invoice_item and not item.purchase_invoice_item:
+                    continue
+                ref_id = str(item.invoice_item_id or item.purchase_invoice_item_id)
+                key = f"{item.product_id}-{ref_id}"
+                if key in seen:
+                    issues.append({
+                        'return_number': return_order.return_number,
+                        'product': item.product.name,
+                        'previous_return': seen[key],
+                        'issue': 'Duplicate return — same invoice item returned multiple times',
+                    })
+                else:
+                    seen[key] = return_order.return_number
+        return issues
+
+    def detect_orphan_reconciliation(self) -> List[Dict]:
+        """Detect reconciliation entries not linked to any invoice, return, or accounting entry."""
+        from .models import ReconciliationEntry
+
+        query = ReconciliationEntry.objects.filter(
+            Q(invoice__isnull=True),
+            Q(return_order__isnull=True),
+            Q(accounting_entry__isnull=True),
+        )
+        if self.company_id:
+            query = query.filter(company_id=self.company_id)
+
+        return [{
+            'reconciliation_id': str(entry.id),
+            'amount': str(entry.amount),
+            'issue': 'Orphan reconciliation entry (no links to invoice, return, or accounting)',
+        } for entry in query]

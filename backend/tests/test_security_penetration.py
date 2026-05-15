@@ -33,6 +33,8 @@ class TestAuthenticationSecurity(APITestCase):
     """Test authentication and token security."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='testuser',
@@ -87,6 +89,8 @@ class TestRBACEnforcement(APITestCase):
     """Test Role-Based Access Control enforcement."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='rbacuser',
@@ -114,6 +118,8 @@ class TestTenantEscapePrevention(APITestCase):
     """Test tenant isolation and escape prevention."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='tenantuser',
@@ -140,6 +146,8 @@ class TestUnauthorizedAccessPrevention(APITestCase):
     """Test unauthorized access prevention."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='unauthorized',
@@ -169,6 +177,8 @@ class TestSensitiveDataLeakagePrevention(APITestCase):
     """Test sensitive data is not leaked."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='datalake',
@@ -206,6 +216,8 @@ class TestPrivilegeEscalationPrevention(APITestCase):
     """Test privilege escalation is prevented."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.regular_user = User.objects.create_user(
             username='regular',
@@ -251,6 +263,8 @@ class TestAPIEndpointSecurity(APITestCase):
     """Test API endpoint security."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
 
     def test_health_endpoint_accessible(self):
@@ -293,6 +307,8 @@ class TestJWTValidation(APITestCase):
     """Test JWT token validation."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='jwtuser',

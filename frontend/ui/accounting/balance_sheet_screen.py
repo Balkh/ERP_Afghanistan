@@ -6,6 +6,7 @@ from ui.accounting.base_report_screen import BaseReportScreen
 # Design tokens
 from ui.constants import COLOR_PRIMARY
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import TEXT_BODY_SMALL
 
 
 class BalanceSheetScreen(BaseReportScreen):
@@ -108,12 +109,16 @@ class BalanceSheetScreen(BaseReportScreen):
                 is_total = "Total" in account or account == account.upper()
                 item = self._item(account)
                 if is_total:
-                    item.setFont(QFont("Segoe UI", 10, QFont.Bold))
+                    total_font = QFont("Segoe UI", TEXT_BODY_SMALL)
+                    total_font.setWeight(QFont.Weight.Bold)
+                    item.setFont(total_font)
                 self.table.setItem(row, 0, item)
                 self.table.setItem(row, 1, self._item(category))
                 amt_item = self._item(f"{amt:,.2f}")
                 if is_total:
-                    amt_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
+                    amt_font = QFont("Segoe UI", TEXT_BODY_SMALL)
+                    amt_font.setWeight(QFont.Weight.Bold)
+                    amt_item.setFont(amt_font)
                 self.table.setItem(row, 2, amt_item)
 
         self._show_data()

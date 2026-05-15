@@ -5,6 +5,8 @@ from security.views import (
     notifications_list, notifications_mark_read, notifications_unread_count,
     users_list, users_detail, roles_list, roles_detail, permissions_list,
     refresh_token_view,
+    admin_reset_password,
+    totp_setup, totp_verify, totp_disable, totp_status,
 )
 
 urlpatterns = [
@@ -21,4 +23,11 @@ urlpatterns = [
     path('roles/', roles_list, name='roles-list'),
     path('roles/<int:role_id>/', roles_detail, name='roles-detail'),
     path('permissions/', permissions_list, name='permissions-list'),
+    # Password reset (offline: admin-initiated)
+    path('users/<uuid:user_id>/reset-password/', admin_reset_password, name='admin-reset-password'),
+    # TOTP / 2FA
+    path('totp/setup/', totp_setup, name='totp-setup'),
+    path('totp/verify/', totp_verify, name='totp-verify'),
+    path('totp/disable/', totp_disable, name='totp-disable'),
+    path('totp/status/', totp_status, name='totp-status'),
 ]

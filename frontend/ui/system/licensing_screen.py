@@ -1,14 +1,15 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QLabel, QLineEdit, QGroupBox, QFormLayout, 
-                                  QMessageBox, QFrame)
+from PySide6.QtWidgets import (QVBoxLayout, QLabel, QLineEdit, QGroupBox, QFormLayout, QMessageBox)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QColor
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, SPACING_LG, FONT_SIZE_LG, FONT_SIZE_XL,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, COLOR_SUCCESS)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, BORDER_RADIUS_MD,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from api.client import APIClient
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 class LicensingScreen(BaseScreen):
     """Screen for managing ERP license and device registration."""
@@ -26,7 +27,7 @@ class LicensingScreen(BaseScreen):
 
         # Header
         title_label = QLabel("License Management")
-        title_label.setFont(QFont("Segoe UI", FONT_SIZE_XL, QFont.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(title_label)
 
         # Device Info Group
@@ -47,7 +48,7 @@ class LicensingScreen(BaseScreen):
         status_layout = QFormLayout(status_group)
         
         self.status_label = QLabel("Unknown")
-        self.status_label.setFont(QFont("Segoe UI", FONT_SIZE_LG, QFont.Bold))
+        self.status_label.setStyleSheet(f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY};")
         status_layout.addRow("Status:", self.status_label)
         
         self.expiry_label = QLabel("N/A")
@@ -65,12 +66,11 @@ class LicensingScreen(BaseScreen):
         activate_layout.addWidget(QLabel("Enter your license key below to activate the system:"))
         
         self.license_key_input = QLineEdit()
-        self.license_key_input.setPlaceholderText("XXXXX-XXXXX-XXXXX-XXXXX-XXXXX")
+        self.license_key_input.setPlaceholderText("Enter license key...")
         self.license_key_input.setMinimumHeight(INPUT_HEIGHT_MD)
-        activate_layout.addWidget(self.license_key_input)
+        activation_layout.addRow("License Key:", self.license_key_input)
         
-        self.activate_btn = QPushButton("Activate System")
-        self.activate_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        self.activate_btn = EnterpriseButton(text="Activate System", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.activate_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
         self.activate_btn.clicked.connect(self.activate_license)
         activate_layout.addWidget(self.activate_btn)

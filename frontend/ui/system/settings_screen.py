@@ -1,16 +1,20 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 """Settings screen for ERP."""
 import json
 import os
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit, QComboBox, QGroupBox,
                                   QFormLayout, QCheckBox, QSpinBox, QMessageBox)
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
+                           BORDER_RADIUS_MD,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
 SETTINGS_FILE = os.path.expanduser("~/.pharmacy_erp_settings.json")
@@ -63,10 +67,7 @@ class SettingsScreen(BaseScreen):
         layout.setSpacing(SPACING_MD)
         
         title_label = QLabel("Settings")
-        title_font = QFont()
-        title_font.setPointSize(FONT_SIZE_XL)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(title_label)
         
         general_group = QGroupBox("General Settings")
@@ -141,12 +142,10 @@ class SettingsScreen(BaseScreen):
         
         button_layout = QHBoxLayout()
         
-        save_button = QPushButton("Save Settings")
-        save_button.setMinimumHeight(BUTTON_HEIGHT_MD)
+        save_button = EnterpriseButton(text="Save Settings", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         save_button.clicked.connect(self.save_settings)
         
-        reset_button = QPushButton("Reset to Defaults")
-        reset_button.setMinimumHeight(BUTTON_HEIGHT_MD)
+        reset_button = EnterpriseButton(text="Reset to Defaults", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)
         reset_button.clicked.connect(self.reset_settings)
         
         button_layout.addWidget(save_button)

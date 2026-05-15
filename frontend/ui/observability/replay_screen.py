@@ -17,7 +17,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM, SPACING_XS)
+from ui.constants import TEXT_PAGE_TITLE, TEXT_BODY
 
 
 class ReplayTimeTravelScreen(QWidget):
@@ -38,12 +39,12 @@ class ReplayTimeTravelScreen(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("Replay Time-Travel")
-        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         self.info_label = QLabel("DETERMINISTIC REPLAY · READ-ONLY")
-        self.info_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px; font-style: italic;")
+        self.info_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px; font-style: italic;")
         header.addWidget(self.info_label, alignment=Qt.AlignRight)
         layout.addLayout(header)
 
@@ -51,7 +52,7 @@ class ReplayTimeTravelScreen(QWidget):
         ctrl_group = QGroupBox("Replay Controls")
         ctrl_group.setStyleSheet(f"""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
-            border-radius: 6px; padding: 12px; padding-top: 20px; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px; padding-top: 20px; }}
         """)
 
         ctrl_layout = QVBoxLayout(ctrl_group)
@@ -67,7 +68,7 @@ class ReplayTimeTravelScreen(QWidget):
             btn = QPushButton(label)
             btn.setStyleSheet(f"""
                 QPushButton {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 8px 16px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}
                 QPushButton:hover {{ background: {COLOR_PRIMARY}; color: white; }}
             """)
             btn.clicked.connect(cb)
@@ -83,7 +84,7 @@ class ReplayTimeTravelScreen(QWidget):
         self.seq_spin.setMaximum(1000)
         self.seq_spin.setStyleSheet(f"""
             QSpinBox {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 4px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_XS}px; }}
         """)
         self.seq_spin.valueChanged.connect(lambda v: self._render(v))
         slider_layout.addWidget(self.seq_spin)
@@ -101,7 +102,7 @@ class ReplayTimeTravelScreen(QWidget):
         slider_layout.addWidget(self.seq_slider)
 
         self.position_label = QLabel("Position: 0 / 0")
-        self.position_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
+        self.position_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px;")
         slider_layout.addWidget(self.position_label)
 
         ctrl_layout.addLayout(slider_layout)
@@ -117,13 +118,13 @@ class ReplayTimeTravelScreen(QWidget):
             QTableWidget {{ background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
             gridline-color: {COLOR_BORDER}; }}
             QHeaderView::section {{ background: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: 6px; font-weight: bold; }}
+            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
         """)
         layout.addWidget(self.table)
 
         # Integrity hash
         self.hash_label = QLabel("")
-        self.hash_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px;")
+        self.hash_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px;")
         layout.addWidget(self.hash_label)
 
     def _load_initial(self):

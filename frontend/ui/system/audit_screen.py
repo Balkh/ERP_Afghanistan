@@ -1,16 +1,24 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Audit log screen."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QGroupBox,
                                   QTextEdit, QDateEdit)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QColor
 from datetime import datetime
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, FONT_SIZE_XL, BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class AuditScreen(BaseScreen):
@@ -29,33 +37,18 @@ class AuditScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("System Audit Logs")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_TABLE_BORDER_LIGHT};
-                border-radius: 5px;
-                padding: 5px 15px;
-                color: #495057;
-            }}
-            QPushButton:hover {{
-                background-color: #e9ecef;
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self._load_audit_logs)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
         
         filter_bar = QGroupBox("Filter Logs")
-        filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; }}")
+        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: 10px; padding-top: 10px; font-size: {TEXT_LABEL}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}")
         filter_layout = QGridLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
@@ -94,7 +87,7 @@ class AuditScreen(BaseScreen):
         filter_layout.addWidget(self.date_to, 1, 3)
         
         self.clear_btn = QPushButton("Clear Filters")
-        self.clear_btn.setStyleSheet(f"background-color: {COLOR_TEXT_SECONDARY}; color: white; border-radius: 5px; padding: 5px 15px;")
+        self.clear_btn.setStyleSheet(f"background-color: {COLOR_TEXT_SECONDARY}; color: white; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_MD}px;")
         self.clear_btn.clicked.connect(self._clear_filters)
         filter_layout.addWidget(self.clear_btn, 1, 5)
         
@@ -103,35 +96,23 @@ class AuditScreen(BaseScreen):
         action_layout = QHBoxLayout()
         self.export_btn = QPushButton("Export CSV")
         self.export_btn.setMinimumHeight(38)
-        self.export_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; padding: 0 15px;")
+        self.export_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: {BORDER_RADIUS_MD}px; padding: 0 {SPACING_MD}px;")
         action_layout.addWidget(self.export_btn)
         action_layout.addStretch()
         layout.addLayout(action_layout)
         
-        self.table = self._create_modern_table()
-        self.table.setColumnCount(8)
-        self.table.setHorizontalHeaderLabels(["Timestamp", "User", "Module", "Action", "Entity", "Entity ID", "IP Address", "Details"])
+        columns = [
+            TableColumn("timestamp", "Timestamp", width=160),
+            TableColumn("user", "User", width=120),
+            TableColumn("module", "Module", width=100),
+            TableColumn("action", "Action", width=100),
+            TableColumn("model", "Model", width=100),
+            TableColumn("object_id", "Object ID", width=80),
+            TableColumn("ip_address", "IP Address", width=120),
+            TableColumn("details", "Details", width=250),
+        ]
+        self.table = EnterpriseTable(columns)
         layout.addWidget(self.table)
-        
-        # Connect filters to auto-refresh
-        self.module_filter.currentIndexChanged.connect(self._load_audit_logs)
-        self.action_filter.currentIndexChanged.connect(self._load_audit_logs)
-        self.user_filter.returnPressed.connect(self._load_audit_logs)
-
-    def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: #f1f2f6; }}
-            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: 8px; border: none; border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; font-weight: bold; }}
-            QTableWidget::item {{ padding: 10px; }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
-        table.horizontalHeader().setSectionResizeMode(7, QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(True)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.itemDoubleClicked.connect(self._show_details)
-        return table
 
     def _clear_filters(self):
         self.module_filter.setCurrentIndex(0)
@@ -167,36 +148,26 @@ class AuditScreen(BaseScreen):
                 data = response['data']
                 logs = data.get('results', data) if isinstance(data, dict) else data
                 
-                self.table.setRowCount(len(logs))
-                for i, log in enumerate(logs):
-                    # Timestamp
+                log_data = []
+                for log in logs:
                     ts = log.get('created_at', '')[:19].replace('T', ' ')
-                    self.table.setItem(i, 0, QTableWidgetItem(ts))
-                    
-                    # User
-                    self.table.setItem(i, 1, QTableWidgetItem(log.get('user_username', 'System')))
-                    
-                    # Module
-                    self.table.setItem(i, 2, QTableWidgetItem(log.get('app_label', '')))
-                    
-                    # Action
-                    action_item = QTableWidgetItem(log.get('action_display', log.get('action', '')))
-                    if log.get('is_error'): action_item.setForeground(QColor(COLOR_DANGER))
-                    self.table.setItem(i, 3, action_item)
-                    
-                    # Entity
-                    self.table.setItem(i, 4, QTableWidgetItem(log.get('model_name', '')))
-                    
-                    # ID
-                    self.table.setItem(i, 5, QTableWidgetItem(str(log.get('object_id', ''))))
-                    
-                    # IP
-                    self.table.setItem(i, 6, QTableWidgetItem(log.get('ip_address', '')))
-                    
-                    # Details (Object Repr)
-                    self.table.setItem(i, 7, QTableWidgetItem(log.get('object_repr', '')))
-                    
-                    self.table.setRowHeight(i, TABLE_ROW_HEIGHT_MD)
+                    log_data.append({
+                        "timestamp": ts,
+                        "user": log.get('user_username', 'System'),
+                        "module": log.get('app_label', ''),
+                        "action": log.get('action_display', log.get('action', '')),
+                        "model": log.get('model_name', ''),
+                        "object_id": str(log.get('object_id', '')),
+                        "ip_address": log.get('ip_address', ''),
+                        "details": log.get('object_repr', ''),
+                        "is_error": log.get('is_error', False),
+                    })
+                self.table.set_data(log_data)
+                for row, item in enumerate(log_data):
+                    if item.get('is_error'):
+                        action_cell = self.table.item(row, 3)
+                        if action_cell:
+                            action_cell.setForeground(QColor(COLOR_DANGER))
                 
                 self.status_label.setText(f"Loaded {len(logs)} logs")
             else:

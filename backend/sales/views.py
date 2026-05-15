@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from core.multitenant.views import CompanyScopedViewSetMixin
+from core.view_logging import log_business_event
 from sales.models import Customer, SalesInvoice, SalesItem, CustomerPayment
 from sales.serializers import (
     CustomerSerializer,
@@ -314,12 +315,15 @@ class SalesInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Confirm a draft invoice."""
         invoice = self.get_object()
         if invoice.status != 'DRAFT':
+            log_business_event(request, 'invoice.sales.confirm_blocked',
+                               {'invoice_id': str(pk), 'current_status': invoice.status, 'reason': 'not_draft'})
             return Response(
                 {'error': 'Only draft invoices can be confirmed.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         invoice.status = 'CONFIRMED'
         invoice.save(update_fields=['status', 'updated_at'])
+        log_business_event(request, 'invoice.sales.confirmed', {'invoice_id': str(pk)})
         serializer = self.get_serializer(invoice)
         return Response(serializer.data)
 
@@ -417,6 +421,8 @@ class SalesInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Cancel an invoice."""
         invoice = self.get_object()
         if invoice.status == 'PAID':
+            log_business_event(request, 'invoice.sales.cancel_blocked',
+                               {'invoice_id': str(pk), 'current_status': invoice.status, 'reason': 'paid'})
             return Response(
                 {'error': 'Cannot cancel a paid invoice.'},
                 status=status.HTTP_400_BAD_REQUEST
@@ -429,6 +435,8 @@ class SalesInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
                 reason=f'Invoice {invoice.invoice_number} cancelled'
             )
             if not reversal_result.get('success'):
+                log_business_event(request, 'invoice.sales.cancel_failed',
+                                   {'invoice_id': str(pk), 'reason': 'reversal_failed', 'errors': reversal_result.get('errors')})
                 return Response(
                     {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')},
                     status=status.HTTP_400_BAD_REQUEST
@@ -436,6 +444,7 @@ class SalesInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         
         invoice.status = 'CANCELLED'
         invoice.save(update_fields=['status', 'updated_at'])
+        log_business_event(request, 'invoice.sales.cancelled', {'invoice_id': str(pk)})
         serializer = self.get_serializer(invoice)
         return Response(serializer.data)
 

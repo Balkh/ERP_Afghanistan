@@ -1,5 +1,3 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_PRIMARY_MUTED, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 Workflow Intelligence Screen - Live Decision Tracking System.
 Provides visual analytics and real-time tracking for ERP workflows.
@@ -9,18 +7,25 @@ import time
 from datetime import datetime, timedelta
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                QLabel, QFrame, QScrollArea, QListWidget, 
-                               QListWidgetItem, QHeaderView, QTableWidget, 
-                               QTableWidgetItem, QPushButton, QSizePolicy, 
+                               QListWidgetItem, QHeaderView, QSizePolicy, 
                                QGroupBox, QProgressBar)
 from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSize, QPointF
-from PySide6.QtGui import QFont, QColor, QPainter, QPen, QBrush, QLinearGradient
+from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QLinearGradient
 
 from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, 
-                          FONT_SIZE_SM, FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL,
-                          COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BORDER_RADIUS_SM, BORDER_RADIUS_LG, BORDER_RADIUS_XL,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_PRIMARY_MUTED,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from api.client import APIClient
 from runtime.timer_registry import register_timer, unregister_owner
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class WorkflowPipelineWidget(QWidget):
@@ -30,10 +35,10 @@ class WorkflowPipelineWidget(QWidget):
         self.setFixedHeight(120)
         self.stages = [
             {'id': 'DRAFT', 'label': 'Draft', 'color': COLOR_TEXT_MUTED},
-            {'id': 'PENDING_APPROVAL', 'label': 'Pending', 'color': '#f9e2af'},
+            {'id': 'PENDING_APPROVAL', 'label': 'Pending', 'color': COLOR_WARNING},
             {'id': 'APPROVED', 'label': 'Approved', 'color': COLOR_STATUS_VALID},
-            {'id': 'REJECTED', 'label': 'Rejected', 'color': '#f38ba8'},
-            {'id': 'POSTED', 'label': 'Posted', 'color': '#89b4fa'}
+            {'id': 'REJECTED', 'label': 'Rejected', 'color': COLOR_DANGER},
+            {'id': 'POSTED', 'label': 'Posted', 'color': COLOR_PRIMARY}
         ]
         self.data = {s['id']: 0 for s in self.stages}
 
@@ -70,10 +75,10 @@ class WorkflowPipelineWidget(QWidget):
             
             # Labels
             painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-            painter.setFont(QFont("Segoe UI", 9, QFont.Bold))
+            painter.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))
             painter.drawText(int(x), y + 45, int(step_w), 20, Qt.AlignCenter, stage['label'])
 
-            painter.setFont(QFont("Segoe UI", 14, QFont.Bold))
+            painter.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
             painter.drawText(int(x), y - 25, int(step_w), 30, Qt.AlignCenter, str(count))
 
 
@@ -119,11 +124,11 @@ class WorkflowRelationGraph(QWidget):
             painter.drawRoundedRect(x, y, 100, 40, 8, 8)
             
             painter.setPen(QColor(COLOR_PRIMARY_MUTED))
-            painter.setFont(QFont("Segoe UI", 8))
+            painter.setFont(QFont("Segoe UI", TEXT_TABLE_HEADER))
             painter.drawText(x + 5, y + 15, label)
 
             painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-            painter.setFont(QFont("Segoe UI", 9, QFont.Bold))
+            painter.setFont(QFont("Segoe UI", TEXT_TABLE_HEADER, QFont.Weight.Bold))
             painter.drawText(x + 5, y + 32, val)
 
 
@@ -145,17 +150,16 @@ class WorkflowIntelligenceScreen(BaseScreen):
         # Header
         header = QHBoxLayout()
         title = QLabel("Workflow Intelligence")
-        title.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         
         self.status_label = QLabel("LIVE TRACKING ACTIVE")
-        self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; font-size: 11px; background: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: 4px 10px; border-radius: 4px;")
+        self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: 700; font-size: {TEXT_BODY}pt; background: {COLOR_TABLE_HEADER_BG_LIGHT}; padding: {SPACING_XS}px 10px; border-radius: {BORDER_RADIUS_SM};")
         
         header.addWidget(title)
         header.addWidget(self.status_label)
         header.addStretch()
         
-        refresh_btn = QPushButton("Refresh")
+        refresh_btn = EnterpriseButton(text="Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         refresh_btn.clicked.connect(self._load_data)
         header.addWidget(refresh_btn)
         layout.addLayout(header)
@@ -177,7 +181,7 @@ class WorkflowIntelligenceScreen(BaseScreen):
         # 2. Bottlenecks (Right)
         bottleneck_group = self._create_group("Bottlenecks & Delays", 400)
         self.bottleneck_list = QListWidget()
-        self.bottleneck_list.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
+        self.bottleneck_list.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: none; border-radius: {BORDER_RADIUS_LG};")
         bottleneck_group.layout().addWidget(self.bottleneck_list)
         grid.addWidget(bottleneck_group, 0, 1)
         
@@ -198,20 +202,15 @@ class WorkflowIntelligenceScreen(BaseScreen):
     def _create_group(self, title, min_h):
         group = QGroupBox(title)
         group.setMinimumHeight(min_h)
-        group.setStyleSheet(f"QGroupBox {{ color: #89b4fa; font-weight: bold; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
+        group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_TABLE_HEADER_BG_LIGHT}; border-radius: {BORDER_RADIUS_XL}; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
         QVBoxLayout(group)
         group.layout().setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         return group
 
     def _create_table(self, headers):
-        table = QTableWidget()
-        table.setColumnCount(len(headers))
-        table.setHorizontalHeaderLabels(headers)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        columns = [TableColumn(k, h) for k, h in zip([f"col{i}" for i in range(len(headers))], headers)]
+        table = EnterpriseTable(columns)
         table.verticalHeader().setVisible(False)
-        table.setEditTriggers(QTableWidget.NoEditTriggers)
-        table.setAlternatingRowColors(True)
-        table.setStyleSheet(f"QTableWidget {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; border: none; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; }} QHeaderView::section {{ background: {COLOR_TABLE_HEADER_BG_LIGHT}; color: #89b4fa; border: none; padding: 6px; font-weight: bold; }}")
         return table
 
     def _on_screen_shown(self):
@@ -233,13 +232,13 @@ class WorkflowIntelligenceScreen(BaseScreen):
                 self._update_ui(instances)
             else:
                 self.status_label.setText("CONNECTION ERROR")
-                self.status_label.setStyleSheet(self.status_label.styleSheet().replace("COLOR_STATUS_VALID", "#f38ba8"))
+                self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; font-size: {TEXT_BODY}px; background: {COLOR_BORDER}; padding: {SPACING_XS}px 10px; border-radius: {BORDER_RADIUS_SM};")
         except Exception as e:
             print(f"Workflow fetch error: {e}")
 
     def _update_ui(self, instances):
         self.status_label.setText("LIVE TRACKING ACTIVE")
-        self.status_label.setStyleSheet(self.status_label.styleSheet().replace("#f38ba8", "COLOR_STATUS_VALID"))
+        self.status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: 700; font-size: {TEXT_BODY}pt; background: {COLOR_BORDER}; padding: {SPACING_XS}px 10px; border-radius: {BORDER_RADIUS_SM};")
         
         # Update Pipeline
         counts = {'DRAFT': 0, 'PENDING_APPROVAL': 0, 'APPROVED': 0, 'REJECTED': 0, 'POSTED': 0}
@@ -248,27 +247,22 @@ class WorkflowIntelligenceScreen(BaseScreen):
             if state in counts: counts[state] += 1
         self.pipeline.set_data(counts)
         
-        # Update Active Table
-        self.active_table.setRowCount(len(instances[:20]))
-        for i, inst in enumerate(instances[:20]):
-            self.active_table.setItem(i, 0, QTableWidgetItem(inst.get('content_type', '')))
-            self.active_table.setItem(i, 1, QTableWidgetItem(inst.get('object_reference', '')))
-            
-            state = inst.get('current_state', '')
-            state_item = QTableWidgetItem(state)
-            if state == 'PENDING_APPROVAL': state_item.setForeground(QColor(COLOR_WARNING))
-            elif state == 'APPROVED': state_item.setForeground(QColor(COLOR_SUCCESS))
-            self.active_table.setItem(i, 2, state_item)
-            
-            self.active_table.setItem(i, 3, QTableWidgetItem(inst.get('pending_approver_name', 'System')))
-            
-            # Calculate Age
+        # Update Active Table (use set_data with EnterpriseTable)
+        active_data = []
+        for inst in instances[:20]:
             created_at = inst.get('created_at', '')[:19]
             try:
                 dt = datetime.fromisoformat(created_at)
                 age = str(datetime.now() - dt).split('.')[0]
             except: age = "Unknown"
-            self.active_table.setItem(i, 4, QTableWidgetItem(age))
+            active_data.append({
+                "col0": inst.get('content_type', ''),
+                "col1": inst.get('object_reference', ''),
+                "col2": inst.get('current_state', ''),
+                "col3": inst.get('pending_approver_name', 'System'),
+                "col4": age,
+            })
+        self.active_table.set_data(active_data)
 
         # Detect Bottlenecks
         self.bottleneck_list.clear()
@@ -298,17 +292,8 @@ class WorkflowIntelligenceScreen(BaseScreen):
                 user = inst.get('pending_approver_name', 'System')
                 approvers[user] = approvers.get(user, 0) + 1
         
-        self.load_table.setRowCount(len(approvers))
-        for i, (user, count) in enumerate(approvers.items()):
-            self.load_table.setItem(i, 0, QTableWidgetItem(user))
-            self.load_table.setItem(i, 1, QTableWidgetItem(str(count)))
-            self.load_table.setItem(i, 2, QTableWidgetItem("~2.5h")) # Simplified metric
-            
-            progress = QProgressBar()
-            progress.setRange(0, 10)
-            progress.setValue(count)
-            progress.setStyleSheet(f"QProgressBar {{ border: none; background: {COLOR_TABLE_HEADER_BG_LIGHT}; height: 10px; border-radius: 5px; }} QProgressBar::chunk {{ background: #f9e2af; border-radius: 5px; }}")
-            self.load_table.setCellWidget(i, 3, progress)
-            
+        load_data = [{"col0": user, "col1": str(count), "col2": "~2.5h"} for user, count in approvers.items()]
+        self.load_table.set_data(load_data)
+        
         # Select first for graph
         if instances: self.graph.set_workflow(instances[0])

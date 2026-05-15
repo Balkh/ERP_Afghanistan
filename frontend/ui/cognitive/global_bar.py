@@ -21,7 +21,7 @@ from api.observability_client import ObservabilityAPIClient
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_SM, SPACING_MD, SPACING_LG)
+                           COLOR_INFO, COLOR_BORDER, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XS, TEXT_TABLE, TEXT_BODY, BORDER_RADIUS_SM)
 from runtime.timer_registry import register_timer, unregister_owner
 
 
@@ -30,18 +30,18 @@ class _IntelBadge(QFrame):
         super().__init__()
         self.setStyleSheet(f"""
             QFrame {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {color};
-            border-radius: 4px; padding: 2px 8px; }}
+            border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_XS}px {SPACING_SM}px; }}
         """)
         layout = QHBoxLayout(self)
         layout.setContentsMargins(6, 2, 6, 2)
         layout.setSpacing(4)
 
         lbl = QLabel(label)
-        lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 9px;")
+        lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
         layout.addWidget(lbl)
 
         val = QLabel(value)
-        val.setStyleSheet(f"color: {color}; font-size: 11px; font-weight: bold;")
+        val.setStyleSheet(f"color: {color}; font-size: {TEXT_BODY}px; font-weight: bold;")
         layout.addWidget(val)
 
 
@@ -69,7 +69,7 @@ class GlobalIntelligenceBar(QFrame):
 
         # Label
         title = QLabel("🧠 Cognitive Status:")
-        title.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px; font-weight: bold;")
+        title.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px; font-weight: bold;")
         title.setCursor(Qt.PointingHandCursor)
         title.mousePressEvent = lambda e: self.cognitive_dashboard_clicked.emit()
         layout.addWidget(title)

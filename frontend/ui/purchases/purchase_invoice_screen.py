@@ -1,34 +1,49 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
-                                QTableWidget, QTableWidgetItem, QPushButton,
-                                QLineEdit, QLabel, QComboBox, QGroupBox, QSpinBox,
+                                QTableWidget, QTableWidgetItem,
+                                QLineEdit, QLabel, QComboBox, QGroupBox,
                                 QDoubleSpinBox, QDateEdit, QTextEdit, QMessageBox,
-                                QHeaderView, QAbstractItemView, QSplitter, QFrame)
+                                QHeaderView, QAbstractItemView, QSplitter, QFrame,
+                                QMenu, QPushButton)
 from PySide6.QtCore import Qt, QDate, Signal
-from PySide6.QtGui import QFont, QKeySequence, QShortcut
+from PySide6.QtGui import QColor, QFont, QKeySequence, QShortcut
 from decimal import Decimal
 from datetime import date
 
 from ui.common.barcode_search import BarcodeSearchLineEdit
 from ui.common.printable_invoice import PrintableInvoiceDialog
 from api.endpoints import get_endpoint
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL, FONT_SIZE_TITLE,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, INPUT_HEIGHT_LG, 
-                          TABLE_ROW_HEIGHT_MD, TABLE_ROW_HEIGHT_LG,
-                          BORDER_RADIUS_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
+                           TABLE_ROW_HEIGHT_MD, TABLE_ROW_HEIGHT_LG,
+                           BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE,
+                           COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
+                           DENSITY_COMPACT_ROW, DENSITY_STANDARD_SPACING, DENSITY_COMPACT_MARGIN)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
 class PurchaseInvoiceScreen(QWidget):
-    """Screen for creating and managing purchase invoices."""
+    """Screen for creating and managing purchase invoices.
+
+    Phase 15C: 3-zone architecture
+    ZONE 1 — Header Context (supplier, metadata, status)
+    ZONE 2 — Line Item Engine (unified table, inline editing)
+    ZONE 3 — Financial Summary Panel (totals, primary action)
+    """
 
     invoice_created = Signal(dict)
     invoice_updated = Signal(dict)
 
-    def __init__(self, parent=None, api_client=None):
+    def __init__(self, parent=None, api_client=None, auth_manager=None):
         super().__init__(parent)
         self.api_client = api_client
+        self.auth_manager = auth_manager
         self.current_invoice_id = None
         self.suppliers = []
 
@@ -36,232 +51,226 @@ class PurchaseInvoiceScreen(QWidget):
         self.setup_shortcuts()
         self.load_suppliers()
 
+    def _check_action(self, action: str) -> bool:
+        """Check if user has permission for a purchase action."""
+        if self.auth_manager and not self.auth_manager.has_action("purchases", action):
+            from ui.components.toast import get_toast_manager
+            toast = get_toast_manager()
+            toast.show_warning(f"Access denied: you don't have permission to {action} purchase invoices")
+            return False
+        return True
+
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
 
-        # Header
+        # ── PAGE HEADER ──
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, SPACING_SM)
         title_label = QLabel("Purchase Invoice")
-        title_label.setFont(QFont("Segoe UI", FONT_SIZE_TITLE, QFont.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(title_label)
         header_layout.addStretch()
 
         self.status_label = QLabel("DRAFT")
         self.status_label.setStyleSheet(f"""
-            background-color: {COLOR_TEXT_MUTED}; 
-            color: white; 
-            padding: 8px 16px; 
-            border-radius: 4px;
+            background-color: {COLOR_TEXT_MUTED};
+            color: white;
+            padding: {SPACING_XS}px {SPACING_MD}px;
+            border-radius: {BORDER_RADIUS_SM};
             font-weight: bold;
-            font-size: """ + str(FONT_SIZE_MD) + """pt;
+            font-size: {TEXT_TABLE}px;
         """)
         header_layout.addWidget(self.status_label)
-        
-        # Workflow status label
+
         self.workflow_status_label = QLabel("")
-        self.workflow_status_label.setStyleSheet(f"""
-            color: {COLOR_TEXT_MUTED}; 
-            padding: {SPACING_SM};
-            font-size: {FONT_SIZE_MD}pt;
-        """)
+        self.workflow_status_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
         header_layout.addWidget(self.workflow_status_label)
-        
-        # Workflow action buttons
-        self.submit_wf_btn = QPushButton("Submit for Approval")
-        self.submit_wf_btn.setMaximumHeight(BUTTON_HEIGHT_MD)
-        self.submit_wf_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
-        self.submit_wf_btn.clicked.connect(lambda: self.perform_workflow_action('submit'))
-        header_layout.addWidget(self.submit_wf_btn)
-        
-        self.approve_wf_btn = QPushButton("Approve")
-        self.approve_wf_btn.setMaximumHeight(BUTTON_HEIGHT_MD)
-        self.approve_wf_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
-        self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
-        self.approve_wf_btn.setVisible(False)
-        header_layout.addWidget(self.approve_wf_btn)
-        
-        self.reject_wf_btn = QPushButton("Reject")
-        self.reject_wf_btn.setMaximumHeight(BUTTON_HEIGHT_MD)
-        self.reject_wf_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
-        self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
-        self.reject_wf_btn.setVisible(False)
-        header_layout.addWidget(self.reject_wf_btn)
-        
-        self.post_wf_btn = QPushButton("Post")
-        self.post_wf_btn.setMaximumHeight(BUTTON_HEIGHT_MD)
-        self.post_wf_btn.setStyleSheet(f"background-color: {COLOR_INFO}; color: white; border: none; padding: 8px 16px; border-radius: 4px;")
-        self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
-        self.post_wf_btn.setVisible(False)
-        header_layout.addWidget(self.post_wf_btn)
-        
+
         layout.addLayout(header_layout)
 
-        # Top section: Supplier & Invoice Info
-        top_split = QSplitter(Qt.Horizontal)
-        top_split.setChildrenCollapsible(False)
+        # ═══════════════════════════════════════════════════════
+        # ZONE 1 — HEADER CONTEXT (compact metadata bar)
+        # ═══════════════════════════════════════════════════════
+        zone1 = QFrame()
+        zone1.setObjectName("zoneHeader")
+        zone1.setStyleSheet(f"QFrame#zoneHeader {{ background: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
+        zone1_layout = QHBoxLayout(zone1)
+        zone1_layout.setContentsMargins(SPACING_LG, SPACING_MD, SPACING_LG, SPACING_MD)
+        zone1_layout.setSpacing(SPACING_LG)
 
-        # Supplier info group
-        supplier_group = QGroupBox("Supplier Information")
-        supplier_layout = QFormLayout(supplier_group)
-        supplier_layout.setLabelAlignment(Qt.AlignRight)
-        supplier_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-        supplier_layout.setHorizontalSpacing(SPACING_LG)
-        supplier_layout.setVerticalSpacing(SPACING_MD)
-        supplier_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
+        # Left: Supplier + Invoice #
+        left_form = QFormLayout()
+        left_form.setSpacing(SPACING_SM)
+        left_form.setContentsMargins(0, 0, 0, 0)
+        left_form.setLabelAlignment(Qt.AlignRight)
+        left_form.setFormAlignment(Qt.AlignLeft)
 
         self.supplier_combo = QComboBox()
         self.supplier_combo.setPlaceholderText("Select supplier...")
         self.supplier_combo.setMinimumHeight(INPUT_HEIGHT_MD)
-        supplier_layout.addRow("Supplier*:", self.supplier_combo)
-
-        self.supplier_phone = QLineEdit()
-        self.supplier_phone.setReadOnly(True)
-        self.supplier_phone.setMinimumHeight(INPUT_HEIGHT_MD)
-        supplier_layout.addRow("Phone:", self.supplier_phone)
-
-        self.supplier_address = QTextEdit()
-        self.supplier_address.setMaximumHeight(80)
-        self.supplier_address.setMinimumHeight(60)
-        self.supplier_address.setReadOnly(True)
-        supplier_layout.addRow("Address:", self.supplier_address)
-
-        self.credit_limit_label = QLabel("N/A")
-        self.credit_limit_label.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.credit_limit_label.setStyleSheet(f"font-weight: bold;")
-        self.credit_limit_label.setWordWrap(True)
-        supplier_layout.addRow("Credit Limit:", self.credit_limit_label)
-
-        self.balance_label = QLabel("N/A")
-        self.balance_label.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.balance_label.setStyleSheet("font-weight: bold;")
-        self.balance_label.setWordWrap(True)
-        supplier_layout.addRow("Current Balance:", self.balance_label)
-
-        top_split.addWidget(supplier_group)
-
-        # Invoice details group
-        invoice_group = QGroupBox("Invoice Details")
-        invoice_layout = QFormLayout(invoice_group)
-        invoice_layout.setLabelAlignment(Qt.AlignRight)
-        invoice_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-        invoice_layout.setHorizontalSpacing(SPACING_LG)
-        invoice_layout.setVerticalSpacing(SPACING_MD)
-        invoice_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
+        self.supplier_combo.setMinimumWidth(220)
+        left_form.addRow("Supplier:", self.supplier_combo)
 
         self.invoice_number = QLineEdit()
         self.invoice_number.setPlaceholderText("Enter supplier invoice #")
         self.invoice_number.setMinimumHeight(INPUT_HEIGHT_MD)
-        invoice_layout.addRow("Invoice #:", self.invoice_number)
+        self.invoice_number.setMaximumWidth(160)
+        left_form.addRow("Invoice #:", self.invoice_number)
 
-        self.order_date = QDateEdit()
-        self.order_date.setDate(QDate.currentDate())
-        self.order_date.setCalendarPopup(True)
-        self.order_date.setMinimumHeight(INPUT_HEIGHT_MD)
-        invoice_layout.addRow("Order Date:", self.order_date)
+        zone1_layout.addLayout(left_form)
+        zone1_layout.addSpacing(SPACING_LG)
+
+        # Center: Dates
+        center_form = QFormLayout()
+        center_form.setSpacing(SPACING_SM)
+        center_form.setContentsMargins(0, 0, 0, 0)
+        center_form.setLabelAlignment(Qt.AlignRight)
+        center_form.setFormAlignment(Qt.AlignLeft)
 
         self.invoice_date = QDateEdit()
         self.invoice_date.setDate(QDate.currentDate())
         self.invoice_date.setCalendarPopup(True)
         self.invoice_date.setMinimumHeight(INPUT_HEIGHT_MD)
-        invoice_layout.addRow("Invoice Date:", self.invoice_date)
+        self.invoice_date.setMaximumWidth(130)
+        center_form.addRow("Date:", self.invoice_date)
 
         self.due_date = QDateEdit()
         self.due_date.setDate(QDate.currentDate().addDays(30))
         self.due_date.setCalendarPopup(True)
         self.due_date.setMinimumHeight(INPUT_HEIGHT_MD)
-        invoice_layout.addRow("Due Date:", self.due_date)
+        self.due_date.setMaximumWidth(130)
+        center_form.addRow("Due:", self.due_date)
+
+        zone1_layout.addLayout(center_form)
+        zone1_layout.addSpacing(SPACING_LG)
+
+        # Right: Currency + Warehouse
+        right_form = QFormLayout()
+        right_form.setSpacing(SPACING_SM)
+        right_form.setContentsMargins(0, 0, 0, 0)
+        right_form.setLabelAlignment(Qt.AlignRight)
+        right_form.setFormAlignment(Qt.AlignLeft)
 
         self.currency_combo = QComboBox()
         self.currency_combo.addItems(["AFN", "USD"])
         self.currency_combo.setMinimumHeight(INPUT_HEIGHT_MD)
-        invoice_layout.addRow("Currency:", self.currency_combo)
+        self.currency_combo.setMaximumWidth(100)
+        right_form.addRow("Currency:", self.currency_combo)
 
         self.warehouse_combo = QComboBox()
         self.warehouse_combo.addItems(["Main Warehouse", "Cold Storage"])
         self.warehouse_combo.setMinimumHeight(INPUT_HEIGHT_MD)
-        invoice_layout.addRow("Warehouse:", self.warehouse_combo)
+        self.warehouse_combo.setMaximumWidth(160)
+        right_form.addRow("Warehouse:", self.warehouse_combo)
 
-        self.notes_input = QTextEdit()
-        self.notes_input.setMaximumHeight(80)
-        self.notes_input.setMinimumHeight(60)
-        invoice_layout.addRow("Notes:", self.notes_input)
+        zone1_layout.addLayout(right_form)
+        zone1_layout.addStretch()
 
-        top_split.addWidget(invoice_group)
-        top_split.setSizes([400, 400])
+        layout.addWidget(zone1)
 
-        layout.addWidget(top_split)
+        # ═══════════════════════════════════════════════════════
+        # ZONE 2 — LINE ITEM ENGINE (unified table + search)
+        # ═══════════════════════════════════════════════════════
+        zone2_layout = QVBoxLayout()
+        zone2_layout.setSpacing(SPACING_SM)
 
-        # Product search
+        # Search bar
         search_layout = QHBoxLayout()
         search_layout.setSpacing(SPACING_SM)
-        search_label = QLabel("Product Search:")
-        search_label.setMinimumHeight(INPUT_HEIGHT_MD)
-        search_layout.addWidget(search_label)
         self.product_search = QLineEdit()
         self.product_search.setPlaceholderText("Search product by name, barcode...")
         self.product_search.setMinimumHeight(INPUT_HEIGHT_MD)
         search_layout.addWidget(self.product_search, 1)
 
-        self.add_product_btn = QPushButton("Add Product")
-        self.add_product_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        self.add_product_btn = EnterpriseButton(text="+ Add Product", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.add_product_btn.clicked.connect(self.show_product_selector)
         search_layout.addWidget(self.add_product_btn)
 
-        layout.addLayout(search_layout)
+        self.remove_item_btn = EnterpriseButton(text="Remove", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.remove_item_btn.clicked.connect(self.remove_selected_item)
+        search_layout.addWidget(self.remove_item_btn)
 
-        # Items table
+        zone2_layout.addLayout(search_layout)
+
+        # Items table (compact density)
         self.items_table = QTableWidget()
-        self.items_table.setColumnCount(10)
+        self.items_table.setColumnCount(9)
         self.items_table.setHorizontalHeaderLabels([
-            "Product", "Batch #", "Mfg Date", "Expiry Date", "Qty", "Unit Price", "Discount", "Tax", "Total", "Actions"
+            "Product", "Batch #", "Mfg Date", "Expiry", "Qty", "Unit Price", "Discount %", "Tax %", "Total"
         ])
         self.items_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.items_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.items_table.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.items_table.itemChanged.connect(self.on_item_changed)
         self.items_table.setMinimumHeight(TABLE_ROW_HEIGHT_LG * 8)
-        self.items_table.verticalHeader().setDefaultSectionSize(TABLE_ROW_HEIGHT_MD)
+        self.items_table.verticalHeader().setDefaultSectionSize(DENSITY_COMPACT_ROW)
         self.items_table.setAlternatingRowColors(True)
         self.items_table.setStyleSheet(f"""
             QTableWidget {{
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 4px;
+                border-radius: {BORDER_RADIUS_SM};
                 background-color: {COLOR_BG_SURFACE};
                 gridline-color: {COLOR_TABLE_BORDER_LIGHT};
             }}
             QHeaderView::section {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                padding: 8px;
+                padding: {SPACING_XS}px {SPACING_SM}px;
                 font-weight: bold;
                 border: none;
+                font-size: {TEXT_TABLE_HEADER}px;
             }}
         """)
 
-        # Bottom section: Totals and actions
-        bottom_layout = QHBoxLayout()
-        bottom_layout.setSpacing(SPACING_LG)
+        zone2_layout.addWidget(self.items_table)
+        layout.addLayout(zone2_layout, stretch=1)
 
-        # Totals group
-        totals_group = QGroupBox("Invoice Totals")
-        totals_layout = QFormLayout(totals_group)
+        # ═══════════════════════════════════════════════════════
+        # ZONE 3 — FINANCIAL SUMMARY PANEL (totals + primary action)
+        # ═══════════════════════════════════════════════════════
+        zone3 = QFrame()
+        zone3.setObjectName("zoneSummary")
+        zone3.setStyleSheet(f"QFrame#zoneSummary {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
+        zone3_layout = QHBoxLayout(zone3)
+        zone3_layout.setContentsMargins(SPACING_LG, SPACING_MD, SPACING_LG, SPACING_MD)
+        zone3_layout.setSpacing(SPACING_XXL)
+
+        # Left: Supplier details (compact)
+        details_form = QFormLayout()
+        details_form.setSpacing(SPACING_XS)
+        details_form.setContentsMargins(0, 0, 0, 0)
+        details_form.setLabelAlignment(Qt.AlignRight)
+
+        self.supplier_phone = QLabel("—")
+        self.supplier_phone.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        details_form.addRow("Phone:", self.supplier_phone)
+
+        self.credit_limit_label = QLabel("—")
+        self.credit_limit_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        details_form.addRow("Credit Limit:", self.credit_limit_label)
+
+        self.balance_label = QLabel("0.00")
+        self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}px; font-weight: bold;")
+        details_form.addRow("Balance:", self.balance_label)
+
+        zone3_layout.addLayout(details_form)
+        zone3_layout.addSpacing(SPACING_LG)
+
+        # Center: Totals
+        totals_layout = QFormLayout()
+        totals_layout.setSpacing(SPACING_XS)
+        totals_layout.setContentsMargins(0, 0, 0, 0)
         totals_layout.setLabelAlignment(Qt.AlignRight)
-        totals_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-        totals_layout.setHorizontalSpacing(SPACING_LG)
-        totals_layout.setVerticalSpacing(SPACING_MD)
-        totals_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
 
         self.subtotal_label = QLabel("0.00")
-        self.subtotal_label.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.subtotal_label.setFont(QFont("Segoe UI", FONT_SIZE_LG))
+        self.subtotal_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}px;")
         totals_layout.addRow("Subtotal:", self.subtotal_label)
 
         self.discount_input = QDoubleSpinBox()
         self.discount_input.setRange(0, 999999)
         self.discount_input.setValue(0)
-        self.discount_input.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.discount_input.setMaximumWidth(120)
         self.discount_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Discount:", self.discount_input)
 
@@ -269,103 +278,76 @@ class PurchaseInvoiceScreen(QWidget):
         self.tax_input.setRange(0, 100)
         self.tax_input.setValue(0)
         self.tax_input.setSuffix("%")
-        self.tax_input.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.tax_input.setMaximumWidth(120)
         self.tax_input.valueChanged.connect(self.recalculate_totals)
-        totals_layout.addRow("Tax Rate:", self.tax_input)
+        totals_layout.addRow("Tax:", self.tax_input)
 
         self.tax_amount_label = QLabel("0.00")
-        self.tax_amount_label.setMinimumHeight(INPUT_HEIGHT_MD)
-        totals_layout.addRow("Tax Amount:", self.tax_amount_label)
+        self.tax_amount_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        totals_layout.addRow("Tax Amt:", self.tax_amount_label)
 
         self.total_label = QLabel("0.00")
-        self.total_label.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.total_label.setFont(QFont("Segoe UI", FONT_SIZE_XL, QFont.Bold))
-        self.total_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
+        self.total_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_CARD_TITLE}px; font-weight: 700;")
         totals_layout.addRow("Total:", self.total_label)
 
         self.paid_input = QDoubleSpinBox()
         self.paid_input.setRange(0, 999999)
         self.paid_input.setValue(0)
-        self.paid_input.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.paid_input.setMaximumWidth(120)
         self.paid_input.valueChanged.connect(self.recalculate_totals)
-        totals_layout.addRow("Paid Amount:", self.paid_input)
+        totals_layout.addRow("Paid:", self.paid_input)
 
-        self.balance_label = QLabel("0.00")
-        self.balance_label.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.balance_label.setFont(QFont("Segoe UI", FONT_SIZE_LG))
-        self.balance_label.setStyleSheet(f"color: {COLOR_DANGER};")
-        totals_layout.addRow("Balance Due:", self.balance_label)
+        zone3_layout.addLayout(totals_layout)
+        zone3_layout.addSpacing(SPACING_LG)
 
-        bottom_layout.addWidget(totals_group, 1)
+        # Right: Primary action + secondary menu
+        action_layout = QVBoxLayout()
+        action_layout.setSpacing(SPACING_SM)
+        action_layout.setContentsMargins(0, 0, 0, 0)
 
-        # Action buttons
-        actions_group = QGroupBox("Actions")
-        actions_layout = QVBoxLayout(actions_group)
-        actions_layout.setSpacing(SPACING_SM)
+        self.save_btn = EnterpriseButton(text="Save Invoice", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.save_btn.clicked.connect(self.save_draft)
+        action_layout.addWidget(self.save_btn)
 
-        self.save_draft_btn = QPushButton("Save Draft (Ctrl+S)")
-        self.save_draft_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.save_draft_btn.clicked.connect(self.save_draft)
-        actions_layout.addWidget(self.save_draft_btn)
+        self.confirm_btn = EnterpriseButton(text="Confirm & Receive", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.confirm_btn.clicked.connect(self.receive_invoice)
+        action_layout.addWidget(self.confirm_btn)
 
-        self.confirm_btn = QPushButton("Confirm Invoice (Ctrl+Enter)")
-        self.confirm_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.confirm_btn.clicked.connect(self.confirm_invoice)
-        self.confirm_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_PRIMARY}; 
-                color: white; 
-                border: none;
-                border-radius: """ + str(BORDER_RADIUS_MD) + """px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: {COLOR_PRIMARY_HOVER};
-            }
-            QPushButton:pressed {
-                background-color: {COLOR_PRIMARY_ACTIVE};
-            }
-        """)
-        actions_layout.addWidget(self.confirm_btn)
+        # Secondary actions menu
+        self.more_btn = EnterpriseButton(text="More ▾", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.more_menu = QMenu(self)
+        self.more_menu.addAction("Print Invoice (Ctrl+P)", self.print_invoice)
+        self.more_menu.addAction("Save as Draft", self.save_draft)
+        self.more_menu.addAction("Clear Form (Ctrl+L)", self.clear_form)
+        self.more_menu.addAction("New Invoice (Ctrl+N)", self.clear_form)
+        self.more_btn.setMenu(self.more_menu)
+        action_layout.addWidget(self.more_btn)
 
-        self.receive_btn = QPushButton("Receive & Add Stock (Ctrl+R)")
-        self.receive_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.receive_btn.clicked.connect(self.receive_invoice)
-        self.receive_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_SUCCESS};
-                color: white;
-                border: none;
-                border-radius: {BORDER_RADIUS_MD}px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_SUCCESS_HOVER};
-            }}
-            QPushButton:pressed {{
-                background-color: {COLOR_SUCCESS_ACTIVE};
-            }}
-        """)
-        actions_layout.addWidget(self.receive_btn)
+        # Workflow actions (hidden by default)
+        self.submit_wf_btn = EnterpriseButton(text="Submit for Approval", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.submit_wf_btn.clicked.connect(lambda: self.perform_workflow_action('submit'))
+        self.submit_wf_btn.setVisible(False)
+        action_layout.addWidget(self.submit_wf_btn)
 
-        self.print_btn = QPushButton("Print Invoice (Ctrl+P)")
-        self.print_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.print_btn.clicked.connect(self.print_invoice)
-        actions_layout.addWidget(self.print_btn)
+        self.approve_wf_btn = EnterpriseButton(text="Approve", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
+        self.approve_wf_btn.setVisible(False)
+        action_layout.addWidget(self.approve_wf_btn)
 
-        clear_btn = QPushButton("Clear Form (Ctrl+L)")
-        clear_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        clear_btn.clicked.connect(self.clear_form)
-        actions_layout.addWidget(clear_btn)
+        self.reject_wf_btn = EnterpriseButton(text="Reject", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
+        self.reject_wf_btn.setVisible(False)
+        action_layout.addWidget(self.reject_wf_btn)
 
-        new_btn = QPushButton("New Invoice (Ctrl+N)")
-        new_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        new_btn.clicked.connect(self.clear_form)
-        actions_layout.addWidget(new_btn)
+        self.post_wf_btn = EnterpriseButton(text="Post", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
+        self.post_wf_btn.setVisible(False)
+        action_layout.addWidget(self.post_wf_btn)
 
-        bottom_layout.addWidget(actions_group)
+        action_layout.addStretch()
+        zone3_layout.addLayout(action_layout)
 
-        layout.addLayout(bottom_layout)
+        layout.addWidget(zone3)
 
     def setup_shortcuts(self):
         """Setup keyboard shortcuts."""
@@ -507,7 +489,7 @@ class PurchaseInvoiceScreen(QWidget):
         # Total
         total_item = QTableWidgetItem("0.00")
         total_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        total_item.setForeground(Qt.darkGreen)
+        total_item.setForeground(QColor(COLOR_SUCCESS))
         self.items_table.setItem(row, 8, total_item)
 
         # Actions
@@ -601,13 +583,13 @@ class PurchaseInvoiceScreen(QWidget):
         
         if is_received:
             self.receive_btn.setText("RECEIVED")
-            self.receive_btn.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: white; border: none; border-radius: 4px;")
+            self.receive_btn.set_variant(ButtonVariant.SECONDARY)
         else:
             self.receive_btn.setText("Receive & Add Stock (Ctrl+R)")
-            self.receive_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold; border: none; border-radius: 4px;")
+            self.receive_btn.set_variant(ButtonVariant.SUCCESS)
 
     def save_draft(self):
-        """Save purchase invoice as draft."""
+        """Save purchase invoice as draft — stores invoice ID for subsequent actions."""
         data = self.get_invoice_data()
         if not data["items"]:
             QMessageBox.warning(self, "Validation Error", "Please add at least one product.")
@@ -617,17 +599,22 @@ class PurchaseInvoiceScreen(QWidget):
             endpoint = get_endpoint("purchase_invoices")
             res = self.api_client.post(endpoint, data)
             if res:
-                self.invoice_number.setText(res.get("invoice_number", "DRAFT"))
+                res_data = res.get('data', res) if isinstance(res, dict) else res
+                self.current_invoice_id = res_data.get('id')
+                self.invoice_number.setText(res_data.get("invoice_number", "DRAFT"))
                 self.update_button_states("DRAFT")
                 QMessageBox.information(self, "Success", "Purchase draft saved.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save draft: {e}")
 
     def confirm_invoice(self):
-        """Confirm the purchase invoice."""
+        """Confirm the purchase invoice — persists to backend."""
         data = self.get_invoice_data()
         if not data["supplier_id"]:
             QMessageBox.warning(self, "Validation Error", "Please select a supplier.")
+            return
+        if not self.current_invoice_id:
+            QMessageBox.warning(self, "Error", "Save the invoice as draft first.")
             return
 
         reply = QMessageBox.question(
@@ -638,13 +625,25 @@ class PurchaseInvoiceScreen(QWidget):
         )
 
         if reply == QMessageBox.Yes:
-            self.status_label.setText("CONFIRMED")
-            self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; padding: 5px 15px; border-radius: 3px;")
-            QMessageBox.information(self, "Success", "Purchase invoice confirmed successfully.")
+            try:
+                endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/confirm/"
+                res = self.api_client.post(endpoint, {})
+                if res:
+                    self.status_label.setText("CONFIRMED")
+                    self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+                    self.update_button_states("CONFIRMED")
+                    QMessageBox.information(self, "Success", "Purchase invoice confirmed successfully.")
+                else:
+                    QMessageBox.critical(self, "Error", "Failed to confirm on server.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to confirm: {e}")
 
     def receive_invoice(self):
-        """Receive purchase and add stock."""
+        """Receive purchase and add stock — persists to backend."""
         data = self.get_invoice_data()
+        if not self.current_invoice_id:
+            QMessageBox.warning(self, "Error", "Save the invoice as draft first.")
+            return
         if self.status_label.text() != "CONFIRMED":
             QMessageBox.warning(self, "Error", "Invoice must be confirmed before receiving.")
             return
@@ -663,9 +662,18 @@ class PurchaseInvoiceScreen(QWidget):
         )
 
         if reply == QMessageBox.Yes:
-            self.status_label.setText("RECEIVED")
-            self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; padding: 5px 15px; border-radius: 3px;")
-            QMessageBox.information(self, "Success", "Purchase received and stock added to inventory.")
+            try:
+                endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/receive/"
+                res = self.api_client.post(endpoint, {})
+                if res:
+                    self.status_label.setText("RECEIVED")
+                    self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+                    self.update_button_states("RECEIVED")
+                    QMessageBox.information(self, "Success", "Purchase received and stock added to inventory.")
+                else:
+                    QMessageBox.critical(self, "Error", "Failed to receive on server.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to receive: {e}")
 
     def print_invoice(self):
         """Print the invoice."""
@@ -722,7 +730,7 @@ class PurchaseInvoiceScreen(QWidget):
         self.items_table.setRowCount(0)
         self.recalculate_totals()
         self.status_label.setText("DRAFT")
-        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: white; padding: 5px 15px; border-radius: 3px;")
+        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: white; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
         self.current_invoice_id = None
         self.workflow_status_label.setText("")
         self.submit_wf_btn.setVisible(True)
@@ -753,11 +761,11 @@ class PurchaseInvoiceScreen(QWidget):
                     'APPROVED': COLOR_SUCCESS,
                     'REJECTED': COLOR_DANGER,
                     'POSTED': COLOR_INFO,
-                    'CANCELLED': '#7f8c8d'
+                    'CANCELLED': COLOR_TEXT_MUTED
                 }
                 color = color_map.get(state, COLOR_TEXT_MUTED)
                 self.workflow_status_label.setText(f"Workflow: {state_display}")
-                self.workflow_status_label.setStyleSheet(f"color: {color}; font-weight: bold; padding: 8px;")
+                self.workflow_status_label.setStyleSheet(f"color: {color}; font-weight: bold; padding: {SPACING_SM}px;")
                 
                 self.submit_wf_btn.setVisible(data.get('can_submit', False))
                 self.approve_wf_btn.setVisible(data.get('can_approve', False))

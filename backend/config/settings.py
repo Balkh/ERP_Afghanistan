@@ -28,7 +28,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     # Local apps
-    'common',
+    # 'common',  # Removed: fully duplicated by core/
     'core',
     'inventory',
     'sales',
@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'payments',
     'expenses',
     'licensing',
-    'reports',
+    # 'reports',  # Removed: empty scaffold, no models/views/routes
     'security',
     'backup',
     'hr',
@@ -49,10 +49,10 @@ INSTALLED_APPS = [
     'entities',
     'audit',
     'cashflow',
-    'dashboard',
-    'analytics',
+    # 'dashboard',  # Removed: 40 endpoints, zero consumers, control-center replaced it
+    # 'analytics',  # Removed: 1 frontend ref resolved; logic consolidated into control-center
     'returns',
-    'production',
+    # 'production',  # Removed: service-only, no API, no consumers, no migrations
     'workflows',
     'jobs',
     'integration',
@@ -61,6 +61,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'core.logging.middleware.ObservabilityMiddleware',
+    'core.performance.RequestTimingMiddleware',
+    'security.rate_limiter.RateLimitMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -71,6 +73,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# ── Rate Limiting Configuration ──
+RATE_LIMITS = {
+    "login": {"max_attempts": 5, "window_seconds": 300, "lockout_seconds": 900},
+    "api": {"max_requests": 200, "window_seconds": 60},
+}
 
 ROOT_URLCONF = 'config.urls'
 
@@ -150,7 +158,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,

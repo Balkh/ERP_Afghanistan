@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from datetime import date
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_TABLE, TEXT_CARD_TITLE)
 
 
 class BatchSelectionDialog(QDialog):
@@ -36,7 +36,7 @@ class BatchSelectionDialog(QDialog):
         # Header
         header_layout = QHBoxLayout()
         title_label = QLabel(f"Batches for: {self.product_name}")
-        title_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        title_label.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
         header_layout.addWidget(title_label)
         header_layout.addStretch()
 
@@ -78,7 +78,7 @@ class BatchSelectionDialog(QDialog):
         # Info bar
         info_layout = QHBoxLayout()
         self.info_label = QLabel(f"Required: {self.required_quantity}")
-        self.info_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self.info_label.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))
         info_layout.addWidget(self.info_label)
         info_layout.addStretch()
 

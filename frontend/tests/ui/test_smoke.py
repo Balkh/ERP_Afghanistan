@@ -59,12 +59,11 @@ class TestNavigationFlow:
     @pytest.fixture
     def sidebar_fixture(self, qtbot):
         """Create sidebar for testing."""
-        with patch('ui.sidebar.ThemeManager'):
-            from ui.sidebar import Sidebar
-            sidebar = Sidebar()
-            qtbot.addWidget(sidebar)
-            yield sidebar
-            sidebar.close()
+        from ui.sidebar import Sidebar
+        sidebar = Sidebar()
+        qtbot.addWidget(sidebar)
+        yield sidebar
+        sidebar.close()
 
     def test_sidebar_exists(self, sidebar_fixture):
         """Sidebar should exist."""

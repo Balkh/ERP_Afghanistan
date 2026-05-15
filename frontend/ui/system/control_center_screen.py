@@ -1,4 +1,5 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_XL, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import (TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_HELPER, TEXT_DISPLAY)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 Control Center Screen - Real-time ERP Monitoring Dashboard.
@@ -16,7 +17,6 @@ from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QLinearGradient
 
 from ui.screens.base_screen import BaseScreen, ScreenState
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-                          FONT_SIZE_SM, FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL,
                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
@@ -105,23 +105,23 @@ class KPICard(QFrame):
             QFrame#kpiCard {{
                 background-color: {COLOR_BG_MAIN};
                 border: 1px solid {COLOR_BG_ELEVATED};
-                border-radius: 12px;
+                border-radius: {BORDER_RADIUS_XL};
                 border-left: 4px solid {color};
             }}
             QLabel#title {{
                 color: {COLOR_TEXT_SECONDARY};
-                font-size: 11px;
+                font-size: {TEXT_BODY}px;
                 font-weight: bold;
                 text-transform: uppercase;
             }}
             QLabel#value {{
                 color: {color};
-                font-size: 22px;
+                font-size: {TEXT_SECTION_TITLE}px;
                 font-weight: bold;
             }}
             QLabel#subtitle {{
                 color: {COLOR_TEXT_MUTED};
-                font-size: 10px;
+                font-size: {TEXT_TABLE}px;
             }}
         """)
         
@@ -159,7 +159,7 @@ class KPICard(QFrame):
         
         if severity:
             color = severity
-            self.value_label.setStyleSheet(f"color: {color}; font-size: 22px; font-weight: bold;")
+            self.value_label.setStyleSheet(f"color: {color}; font-size: {TEXT_SECTION_TITLE}px; font-weight: bold;")
             self.setStyleSheet(self.styleSheet().replace(f"border-left: 4px solid {self.default_color}", f"border-left: 4px solid {color}"))
             self.default_color = color
             self.sparkline.color = color
@@ -203,7 +203,9 @@ class ControlCenterScreen(BaseScreen):
         # Header with Refresh Info
         header_layout = QHBoxLayout()
         self.title_label = QLabel("Enterprise Control Center")
-        self.title_label.setFont(QFont("Segoe UI", 22, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        self.title_label.setFont(title_font)
         self.title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
 
         self.health_bar = QFrame()
@@ -211,13 +213,13 @@ class ControlCenterScreen(BaseScreen):
         self.health_bar.setMinimumWidth(200)
         self.health_bar.setStyleSheet(f"""
             background-color: {COLOR_BG_ELEVATED};
-            border-radius: 15px;
+            border-radius: {BORDER_RADIUS_PILL}px;
             border: 1px solid {COLOR_BORDER};
         """)
         health_layout = QHBoxLayout(self.health_bar)
         health_layout.setContentsMargins(SPACING_SM, 0, SPACING_SM, 0)
         self.health_status_label = QLabel("SYSTEM HEALTH: OPTIMAL")
-        self.health_status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; font-size: 11px;")
+        self.health_status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; font-size: {TEXT_BODY}px;")
         health_layout.addStretch()
         health_layout.addWidget(self.health_status_label)
         health_layout.addStretch()
@@ -226,14 +228,14 @@ class ControlCenterScreen(BaseScreen):
         self.status_badge.setStyleSheet(f"""
             background-color: {COLOR_BG_ELEVATED};
             color: {COLOR_STATUS_VALID};
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 10px;
+            padding: {SPACING_XS}px 10px;
+            border-radius: {BORDER_RADIUS_SM};
+            font-size: {TEXT_TABLE}px;
             font-weight: bold;
         """)
         
         self.last_update_label = QLabel("Last update: Never")
-        self.last_update_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px;")
+        self.last_update_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px;")
         
         self.refresh_btn = QPushButton("Manual Refresh")
         self.refresh_btn.setFixedWidth(120)
@@ -253,7 +255,7 @@ class ControlCenterScreen(BaseScreen):
         self.alerts_panel.setVisible(False)
         self.alerts_panel.setStyleSheet(f"""
             background-color: {COLOR_BORDER};
-            border-radius: 8px;
+            border-radius: {BORDER_RADIUS_LG};
             border: 1px solid {COLOR_DANGER};
         """)
         alerts_layout = QHBoxLayout(self.alerts_panel)
@@ -272,14 +274,14 @@ class ControlCenterScreen(BaseScreen):
         # Section 2: Real-time Activity Stream (Left)
         self.activity_group = self._create_section_group("Activity Stream", 400)
         self.activity_list = QListWidget()
-        self.activity_list.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
+        self.activity_list.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: none; border-radius: {BORDER_RADIUS_LG};")
         self.activity_group.layout().addWidget(self.activity_list)
         grid_layout.addWidget(self.activity_group, 0, 0)
 
         # Section 3: Operational Intelligence (Right)
         self.intelligence_group = self._create_section_group("Intelligence & Signals", 400)
         self.intelligence_list = QListWidget()
-        self.intelligence_list.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
+        self.intelligence_list.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: none; border-radius: {BORDER_RADIUS_LG};")
         self.intelligence_group.layout().addWidget(self.intelligence_list)
         grid_layout.addWidget(self.intelligence_group, 0, 1)
         
@@ -307,7 +309,7 @@ class ControlCenterScreen(BaseScreen):
         """Setup the top KPI cards section with System and Business metrics."""
         # System Metrics Row
         system_label = QLabel("SYSTEM PERFORMANCE")
-        system_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px; font-weight: bold;")
+        system_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px; font-weight: bold;")
         self.content_layout.addWidget(system_label)
 
         self.system_kpi_layout = QHBoxLayout()
@@ -329,7 +331,7 @@ class ControlCenterScreen(BaseScreen):
 
         # Business Metrics Row
         business_label = QLabel("BUSINESS OPERATIONS")
-        business_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px; font-weight: bold;")
+        business_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px; font-weight: bold;")
         self.content_layout.addWidget(business_label)
 
         self.business_kpi_layout = QHBoxLayout()
@@ -373,10 +375,10 @@ class ControlCenterScreen(BaseScreen):
         group.setStyleSheet(f"""
             QGroupBox {{
                 color: {COLOR_PRIMARY};
-                font-size: 14px;
+                font-size: {TEXT_DISPLAY}px;
                 font-weight: bold;
                 border: 1px solid {COLOR_BG_ELEVATED};
-                border-radius: 12px;
+                border-radius: {BORDER_RADIUS_XL};
                 margin-top: 15px;
                 background-color: {COLOR_BG_SURFACE};
             }}
@@ -408,7 +410,7 @@ class ControlCenterScreen(BaseScreen):
                 gridline-color: {COLOR_TABLE_BORDER_LIGHT};
             }}
             QTableWidget::item {{
-                padding: 8px;
+                padding: {SPACING_SM}px;
                 border-bottom: 1px solid {COLOR_BG_ELEVATED};
             }}
             QTableWidget::item:selected {{
@@ -418,7 +420,7 @@ class ControlCenterScreen(BaseScreen):
             QHeaderView::section {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 color: {COLOR_PRIMARY};
-                padding: 8px;
+                padding: {SPACING_SM}px;
                 border: none;
                 font-weight: bold;
             }}
@@ -433,10 +435,10 @@ class ControlCenterScreen(BaseScreen):
         layout.setSpacing(SPACING_XS)  # 2
         
         t_label = QLabel(title)
-        t_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
+        t_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px;")
         
         v_label = QLabel(value)
-        v_label.setStyleSheet(f"color: {color}; font-size: 18px; font-weight: bold;")
+        v_label.setStyleSheet(f"color: {color};         font-size: {TEXT_CARD_TITLE}px; font-weight: bold;")
         v_label.setWordWrap(True)
         
         layout.addWidget(t_label)
@@ -461,7 +463,7 @@ class ControlCenterScreen(BaseScreen):
             
         self._is_fetching = True
         self.status_badge.setText("UPDATING...")
-        self.status_badge.setStyleSheet(self.status_badge.styleSheet().replace("#a6e3a1", "#f9e2af"))
+        self.status_badge.setStyleSheet(f"background: {COLOR_BG_ELEVATED}; color: {COLOR_WARNING}; padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_LG}px; font-weight: bold; font-size: {TEXT_TABLE}px; border: 1px solid {COLOR_WARNING};")
         
         self._fetch_thread = DataFetchThread(self._service)
         self._fetch_thread.data_received.connect(self._handle_data)
@@ -477,7 +479,7 @@ class ControlCenterScreen(BaseScreen):
         """Update UI with fetched data, supporting partial rendering and fallback states."""
         self.last_update_label.setText(f"Last update: {time.strftime('%H:%M:%S')}")
         self.status_badge.setText("LIVE MONITORING")
-        self.status_badge.setStyleSheet(self.status_badge.styleSheet().replace("#f9e2af", "#a6e3a1"))
+        self.status_badge.setStyleSheet(f"background: {COLOR_BG_ELEVATED}; color: {COLOR_STATUS_VALID}; padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_LG}px; font-weight: bold; font-size: {TEXT_TABLE}px; border: 1px solid {COLOR_STATUS_VALID};")
         
         active_alerts = []
         
@@ -568,23 +570,21 @@ class ControlCenterScreen(BaseScreen):
         return self._history[key]
 
     def _update_system_health_ui(self, active_alerts):
-        """Update the top health bar and alert panel based on active issues."""
         if not active_alerts:
             self.health_status_label.setText("SYSTEM HEALTH: OPTIMAL")
-            self.health_status_label.setStyleSheet("color: #a6e3a1; font-weight: bold; font-size: 11px;")
-            self.health_bar.setStyleSheet(self.health_bar.styleSheet().replace("#f38ba8", "#313244").replace("#f9e2af", "#313244"))
+            self.health_status_label.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; font-size: {TEXT_BODY}px;")
+            self.health_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_PILL}px; border: 1px solid {COLOR_STATUS_VALID};")
             self.alerts_panel.setVisible(False)
         else:
             is_critical = any("CRITICAL" in a or "SYSTEM" in a or "DATABASE" in a for a in active_alerts)
             if is_critical:
                 self.health_status_label.setText("SYSTEM HEALTH: CRITICAL FAILURE")
-                self.health_status_label.setStyleSheet("color: #f38ba8; font-weight: bold; font-size: 11px;")
-                self.health_bar.setStyleSheet("background-color: #313244; border-radius: 15px; border: 1px solid #f38ba8;")
+                self.health_status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; font-size: {TEXT_BODY}px;")
+                self.health_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_PILL}px; border: 1px solid {COLOR_DANGER};")
             else:
                 self.health_status_label.setText("SYSTEM HEALTH: DEGRADED PERFORMANCE")
-                self.health_status_label.setStyleSheet("color: #f9e2af; font-weight: bold; font-size: 11px;")
-                self.health_bar.setStyleSheet("background-color: #313244; border-radius: 15px; border: 1px solid #f9e2af;")
-            
+                self.health_status_label.setStyleSheet(f"color: {COLOR_WARNING}; font-weight: bold; font-size: {TEXT_BODY}px;")
+                self.health_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_PILL}px; border: 1px solid {COLOR_WARNING};")
             self.alerts_label.setText("ACTIVE ALERTS: " + " | ".join(active_alerts))
             self.alerts_panel.setVisible(True)
 
@@ -645,7 +645,7 @@ class ControlCenterScreen(BaseScreen):
                 if len(group) > 1:
                     header = QListWidgetItem(f"--- Grouped Events at {ts} ---")
                     header.setForeground(QColor(COLOR_TEXT_MUTED))
-                    header.setFont(QFont("Segoe UI", 9, QFont.Bold))
+                    header.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))
                     self.activity_list.addItem(header)
                 
                 for alert in group:
@@ -743,7 +743,7 @@ class ControlCenterScreen(BaseScreen):
     def _handle_error(self, message):
         """Handle fetch errors."""
         self.status_badge.setText("CONNECTION ERROR")
-        self.status_badge.setStyleSheet(self.status_badge.styleSheet().replace("#f9e2af", "#f38ba8"))
+        self.status_badge.setStyleSheet(f"background: {COLOR_BG_ELEVATED}; color: {COLOR_DANGER}; padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_LG}px; font-weight: bold; font-size: {TEXT_TABLE}px; border: 1px solid {COLOR_DANGER};")
         self.last_update_label.setText("Retrying connection...")
 
     def _get_severity_color(self, severity):

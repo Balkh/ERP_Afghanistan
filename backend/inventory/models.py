@@ -148,6 +148,14 @@ class Batch(TimeStampedUUIDModel):
         verbose_name=_('Product')
     )
     batch_number = models.CharField(max_length=100, unique=True, verbose_name=_('Batch Number'))
+    barcode = models.CharField(
+        max_length=100, 
+        blank=True, 
+        null=True, 
+        unique=True, 
+        verbose_name=_('Batch Barcode'),
+        help_text=_('Optional barcode for this specific batch. Falls back to batch_number if empty.')
+    )
     manufacturing_date = models.DateField(
         verbose_name=_('Manufacturing Date'),
         help_text=_('Date when the batch was manufactured')
@@ -306,11 +314,16 @@ class StockMovement(TimeStampedUUIDModel):
         ('OUT', _('Stock Out')),
         ('ADJUSTMENT', _('Adjustment')),
         ('TRANSFER', _('Transfer')),
+        ('RETURN_IN', _('Return In (Sale Return)')),
+        ('RETURN_PURCHASE', _('Return Purchase')),
+        ('RETURN_DAMAGED', _('Return Damaged (Quarantine)')),
+        ('RETURN_EXPIRED', _('Return Expired (Quarantine)')),
     ]
     
     REFERENCE_TYPES = [
         ('PURCHASE', _('Purchase')),
         ('SALE', _('Sale')),
+        ('RETURN', _('Return')),
         ('PRODUCTION', _('Production')),
         ('WASTE', _('Waste')),
         ('EXPIRY', _('Expiry')),

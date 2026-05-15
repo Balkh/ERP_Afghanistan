@@ -15,7 +15,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, BORDER_RADIUS_MD)
+from ui.constants import TEXT_SECTION_TITLE, TEXT_BODY
 
 
 class FinancialControlTowerScreen(QWidget):
@@ -33,7 +34,9 @@ class FinancialControlTowerScreen(QWidget):
         layout.setSpacing(SPACING_LG)
 
         header = QLabel("Financial Control Tower")
-        header.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        header_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        header_font.setWeight(QFont.Weight.Bold)
+        header.setFont(header_font)
         header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(header)
 
@@ -49,8 +52,8 @@ class FinancialControlTowerScreen(QWidget):
             btn = QPushButton(label)
             btn.setStyleSheet(f"""
                 QPushButton {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 8px 12px;
-                font-size: 11px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 12px;
+                font-size: {TEXT_BODY}px; }}
                 QPushButton:hover {{ background: {COLOR_PRIMARY}; color: white; }}
             """)
             btn.clicked.connect(cb)
@@ -61,8 +64,8 @@ class FinancialControlTowerScreen(QWidget):
         self.content.setReadOnly(True)
         self.content.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px;
-            font-family: 'Consolas', monospace; font-size: 12px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         layout.addWidget(self.content)
 

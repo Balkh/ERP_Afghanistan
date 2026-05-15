@@ -1,5 +1,3 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
 Drift Intelligence Screen - Predictive ERP Integrity Dashboard.
 Visualizes system drift, risk heatmaps, and predictive warnings.
@@ -10,7 +8,18 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                QLabel, QFrame, QScrollArea, QListWidget, 
                                QListWidgetItem, QSizePolicy, QGroupBox)
 from PySide6.QtCore import Qt, QPointF, QTimer
-from PySide6.QtGui import QFont, QColor, QPainter, QPen, QBrush, QLinearGradient
+from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QLinearGradient
+from ui.screens.base_screen import BaseScreen
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+                           BORDER_RADIUS_SM, BORDER_RADIUS_LG, BORDER_RADIUS_XL,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from api.drift_intelligence_service import DriftIntelligenceService
 
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
@@ -50,10 +59,10 @@ class DriftGaugeWidget(QWidget):
         
         # Draw Text
         painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-        painter.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        painter.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         painter.drawText(rect, Qt.AlignCenter, f"{self.score}%")
 
-        painter.setFont(QFont("Segoe UI", 8))
+        painter.setFont(QFont("Segoe UI", TEXT_HELPER))
         painter.drawText(0, self.height() - 15, self.width(), 15, Qt.AlignCenter, self.title)
 
 
@@ -91,7 +100,7 @@ class RiskHeatmapWidget(QWidget):
             painter.drawRoundedRect(int(x), 10, int(cell_w - 5), 50, 5, 5)
             
             painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-            painter.setFont(QFont("Segoe UI", 8, QFont.Bold))
+            painter.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))
             painter.drawText(int(x), 75, int(cell_w - 5), 15, Qt.AlignCenter, mod)
 
 
@@ -111,11 +120,13 @@ class DriftIntelligenceScreen(BaseScreen):
         # Header
         header = QHBoxLayout()
         title = QLabel("System Drift Intelligence")
-        title.setFont(QFont("Segoe UI", 22, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         
         self.status_badge = QLabel("PREDICTIVE ANALYSIS ACTIVE")
-        self.status_badge.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; font-size: 11px; background: {COLOR_BG_ELEVATED}; padding: 4px 10px; border-radius: 4px;")
+        self.status_badge.setStyleSheet(f"color: {COLOR_STATUS_VALID}; font-weight: bold; font-size: {TEXT_BODY}px; background: {COLOR_BG_ELEVATED}; padding: {SPACING_XS}px 10px; border-radius: {BORDER_RADIUS_SM};")
         
         header.addWidget(title)
         header.addWidget(self.status_badge)
@@ -141,7 +152,7 @@ class DriftIntelligenceScreen(BaseScreen):
         # 3. Early Warning Panel (Bottom Left)
         warning_group = self._create_group("Early Warnings & Drift Patterns", 400)
         self.warning_list = QListWidget()
-        self.warning_list.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: none; border-radius: 8px;")
+        self.warning_list.setStyleSheet(f"background: {COLOR_BG_SURFACE}; border: none; border-radius: {BORDER_RADIUS_LG};")
         warning_group.layout().addWidget(self.warning_list)
         grid.addWidget(warning_group, 1, 0)
         
@@ -157,7 +168,7 @@ class DriftIntelligenceScreen(BaseScreen):
     def _create_group(self, title, min_h):
         group = QGroupBox(title)
         group.setMinimumHeight(min_h)
-        group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: 12px; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
+        group.setStyleSheet(f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_XL}; margin-top: 15px; background: {COLOR_BG_MAIN}; }} QGroupBox::title {{ subcontrol-origin: margin; left: 15px; padding: 0 5px; }}")
         QVBoxLayout(group)
         group.layout().setContentsMargins(SPACING_MD,  SPACING_XL + SPACING_SM,  SPACING_MD,  SPACING_MD)
         return group

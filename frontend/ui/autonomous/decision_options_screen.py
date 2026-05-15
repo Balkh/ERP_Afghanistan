@@ -15,8 +15,8 @@ from api.autonomous_client import AutonomousAPIClient
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XS,
+                           MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
 
 
 class _OptionCard(QFrame):
@@ -25,17 +25,17 @@ class _OptionCard(QFrame):
         super().__init__()
         self.setStyleSheet(f"""
             QFrame {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER};
-            border-radius: 8px; padding: 12px; margin: 4px; }}
+            border-radius: {BORDER_RADIUS_LG}; padding: {SPACING_MD}px; margin: {SPACING_XS}px; }}
         """)
         layout = QVBoxLayout(self)
         layout.setSpacing(SPACING_SM)
 
         d_type = QLabel(title)
-        d_type.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: 16px; font-weight: bold;")
+        d_type.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_CARD_TITLE}px; font-weight: bold;")
         layout.addWidget(d_type)
 
         ctx = QLabel(context[:120])
-        ctx.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
+        ctx.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px;")
         layout.addWidget(ctx)
 
         sep = QFrame()
@@ -47,21 +47,21 @@ class _OptionCard(QFrame):
             opt_frame = QFrame()
             opt_frame.setStyleSheet(f"""
                 QFrame {{ background: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER};
-                border-radius: 6px; padding: 8px; margin: 2px; }}
+                border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; margin: 2px; }}
             """)
             ol = QVBoxLayout(opt_frame)
 
             o_title = QLabel(opt.get("action_summary", "Option"))
-            o_title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: 12px; font-weight: bold;")
+            o_title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}px; font-weight: bold;")
             ol.addWidget(o_title)
 
             meta = QLabel(f"Risk: {opt.get('risk_level', 'N/A')}  |  Confidence: {opt.get('confidence', 0):.0%}")
-            meta.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px;")
+            meta.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}px;")
             ol.addWidget(meta)
 
             if opt.get("option_id") == recommended_id:
                 rec = QLabel("★ RECOMMENDED")
-                rec.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: 10px; font-weight: bold;")
+                rec.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_BODY_SMALL}px; font-weight: bold;")
                 ol.addWidget(rec)
 
             layout.addWidget(opt_frame)
@@ -85,19 +85,21 @@ class DecisionOptionsScreen(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("Decision Options & Alternatives")
-        title.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_PAGE_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
         header.addStretch()
 
         info = QLabel("READ-ONLY · No execution capability")
-        info.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px; font-style: italic;")
+        info.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px; font-style: italic;")
         header.addWidget(info)
 
         self.refresh_btn = QPushButton("⟳ Refresh")
         self.refresh_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         self.refresh_btn.clicked.connect(self._refresh)
         header.addWidget(self.refresh_btn)
@@ -113,7 +115,7 @@ class DecisionOptionsScreen(QWidget):
         self.container_layout.setSpacing(SPACING_MD)
 
         self.empty_label = QLabel("Loading decision options...")
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 14px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_DISPLAY}px;")
         self.empty_label.setAlignment(Qt.AlignCenter)
         self.container_layout.addWidget(self.empty_label)
 
@@ -130,7 +132,7 @@ class DecisionOptionsScreen(QWidget):
 
             if not decisions:
                 self.empty_label = QLabel("No decision options available.")
-                self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 14px;")
+                self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_DISPLAY}px;")
                 self.empty_label.setAlignment(Qt.AlignCenter)
                 self.container_layout.addWidget(self.empty_label)
                 return
@@ -148,7 +150,7 @@ class DecisionOptionsScreen(QWidget):
         except Exception as e:
             self._clear_container()
             err = QLabel(f"Error loading decisions: {e}")
-            err.setStyleSheet(f"color: {COLOR_DANGER}; font-size: 12px;")
+            err.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_CARD_TITLE}px;")
             self.container_layout.addWidget(err)
 
     def _clear_container(self):

@@ -4,26 +4,14 @@
 repos:
   - repo: local
     hooks:
-      - id: design-system-governance
-        name: Design System Governance Check
-        entry: python scripts/pre_commit_governance.py
+      - id: design-system-enforcer
+        name: Design System Enforcer (Strict)
+        entry: python scripts/pre_commit_enforcer.py --staged-only
         language: system
         pass_filenames: false
         always_run: true
         stages: [pre-commit]
-        description: |
-          Enforces design system rules:
-          - No hardcoded colors (must use COLOR_* tokens)
-          - No hardcoded spacing (must use SPACING_* constants)
-          - No forbidden fonts (must use Segoe UI)
-
-      - id: token-usage-validator
-        name: Design Token Usage Validator
-        entry: python scripts/validate_tokens.py
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-commit]
-        description: |
-          Validates that UI files use only approved design tokens
-          from ui/constants.py and enterprise_styling.py
+        description: >
+          STRICT enforcement — FAIL on ANY violation. Blocks hardcoded colors,
+          spacing, forbidden fonts, and renderer-layer usage.
+          Use COLOR_* tokens, SPACING_* constants, and Enterprise* components.

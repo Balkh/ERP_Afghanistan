@@ -1,11 +1,18 @@
 from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QMessageBox, QHeaderView,
-                               QAbstractItemView, QPushButton, QHBoxLayout, QFrame,
+                               QHBoxLayout, QFrame, QAbstractItemView,
                                QComboBox, QLineEdit, QLabel)
-from PySide6.QtCore import Qt, Slot, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_TOOLBAR)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_TOOLBAR,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+                           BORDER_RADIUS_MD,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
 class ChartOfAccountsScreen(QFrame):
@@ -38,7 +45,7 @@ class ChartOfAccountsScreen(QFrame):
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
         header = QLabel("Chart of Accounts")
-        header.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(header)
 
         return layout
@@ -63,10 +70,10 @@ class ChartOfAccountsScreen(QFrame):
 
         toolbar_layout.addStretch()
 
-        self.btn_add = QPushButton("Add Account")
-        self.btn_edit = QPushButton("Edit")
-        self.btn_delete = QPushButton("Delete")
-        self.btn_refresh = QPushButton("Refresh")
+        self.btn_add = EnterpriseButton(text="Add Account", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.btn_edit = EnterpriseButton(text="Edit", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.btn_delete = EnterpriseButton(text="Delete", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.btn_refresh = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
 
         self.btn_edit.setEnabled(False)
         self.btn_delete.setEnabled(False)
@@ -131,7 +138,7 @@ class ChartOfAccountsScreen(QFrame):
                 root_item.setExpanded(True)
                 font = root_item.font(0)
                 font.setBold(True)
-                font.setPointSize(11)
+                font.setPointSize(TEXT_BODY)
                 root_item.setFont(0, font)
                 root_item.setFont(1, font)
                 root_nodes[acc_type] = root_item

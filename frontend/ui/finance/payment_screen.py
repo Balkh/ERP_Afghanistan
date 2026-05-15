@@ -1,15 +1,23 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT)
 """Payments screen for ERP."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
+                                QTableWidgetItem, QLabel, QLineEdit,
                                 QHeaderView, QAbstractItemView, QComboBox, QGroupBox,
                                 QDateEdit, QMessageBox, QApplication)
 from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint
-from ui.constants import (BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, FONT_SIZE_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
+                           BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class PaymentScreen(QWidget):
@@ -31,26 +39,12 @@ class PaymentScreen(QWidget):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Payment Transactions")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_PRIMARY};
-                border: none;
-                border-radius: 5px;
-                padding: {SPACING_XS} {SPACING_MD};
-                color: white;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_PRIMARY_HOVER};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_payments)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
@@ -61,16 +55,14 @@ class PaymentScreen(QWidget):
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading payments...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: 40px;")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No payments found")
-        self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: 40px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -80,8 +72,10 @@ class PaymentScreen(QWidget):
 
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
-        bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar_font = QFont("Segoe UI", TEXT_LABEL)
+        bar_font.setWeight(QFont.Weight.Bold)
+        bar.setFont(bar_font)
+        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -121,8 +115,8 @@ class PaymentScreen(QWidget):
             QLineEdit {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 5px;
-                padding: 5px 10px;
+                border-radius: {BORDER_RADIUS_SM};
+                padding: {SPACING_XS}px {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
             }}
             QLineEdit::placeholder {{
@@ -136,11 +130,7 @@ class PaymentScreen(QWidget):
         layout.addLayout(search_layout)
 
         # Apply button
-        self.btn_apply = QPushButton("Apply Filters")
-        self.btn_apply.setMinimumHeight(35)
-        self.btn_apply.setMinimumWidth(100)
-        self.btn_apply.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; border: none; padding: 5px 15px;")
-        self.btn_apply.setCursor(Qt.PointingHandCursor)
+        self.btn_apply = EnterpriseButton(text="Apply Filters", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_apply.clicked.connect(self.load_payments)
         
         btn_layout = QVBoxLayout()
@@ -153,8 +143,8 @@ class PaymentScreen(QWidget):
             QComboBox {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 5px;
-                padding: 5px 10px;
+                border-radius: {BORDER_RADIUS_SM};
+                padding: {SPACING_XS}px {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
             }}
             QComboBox::drop-down {{
@@ -178,61 +168,25 @@ class PaymentScreen(QWidget):
         return bar
 
     def _create_table(self):
-        table = QTableWidget()
-        table.setColumnCount(8)
-        table.setHorizontalHeaderLabels([
-            "ID", "Date", "Type", "Amount", "Method", "Account", "Reference", "Status"
-        ])
-        
+        columns = [
+            TableColumn("id", "ID", width=60),
+            TableColumn("date", "Date", width=100, align="center"),
+            TableColumn("type", "Type", width=80),
+            TableColumn("amount", "Amount", width=100, align="right"),
+            TableColumn("method", "Method", width=100),
+            TableColumn("account", "Account", width=120),
+            TableColumn("reference", "Reference", width=120),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        table = EnterpriseTable(columns)
+
         header = table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(7, QHeaderView.ResizeToContents)
-        
-        table.setStyleSheet(f"""
-            QTableWidget {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                border: 1px solid {COLOR_TABLE_BORDER_LIGHT};
-                border-radius: 5px;
-                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_TABLE_BORDER_LIGHT};
-                padding: 10px;
-                border: none;
-                border-bottom: 2px solid {COLOR_BORDER_LIGHT};
-                font-weight: bold;
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QTableWidget::item {{
-                padding: 10px;
-                color: {COLOR_TEXT_PRIMARY};
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-            }}
-            QTableWidget::item:selected {{
-                background-color: {COLOR_BORDER};
-                color: white;
-            }}
-            QTableWidget alternatingRowColors {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-            }}
-            QScrollBar:vertical {{
-                background: {COLOR_BG_ELEVATED};
-            }}
-            QScrollBar::handle:vertical {{
-                background: {COLOR_BORDER};
-                border-radius: 4px;
-            }}
-        """)
-        
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setSelectionMode(QAbstractItemView.SingleSelection)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.setAlternatingRowColors(True)
 
+        table.setSelectionMode(QAbstractItemView.SingleSelection)
         return table
 
     def _show_loading(self, show=True):
@@ -305,15 +259,18 @@ class PaymentScreen(QWidget):
             return
 
         self._show_data()
-        self.table.setRowCount(len(self.payments))
-        for row, payment in enumerate(self.payments):
+        data = []
+        for payment in self.payments:
             if not isinstance(payment, dict):
                 continue
-            self.table.setItem(row, 0, QTableWidgetItem(str(payment.get('id') or '')[:8]))
-            self.table.setItem(row, 1, QTableWidgetItem(str(payment.get('transaction_date') or '')[:10]))
-            self.table.setItem(row, 2, QTableWidgetItem(payment.get('transaction_type') or ''))
-            self.table.setItem(row, 3, QTableWidgetItem(f"{self._safe_float(payment.get('amount')):,.2f}"))
-            self.table.setItem(row, 4, QTableWidgetItem(payment.get('payment_method') or ''))
-            self.table.setItem(row, 5, QTableWidgetItem(payment.get('account_name') or ''))
-            self.table.setItem(row, 6, QTableWidgetItem(payment.get('reference_number') or ''))
-            self.table.setItem(row, 7, QTableWidgetItem(payment.get('status') or ''))
+            data.append({
+                "id": str(payment.get('id') or '')[:8],
+                "date": str(payment.get('transaction_date') or '')[:10],
+                "type": payment.get('transaction_type') or '',
+                "amount": f"{self._safe_float(payment.get('amount')):,.2f}",
+                "method": payment.get('payment_method') or '',
+                "account": payment.get('account_name') or '',
+                "reference": payment.get('reference_number') or '',
+                "status": payment.get('status') or '',
+            })
+        self.table.set_data(data)

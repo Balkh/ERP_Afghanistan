@@ -1,19 +1,24 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_BG_LIGHT, COLOR_TEXT_SECONDARY_LIGHT, COLOR_BG_BUTTON_LIGHT, COLOR_BORDER_DIALOG, COLOR_TEXT_DIALOG, COLOR_BG_BUTTON_SECONDARY, COLOR_TABLE_GRIDLINE, COLOR_BORDER_TABLE, COLOR_TEXT_TITLE, SPACING_NONE, MARGIN_TOOLBAR)
 """Returns management screen."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QDateEdit,
                                   QGroupBox, QFormLayout, QDialog, QDialogButtonBox,
-                                  QTextEdit, QScrollArea, QInputDialog, QApplication)
-from PySide6.QtCore import Qt, Signal, Slot
-from PySide6.QtGui import QFont
+                                  QTextEdit, QInputDialog, QApplication)
+from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
-from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          FONT_SIZE_MD, FONT_SIZE_LG, FONT_SIZE_XL, FONT_SIZE_TITLE,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                          BORDER_RADIUS_MD)
+from ui.screens.base_screen import BaseScreen
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 
 class ReturnsScreen(BaseScreen):
@@ -33,27 +38,12 @@ class ReturnsScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Returns Management")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_BUTTON_LIGHT};
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                color: white;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_TEXT_SECONDARY_LIGHT};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self._load_returns)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
@@ -65,19 +55,13 @@ class ReturnsScreen(BaseScreen):
         # Action Buttons
         action_layout = QHBoxLayout()
         
-        self.add_button = QPushButton("+ New Return")
-        self.add_button.setMinimumHeight(38)
-        self.add_button.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold; padding: 0 15px;")
+        self.add_button = EnterpriseButton(text="+ New Return", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.add_button.clicked.connect(self._show_add_dialog)
         
-        self.approve_button = QPushButton("Approve")
-        self.approve_button.setMinimumHeight(38)
-        self.approve_button.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: 5px; padding: 0 15px;")
+        self.approve_button = EnterpriseButton(text="Approve", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.approve_button.clicked.connect(self._approve_return)
         
-        self.reject_button = QPushButton("Reject")
-        self.reject_button.setMinimumHeight(38)
-        self.reject_button.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: 5px; padding: 0 15px;")
+        self.reject_button = EnterpriseButton(text="Reject", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
         self.reject_button.clicked.connect(self._reject_return)
         
         action_layout.addWidget(self.add_button)
@@ -88,26 +72,30 @@ class ReturnsScreen(BaseScreen):
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading return orders...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No return orders found")
-        self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         # Table section
-        self.table = self._create_modern_table()
-        self.table.setColumnCount(9)
-        self.table.setHorizontalHeaderLabels([
-            "Return #", "Type", "Invoice #", "Party", "Amount", "Status", 
-            "Reason", "Created", "Approved By"
-        ])
+        columns = [
+            TableColumn("return_no", "Return #", width=100),
+            TableColumn("type", "Type", width=80),
+            TableColumn("invoice_no", "Invoice #", width=100),
+            TableColumn("party", "Party", width=150),
+            TableColumn("amount", "Amount", width=100, align="right"),
+            TableColumn("status", "Status", width=80, align="center"),
+            TableColumn("reason", "Reason", width=150),
+            TableColumn("created", "Created", width=100),
+            TableColumn("approved_by", "Approved By", width=120),
+        ]
+        self.table = EnterpriseTable(columns)
         self.table.itemSelectionChanged.connect(self._on_selection_changed)
         self.table.cellDoubleClicked.connect(lambda row, col: self._view_return(row))
         layout.addWidget(self.table)
@@ -132,8 +120,8 @@ class ReturnsScreen(BaseScreen):
 
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
-        bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
+        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -172,15 +160,7 @@ class ReturnsScreen(BaseScreen):
         return bar
 
     def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ border: none; gridline-color: {COLOR_TABLE_GRIDLINE}; }}
-            QHeaderView::section {{ background-color: {COLOR_BG_ELEVATED}; padding: {SPACING_SM}; border: none; border-bottom: 2px solid {COLOR_BORDER_TABLE}; font-weight: bold; }}
-            QTableWidget::item {{ padding: {SPACING_LG}; }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(True)
+        return EnterpriseTable([])
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         return table
     
@@ -274,38 +254,23 @@ class ReturnsScreen(BaseScreen):
             return
 
         self._show_data()
-        self.table.setRowCount(len(filtered_data))
-        
-        for row, item in enumerate(filtered_data):
+        data = []
+        for item in filtered_data:
             return_type = item.get("return_type", "")
             status = item.get("status", "")
-            
-            self.table.setItem(row, 0, QTableWidgetItem(item.get("return_number", "")))
-            self.table.setItem(row, 1, QTableWidgetItem("Sale" if return_type == "SALE_RETURN" else "Purchase"))
-            self.table.setItem(row, 2, QTableWidgetItem(item.get("invoice_number", item.get("purchase_invoice_number", ""))))
-            self.table.setItem(row, 3, QTableWidgetItem(item.get("party_name", item.get("supplier_name", ""))))
-            
             amount = float(item.get("total_amount", 0))
-            amount_item = QTableWidgetItem(f"{amount:,.2f}")
-            amount_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            self.table.setItem(row, 4, amount_item)
-            
-            status_item = QTableWidgetItem(status)
-            status_item.setTextAlignment(Qt.AlignCenter)
-            if status == "APPROVED":
-                status_item.setForeground(QColor(COLOR_SUCCESS))
-            elif status == "PENDING":
-                status_item.setForeground(QColor(COLOR_WARNING))
-            elif status == "REJECTED":
-                status_item.setForeground(QColor(COLOR_DANGER))
-            self.table.setItem(row, 5, status_item)
-            
-            reason = item.get("reason", "")
-            self.table.setItem(row, 6, QTableWidgetItem(reason[:30] + "..." if len(reason) > 30 else reason))
-            self.table.setItem(row, 7, QTableWidgetItem(item.get("created_at", "")[:10]))
-            self.table.setItem(row, 8, QTableWidgetItem(item.get("approved_by_name", "")))
-            
-            self.table.setRowHeight(row, 45)
+            data.append({
+                "return_no": item.get("return_number", ""),
+                "type": "Sale" if return_type == "SALE_RETURN" else "Purchase",
+                "invoice_no": item.get("invoice_number", item.get("purchase_invoice_number", "")),
+                "party": item.get("party_name", item.get("supplier_name", "")),
+                "amount": f"{amount:,.2f}",
+                "status": status,
+                "reason": item.get("reason", "")[:50],
+                "created": str(item.get("created_at", ""))[:10],
+                "approved_by": item.get("approved_by_name", ""),
+            })
+        self.table.set_data(data)
     
     def _get_mock_returns(self):
         """Get mock returns for development."""
@@ -437,116 +402,288 @@ class ReturnsScreen(BaseScreen):
 
 
 class ReturnOrderDialog(QDialog):
-    """Dialog for creating/editing return orders."""
-    
+    """Dialog for creating return orders with line-item entry."""
+
     def __init__(self, api_client=None, parent=None):
         super().__init__(parent)
         self.api_client = api_client
         self.setWindowTitle("New Return Order")
-        self.setMinimumWidth(550)
+        self.setMinimumWidth(750)
+        self.setMinimumHeight(600)
+        self._invoice_data = None
+        self._items = []
         self._setup_ui()
-    
-    def _setup_ui(self):
-        self.setStyleSheet(f"""
-            QDialog {{ background-color: {COLOR_BG_LIGHT}; }}
-            QGroupBox {{ 
-                font-weight: bold; 
-                border: 1px solid {COLOR_BORDER_DIALOG}; 
-                border-radius: 8px; 
-                margin-top: 15px;
-                padding-top: 15px;
-                background-color: white;
-            }}
-            QLabel {{ color: {COLOR_TEXT_DIALOG}; }}
-        """)
 
+    def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
-        layout.setSpacing(SPACING_MD + SPACING_XS)
+        layout.setSpacing(SPACING_MD)
 
         title = QLabel("Create Return Order")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         title.setStyleSheet(f"color: {COLOR_TEXT_TITLE};")
         layout.addWidget(title)
 
-        form_group = QGroupBox("Return Details")
+        form_group = QGroupBox("Return Header")
+        form_group.setStyleSheet(
+            f"QGroupBox {{ font-weight: bold; border: 1px solid {COLOR_BORDER_DIALOG}; "
+            f"border-radius: {BORDER_RADIUS_LG}; margin-top: 15px; padding-top: 15px; }}"
+        )
         form_layout = QFormLayout(form_group)
         form_layout.setLabelAlignment(Qt.AlignRight)
-        form_layout.setSpacing(SPACING_MD + SPACING_XS)
+        form_layout.setSpacing(SPACING_MD)
 
-        self.return_type = QComboBox()
-        self.return_type.addItems(["Sale Return", "Purchase Return"])
-        self.return_type.setMinimumHeight(30)
-        
-        self.invoice = QLineEdit()
-        self.invoice.setPlaceholderText("Enter original invoice number")
-        self.invoice.setMinimumHeight(30)
-        
-        self.party = QLineEdit()
-        self.party.setPlaceholderText("Customer or Supplier name")
-        self.party.setMinimumHeight(30)
-        
+        self.return_type_cb = QComboBox()
+        self.return_type_cb.addItems(["Sale Return", "Purchase Return"])
+        self.return_type_cb.currentIndexChanged.connect(self._on_type_change)
+        form_layout.addRow("Return Type*:", self.return_type_cb)
+
+        self.invoice_search = QLineEdit()
+        self.invoice_search.setPlaceholderText("Search invoice by number, customer, or supplier...")
+        self.invoice_search.setMinimumHeight(30)
+        self.invoice_search.setStyleSheet(
+            f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
+            f"border: 1px solid {COLOR_BORDER_INPUT}; border-radius: {BORDER_RADIUS_MD}; "
+            f"padding: 0 {SPACING_SM}px;"
+        )
+        self.invoice_search.returnPressed.connect(self._load_invoice)
+        form_layout.addRow("Invoice:", self.invoice_search)
+
+        self.party_label = QLabel("Party: —")
+        self.party_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
+        form_layout.addRow("", self.party_label)
+
+        self.invoice_total_label = QLabel("Invoice Total: —")
+        self.invoice_total_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
+        form_layout.addRow("", self.invoice_total_label)
+
         self.reason = QTextEdit()
         self.reason.setPlaceholderText("Enter reason for return...")
-        self.reason.setMaximumHeight(80)
-        
+        self.reason.setMaximumHeight(60)
+        form_layout.addRow("Reason*:", self.reason)
+
         self.notes = QTextEdit()
         self.notes.setPlaceholderText("Additional internal notes...")
         self.notes.setMaximumHeight(60)
-        
-        form_layout.addRow("Return Type*:", self.return_type)
-        form_layout.addRow("Invoice #*:", self.invoice)
-        form_layout.addRow("Party Name*:", self.party)
-        form_layout.addRow("Reason*:", self.reason)
         form_layout.addRow("Notes:", self.notes)
-        
+
         layout.addWidget(form_group)
 
-        # Buttons
+        items_group = QGroupBox("Return Items")
+        items_group.setStyleSheet(
+            f"QGroupBox {{ font-weight: bold; border: 1px solid {COLOR_BORDER_DIALOG}; "
+            f"border-radius: {BORDER_RADIUS_LG}; margin-top: 15px; padding-top: 15px; }}"
+        )
+        items_layout = QVBoxLayout(items_group)
+
+        self.items_table = QTableWidget()
+        self.items_table.setColumnCount(7)
+        self.items_table.setHorizontalHeaderLabels(
+            ["Product", "Sold Qty", "To Return", "Unit Price", "Discount", "Tax", "Total"]
+        )
+        self.items_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.items_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.items_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.items_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.items_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.items_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        self.items_table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        self.items_table.verticalHeader().setVisible(False)
+        self.items_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.items_table.setMinimumHeight(150)
+        self.items_table.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.items_table.cellChanged.connect(self._on_cell_changed)
+        items_layout.addWidget(self.items_table)
+
+        self.summary_label = QLabel("Refund Preview: 0.00 AFN")
+        self.summary_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-weight: bold; font-size: 12pt;")
+        items_layout.addWidget(self.summary_label)
+
+        layout.addWidget(items_group)
+
         buttons = QHBoxLayout()
         buttons.addStretch()
-        
+
         cancel_btn = QPushButton("Cancel")
         cancel_btn.setMinimumHeight(35)
         cancel_btn.setMinimumWidth(100)
-        cancel_btn.setStyleSheet(f"background-color: {COLOR_BG_BUTTON_SECONDARY}; color: {COLOR_TEXT_DIALOG}; border-radius: 5px;")
         cancel_btn.clicked.connect(self.reject)
-        
+
         save_btn = QPushButton("Save Return")
         save_btn.setMinimumHeight(35)
         save_btn.setMinimumWidth(120)
-        save_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: 5px; font-weight: bold;")
+        save_btn.setStyleSheet(
+            f"background-color: {COLOR_SUCCESS}; color: white; border-radius: {BORDER_RADIUS_MD}px; font-weight: bold;"
+        )
         save_btn.clicked.connect(self.save)
-        
+
         buttons.addWidget(cancel_btn)
         buttons.addWidget(save_btn)
         layout.addLayout(buttons)
-    
+
+    def _on_type_change(self):
+        self._invoice_data = None
+        self._items = []
+        self.items_table.setRowCount(0)
+        self.party_label.setText("Party: —")
+        self.invoice_total_label.setText("Invoice Total: —")
+        self.summary_label.setText("Refund Preview: 0.00 AFN")
+
+    def _load_invoice(self):
+        query = self.invoice_search.text().strip()
+        if not query or not self.api_client:
+            return
+        try:
+            is_sale = self.return_type_cb.currentIndex() == 0
+            endpoint = "/api/sales/invoices/" if is_sale else "/api/purchases/invoices/"
+            response = self.api_client.get(endpoint, params={"search": query})
+            if response and isinstance(response, dict):
+                invoices = response.get("results", [])
+                if not invoices:
+                    invoices = [response] if response.get("id") else []
+                if invoices:
+                    self._invoice_data = invoices[0]
+                    self._populate_items()
+                else:
+                    QMessageBox.warning(self, "Not Found", f"No invoice found matching '{query}'")
+        except Exception:
+            pass
+
+    def _populate_items(self):
+        inv = self._invoice_data
+        if not inv:
+            return
+
+        self.party_label.setText(f"Party: {inv.get('customer_name', inv.get('supplier_name', 'N/A'))}")
+        self.invoice_total_label.setText(f"Invoice Total: {inv.get('total_amount', 0):.2f} AFN")
+
+        items = inv.get("items", [])
+        self._items = []
+        self.items_table.setRowCount(len(items))
+
+        for i, item in enumerate(items):
+            product_name = item.get("product_name", "Unknown")
+            sold_qty = float(item.get("quantity", 0))
+            unit_price = float(item.get("unit_price", 0))
+            discount = float(item.get("discount", 0))
+            tax = float(item.get("tax", 0))
+
+            self._items.append({
+                "product": item.get("product"),
+                "product_name": product_name,
+                "quantity": 0,
+                "unit_price": unit_price,
+                "discount_amount": discount,
+                "tax_amount": tax,
+                "max_qty": sold_qty,
+            })
+
+            self.items_table.setItem(i, 0, QTableWidgetItem(product_name))
+            self.items_table.setItem(i, 1, QTableWidgetItem(str(int(sold_qty))))
+            self.items_table.setItem(i, 2, QTableWidgetItem("0"))
+            self.items_table.setItem(i, 3, QTableWidgetItem(f"{unit_price:.2f}"))
+            self.items_table.setItem(i, 4, QTableWidgetItem(f"{discount:.2f}"))
+            self.items_table.setItem(i, 5, QTableWidgetItem(f"{tax:.2f}"))
+            self.items_table.setItem(i, 6, QTableWidgetItem("0.00"))
+
+    def _on_cell_changed(self, row, col):
+        if col != 2 or row >= len(self._items):
+            return
+        try:
+            qty = int(self.items_table.item(row, col).text() or "0")
+            max_qty = int(self._items[row]["max_qty"])
+            if qty < 0:
+                qty = 0
+            if qty > max_qty:
+                qty = max_qty
+            self._items[row]["quantity"] = qty
+
+            up = self._items[row]["unit_price"]
+            disc = self._items[row]["discount_amount"]
+            tax = self._items[row]["tax_amount"]
+            ratio = qty / max_qty if max_qty > 0 else 0
+            total = (qty * up) - (disc * ratio) + (tax * ratio)
+            self.items_table.item(row, 6).setText(f"{total:.2f}")
+
+            refund_total = sum(
+                (it["quantity"] * it["unit_price"])
+                - (it["discount_amount"] * (it["quantity"] / it["max_qty"] if it["max_qty"] > 0 else 0))
+                + (it["tax_amount"] * (it["quantity"] / it["max_qty"] if it["max_qty"] > 0 else 0))
+                for it in self._items
+            )
+            self.summary_label.setText(f"Refund Preview: {refund_total:.2f} AFN")
+        except (ValueError, ZeroDivisionError):
+            pass
+
     def save(self):
-        """Save return order."""
-        if not self.invoice.text().strip():
-            QMessageBox.warning(self, "Validation Error", "Invoice number is required.")
-            return
-        
-        if not self.party.text().strip():
-            QMessageBox.warning(self, "Validation Error", "Party name is required.")
-            return
-        
         if not self.reason.toPlainText().strip():
             QMessageBox.warning(self, "Validation Error", "Reason is required.")
             return
-        
-        import uuid
+
+        items_to_return = [it for it in self._items if it["quantity"] > 0]
+        if not items_to_return:
+            QMessageBox.warning(self, "Validation Error", "At least one item must have a return quantity > 0.")
+            return
+
+        is_sale = self.return_type_cb.currentIndex() == 0
         data = {
-            "return_type": "SALE_RETURN" if self.return_type.currentText() == "Sale Return" else "PURCHASE_RETURN",
-            "invoice": self.invoice.text().strip(),
-            "party_name": self.party.text().strip(),
+            "return_type": "SALE_RETURN" if is_sale else "PURCHASE_RETURN",
             "reason": self.reason.toPlainText().strip(),
             "notes": self.notes.toPlainText().strip(),
             "status": "PENDING",
-            "return_number": f"RET-{uuid.uuid4().hex[:8].upper()}",
+            "items": [],
         }
-        
+
+        if self._invoice_data:
+            data["invoice"] = self._invoice_data.get("id") if is_sale else None
+            data["purchase_invoice"] = self._invoice_data.get("id") if not is_sale else None
+            data["party"] = self._invoice_data.get("customer", self._invoice_data.get("customer_id"))
+            data["supplier"] = self._invoice_data.get("supplier", self._invoice_data.get("supplier_id"))
+
+        total_amount = 0.0
+        for it in items_to_return:
+            max_qty = it["max_qty"]
+            ratio = it["quantity"] / max_qty if max_qty > 0 else 0
+            prorated_discount = it["discount_amount"] * ratio
+            prorated_tax = it["tax_amount"] * ratio
+            item_total = (it["quantity"] * it["unit_price"]) - prorated_discount + prorated_tax
+            total_amount += item_total
+
+            data["items"].append({
+                "product": it["product"],
+                "return_quantity": it["quantity"],
+                "unit_price": it["unit_price"],
+                "discount_amount": prorated_discount,
+                "tax_amount": prorated_tax,
+            })
+
+        data["total_amount"] = round(total_amount, 2)
+
+        try:
+            if self.api_client:
+                response = self.api_client.post("/api/returns/return-orders/", data)
+            else:
+                import uuid
+                response = {
+                    "success": True,
+                    "data": {
+                        "return_number": f"RET-{uuid.uuid4().hex[:8].upper()}",
+                        "items_count": len(data["items"]),
+                    }
+                }
+
+            if response and (response.get("success") or "id" in response):
+                QMessageBox.information(
+                    self, "Success",
+                    f"Return created with {len(data['items'])} item(s)\n"
+                    f"Total: {data['total_amount']:.2f} AFN"
+                )
+                self.accept()
+            else:
+                err = response.get("error", "Unknown error") if response else "No response"
+                QMessageBox.critical(self, "Error", f"Failed to create return: {err}")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to create return: {e}")
         endpoint = get_endpoint("return-orders")
         if self.api_client:
             try:

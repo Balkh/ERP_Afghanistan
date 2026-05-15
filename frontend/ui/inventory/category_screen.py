@@ -2,7 +2,7 @@ from api.client import APIClient
 from api.endpoints import get_endpoint
 from PySide6.QtCore import Slot
 
-from PySide6.QtWidgets import QHeaderView, QAbstractItemView, QTableWidgetItem
+from ui.components.tables import EnterpriseTable, TableColumn
 from .base_screen import BaseInventoryScreen
 
 class CategoryScreen(BaseInventoryScreen):
@@ -26,16 +26,13 @@ class CategoryScreen(BaseInventoryScreen):
 
     def setup_table(self):
         """Setup the categories table."""
-        from PySide6.QtWidgets import QTableWidget
-
-        self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels([
-            "ID", "Name", "Description", "Is Active"
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
+        columns = [
+            TableColumn("id", "ID", width=50),
+            TableColumn("name", "Name", width=200),
+            TableColumn("description", "Description", width=300),
+            TableColumn("is_active", "Is Active", width=80, align="center"),
+        ]
+        self.table = EnterpriseTable(columns)
         self.table.itemSelectionChanged.connect(self.on_selection_changed)
 
         self.set_table_widget(self.table)
@@ -85,13 +82,16 @@ class CategoryScreen(BaseInventoryScreen):
 
     def update_table(self):
         """Update the table with current categories."""
-        self.table.setRowCount(len(self.categories))
-        for row, category in enumerate(self.categories):
-            self.table.setItem(row, 0, QTableWidgetItem(str(category.get("id", ""))))
-            self.table.setItem(row, 1, QTableWidgetItem(category.get("name", "")))
-            self.table.setItem(row, 2, QTableWidgetItem(category.get("description", "")))
+        data = []
+        for category in self.categories:
             is_active = category.get("is_active", False)
-            self.table.setItem(row, 3, QTableWidgetItem("Yes" if is_active else "No"))
+            data.append({
+                "id": str(category.get("id", "")),
+                "name": category.get("name", ""),
+                "description": category.get("description", ""),
+                "is_active": "Yes" if is_active else "No",
+            })
+        self.table.set_data(data)
 
     @Slot()
     def on_selection_changed(self):

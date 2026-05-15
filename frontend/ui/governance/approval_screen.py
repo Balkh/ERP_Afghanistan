@@ -14,7 +14,7 @@ from api.governance_client import GovernanceAPIClient
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_SUCCESS,
                            COLOR_WARNING, COLOR_DANGER, COLOR_BORDER,
-                           SPACING_LG, SPACING_MD, SPACING_SM, MARGIN_PAGE)
+                           SPACING_LG, SPACING_MD, SPACING_SM, MARGIN_PAGE, SPACING_6, TEXT_BODY, TEXT_CARD_TITLE, TEXT_PAGE_TITLE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, SPACING_XS)
 
 
 class ApprovalWorkflowScreen(QWidget):
@@ -33,26 +33,26 @@ class ApprovalWorkflowScreen(QWidget):
         layout.setSpacing(SPACING_LG)
 
         header = QLabel("Approval Workflows")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
+        header.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(header)
 
         splitter = QSplitter(Qt.Horizontal)
-        splitter.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: 8px;")
+        splitter.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG};")
 
         # Left: Workflow list
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
 
         list_header = QLabel("Active Workflows")
-        list_header.setFont(QFont("Segoe UI", 14, QFont.Bold))
-        list_header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; padding: 4px;")
+        list_header.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
+        list_header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_XS}px;")
         left_layout.addWidget(list_header)
 
         self.refresh_btn = QPushButton("⟳ Refresh")
         self.refresh_btn.setStyleSheet(f"""
             QPushButton {{ background-color: {COLOR_PRIMARY}; color: white;
-            border: none; border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border: none; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px {SPACING_LG}px; font-weight: bold; }}
             QPushButton:hover {{ opacity: 0.8; }}
         """)
         self.refresh_btn.clicked.connect(self._refresh)
@@ -67,7 +67,7 @@ class ApprovalWorkflowScreen(QWidget):
             QTableWidget {{ background-color: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
             gridline-color: {COLOR_BORDER}; border: 1px solid {COLOR_BORDER}; }}
             QHeaderView::section {{ background-color: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: 6px; font-weight: bold; }}
+            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
         """)
         self.table.itemClicked.connect(self._on_workflow_selected)
         left_layout.addWidget(self.table)
@@ -77,7 +77,7 @@ class ApprovalWorkflowScreen(QWidget):
         right_layout = QVBoxLayout(right_panel)
 
         self.detail_label = QLabel("Select a workflow to view details")
-        self.detail_label.setFont(QFont("Segoe UI", 12))
+        self.detail_label.setFont(QFont("Segoe UI", TEXT_BODY))
         self.detail_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
         right_layout.addWidget(self.detail_label)
 
@@ -85,7 +85,7 @@ class ApprovalWorkflowScreen(QWidget):
         self.detail_text.setReadOnly(True)
         self.detail_text.setStyleSheet(f"""
             QTextEdit {{ background-color: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; }}
         """)
         right_layout.addWidget(self.detail_text)
 
@@ -95,7 +95,7 @@ class ApprovalWorkflowScreen(QWidget):
         self.approve_btn = QPushButton("✓ Approve")
         self.approve_btn.setStyleSheet(f"""
             QPushButton {{ background-color: {COLOR_SUCCESS}; color: white;
-            border: none; border-radius: 6px; padding: 10px 20px; font-weight: bold; }}
+            border: none; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px {SPACING_LG}px; font-weight: bold; }}
         """)
         self.approve_btn.clicked.connect(lambda: self._sign("APPROVED"))
         self.approve_btn.setEnabled(False)
@@ -104,7 +104,7 @@ class ApprovalWorkflowScreen(QWidget):
         self.reject_btn = QPushButton("✗ Reject")
         self.reject_btn.setStyleSheet(f"""
             QPushButton {{ background-color: {COLOR_DANGER}; color: white;
-            border: none; border-radius: 6px; padding: 10px 20px; font-weight: bold; }}
+            border: none; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px {SPACING_LG}px; font-weight: bold; }}
         """)
         self.reject_btn.clicked.connect(lambda: self._sign("REJECTED"))
         self.reject_btn.setEnabled(False)

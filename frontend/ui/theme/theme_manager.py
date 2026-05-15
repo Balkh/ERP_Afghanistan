@@ -1,4 +1,15 @@
-"""Theme management system for ERP."""
+"""
+DEPRECATED — Theme management system for ERP.
+Use ``theme.theme_engine.ThemeEngine`` instead.
+This module will be removed in a future release.
+"""
+import warnings
+warnings.warn(
+    "ui.theme.theme_manager is deprecated. Use theme.theme_engine.ThemeEngine instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QPalette, QColor
 from PySide6.QtWidgets import QApplication
@@ -7,7 +18,7 @@ import os
 
 
 class ThemeManager(QObject):
-    """Manages application themes (light/dark mode)."""
+    """DEPRECATED — Use theme.theme_engine.ThemeEngine instead."""
     
     theme_changed = Signal(str)  # Emits theme name when changed
     

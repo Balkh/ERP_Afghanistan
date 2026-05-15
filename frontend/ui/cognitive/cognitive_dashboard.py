@@ -20,7 +20,7 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, TEXT_SECTION_TITLE, TEXT_BODY_SMALL, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
 
 
 class _SectionCard(QFrame):
@@ -29,13 +29,13 @@ class _SectionCard(QFrame):
         super().__init__()
         self.setStyleSheet(f"""
             QFrame {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {color};
-            border-radius: 8px; padding: 12px; }}
+            border-radius: {BORDER_RADIUS_LG}; padding: {SPACING_MD}px; }}
         """)
         layout = QVBoxLayout(self)
         layout.setSpacing(SPACING_SM)
 
         header = QLabel(title)
-        header.setStyleSheet(f"color: {color}; font-size: 14px; font-weight: bold;")
+        header.setStyleSheet(f"color: {color}; font-size: {TEXT_DISPLAY}px; font-weight: bold;")
         layout.addWidget(header)
 
         self.content = QVBoxLayout()
@@ -46,10 +46,10 @@ class _SectionCard(QFrame):
     def add_row(self, label: str, value: str, value_color: str = COLOR_TEXT_PRIMARY):
         row = QHBoxLayout()
         lbl = QLabel(label)
-        lbl.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 11px;")
+        lbl.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px;")
         row.addWidget(lbl)
         val = QLabel(value)
-        val.setStyleSheet(f"color: {value_color}; font-size: 11px; font-weight: bold;")
+        val.setStyleSheet(f"color: {value_color}; font-size: {TEXT_BODY}px; font-weight: bold;")
         row.addWidget(val)
         row.addStretch()
         self.content.addLayout(row)
@@ -73,7 +73,7 @@ class _ClickableCard(QFrame):
         self.navigate_to = navigate_to
         self.setStyleSheet(f"""
             QFrame {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {color};
-            border-radius: 8px; padding: 12px; }}
+            border-radius: {BORDER_RADIUS_LG}; padding: {SPACING_MD}px; }}
             QFrame:hover {{ border: 2px solid {color}; }}
         """)
         if navigate_to:
@@ -83,11 +83,11 @@ class _ClickableCard(QFrame):
         layout.setSpacing(2)
 
         t = QLabel(title)
-        t.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: 10px;")
+        t.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY_SMALL}px;")
         layout.addWidget(t)
 
         v = QLabel(value)
-        v.setStyleSheet(f"color: {color}; font-size: 22px; font-weight: bold;")
+        v.setStyleSheet(f"color: {color}; font-size: {TEXT_SECTION_TITLE}px; font-weight: bold;")
         layout.addWidget(v)
 
     def mousePressEvent(self, e):
@@ -121,18 +121,20 @@ class EnterpriseCognitiveDashboard(QWidget):
         # Header
         header = QHBoxLayout()
         title = QLabel("Enterprise Cognitive Dashboard")
-        title.setFont(QFont("Segoe UI", 22, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         self.status_label = QLabel("● Initializing...")
-        self.status_label.setStyleSheet(f"color: {COLOR_INFO}; font-size: 12px;")
+        self.status_label.setStyleSheet(f"color: {COLOR_INFO}; font-size: {TEXT_CARD_TITLE}px;")
         header.addWidget(self.status_label, alignment=Qt.AlignRight)
 
         refresh_btn = QPushButton("⟳ Refresh All")
         refresh_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         refresh_btn.clicked.connect(self._refresh)
         header.addWidget(refresh_btn)
@@ -175,7 +177,7 @@ class EnterpriseCognitiveDashboard(QWidget):
 
         # Timestamp
         self.ts_label = QLabel("")
-        self.ts_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 10px;")
+        self.ts_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}px;")
         layout.addWidget(self.ts_label)
 
     def _make_kpi(self, title: str, value: str, color: str, nav: str) -> _ClickableCard:
@@ -193,11 +195,11 @@ class EnterpriseCognitiveDashboard(QWidget):
             )
             self._kpi_cards[0].layout().itemAt(1).widget().setText(f"{state.risk_score:.0f}/100")
             self._kpi_cards[0].layout().itemAt(1).widget().setStyleSheet(
-                f"color: {risk_color}; font-size: 22px; font-weight: bold;"
+                f"color: {risk_color}; font-size: {TEXT_SECTION_TITLE}px; font-weight: bold;"
             )
             self._kpi_cards[1].layout().itemAt(1).widget().setText(str(state.anomaly_count))
             self._kpi_cards[1].layout().itemAt(1).widget().setStyleSheet(
-                f"color: {COLOR_DANGER if state.anomaly_count > 0 else COLOR_SUCCESS}; font-size: 22px; font-weight: bold;"
+                f"color: {COLOR_DANGER if state.anomaly_count > 0 else COLOR_SUCCESS}; font-size: {TEXT_SECTION_TITLE}px; font-weight: bold;"
             )
             self._kpi_cards[2].layout().itemAt(1).widget().setText(str(state.forecast_count))
             self._kpi_cards[3].layout().itemAt(1).widget().setText(str(state.decision_count))
@@ -260,11 +262,11 @@ class EnterpriseCognitiveDashboard(QWidget):
 
             self.ts_label.setText(f"Last refreshed: {state.generated_at[:19]} UTC")
             self.status_label.setText("● Online")
-            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: 12px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_CARD_TITLE}px;")
 
         except Exception as e:
             self.status_label.setText(f"● Error: {e}")
-            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: 12px;")
+            self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_CARD_TITLE}px;")
 
     def showEvent(self, event):
         super().showEvent(event)

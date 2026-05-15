@@ -6,12 +6,13 @@ from ui.accounting.base_report_screen import BaseReportScreen
 # Design tokens
 from ui.constants import COLOR_SUCCESS, COLOR_DANGER
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import TEXT_BODY, TEXT_BODY_SMALL
 
 
 class ProfitAndLossScreen(BaseReportScreen):
     """Profit & Loss Report Screen."""
 
-    report_api_endpoint = "/api/accounting/accounts/profit_loss/"
+    report_api_endpoint = "/api/accounting/accounts/income_statement/"
 
     def __init__(self, parent=None):
         super().__init__("Profit & Loss", parent)
@@ -177,13 +178,17 @@ class ProfitAndLossScreen(BaseReportScreen):
                 self.table.setItem(row, 1, self._item(category))
                 amt_item = self._item(f"{amt:,.2f}")
                 if account == "NET INCOME":
-                    amt_item.setFont(QFont("Segoe UI", 11, QFont.Bold))
+                    net_font = QFont("Segoe UI", TEXT_BODY)
+                    net_font.setWeight(QFont.Weight.Bold)
+                    amt_item.setFont(net_font)
                     if amt >= 0:
                         amt_item.setForeground(QColor(COLOR_SUCCESS))
                     else:
                         amt_item.setForeground(QColor(COLOR_DANGER))
                 elif "Total" in account or "GROSS" in account:
-                    amt_item.setFont(QFont("Segoe UI", 10, QFont.Bold))
+                    total_font = QFont("Segoe UI", TEXT_BODY_SMALL)
+                    total_font.setWeight(QFont.Weight.Bold)
+                    amt_item.setFont(total_font)
                 self.table.setItem(row, 2, amt_item)
 
         self._show_data()

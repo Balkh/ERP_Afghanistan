@@ -1,5 +1,6 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_BODY, TEXT_DISPLAY
 """
 License status screen for Pharmacy ERP.
 Displays current license information and validation status.
@@ -52,19 +53,19 @@ class LicenseStatusScreen(QWidget):
         
         # Title
         title_label = QLabel("Pharmacy ERP License Status")
-        title_label.setFont(QFont("Segoe UI", 24, QFont.Bold))
+        title_label.setFont(QFont("Segoe UI", TEXT_DISPLAY, QFont.Weight.Bold))
         title_label.setAlignment(Qt.AlignCenter)
         title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title_label)
 
         # Device Information Group
         device_group = QGroupBox("Device Information")
-        device_group.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        device_group.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         device_layout = QVBoxLayout()
 
         device_id_label = QLabel(f"Device ID: {self.device_id}")
-        device_id_label.setFont(QFont("Consolas", 11))
-        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: 12px; border-radius: 6px; border: 1px solid {COLOR_BORDER};")
+        device_id_label.setFont(QFont("Consolas", TEXT_MONO))
+        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_MD}px; border-radius: {BORDER_RADIUS_MD}; border: 1px solid {COLOR_BORDER};")
         device_layout.addWidget(device_id_label)
         
         device_group.setLayout(device_layout)
@@ -72,18 +73,18 @@ class LicenseStatusScreen(QWidget):
         
         # License Status Group
         status_group = QGroupBox("License Status")
-        status_group.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        status_group.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         status_layout = QVBoxLayout()
 
         # Status indicator
         status_indicator_layout = QHBoxLayout()
         self.status_indicator = QLabel("●")
-        self.status_indicator.setFont(QFont("Segoe UI", 16))
+        self.status_indicator.setFont(QFont("Segoe UI", TEXT_CARD_TITLE))
         self.status_indicator.setFixedWidth(20)
         status_indicator_layout.addWidget(self.status_indicator)
 
         self.status_label = QLabel("Checking license status...")
-        self.status_label.setFont(QFont("Segoe UI", 12))
+        self.status_label.setFont(QFont("Segoe UI", TEXT_BODY))
         self.status_label.setStyleSheet(f"font-weight: bold; color: {COLOR_TEXT_PRIMARY};")
         status_indicator_layout.addWidget(self.status_label)
         status_indicator_layout.addStretch()
@@ -92,14 +93,14 @@ class LicenseStatusScreen(QWidget):
 
         # Status details
         self.status_details = QLabel("Initializing license validation...")
-        self.status_details.setFont(QFont("Segoe UI", 10))
-        self.status_details.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: 8px 0px;")
+        self.status_details.setFont(QFont("Segoe UI", TEXT_LABEL))
+        self.status_details.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; padding: {SPACING_SM}px 0px;")
         self.status_details.setWordWrap(True)
         status_layout.addWidget(self.status_details)
 
         # Last checked time
         self.last_checked_label = QLabel("Last checked: --")
-        self.last_checked_label.setFont(QFont("Segoe UI", 9))
+        self.last_checked_label.setFont(QFont("Segoe UI", TEXT_TABLE))
         self.last_checked_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         status_layout.addWidget(self.last_checked_label)
         
@@ -108,21 +109,21 @@ class LicenseStatusScreen(QWidget):
         
         # License Details Group
         details_group = QGroupBox("License Details")
-        details_group.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        details_group.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         details_layout = QVBoxLayout()
 
         # Create a scrollable text area for license details
         self.details_text = QTextEdit()
         self.details_text.setMaximumHeight(200)
         self.details_text.setReadOnly(True)
-        self.details_text.setFont(QFont("Consolas", 9))
+        self.details_text.setFont(QFont("Consolas", TEXT_TABLE))
         self.details_text.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 4px;
-                padding: 12px;
+                border-radius: {BORDER_RADIUS_SM};
+                padding: {SPACING_MD}px;
             }}
         """)
         details_layout.addWidget(self.details_text)
@@ -135,14 +136,14 @@ class LicenseStatusScreen(QWidget):
         
         self.refresh_button = QPushButton("Refresh Status")
         self.refresh_button.setMinimumHeight(36)
-        self.refresh_button.setFont(QFont("Segoe UI", 10))
+        self.refresh_button.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.refresh_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_BORDER};
                 color: {COLOR_TEXT_PRIMARY};
                 border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px 16px;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_BORDER_LIGHT};
@@ -158,14 +159,14 @@ class LicenseStatusScreen(QWidget):
 
         self.view_license_button = QPushButton("View License File")
         self.view_license_button.setMinimumHeight(36)
-        self.view_license_button.setFont(QFont("Segoe UI", 10))
+        self.view_license_button.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.view_license_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_PRIMARY};
                 color: {COLOR_BG_MAIN};
                 border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px 16px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -337,7 +338,7 @@ class LicenseDetailsDialog(QWidget):
 
         # Title
         title = QLabel("License Details")
-        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title)
@@ -345,14 +346,14 @@ class LicenseDetailsDialog(QWidget):
         # Details text
         details_text = QTextEdit()
         details_text.setReadOnly(True)
-        details_text.setFont(QFont("Consolas", 10))
+        details_text.setFont(QFont("Consolas", TEXT_BODY))
         details_text.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 4px;
-                padding: 12px;
+                border-radius: {BORDER_RADIUS_SM};
+                padding: {SPACING_MD}px;
             }}
         """)
 
@@ -365,14 +366,14 @@ class LicenseDetailsDialog(QWidget):
 
         # Close button
         close_button = QPushButton("Close")
-        close_button.setFont(QFont("Segoe UI", 10))
+        close_button.setFont(QFont("Segoe UI", TEXT_LABEL))
         close_button.setStyleSheet(f"""
             QPushButton {{
                 background-color: {COLOR_BORDER};
                 color: {COLOR_TEXT_PRIMARY};
                 border: none;
-                border-radius: 6px;
-                padding: 8px 20px;
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_SM}px 20px;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_BORDER_LIGHT};

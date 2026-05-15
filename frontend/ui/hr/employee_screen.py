@@ -1,21 +1,25 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_BG_BUTTON_LIGHT, COLOR_SECONDARY_BG)
 """Employee screen for ERP."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                 QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
-                                 QHeaderView, QAbstractItemView, QComboBox, QGroupBox,
-                                 QDateEdit, QMessageBox, QDialog, QDialogButtonBox,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                 QLabel, QLineEdit,
+                                 QComboBox, QGroupBox,
+                                 QMessageBox, QDialog, QDialogButtonBox,
                                  QFormLayout)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint
+from ui.utils.debounce import Debouncer
 from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_MD, SPACING_LG, FONT_SIZE_LG, FONT_SIZE_XL,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, COLOR_PRIMARY,
-                          COLOR_SUCCESS, COLOR_DANGER)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.utils.validation import FormValidator
-import uuid
 
 
 class EmployeeScreen(BaseScreen):
@@ -36,52 +40,19 @@ class EmployeeScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Employee Directory")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton("⟳ Refresh")
-        self.btn_refresh.setMinimumHeight(38)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BG_BUTTON_LIGHT};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 16px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_SECONDARY_BG};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_employees)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
 
         # Action section
         action_layout = QHBoxLayout()
-        self.add_btn = QPushButton("+ Add Employee")
-        self.add_btn.setMinimumHeight(38)
-        self.add_btn.setCursor(Qt.PointingHandCursor)
-        self.add_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_SUCCESS};
-                color: white;
-                border: none;
-                border-radius: 6px;
-                font-weight: bold;
-                padding: 0 {SPACING_MD};
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_SUCCESS};
-            }}
-            QPushButton:pressed {{
-                background-color: {COLOR_SUCCESS};
-            }}
-        """)
+        self.add_btn = EnterpriseButton(text="+ Add Employee", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.add_btn.clicked.connect(self.add_employee)
         action_layout.addWidget(self.add_btn)
         action_layout.addStretch()
@@ -89,15 +60,16 @@ class EmployeeScreen(BaseScreen):
 
         # Filters
         filter_bar = QGroupBox("Filter Employees")
-        filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
         filter_bar.setStyleSheet(f"""
             QGroupBox {{
-                border: 1px solid {COLOR_TEXT_SECONDARY};
-                border-radius: 8px;
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_LG};
                 margin-top: 10px;
                 padding-top: 10px;
                 background-color: {COLOR_BG_MAIN};
                 color: {COLOR_TEXT_PRIMARY};
+                font-size: {TEXT_LABEL}pt;
+                font-weight: 700;
             }}
         """)
         filter_layout = QHBoxLayout(filter_bar)
@@ -106,20 +78,9 @@ class EmployeeScreen(BaseScreen):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search by name, position, or department...")
         self.search_input.setMinimumHeight(35)
-        self.search_input.setStyleSheet(f"""
-            QLineEdit {{
-                background-color: {COLOR_TEXT_SECONDARY};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: 6px;
-                padding: 8px;
-            }}
-            QLineEdit:focus {{
-                border-color: {COLOR_PRIMARY};
-            }}
-        """)
         self.search_input.setMinimumWidth(300)
-        self.search_input.textChanged.connect(self.load_employees)
+        self._employee_search_debounce = Debouncer(self.load_employees, 300)
+        self.search_input.textChanged.connect(self._employee_search_debounce)
         filter_layout.addWidget(QLabel("Search:"))
         filter_layout.addWidget(self.search_input)
         
@@ -127,73 +88,35 @@ class EmployeeScreen(BaseScreen):
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading employees...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("color: #6c757d; padding: 40px;")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No employees found")
-        self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet("color: #6c757d; padding: 40px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading employees")
-        self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet("color: #e74c3c; padding: 40px;")
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 
         # Table
-        self.table = self._create_modern_table()
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels([
-            "ID", "Full Name", "Department", "Position", "Phone", "Email", "Status"
-        ])
+        columns = [
+            TableColumn("id", "ID", width=60),
+            TableColumn("full_name", "Full Name", width=150),
+            TableColumn("department_name", "Department", width=120),
+            TableColumn("position_title", "Position", width=120),
+            TableColumn("phone", "Phone", width=120),
+            TableColumn("email", "Email", width=180),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.table = EnterpriseTable(columns)
         layout.addWidget(self.table)
-
-    def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ 
-                background-color: {COLOR_BG_MAIN}; 
-                color: {COLOR_TEXT_PRIMARY}; 
-                border: none; 
-                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
-            }}
-            QHeaderView::section {{ 
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; 
-                color: {COLOR_TEXT_PRIMARY};
-                padding: {SPACING_SM}; 
-                border: none; 
-                border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; 
-                font-weight: bold;
-                font-size: 12px;
-            }}
-            QTableWidget::item {{ 
-                padding: {SPACING_SM}; 
-                border-bottom: 1px solid {COLOR_TEXT_SECONDARY};
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QTableWidget::item:selected {{
-                background-color: {COLOR_PRIMARY} !important;
-                color: white !important;
-                font-weight: bold;
-            }}
-            QTableWidget::item:hover:!selected {{
-                background-color: {COLOR_TEXT_SECONDARY};
-                color: white;
-            }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(False)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        table.setSelectionMode(QAbstractItemView.SingleSelection)
-        return table
     
     def load_employees(self):
         """Load employees from API."""
@@ -233,31 +156,34 @@ class EmployeeScreen(BaseScreen):
     
     def update_table(self):
         """Update table with employee data and show appropriate state indicators."""
-        if not self.employees:
-            self.table.setRowCount(0)
-        
-        self.table.setRowCount(len(self.employees))
-        for row, emp in enumerate(self.employees):
-            if not isinstance(emp, dict):
-                continue
-            self.table.setItem(row, 0, QTableWidgetItem(str(emp.get('id') or '')[:8]))
-            first_name = emp.get('first_name') or ''
-            last_name = emp.get('last_name') or ''
-            full_name = f"{first_name} {last_name}".strip() or "Unknown"
-            self.table.setItem(row, 1, QTableWidgetItem(full_name))
-            self.table.setItem(row, 2, QTableWidgetItem(emp.get('department_name') or ''))
-            self.table.setItem(row, 3, QTableWidgetItem(emp.get('position_title') or ''))
-            self.table.setItem(row, 4, QTableWidgetItem(emp.get('phone') or ''))
-            self.table.setItem(row, 5, QTableWidgetItem(emp.get('email') or ''))
-            status = "Active" if emp.get('is_active', True) else "Inactive"
-            self.table.setItem(row, 6, QTableWidgetItem(status))
-        
-        # Show/hide indicators based on state
         state = self.state
         self.loading_label.setVisible(state == ScreenState.LOADING)
         self.error_label.setVisible(state == ScreenState.ERROR)
         self.empty_label.setVisible(state == ScreenState.EMPTY and len(self.employees) == 0)
         self.table.setVisible(state == ScreenState.READY and len(self.employees) > 0)
+
+        if not self.employees:
+            self.table.set_data([])
+            return
+
+        data = []
+        for emp in self.employees:
+            if not isinstance(emp, dict):
+                continue
+            first_name = emp.get('first_name') or ''
+            last_name = emp.get('last_name') or ''
+            full_name = f"{first_name} {last_name}".strip() or "Unknown"
+            status = "Active" if emp.get('is_active', True) else "Inactive"
+            data.append({
+                "id": str(emp.get('id') or '')[:8],
+                "full_name": full_name,
+                "department_name": emp.get('department_name') or '',
+                "position_title": emp.get('position_title') or '',
+                "phone": emp.get('phone') or '',
+                "email": emp.get('email') or '',
+                "status": status,
+            })
+        self.table.set_data(data)
     
     def add_employee(self):
         """Add new employee dialog."""

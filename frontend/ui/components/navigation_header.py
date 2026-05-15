@@ -1,5 +1,6 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_SM)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import TEXT_LABEL, TEXT_BODY, TEXT_SECTION_TITLE
 """
 Navigation Header Component.
 Reusable header with back, home, close buttons, title, and breadcrumb.
@@ -34,9 +35,9 @@ class NavigationHeader(QWidget):
                 background-color: transparent;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 4px;
-                padding: 6px 10px;
-                font-size: 14px;
+                border-radius: {BORDER_RADIUS_SM};
+                padding: {SPACING_6}px 10px;
+                font-size: {TEXT_SECTION_TITLE}px;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};
@@ -66,14 +67,14 @@ class NavigationHeader(QWidget):
         self.back_btn = QPushButton("←")
         self.back_btn.setToolTip("Back (Alt+Left)")
         self.back_btn.setFixedWidth(36)
-        self.back_btn.setFont(QFont("Segoe UI", 12))
+        self.back_btn.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.back_btn.clicked.connect(self.back_clicked.emit)
         left_layout.addWidget(self.back_btn)
         
         self.home_btn = QPushButton("⌂")
         self.home_btn.setToolTip("Home (Ctrl+Home)")
         self.home_btn.setFixedWidth(36)
-        self.home_btn.setFont(QFont("Segoe UI", 12))
+        self.home_btn.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.home_btn.clicked.connect(self.home_clicked.emit)
         left_layout.addWidget(self.home_btn)
         
@@ -85,12 +86,12 @@ class NavigationHeader(QWidget):
         center_layout.setSpacing(SPACING_XS)
         
         self.title_label = QLabel("")
-        self.title_label.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        self.title_label.setFont(QFont("Segoe UI", TEXT_SECTION_TITLE, QFont.Weight.Bold))
         self.title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         center_layout.addWidget(self.title_label)
         
         self.breadcrumb_label = QLabel("")
-        self.breadcrumb_label.setFont(QFont("Segoe UI", 10))
+        self.breadcrumb_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.breadcrumb_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
         center_layout.addWidget(self.breadcrumb_label)
         
@@ -100,7 +101,7 @@ class NavigationHeader(QWidget):
         self.close_btn = QPushButton("✕")
         self.close_btn.setToolTip("Close (Esc)")
         self.close_btn.setFixedWidth(36)
-        self.close_btn.setFont(QFont("Segoe UI", 12))
+        self.close_btn.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.close_btn.clicked.connect(self.close_clicked.emit)
         main_layout.addWidget(self.close_btn)
     

@@ -10,6 +10,7 @@ class Role(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     is_active = models.BooleanField(default=True)
+    require_2fa = models.BooleanField(default=False, help_text='Require two-factor authentication for users with this role')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -257,3 +258,78 @@ class Notification(models.Model):
         self.is_read = True
         self.read_at = timezone.now()
         self.save(update_fields=['is_read', 'read_at'])
+
+
+class PasswordResetToken(models.Model):
+    """
+    Secure password reset token with expiration and single-use enforcement.
+    """
+    id = models.BigAutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_tokens')
+    token = models.CharField(max_length=128, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(help_text='Token expiration time (default: 1 hour)')
+    used = models.BooleanField(default=False)
+    used_at = models.DateTimeField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'security_password_reset_token'
+        verbose_name = 'Password Reset Token'
+        verbose_name_plural = 'Password Reset Tokens'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Reset token for {self.user.username} (expires: {self.expires_at})"
+
+    @property
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+
+    @property
+    def is_valid(self):
+        return not self.used and not self.is_expired
+
+
+class TOTPDevice(models.Model):
+    """
+    TOTP (Time-based One-Time Password) device for 2FA.
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='totp_device')
+    secret = models.CharField(max_length=64, help_text='Base32-encoded TOTP secret')
+    is_confirmed = models.BooleanField(default=False, help_text='True after user verifies first TOTP code')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(null=True, blank=True)
+    failed_attempts = models.IntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True, help_text='Lockout after too many failed attempts')
+
+    class Meta:
+        db_table = 'security_totp_device'
+        verbose_name = 'TOTP Device'
+        verbose_name_plural = 'TOTP Devices'
+
+    def __str__(self):
+        return f"TOTP for {self.user.username} (confirmed: {self.is_confirmed})"
+
+    @property
+    def is_locked(self):
+        from django.utils import timezone
+        if self.locked_until and timezone.now() < self.locked_until:
+            return True
+        return False
+
+    def record_failure(self, max_attempts=5, lockout_minutes=15):
+        """Record a failed TOTP attempt and lock if threshold exceeded."""
+        from django.utils import timezone
+        import datetime
+        self.failed_attempts += 1
+        if self.failed_attempts >= max_attempts:
+            self.locked_until = timezone.now() + datetime.timedelta(minutes=lockout_minutes)
+        self.save(update_fields=['failed_attempts', 'locked_until'])
+
+    def reset_failures(self):
+        """Reset failure counter on successful verification."""
+        self.failed_attempts = 0
+        self.locked_until = None
+        self.save(update_fields=['failed_attempts', 'locked_until'])

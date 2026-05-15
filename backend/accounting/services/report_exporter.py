@@ -1,5 +1,6 @@
 import csv
 import io
+import base64
 from decimal import Decimal
 from datetime import date
 from typing import Optional
@@ -11,6 +12,29 @@ class ReportExporter:
 
     Supports: CSV, JSON-ready, and structured text (PDF-ready).
     """
+
+    @staticmethod
+    def generate_qr_code_base64(report_data: dict, report_type: str) -> str:
+        """
+        Generate a QR code for the report as base64 PNG.
+        Embeds report metadata for verification.
+        """
+        try:
+            import qrcode
+            qr = qrcode.QRCode(version=1, box_size=10, border=4)
+            qr_data = f"REPORT={report_type}|DATE={date.today().isoformat()}"
+            if 'as_of_date' in report_data:
+                qr_data += f"|AS_OF={report_data['as_of_date']}"
+            if 'start_date' in report_data and 'end_date' in report_data:
+                qr_data += f"|FROM={report_data['start_date']}|TO={report_data['end_date']}"
+            qr.add_data(qr_data)
+            qr.make(fit=True)
+            img = qr.make_image(fill_color="black", back_color="white")
+            buffer = io.BytesIO()
+            img.save(buffer, format="PNG")
+            return base64.b64encode(buffer.getvalue()).decode("utf-8")
+        except Exception:
+            return ""
 
     @staticmethod
     def to_csv(report_data: dict, report_type: str) -> str:
@@ -67,6 +91,7 @@ class ReportExporter:
 
         lines.append('-' * 80)
         lines.append(f'Generated: {date.today().isoformat()}')
+        lines.append(f'Verify: Scan QR code on PDF/Print version')
         lines.append('=' * 80)
 
         return '\n'.join(lines)

@@ -1,20 +1,29 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Backup & Restore screen for ERP."""
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
-                                QHeaderView, QAbstractItemView, QGroupBox, QMessageBox)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                QLabel, QLineEdit,
+                                QHeaderView, QGroupBox, QMessageBox)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BORDER_RADIUS_MD,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
+from ui.screens.base_screen import BaseScreen
 
 
-class BackupScreen(QWidget):
+class BackupScreen(BaseScreen):
     """Backup & Restore management screen."""
     
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="backup")
         self.api_client = api_client or APIClient()
         self.restore_points = []
         self.setup_ui()
@@ -22,44 +31,63 @@ class BackupScreen(QWidget):
     
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         
         header = QLabel("Backup & Restore")
-        header.setFont(QFont("Segoe UI", 18, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(header)
         
         toolbar = QHBoxLayout()
         
-        create_btn = QPushButton("Create Backup")
+        create_btn = EnterpriseButton(text="Create Backup", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         create_btn.clicked.connect(self.create_backup)
         toolbar.addWidget(create_btn)
         
-        refresh_btn = QPushButton("Refresh")
+        refresh_btn = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         refresh_btn.clicked.connect(self.load_restore_points)
         toolbar.addWidget(refresh_btn)
         
         layout.addLayout(toolbar)
         
         status_group = QGroupBox("System Status")
+        status_group.setStyleSheet(f"""
+            QGroupBox {{
+                font-size: {TEXT_CARD_TITLE}pt;
+                font-weight: 700;
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 5px;
+            }}
+        """)
         status_layout = QVBoxLayout()
         
         self.status_label = QLabel("Checking backup status...")
+        self.status_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}pt;")
         status_layout.addWidget(self.status_label)
         
         status_group.setLayout(status_layout)
         layout.addWidget(status_group)
         
         points_label = QLabel("Restore Points")
-        points_label.setFont(QFont("Segoe UI", 14))
+        points_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
         layout.addWidget(points_label)
         
-        self.table = QTableWidget()
-        self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels([
-            "ID", "Name", "Created", "Size", "Type", "Status"
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        columns = [
+            TableColumn("id", "ID", width=50),
+            TableColumn("name", "Name", width=200),
+            TableColumn("created", "Created", width=150),
+            TableColumn("size", "Size", width=80, align="right"),
+            TableColumn("type", "Type", width=100),
+            TableColumn("status", "Status", width=80, align="center"),
+        ]
+        self.table = EnterpriseTable(columns)
         layout.addWidget(self.table)
     
     def load_restore_points(self):
@@ -92,14 +120,17 @@ class BackupScreen(QWidget):
     
     def update_table(self):
         """Update table with restore points."""
-        self.table.setRowCount(len(self.restore_points))
-        for row, point in enumerate(self.restore_points):
-            self.table.setItem(row, 0, QTableWidgetItem(str(point.get('id', ''))[:8]))
-            self.table.setItem(row, 1, QTableWidgetItem(point.get('name', '')))
-            self.table.setItem(row, 2, QTableWidgetItem(str(point.get('created_at', ''))[:19]))
-            self.table.setItem(row, 3, QTableWidgetItem(point.get('size', '')))
-            self.table.setItem(row, 4, QTableWidgetItem(point.get('backup_type', '')))
-            self.table.setItem(row, 5, QTableWidgetItem(point.get('status', 'READY')))
+        data = []
+        for point in self.restore_points:
+            data.append({
+                "id": str(point.get('id', ''))[:8],
+                "name": point.get('name', ''),
+                "created": str(point.get('created_at', ''))[:19],
+                "size": point.get('size', ''),
+                "type": point.get('backup_type', ''),
+                "status": point.get('status', 'READY'),
+            })
+        self.table.set_data(data)
     
     def create_backup(self):
         """Create new backup via API."""

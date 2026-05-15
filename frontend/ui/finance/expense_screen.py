@@ -1,18 +1,25 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-                                  QTableWidget, QTableWidgetItem, QLabel, QLineEdit,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
+                                  QTableWidgetItem, QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QDateEdit,
                                   QGroupBox, QFormLayout, QDialog, QDialogButtonBox,
-                                  QTextEdit, QAbstractItemView, QApplication)
+                                  QTextEdit, QApplication)
 from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QColor
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
-from ui.constants import (SPACING_MD, SPACING_LG, FONT_SIZE_LG, FONT_SIZE_XL,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD)
+from ui.utils.debounce import Debouncer
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from api.client import APIClient
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
 
 class ExpenseScreen(BaseScreen):
     """Screen for managing pharmacy expenses."""
@@ -32,36 +39,19 @@ class ExpenseScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Pharmacy Expenses")
-        header.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(header)
         
         header_layout.addStretch()
         
-        self.btn_refresh = QPushButton(" Refresh")
-        self.btn_refresh.setMinimumHeight(35)
-        self.btn_refresh.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_TEXT_MUTED};
-                border: none;
-                border-radius: 6px;
-                padding: {SPACING_SM} {SPACING_MD};
-                color: white;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BORDER};
-            }}
-        """)
+        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_expenses)
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
 
         # Action section
         action_layout = QHBoxLayout()
-        self.add_btn = QPushButton("+ Record Expense")
-        self.add_btn.setMinimumHeight(38)
-        self.add_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: 5px; font-weight: bold; padding: 0 {SPACING_MD};")
+        self.add_btn = EnterpriseButton(text="+ Record Expense", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
         self.add_btn.clicked.connect(self.show_add_expense_dialog)
         action_layout.addWidget(self.add_btn)
         action_layout.addStretch()
@@ -69,8 +59,10 @@ class ExpenseScreen(BaseScreen):
 
         # Filters
         filter_bar = QGroupBox("Filter Expenses")
-        filter_bar.setFont(QFont("Segoe UI", 10, QFont.Bold))
-        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: 8px; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}")
+        filter_font = QFont("Segoe UI", TEXT_LABEL)
+        filter_font.setWeight(QFont.Weight.Bold)
+        filter_bar.setFont(filter_font)
+        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}")
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
@@ -78,7 +70,8 @@ class ExpenseScreen(BaseScreen):
         self.search_input.setPlaceholderText("Search expenses...")
         self.search_input.setMinimumHeight(30)
         self.search_input.setMinimumWidth(200)
-        self.search_input.textChanged.connect(self.load_expenses)
+        self._expense_search_debounce = Debouncer(self.load_expenses, 300)
+        self.search_input.textChanged.connect(self._expense_search_debounce)
         filter_layout.addWidget(QLabel("Search:"))
         filter_layout.addWidget(self.search_input)
         
@@ -100,47 +93,35 @@ class ExpenseScreen(BaseScreen):
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading expenses...")
-        self.loading_label.setFont(QFont("Segoe UI", 12))
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No expenses found")
-        self.empty_label.setFont(QFont("Segoe UI", 12))
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XL + SPACING_MD};")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading expenses")
-        self.error_label.setFont(QFont("Segoe UI", 12))
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: {SPACING_XL + SPACING_MD};")
+        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 
         # Table
-        self.table = self._create_modern_table()
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels([
-            "Date", "Expense #", "Category", "Payment Method", "Payee", "Amount", "Description"
-        ])
+        columns = [
+            TableColumn("date", "Date", width=90, align="center"),
+            TableColumn("expense_number", "Expense #", width=100),
+            TableColumn("category", "Category", width=120),
+            TableColumn("payment_account", "Payment Method", width=120),
+            TableColumn("payee", "Payee", width=120),
+            TableColumn("amount", "Amount", width=100, align="right"),
+            TableColumn("description", "Description", width=200),
+        ]
+        self.table = EnterpriseTable(columns)
         layout.addWidget(self.table)
-
-    def _create_modern_table(self):
-        table = QTableWidget()
-        table.setStyleSheet(f"""
-            QTableWidget {{ background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_TABLE_BORDER_LIGHT}; border-radius: 6px; gridline-color: {COLOR_TABLE_BORDER_LIGHT}; color: {COLOR_TEXT_PRIMARY}; }}
-            QHeaderView::section {{ background-color: {COLOR_TABLE_HEADER_BG_LIGHT}; color: {COLOR_TEXT_PRIMARY}; padding: 8px; border: none; border-bottom: 2px solid {COLOR_TABLE_BORDER_LIGHT}; font-weight: bold; }}
-            QTableWidget::item {{ padding: 10px; border-bottom: 1px solid {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; }}
-            QTableWidget::item:selected {{ background-color: {COLOR_PRIMARY}; color: white; }}
-        """)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        table.setAlternatingRowColors(True)
-        table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        return table
 
     def _show_loading(self, show=True):
         """Show/hide loading state."""
@@ -193,23 +174,18 @@ class ExpenseScreen(BaseScreen):
             self.error_label.setVisible(True)
 
     def _populate_table(self):
-        self.table.setRowCount(0)
+        data = []
         for exp in self.expenses_data:
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            
-            self.table.setItem(row, 0, QTableWidgetItem(exp.get('date', '')))
-            self.table.setItem(row, 1, QTableWidgetItem(exp.get('expense_number', '')))
-            self.table.setItem(row, 2, QTableWidgetItem(exp.get('expense_account_name', '')))
-            self.table.setItem(row, 3, QTableWidgetItem(exp.get('payment_account_name', '')))
-            self.table.setItem(row, 4, QTableWidgetItem(exp.get('payee', '')))
-            
-            amount_item = QTableWidgetItem(f"{float(exp.get('amount', 0)):,.2f}")
-            amount_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            amount_item.setForeground(QColor(COLOR_DANGER))
-            self.table.setItem(row, 5, amount_item)
-            
-            self.table.setItem(row, 6, QTableWidgetItem(exp.get('description', '')))
+            data.append({
+                "date": exp.get('date', ''),
+                "expense_number": exp.get('expense_number', ''),
+                "category": exp.get('expense_account_name', ''),
+                "payment_account": exp.get('payment_account_name', ''),
+                "payee": exp.get('payee', ''),
+                "amount": f"{float(exp.get('amount', 0)):,.2f}",
+                "description": exp.get('description', ''),
+            })
+        self.table.set_data(data)
 
     def show_add_expense_dialog(self):
         dialog = AddExpenseDialog(self, api_client=self.api_client)

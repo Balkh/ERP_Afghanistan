@@ -1,10 +1,11 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
-                              QLineEdit, QLabel, QFrame, QSpacerItem, QSizePolicy,
-                              QComboBox, QTableWidget, QTableWidgetItem, QHeaderView,
-                              QAbstractItemView, QMenu, QMessageBox)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
+                              QLineEdit, QLabel, QFrame, QSizePolicy,
+                              QComboBox, QMessageBox)
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_LABEL,
+                           COLOR_TEXT_PRIMARY)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 class BaseInventoryScreen(QWidget):
     """Base class for inventory management screens."""
@@ -31,7 +32,7 @@ class BaseInventoryScreen(QWidget):
         # Header
         header_layout = QHBoxLayout()
         title_label = QLabel(self.windowTitle())
-        title_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(title_label)
         header_layout.addStretch()
         
@@ -61,10 +62,10 @@ class BaseInventoryScreen(QWidget):
         
         # Button bar
         button_layout = QHBoxLayout()
-        self.add_button = QPushButton("Add")
-        self.edit_button = QPushButton("Edit")
-        self.delete_button = QPushButton("Delete")
-        self.refresh_button = QPushButton("Refresh")
+        self.add_button = EnterpriseButton(text="Add", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.edit_button = EnterpriseButton(text="Edit", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.delete_button = EnterpriseButton(text="Delete", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.refresh_button = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         
         self.add_button.clicked.connect(self.add_requested.emit)
         self.edit_button.clicked.connect(self._on_edit_clicked)

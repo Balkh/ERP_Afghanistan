@@ -3,7 +3,7 @@ import os
 import logging
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QMessageBox, QDialog
 from PySide6.QtCore import Qt
-from theme.theme_manager import ThemeManager
+from theme.theme_engine import ThemeEngine
 from ui.main_window import MainWindow
 from ui.role_manager import get_role_from_user_data
 from utils.device_fingerprint import generate_device_id
@@ -12,6 +12,7 @@ from security.obfuscator import Obfuscator
 from security.encrypted_config import EncryptedConfig
 from security.tamper_detector import TamperDetector
 from api.client import APIClient
+from security.auth_manager import AuthManager
 from utils.logger import get_logger, init_logging, shutdown as log_shutdown, set_active_screen, capture_health_snapshot, DiagnosticContext, record_error, emit_event
 from security.session_store import load_session as session_store_load, _migrate_from_legacy
 
@@ -162,10 +163,9 @@ def main():
     app.setProperty("deviceId", device_id)
     log.debug(f"Device ID: {device_id}", extra={'extra_fields': {'tags': ['system']}})
 
-    # Initialize theme manager
-    theme_manager = ThemeManager()
-    theme_manager.apply_theme("light")
-    log.debug("Theme manager initialized", extra={'extra_fields': {'tags': ['theme']}})
+    # Initialize unified theme engine
+    ThemeEngine.instance().apply_theme("dark")
+    log.debug("Theme engine initialized", extra={'extra_fields': {'tags': ['theme']}})
 
     # Initialize license validation
     license_validator = initialize_license_validation()
@@ -175,6 +175,10 @@ def main():
     api_client = APIClient()
     log.debug("API client initialized", extra={'extra_fields': {'tags': ['api']}})
 
+    # Initialize AuthManager (handles session restore automatically)
+    auth_manager = AuthManager(api_client)
+    log.debug("AuthManager initialized", extra={'extra_fields': {'tags': ['auth']}})
+
     # Authentication gateway
     authenticated = False
     user_data = {}
@@ -183,18 +187,16 @@ def main():
 
     if not dev_mode:
         try:
-            log.debug("Checking session validity...", extra={'extra_fields': {'tags': ['auth']}})
-            session_valid, saved_username = check_session_valid(api_client)
-            log.debug(f"Session valid: {session_valid}, Username: {saved_username}", extra={'extra_fields': {'tags': ['auth']}})
-
-            if session_valid:
-                log.info(f"Session restored for user: {saved_username}", extra={'extra_fields': {'tags': ['auth']}})
+            # Check if AuthManager restored a valid session
+            if auth_manager.is_authenticated:
+                log.info(f"Session restored for user: {auth_manager.user.get('username', 'unknown')}",
+                         extra={'extra_fields': {'tags': ['auth']}})
                 authenticated = True
-                user_data = {"username": saved_username, "role": "admin"}
+                user_data = auth_manager.user or {}
             else:
                 log.info("No valid session found, showing login dialog", extra={'extra_fields': {'tags': ['auth']}})
                 from ui.auth.login_screen import LoginDialog
-                login_dialog = LoginDialog(api_client)
+                login_dialog = LoginDialog(api_client=api_client, auth_manager=auth_manager)
 
                 username, _ = login_dialog.load_session()
                 log.debug(f"Loaded session username: {username}", extra={'extra_fields': {'tags': ['auth']}})
@@ -242,7 +244,7 @@ def main():
 
     try:
         log.debug("Creating main window...", extra={'extra_fields': {'tags': ['ui']}})
-        window = MainWindow(license_validator=license_validator, user_data=user_data, api_client=api_client)
+        window = MainWindow(license_validator=license_validator, user_data=user_data, api_client=api_client, auth_manager=auth_manager)
         log.debug("Main window created, showing...", extra={'extra_fields': {'tags': ['ui']}})
         window.show()
         log.debug("Main window shown", extra={'extra_fields': {'tags': ['ui']}})

@@ -1,14 +1,23 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """Login screen for ERP."""
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                                QLineEdit, QPushButton, QMessageBox, QCheckBox,
-                                QFrame, QSpacerItem, QSizePolicy)
+                                 QLineEdit, QMessageBox, QCheckBox,
+                                 QFrame)
 from PySide6.QtCore import Signal, Qt, QTimer
-from PySide6.QtGui import QFont, QPixmap, QPainter, QColor, QBrush
+from PySide6.QtGui import QPixmap, QPainter, QColor, QBrush
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+                           BORDER_RADIUS_LG,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from security.session_store import save_session as encrypted_save_session, load_session as encrypted_load_session
+from security.auth_manager import AuthManager
 from utils.logger import get_logger
 
 log = get_logger('auth')
@@ -26,9 +35,10 @@ class LoginDialog(QDialog):
     
     login_successful = Signal(dict)  # user data
     
-    def __init__(self, api_client=None):
+    def __init__(self, api_client=None, auth_manager=None):
         super().__init__()
         self.api_client = api_client or APIClient()
+        self.auth_manager = auth_manager or AuthManager(self.api_client)
         self.setWindowTitle("Pharmacy ERP - Login")
         self.setFixedSize(420, 520)
         self.setModal(True)
@@ -47,10 +57,10 @@ class LoginDialog(QDialog):
             QLineEdit {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: 8px;
-                padding: 12px;
+                border-radius: {BORDER_RADIUS_LG};
+                padding: {SPACING_MD}px;
                 color: {COLOR_TEXT_PRIMARY};
-                font-size: 14px;
+                font-size: {TEXT_BODY}px;
             }}
             QLineEdit:focus {{
                 border: 2px solid {COLOR_PRIMARY};
@@ -59,9 +69,9 @@ class LoginDialog(QDialog):
                 background-color: {COLOR_PRIMARY};
                 color: {COLOR_BG_MAIN};
                 border: none;
-                border-radius: 8px;
-                padding: 14px;
-                font-size: 14px;
+                border-radius: {BORDER_RADIUS_LG};
+                padding: {SPACING_LG}px;
+                font-size: {TEXT_BODY}px;
                 font-weight: bold;
             }}
             QPushButton:hover {{
@@ -93,19 +103,17 @@ class LoginDialog(QDialog):
         header_layout = QVBoxLayout(header)
         
         logo_label = QLabel("💊")
-        logo_label.setFont(QFont("Segoe UI", 36))
+        logo_label.setStyleSheet(f"font-size: 36pt; font-weight: 700; color: {COLOR_PRIMARY};")
         logo_label.setAlignment(Qt.AlignCenter)
         header_layout.addWidget(logo_label)
         
         title = QLabel("Pharmacy ERP")
-        title.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        title.setStyleSheet(f"color: {COLOR_PRIMARY};")
+        title.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
         title.setAlignment(Qt.AlignCenter)
         header_layout.addWidget(title)
 
         subtitle = QLabel("Enterprise Management System")
-        subtitle.setFont(QFont("Segoe UI", 10))
-        subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
+        subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt;")
         subtitle.setAlignment(Qt.AlignCenter)
         header_layout.addWidget(subtitle)
         
@@ -120,7 +128,7 @@ class LoginDialog(QDialog):
         
         # Username
         user_label = QLabel("Username")
-        user_label.setFont(QFont("Segoe UI", 11))
+        user_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_TEXT_PRIMARY};")
         form_layout.addWidget(user_label)
         
         self.username = QLineEdit()
@@ -131,7 +139,7 @@ class LoginDialog(QDialog):
         
         # Password
         pass_label = QLabel("Password")
-        pass_label.setFont(QFont("Segoe UI", 11))
+        pass_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_TEXT_PRIMARY};")
         form_layout.addWidget(pass_label)
         
         self.password = QLineEdit()
@@ -155,14 +163,13 @@ class LoginDialog(QDialog):
         layout.addSpacing(20)
         
         # Login button
-        self.login_btn = QPushButton("Sign In")
-        self.login_btn.setFixedHeight(50)
+        self.login_btn = EnterpriseButton(text="Sign In", variant=ButtonVariant.PRIMARY, size=ButtonSize.LARGE)
         self.login_btn.clicked.connect(self.do_login)
         layout.addWidget(self.login_btn)
         
         # Status message
         self.status_label = QLabel()
-        self.status_label.setFont(QFont("Segoe UI", 10))
+        self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt;")
         self.status_label.setAlignment(Qt.AlignCenter)
         self.status_label.setStyleSheet(f"color: {COLOR_DANGER};")
         self.status_label.setVisible(False)
@@ -172,7 +179,7 @@ class LoginDialog(QDialog):
 
         # Footer
         footer = QLabel("© 2026 Pharmacy ERP System")
-        footer.setFont(QFont("Segoe UI", 9))
+        footer.setStyleSheet(f"font-size: {TEXT_HELPER}pt; color: {COLOR_TEXT_MUTED};")
         footer.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
         footer.setAlignment(Qt.AlignCenter)
         layout.addWidget(footer)
@@ -225,52 +232,33 @@ class LoginDialog(QDialog):
         QTimer.singleShot(100, lambda: self._perform_login(username, password))
     
     def _perform_login(self, username, password):
-        """Perform actual login API call."""
+        """Perform actual login API call via AuthManager."""
         try:
-            endpoint = get_endpoint("login") or "/api/auth/login/"
             log.info(f"Login attempt: user={username}",
                      extra={'extra_fields': {'tags': ['auth', 'login']}})
-            response = self.api_client.post(endpoint, {
-                "username": username,
-                "password": password
-            })
             
+            success = self.auth_manager.login(username, password)
             self.set_loading(False)
             
-            if response and isinstance(response, dict):
-                if response.get("success"):
-                    data = response.get("data", response)
-                    self.api_client.set_auth_data(data)
-                    user_data = data.get("user", {})
-                    token = self.api_client._auth_token
+            if success:
+                user_data = self.auth_manager.user or {}
+                token = self.auth_manager.api_client._auth_token
 
-                    if token:
-                        if self.remember.isChecked():
-                            encrypted_save_session(username, token, data.get('refresh_token', ''))
-                            log.info(f"Session persisted for user={username}",
-                                     extra={'extra_fields': {'tags': ['auth', 'session']}})
+                if token:
+                    if self.remember.isChecked():
+                        encrypted_save_session(username, token, self.auth_manager.api_client._refresh_token or '')
+                        log.info(f"Session persisted for user={username}",
+                                 extra={'extra_fields': {'tags': ['auth', 'session']}})
 
-                        user_data["token"] = token
-                        log.info(f"Login successful: user={username}",
-                                 extra={'extra_fields': {'tags': ['auth', 'login']}})
-                        self.login_successful.emit(user_data)
-                        self.accept()
-                        return
-                
-                # Handle error
-                error = response.get("error", {})
-                if isinstance(error, dict):
-                    msg = error.get("message", "Login failed")
-                else:
-                    msg = str(error)
-                log.warning(f"Login failed: user={username} reason={msg}",
-                             extra={'extra_fields': {'tags': ['auth', 'login', 'error']}})
-                self.show_error(msg)
-                
-            else:
-                log.warning(f"Login invalid response: user={username}",
-                             extra={'extra_fields': {'tags': ['auth', 'login', 'error']}})
-                self.show_error("Invalid response from server")
+                    user_data["token"] = token
+                    log.info(f"Login successful: user={username}",
+                             extra={'extra_fields': {'tags': ['auth', 'login']}})
+                    self.login_successful.emit(user_data)
+                    self.accept()
+                    return
+            
+            # Handle error
+            self.show_error("Invalid credentials")
                 
         except Exception as e:
             self.set_loading(False)

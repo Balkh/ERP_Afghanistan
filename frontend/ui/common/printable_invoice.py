@@ -7,7 +7,10 @@ from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewDialog
 import os
 from api.document_action_service import DocumentActionService
 from utils.invoice_template_engine import InvoiceTemplateEngine
+from utils.qr_generator import QRCodeGenerator
 from api.client import APIClient
+from ui.constants import COLOR_WHATSAPP, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER
+from ui.constants import TEXT_LABEL, TEXT_BODY, TEXT_CARD_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE
 
 
 class PrintableInvoiceDialog(QDialog):
@@ -33,7 +36,7 @@ class PrintableInvoiceDialog(QDialog):
         # Title
         title_layout = QHBoxLayout()
         title_label = QLabel("Invoice Preview")
-        title_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        title_label.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
         title_layout.addWidget(title_label)
         title_layout.addStretch()
         layout.addLayout(title_layout)
@@ -57,7 +60,7 @@ class PrintableInvoiceDialog(QDialog):
         self.save_pdf_btn.clicked.connect(self.save_as_pdf)
 
         self.share_wa_btn = QPushButton("Share to WhatsApp")
-        self.share_wa_btn.setStyleSheet("background-color: #25D366; color: white; font-weight: bold;")
+        self.share_wa_btn.setStyleSheet(f"background-color: {COLOR_WHATSAPP}; color: white; font-weight: bold;")
         self.share_wa_btn.clicked.connect(self.share_invoice)
 
         close_btn = QPushButton("Close")
@@ -108,14 +111,21 @@ class PrintableInvoiceDialog(QDialog):
 
         header_color = "#2c3e50"
         accent_color = "#3498db"
+        table_border_color = "#ddd"
+        even_row_bg = "#f9f9f9"
+        footer_text_color = "#666"
+        footer_border_color = "#ddd"
+        status_paid_bg = "#27ae60"
+        status_unpaid_bg = "#e74c3c"
+        status_partial_bg = "#f39c12"
 
         html = f"""
         <html>
         <head>
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: 12px; }}
+                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: {TEXT_BODY}px; }}
                 .header {{ background-color: {header_color}; color: white; padding: 20px; border-radius: 5px; }}
-                .header h1 {{ margin: 0; font-size: 24px; }}
+                .header h1 {{ margin: 0; font-size: {TEXT_SECTION_TITLE}px; }}
                 .header p {{ margin: 5px 0; }}
                 .invoice-info {{ display: flex; justify-content: space-between; margin: 20px 0; }}
                 .invoice-info div {{ width: 48%; }}
@@ -127,8 +137,8 @@ class PrintableInvoiceDialog(QDialog):
                 .totals table {{ width: 300px; margin-left: auto; }}
                 .totals th {{ text-align: right; }}
                 .totals td {{ text-align: right; }}
-                .grand-total {{ font-size: 16px; font-weight: bold; background-color: {header_color}; color: white; }}
-                .footer {{ text-align: center; margin-top: 40px; color: #666; font-size: 10px; border-top: 1px solid #ddd; padding-top: 10px; }}
+                .grand-total {{ font-size: {TEXT_CARD_TITLE}px; font-weight: bold; background-color: {header_color}; color: white; }}
+                .footer {{ text-align: center; margin-top: 40px; color: #666; font-size: {TEXT_TABLE}px; border-top: 1px solid #ddd; padding-top: 10px; }}
                 .status {{ display: inline-block; padding: 5px 10px; border-radius: 3px; font-weight: bold; }}
                 .status-paid {{ background-color: #27ae60; color: white; }}
                 .status-unpaid {{ background-color: #e74c3c; color: white; }}
@@ -227,12 +237,29 @@ class PrintableInvoiceDialog(QDialog):
             <div class="footer">
                 <p>Thank you for your business!</p>
                 <p>This is a computer-generated invoice from {company_name} Pharmacy ERP System</p>
+                {self._render_qr_code_fallback(inv)}
             </div>
         </body>
         </html>
         """
 
         return html
+
+    def _render_qr_code_fallback(self, inv: dict) -> str:
+        """Render a QR code for the invoice using local generator."""
+        try:
+            qr_data = QRCodeGenerator.generate_invoice_qr_data(inv)
+            qr_uri = QRCodeGenerator.generate_data_uri(qr_data, size=80)
+            if qr_uri:
+                return f'''
+                <div style="text-align: center; margin-top: 15px;">
+                    <img src="{qr_uri}" alt="QR Code" width="80" height="80">
+                    <p style="font-size: 10px; color: #666; margin-top: 4px;">Scan to Verify Invoice</p>
+                </div>
+                '''
+        except Exception:
+            pass
+        return ""
 
     def print_invoice(self):
         printer = QPrinter(QPrinter.HighResolution)

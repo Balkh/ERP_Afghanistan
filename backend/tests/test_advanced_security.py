@@ -31,6 +31,8 @@ class TestTenantAttackSimulation(APITestCase):
     """Simulate advanced tenant escape attacks."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='tenant_attack',
@@ -104,6 +106,8 @@ class TestTokenAttackSimulation(APITestCase):
     """Simulate token-based attacks."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='token_attack',
@@ -153,7 +157,7 @@ class TestTokenAttackSimulation(APITestCase):
 
         for token in malformed_tokens:
             response = self.client.get(
-                '/api/inventory/products/',
+                '/api/auth/profile/',
                 HTTP_AUTHORIZATION=token if token != "Bearer" else f'{token}'
             )
             self.assertIn(response.status_code, [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN, status.HTTP_400_BAD_REQUEST])
@@ -176,6 +180,8 @@ class TestPrivilegeEscalationChain(APITestCase):
     """Test privilege escalation attack chains."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.regular_user = User.objects.create_user(
             username='regular_user',
@@ -254,6 +260,8 @@ class TestAPIAbuseTesting(APITestCase):
     """Test API abuse and parameter tampering."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='abuse_test',
@@ -358,6 +366,8 @@ class TestRateLimitingVerification(APITestCase):
     """Test rate limiting and brute force protection."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
 
     def test_login_brute_force_protection(self):
@@ -404,6 +414,8 @@ class TestAuditSecurityVerification(APITestCase):
     """Verify audit log security."""
 
     def setUp(self):
+        from security.rate_limiter import reset_all_limits
+        reset_all_limits()
         self.client = APIClient()
         self.user = User.objects.create_user(
             username='audit_test',

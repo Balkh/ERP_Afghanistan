@@ -1,6 +1,8 @@
 """
-Enterprise Styling System.
-Provides consistent styling across all UI components.
+DEPRECATED — Enterprise Styling System.
+All styling is now handled via inline QSS f-strings using COLOR_*/TEXT_*/SPACING_* tokens
+from ui/constants.py. Theme switching is handled by theme/theme_engine.py.
+This file is retained for reference only and is NOT loaded at runtime by any UI component.
 """
 
 from PySide6.QtCore import QObject
@@ -8,14 +10,22 @@ from typing import Dict, Optional
 
 
 class Typography:
-    """Typography system for consistent text styling."""
+    """
+    Typography system for consistent text styling.
+    
+    DEPRECATED: Use semantic role constants from ui.constants instead:
+      - TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE
+      - TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE
+      - TEXT_HELPER, TEXT_ERROR, TEXT_BADGE
+    Font families remain valid references.
+    """
     
     # Font families
     FONT_FAMILY_PRIMARY = "Segoe UI"
     FONT_FAMILY_SECONDARY = "Arial"
     FONT_FAMILY_MONO = "Consolas"
     
-    # Font sizes (in points)
+    # Font sizes (in points) — mirror ui.constants for backward compat
     FONT_SIZE_H1 = 24
     FONT_SIZE_H2 = 20
     FONT_SIZE_H3 = 16
@@ -32,22 +42,24 @@ class Typography:
     
     @staticmethod
     def get_header_styles() -> Dict[str, str]:
-        """Get header text styles."""
+        """Get header text styles. DEPRECATED: use TEXT_* semantic constants."""
+        from ui.constants import TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE
         return {
-            'h1': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {Typography.FONT_SIZE_H1}pt; font-weight: {Typography.FONT_WEIGHT_BOLD};",
-            'h2': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {Typography.FONT_SIZE_H2}pt; font-weight: {Typography.FONT_WEIGHT_BOLD};",
-            'h3': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {Typography.FONT_SIZE_H3}pt; font-weight: {Typography.FONT_WEIGHT_SEMIBOLD};",
-            'h4': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {Typography.FONT_SIZE_H4}pt; font-weight: {Typography.FONT_WEIGHT_SEMIBOLD};",
+            'h1': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: {Typography.FONT_WEIGHT_BOLD};",
+            'h2': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: {Typography.FONT_WEIGHT_BOLD};",
+            'h3': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: {Typography.FONT_WEIGHT_SEMIBOLD};",
+            'h4': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; font-weight: {Typography.FONT_WEIGHT_SEMIBOLD};",
         }
     
     @staticmethod
     def get_body_styles() -> Dict[str, str]:
-        """Get body text styles."""
+        """Get body text styles. DEPRECATED: use TEXT_* semantic constants."""
+        from ui.constants import TEXT_BODY, TEXT_BODY_SMALL, TEXT_HELPER
         return {
-            'body': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {Typography.FONT_SIZE_BODY}pt; font-weight: {Typography.FONT_WEIGHT_NORMAL};",
-            'body_small': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {Typography.FONT_SIZE_SMALL}pt; font-weight: {Typography.FONT_WEIGHT_NORMAL};",
-            'caption': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {Typography.FONT_SIZE_CAPTION}pt; font-weight: {Typography.FONT_WEIGHT_NORMAL};",
-            'mono': f"font-family: {Typography.FONT_FAMILY_MONO}; font-size: {Typography.FONT_SIZE_BODY}pt;",
+            'body': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {TEXT_BODY}pt; font-weight: {Typography.FONT_WEIGHT_NORMAL};",
+            'body_small': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {TEXT_BODY_SMALL}pt; font-weight: {Typography.FONT_WEIGHT_NORMAL};",
+            'caption': f"font-family: {Typography.FONT_FAMILY_PRIMARY}; font-size: {TEXT_HELPER}pt; font-weight: {Typography.FONT_WEIGHT_NORMAL};",
+            'mono': f"font-family: {Typography.FONT_FAMILY_MONO}; font-size: {TEXT_BODY}pt;",
         }
 
 
@@ -288,7 +300,7 @@ class EnterpriseStyles:
             QScrollBar::handle:vertical {{
                 background-color: {handle_color};
                 min-height: 30px;
-                border-radius: 6px;
+                border-radius: {BORDER_RADIUS_MD};
                 margin: 2px;
             }}
             QScrollBar::handle:vertical:hover {{
@@ -305,7 +317,7 @@ class EnterpriseStyles:
             QScrollBar::handle:horizontal {{
                 background-color: {handle_color};
                 min-width: 30px;
-                border-radius: 6px;
+                border-radius: {BORDER_RADIUS_MD};
                 margin: 2px;
             }}
             QScrollBar::handle:horizontal:hover {{
@@ -403,7 +415,7 @@ class StyleSheetBuilder:
                 background: {primary};
                 width: 16px;
                 margin: -5px 0;
-                border-radius: 8px;
+                border-radius: {BORDER_RADIUS_LG};
             }}
             
             /* Tooltip */

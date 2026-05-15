@@ -8,6 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
+from core.view_logging import log_business_event
 from core.multitenant.views import CompanyScopedViewSetMixin
 from accounting.models import Account, JournalEntry, JournalEntryLine, JournalEventLog
 from accounting.serializers import (
@@ -366,6 +367,7 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Post a journal entry (locks it from further editing)."""
         from accounting.services.journal_engine import JournalEngine
         result = JournalEngine.post_entry(pk)
+        log_business_event(request, 'journal_entry.posted', {'entry_id': pk, 'success': result.get('success')})
         if result.get('success'):
             entry = JournalEntry.objects.get(id=pk)
             serializer = self.get_serializer(entry)
@@ -377,6 +379,7 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Unpost a journal entry (allows editing again)."""
         from accounting.services.journal_engine import JournalEngine
         result = JournalEngine.unpost_entry(pk)
+        log_business_event(request, 'journal_entry.unposted', {'entry_id': pk, 'success': result.get('success')})
         if result.get('success'):
             entry = JournalEntry.objects.get(id=pk)
             serializer = self.get_serializer(entry)
@@ -389,6 +392,7 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         from accounting.services.journal_engine import JournalEngine
         reason = request.data.get('reason', '')
         result = JournalEngine.reverse_entry(pk, reason=reason)
+        log_business_event(request, 'journal_entry.reversed', {'entry_id': pk, 'reason': reason, 'success': result.get('success')})
         if result.get('success'):
             return Response(result)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)

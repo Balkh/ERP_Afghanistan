@@ -472,11 +472,26 @@ class APIClient(QObject):
         return self.get(f"/api/inventory/products/{product_id}/")
     
     def get_product_by_barcode_or_sku(self, code):
-        """Quick lookup - try barcode first, then SKU."""
+        """Quick lookup - try barcode first, then SKU, then batch barcode."""
         result = self.lookup_barcode(code)
         if result.get('success'):
             return result
-        return self.lookup_sku(code)
+        result = self.lookup_sku(code)
+        if result.get('success'):
+            return result
+        return self.lookup_batch_barcode(code)
+
+    def lookup_batch_barcode(self, barcode):
+        """Look up batch by its barcode or batch_number."""
+        return self.get("/api/inventory/batches/by_batch_barcode/", params={'barcode': barcode})
+
+    def generate_barcode(self, code, fmt="code128"):
+        """Generate barcode image from backend."""
+        return self.get("/api/inventory/products/generate_barcode/", params={'barcode': code, 'format': fmt})
+
+    def validate_barcode(self, code, fmt="ean13"):
+        """Validate barcode checksum."""
+        return self.get("/api/inventory/products/validate_barcode/", params={'barcode': code, 'format': fmt})
     
     # User Management API methods
     

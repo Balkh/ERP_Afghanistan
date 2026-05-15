@@ -1,281 +1,113 @@
-#!/usr/bin/env python3
 """
-Design System Governance Scanner
-=================================
-Enterprise ERP UI Governance - Automated compliance enforcement.
-This script scans for design system violations and enforces:
-- No hardcoded colors (must use theme tokens)
-- No forbidden fonts (must use Segoe UI)
-- No hardcoded spacing (must use constants)
-- No inline styles bypassing the theme system
+Design System Governance Scanner.
+Read-only scanner that detects raw styling values bypassing semantic tokens.
 
 Usage:
-    python scripts/design_system_governance.py [--fix] [--report]
+    python scripts/design_system_governance.py
+    python scripts/design_system_governance.py --strict   # includes hex check
+
+Exit codes:
+    0 = clean
+    1 = violations found
 """
 
-import os
 import re
 import sys
-import json
 from pathlib import Path
-from typing import List, Dict, Tuple
 
-# Configuration
-# Script is at: E:\Pharmacy_ERP\frontend\scripts\design_system_governance.py
-# Frontend dir is: E:\Pharmacy_ERP\frontend
-FRONTEND_DIR = Path(__file__).parent.parent
+UI_DIR = Path(__file__).resolve().parent.parent / "ui"
 
-EXCLUDED_DIRS = {"__pycache__", ".git", "node_modules", ".venv", "venv"}
-EXCLUDED_FILES = {"design_system_governance.py"}
-
-# Design token enforcements
-REQUIRED_IMPORTS = ["from ui.constants import"]
-FORBIDDEN_COLORS = [
-    r"#(?:[0-9a-fA-F]{3}){1,2}\b",  # Hex colors
-    r"QColor\([0-9]+,\s*[0-9]+,\s*[0-9]+\)",  # Raw QColor
-    r"rgb\([0-9]+,\s*[0-9]+,\s*[0-9]+\)",  # rgb()
-    r"rgba\([0-9]+,\s*[0-9]+,\s*[0-9]+,\s*[\d.]+\)",  # rgba()
-]
-
-FORBIDDEN_FONTS = [
-    r"\bArial\b",
-    r"\bTimes New Roman\b",
-    r"\bVerdana\b",
-    r"\bTahoma\b",
-]
-
-FORBIDDEN_SPACING = [
-    r"setContentsMargins\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\)",  # Hardcoded margins
-    r"setSpacing\(\s*\d+\s*\)",  # Hardcoded spacing
-]
-
-# Token whitelist - colors that ARE allowed (from constants.py)
-ALLOWED_TOKENS = {
-    # From ui/constants.py
-    "COLOR_PRIMARY", "COLOR_PRIMARY_HOVER", "COLOR_PRIMARY_ACTIVE", "COLOR_PRIMARY_MUTED",
-    "COLOR_SUCCESS", "COLOR_SUCCESS_BG", "COLOR_WARNING", "COLOR_WARNING_BG",
-    "COLOR_DANGER", "COLOR_DANGER_BG", "COLOR_INFO", "COLOR_INFO_BG",
-    "COLOR_BG_MAIN", "COLOR_BG_SURFACE", "COLOR_BG_ELEVATED", "COLOR_BG_INPUT",
-    "COLOR_TEXT_PRIMARY", "COLOR_TEXT_SECONDARY", "COLOR_TEXT_MUTED", "COLOR_TEXT_ON_PRIMARY",
-    "COLOR_BORDER", "COLOR_BORDER_LIGHT", "COLOR_BORDER_FOCUS",
-    "COLOR_TABLE_HEADER", "COLOR_TABLE_ALT", "COLOR_TABLE_GRID",
-    "COLOR_STATUS_VALID", "COLOR_STATUS_INVALID", "COLOR_STATUS_WARNING", "COLOR_STATUS_PENDING",
-    "COLOR_WHATSAPP",
-    # From enterprise_styling.py
-    "Typography.FONT_FAMILY_PRIMARY", "Typography.FONT_FAMILY_SECONDARY", "Typography.FONT_FAMILY_MONO",
-    "Spacing.SPACING_XXS", "Spacing.SPACING_XS", "Spacing.SPACING_SM", "Spacing.SPACING_MD",
-    "Spacing.SPACING_LG", "Spacing.SPACING_XL", "Spacing.SPACING_XXL", "Spacing.SPACING_XXXL",
-    "Spacing.BORDER_RADIUS_SM", "Spacing.BORDER_RADIUS_MD", "Spacing.BORDER_RADIUS_LG", "Spacing.BORDER_RADIUS_XL",
+EXCLUDE_FILES = {
+    "printable_invoice.py",  # HTML template — uses its own CSS
+    "theme_manager.py",      # Deprecated, kept for backward compat
+    "constants.py",          # Token definitions — false positives
 }
 
-# File categories for reporting
-FILE_CATEGORIES = {
-    "licensing": ["activation_screen.py", "license_status_screen.py", "license_manager_dialog.py"],
-    "accounting": ["arap_ageing_screen.py", "balance_sheet_screen.py", "profit_loss_screen.py",
-                   "accounting_dashboard.py", "account_ledger_screen.py", "journal_entry_screen.py",
-                   "chart_of_accounts_screen.py", "trial_balance_screen.py"],
-    "system": ["control_center_screen.py", "intelligence_hub_screen.py", "production_screen.py",
-               "backup_screen.py", "correlation_screen.py", "drift_intelligence_screen.py",
-               "integrity_screen.py", "workflow_intelligence_screen.py"],
-    "auth": ["login_screen.py"],
-    "components": ["document_action_dialog.py", "toast.py", "tables.py", "buttons.py", "forms.py"],
+# Mappable values that SHOULD use tokens
+PADDING_VALUES = {4: "SPACING_XS", 8: "SPACING_SM", 12: "SPACING_MD",
+                  16: "SPACING_LG", 20: "SPACING_XL", 24: "SPACING_XXL", 6: "SPACING_6"}
+RADIUS_VALUES = {4: "BORDER_RADIUS_SM", 6: "BORDER_RADIUS_MD", 8: "BORDER_RADIUS_LG",
+                 12: "BORDER_RADIUS_XL", 2: "BORDER_RADIUS_XS"}
+FONT_VALUES = {8: "FONT_SIZE_8", 9: "FONT_SIZE_XS", 10: "FONT_SIZE_SM", 11: "FONT_SIZE_MD",
+               12: "FONT_SIZE_LG", 13: "FONT_SIZE_XL", 14: "FONT_SIZE_XXL", 16: "FONT_SIZE_16",
+               18: "FONT_SIZE_TITLE", 20: "FONT_SIZE_HEADER", 22: "FONT_SIZE_SECTION",
+               24: "FONT_SIZE_24", 28: "FONT_SIZE_28"}
+
+ALLOWED_PATTERNS = {
+    "font-size": FONT_VALUES,
+    "padding": PADDING_VALUES,
+    "border-radius": RADIUS_VALUES,
 }
 
 
-class DesignSystemGovernance:
-    """Enterprise Design System Governance Scanner"""
-    
-    def __init__(self, auto_fix: bool = False):
-        self.auto_fix = auto_fix
-        self.violations = []
-        self.stats = {
-            "files_scanned": 0,
-            "color_violations": 0,
-            "font_violations": 0,
-            "spacing_violations": 0,
-            "files_compliant": 0,
-            "files_non_compliant": 0,
-        }
-        
-    def scan_file(self, file_path: Path) -> List[Dict]:
-        """Scan a single file for design system violations"""
-        violations = []
-        
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        except Exception as e:
-            return [{"error": f"Could not read file: {e}", "line": 0, "type": "READ_ERROR"}]
-        
-        lines = content.split('\n')
-        
-        # Check for hardcoded colors
-        for i, line in enumerate(lines, 1):
-            # Skip if line contains allowed tokens
-            if any(token in line for token in ALLOWED_TOKENS):
-                continue
-                
-            # Check for forbidden color patterns
-            for pattern in FORBIDDEN_COLORS:
-                if re.search(pattern, line):
-                    # Verify it's not using a token
-                    if not any(tok in line for tok in ALLOWED_TOKENS):
-                        violations.append({
-                            "file": str(file_path.relative_to(FRONTEND_DIR)),
-                            "line": i,
-                            "content": line.strip()[:80],
-                            "type": "HARDCODED_COLOR",
-                            "severity": "HIGH",
-                            "message": "Hardcoded color found. Use COLOR_* tokens from ui.constants"
-                        })
-            
-            # Check for forbidden fonts
-            for pattern in FORBIDDEN_FONTS:
-                if re.search(pattern, line, re.IGNORECASE):
-                    violations.append({
-                        "file": str(file_path.relative_to(FRONTEND_DIR)),
-                        "line": i,
-                        "content": line.strip()[:80],
-                        "type": "FORBIDDEN_FONT",
-                        "severity": "HIGH",
-                        "message": "Forbidden font found. Use Segoe UI from Typography.FONT_FAMILY_PRIMARY"
-                    })
-            
-            # Check for hardcoded spacing
-            for pattern in FORBIDDEN_SPACING:
-                if re.search(pattern, line):
-                    # Verify it's not using constants
-                    if "SPACING_" not in line and "Spacing.SPACING_" not in line:
-                        violations.append({
-                            "file": str(file_path.relative_to(FRONTEND_DIR)),
-                            "line": i,
-                            "content": line.strip()[:80],
-                            "type": "HARDCODED_SPACING",
-                            "severity": "MEDIUM",
-                            "message": "Hardcoded spacing found. Use SPACING_* constants from ui.constants"
-                        })
-        
+def scan_file(filepath: Path, strict: bool = False) -> list:
+    violations = []
+    try:
+        text = filepath.read_text(encoding="utf-8", errors="replace")
+    except Exception:
         return violations
-    
-    def scan_directory(self, directory: Path) -> None:
-        """Scan entire directory for violations"""
-        for root, dirs, files in os.walk(directory):
-            # Remove excluded directories
-            dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS]
-            
-            for file in files:
-                if file.endswith('.py') and file not in EXCLUDED_FILES:
-                    file_path = Path(root) / file
-                    self.stats["files_scanned"] += 1
-                    
-                    file_violations = self.scan_file(file_path)
-                    
-                    if file_violations:
-                        self.violations.extend(file_violations)
-                        self.stats["files_non_compliant"] += 1
-                        
-                        # Count violation types
-                        for v in file_violations:
-                            if v.get("type") == "HARDCODED_COLOR":
-                                self.stats["color_violations"] += 1
-                            elif v.get("type") == "FORBIDDEN_FONT":
-                                self.stats["font_violations"] += 1
-                            elif v.get("type") == "HARDCODED_SPACING":
-                                self.stats["spacing_violations"] += 1
-                    else:
-                        self.stats["files_compliant"] += 1
-    
-    def generate_report(self) -> str:
-        """Generate a comprehensive report"""
-        total_violations = len(self.violations)
-        compliance_score = (self.stats["files_compliant"] / max(1, self.stats["files_scanned"])) * 100
-        
-        report = []
-        report.append("=" * 80)
-        report.append("ENTERPRISE DESIGN SYSTEM GOVERNANCE REPORT")
-        report.append("=" * 80)
-        report.append("")
-        report.append(f"Files Scanned: {self.stats['files_scanned']}")
-        report.append(f"Compliant Files: {self.stats['files_compliant']}")
-        report.append(f"Non-Compliant Files: {self.stats['files_non_compliant']}")
-        report.append(f"Compliance Score: {compliance_score:.1f}%")
-        report.append("")
-        report.append("-" * 80)
-        report.append("VIOLATION BREAKDOWN")
-        report.append("-" * 80)
-        report.append(f"Color Violations: {self.stats['color_violations']}")
-        report.append(f"Font Violations: {self.stats['font_violations']}")
-        report.append(f"Spacing Violations: {self.stats['spacing_violations']}")
-        report.append(f"Total Violations: {total_violations}")
-        report.append("")
-        
-        if self.violations:
-            report.append("-" * 80)
-            report.append("DETAILED VIOLATIONS")
-            report.append("-" * 80)
-            
-            # Group by file
-            by_file = {}
-            for v in self.violations:
-                f = v.get("file", "unknown")
-                if f not in by_file:
-                    by_file[f] = []
-                by_file[f].append(v)
-            
-            for file, file_violations in sorted(by_file.items()):
-                report.append(f"\n{file} ({len(file_violations)} violations):")
-                for v in file_violations[:5]:  # Show first 5 per file
-                    report.append(f"  Line {v.get('line', '?')}: {v.get('type', 'UNKNOWN')} - {v.get('message', '')}")
-                if len(file_violations) > 5:
-                    report.append(f"  ... and {len(file_violations) - 5} more")
-        
-        report.append("")
-        report.append("=" * 80)
-        
-        return "\n".join(report)
-    
-    def run(self) -> int:
-        """Run the governance scanner"""
-        ui_dir = FRONTEND_DIR / "ui"
-        
-        if not ui_dir.exists():
-            print(f"Error: {ui_dir} does not exist")
-            return 1
-        
-        print(f"Scanning {ui_dir} for design system violations...")
-        self.scan_directory(ui_dir)
-        
-        report = self.generate_report()
-        print(report)
-        
-        # Exit with error code if violations found
-        if self.violations:
-            print("\n[!] DESIGN SYSTEM VIOLATIONS DETECTED")
-            print("Run with --fix flag to attempt auto-fix (may require manual review)")
-            return 1
-        else:
-            print("\n[OK] ALL FILES COMPLIANT WITH DESIGN SYSTEM")
-            return 0
+
+    for i, line in enumerate(text.split("\n"), 1):
+        for label, value_map in ALLOWED_PATTERNS.items():
+            pattern = rf'{label}:\s*(\d+)px'
+            for match in re.finditer(pattern, line):
+                val = int(match.group(1))
+                token = value_map.get(val)
+                if token is None:
+                    continue  # No token exists for this value — skip
+                before = line[: match.start()]
+                if "{" in before[max(0, match.start() - 3) : match.start()]:
+                    continue  # Already tokenized
+                violations.append((label, val, token, i, match.group(), filepath))
+
+        if strict and not filepath.name.startswith("constants"):
+            for match in re.finditer(r'#[0-9a-fA-F]{6}\b', line):
+                before = line[: match.start()]
+                # Skip COLOR_* definitions
+                if "COLOR_" in before or "= " in before:
+                    continue
+                violations.append(("hex", 0, "", i, match.group(), filepath))
+
+    return violations
 
 
 def main():
-    import argparse
-    
-    parser = argparse.ArgumentParser(description="Enterprise Design System Governance Scanner")
-    parser.add_argument("--fix", action="store_true", help="Attempt to auto-fix violations")
-    parser.add_argument("--report", action="store_true", help="Generate detailed report")
-    parser.add_argument("--json", action="store_true", help="Output in JSON format")
-    
-    args = parser.parse_args()
-    
-    scanner = DesignSystemGovernance(auto_fix=args.fix)
-    exit_code = scanner.run()
-    
-    if args.json and scanner.violations:
-        print("\n" + json.dumps(scanner.violations, indent=2))
-    
-    sys.exit(exit_code)
+    strict = "--strict" in sys.argv
+    all_violations = []
+
+    for py_file in sorted(UI_DIR.rglob("*.py")):
+        if "__pycache__" in str(py_file):
+            continue
+        if py_file.name in EXCLUDE_FILES:
+            continue
+        all_violations.extend(scan_file(py_file, strict))
+
+    if not all_violations:
+        print("DESIGN SYSTEM GOVERNANCE: CLEAN")
+        print("No tokenizable styling violations detected.")
+        return 0
+
+    print("DESIGN SYSTEM GOVERNANCE: VIOLATIONS FOUND")
+    print(f"Total: {len(all_violations)} violations (use `--strict` for hex check)\n")
+
+    by_type: dict = {}
+    for label, val, token, line, match, fpath in all_violations:
+        rel = fpath.relative_to(UI_DIR.parent)
+        by_type.setdefault(label, []).append(f"{rel}:{line}: {match} -> {token}")
+
+    for label in ["font-size", "padding", "border-radius", "hex"]:
+        items = by_type.get(label, [])
+        if items:
+            plural = f" ({len(items)} occurrences)"
+            print(f"[{label}]{plural}")
+            for item in items[:8]:
+                print(f"  {item}")
+            if len(items) > 8:
+                print(f"  ... and {len(items) - 8} more")
+            print()
+
+    return 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

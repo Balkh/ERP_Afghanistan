@@ -19,7 +19,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE)
+                           MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
+from ui.constants import TEXT_SECTION_TITLE, TEXT_BODY
 
 # Known cross-domain dependency matrix (UI-level, computed from Phase 5B.4 correlation patterns)
 DOMAIN_DEPENDENCIES = [
@@ -50,14 +51,16 @@ class DependencyGraphView(QWidget):
 
         header = QHBoxLayout()
         title = QLabel("🔗 Cross-Domain Dependency Map")
-        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
         refresh_btn = QPushButton("⟳ Refresh")
         refresh_btn.setStyleSheet(f"""
             QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: 6px; padding: 8px 16px; font-weight: bold; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
         """)
         refresh_btn.clicked.connect(self._refresh)
         header.addWidget(refresh_btn, alignment=Qt.AlignRight)
@@ -66,7 +69,7 @@ class DependencyGraphView(QWidget):
 
         info = QLabel("Lines represent inferred causal relationships between enterprise domains. "
                        "Thicker line = stronger correlation.")
-        info.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: 11px; font-style: italic;")
+        info.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px; font-style: italic;")
         info.setWordWrap(True)
         layout.addWidget(info)
 
@@ -75,8 +78,8 @@ class DependencyGraphView(QWidget):
         self.graph_text.setReadOnly(True)
         self.graph_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 6px; padding: 12px;
-            font-family: 'Consolas', monospace; font-size: 12px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         layout.addWidget(self.graph_text)
 
@@ -84,15 +87,15 @@ class DependencyGraphView(QWidget):
         corr_group = QGroupBox("Observability Correlation Data")
         corr_group.setStyleSheet(f"""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
-            border-radius: 6px; padding: 12px; padding-top: 20px; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px; padding-top: 20px; }}
         """)
         corr_layout = QVBoxLayout(corr_group)
         self.corr_text = QTextEdit()
         self.corr_text.setReadOnly(True)
         self.corr_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: 4px; padding: 8px;
-            font-family: 'Consolas', monospace; font-size: 11px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
         """)
         corr_layout.addWidget(self.corr_text)
         layout.addWidget(corr_group)
