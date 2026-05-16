@@ -4,6 +4,11 @@ Standardized State Helper Components.
 Provides consistent loading, empty, and error states across all workspaces.
 Uses semantic COLOR_* tokens for automatic dark/light parity.
 
+Phase 15.9: Enhanced with:
+- Professional empty states with action suggestions
+- Context-aware messages (no emoji)
+- Action buttons for primary workflow progression
+
 Usage:
     helper = StateHelper(parent_layout)
     helper.show_loading()
@@ -12,7 +17,9 @@ Usage:
     helper.hide()  # Show actual content
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QFrame
+from typing import Optional, Callable, List, Tuple
+
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QFrame, QHBoxLayout
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 
@@ -27,6 +34,8 @@ from ui.constants import (
     TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_CARD_TITLE,
     STATE_LOADING, STATE_EMPTY_TITLE, STATE_EMPTY_SUBTITLE,
     STATE_ERROR_TITLE, STATE_ERROR_RETRY,
+    EMPTY_STATE_ICON_SIZE, EMPTY_STATE_SPACING,
+    BORDER_RADIUS_SM,
 )
 
 
@@ -78,8 +87,19 @@ class StateHelper:
         self._state_widget = container
         self._layout.addWidget(container)
 
-    def show_empty(self, title: str = STATE_EMPTY_TITLE, subtitle: str = STATE_EMPTY_SUBTITLE):
-        """Show empty state."""
+    def show_empty(
+        self,
+        title: str = STATE_EMPTY_TITLE,
+        subtitle: str = STATE_EMPTY_SUBTITLE,
+        actions: Optional[List[Tuple[str, Callable]]] = None
+    ):
+        """Show empty state with optional action suggestions.
+
+        Args:
+            title: Primary empty state heading.
+            subtitle: Contextual guidance description.
+            actions: List of (button_label, callback) tuples for action suggestions.
+        """
         self._clear()
         self._state_type = "empty"
 
@@ -95,14 +115,16 @@ class StateHelper:
 
         layout = QVBoxLayout(container)
         layout.setAlignment(Qt.AlignCenter)
-        layout.setSpacing(SPACING_SM)
+        layout.setSpacing(EMPTY_STATE_SPACING)
 
-        # Icon
-        icon = QLabel("\uD83D\uDCCB")  # Clipboard
-        icon.setFont(QFont("Segoe UI", TEXT_CARD_TITLE))
-        icon.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; border: none;")
-        icon.setAlignment(Qt.AlignCenter)
-        layout.addWidget(icon)
+        # Indicator bar (thin geometric line, professional alternative to icon)
+        indicator = QFrame()
+        indicator.setFixedSize(EMPTY_STATE_ICON_SIZE, 3)
+        indicator.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; border: none; border-radius: {BORDER_RADIUS_SM}px;")
+        indicator_layout = QHBoxLayout()
+        indicator_layout.setAlignment(Qt.AlignCenter)
+        indicator_layout.addWidget(indicator)
+        layout.addLayout(indicator_layout)
 
         # Title
         title_label = QLabel(title)
@@ -120,11 +142,47 @@ class StateHelper:
             sub.setWordWrap(True)
             layout.addWidget(sub)
 
+        # Action suggestion buttons
+        if actions:
+            action_layout = QHBoxLayout()
+            action_layout.setAlignment(Qt.AlignCenter)
+            action_layout.setSpacing(SPACING_SM)
+            for label, callback in actions:
+                btn = QPushButton(label)
+                btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
+                btn.setFixedHeight(36)
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {COLOR_PRIMARY};
+                        color: white;
+                        border: none;
+                        border-radius: {BORDER_RADIUS_MD}px;
+                        padding: {SPACING_SM}px 24px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {COLOR_PRIMARY_HOVER};
+                    }}
+                """)
+                btn.clicked.connect(callback)
+                action_layout.addWidget(btn)
+            layout.addLayout(action_layout)
+
         self._state_widget = container
         self._layout.addWidget(container)
 
-    def show_error(self, message: str = STATE_ERROR_TITLE, on_retry=None):
-        """Show error state with optional retry button."""
+    def show_error(
+        self,
+        message: str = STATE_ERROR_TITLE,
+        on_retry=None,
+        actions: Optional[List[Tuple[str, Callable]]] = None
+    ):
+        """Show error state with optional retry and action suggestion buttons.
+
+        Args:
+            message: Error description.
+            on_retry: Callback for retry button (shorthand for single action).
+            actions: Additional (button_label, callback) tuples for actions.
+        """
         self._clear()
         self._state_type = "error"
 
@@ -140,14 +198,16 @@ class StateHelper:
 
         layout = QVBoxLayout(container)
         layout.setAlignment(Qt.AlignCenter)
-        layout.setSpacing(SPACING_SM)
+        layout.setSpacing(EMPTY_STATE_SPACING)
 
-        # Icon
-        icon = QLabel("\u26A0\uFE0F")  # Warning
-        icon.setFont(QFont("Segoe UI", TEXT_CARD_TITLE))
-        icon.setStyleSheet(f"color: {COLOR_DANGER}; border: none;")
-        icon.setAlignment(Qt.AlignCenter)
-        layout.addWidget(icon)
+        # Indicator bar (thin line in danger color, professional alternative to warning icon)
+        indicator = QFrame()
+        indicator.setFixedSize(EMPTY_STATE_ICON_SIZE, 3)
+        indicator.setStyleSheet(f"background-color: {COLOR_DANGER}; border: none; border-radius: {BORDER_RADIUS_SM}px;")
+        indicator_layout = QHBoxLayout()
+        indicator_layout.setAlignment(Qt.AlignCenter)
+        indicator_layout.addWidget(indicator)
+        layout.addLayout(indicator_layout)
 
         # Title
         title_label = QLabel(message)
@@ -157,25 +217,34 @@ class StateHelper:
         title_label.setWordWrap(True)
         layout.addWidget(title_label)
 
-        # Retry button
+        # Action buttons
+        all_actions = list(actions or [])
         if on_retry:
-            retry_btn = QPushButton(STATE_ERROR_RETRY)
-            retry_btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
-            retry_btn.setFixedHeight(36)
-            retry_btn.setStyleSheet(f"""
-                QPushButton {{
-                    background-color: {COLOR_PRIMARY};
-                    color: white;
-                    border: none;
-                    border-radius: {BORDER_RADIUS_MD}px;
-                    padding: {SPACING_SM}px 24px;
-                }}
-                QPushButton:hover {{
-                    background-color: {COLOR_PRIMARY_HOVER};
-                }}
-            """)
-            retry_btn.clicked.connect(on_retry)
-            layout.addWidget(retry_btn)
+            all_actions.append((STATE_ERROR_RETRY, on_retry))
+
+        if all_actions:
+            action_layout = QHBoxLayout()
+            action_layout.setAlignment(Qt.AlignCenter)
+            action_layout.setSpacing(SPACING_SM)
+            for label, callback in all_actions:
+                btn = QPushButton(label)
+                btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
+                btn.setFixedHeight(36)
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {COLOR_PRIMARY};
+                        color: white;
+                        border: none;
+                        border-radius: {BORDER_RADIUS_MD}px;
+                        padding: {SPACING_SM}px 24px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {COLOR_PRIMARY_HOVER};
+                    }}
+                """)
+                btn.clicked.connect(callback)
+                action_layout.addWidget(btn)
+            layout.addLayout(action_layout)
 
         self._state_widget = container
         self._layout.addWidget(container)

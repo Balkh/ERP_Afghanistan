@@ -16,6 +16,7 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XS,
+    SPACING_SM,
                            MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
 
 
@@ -47,7 +48,7 @@ class _OptionCard(QFrame):
             opt_frame = QFrame()
             opt_frame.setStyleSheet(f"""
                 QFrame {{ background: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; margin: 2px; }}
+                border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; margin: {SPACING_XS}px; }}
             """)
             ol = QVBoxLayout(opt_frame)
 

@@ -2,8 +2,8 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QHeaderView, QAbstractItemView,
                                   QComboBox, QLineEdit, QGroupBox, QFormLayout,
-                                  QMessageBox, QDialog, QDialogButtonBox, QSpinBox,
-                                  QCheckBox, QDateEdit, QTabWidget)
+                                   QMessageBox, QDialog, QSpinBox,
+                                  QCheckBox, QDateEdit, QTabWidget, QWidget)
 from PySide6.QtCore import Qt
 from ui.screens.base_screen import BaseScreen
 from ui.components.dialogs import confirm_dialog

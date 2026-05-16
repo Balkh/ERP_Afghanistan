@@ -1,5 +1,10 @@
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V, COLOR_HEADER_DARK, BORDER_RADIUS_SM)
-from ui.constants import TEXT_BODY, TEXT_LABEL, TEXT_DISPLAY
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V, COLOR_HEADER_DARK, BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, DIALOG_WIDTH_MAX, DIALOG_WIDTH_MIN, DIALOG_WIDTH_PREFERRED, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, TEXT_LABEL)
+from ui.constants import TEXT_BODY, TEXT_LABEL, TEXT_DISPLAY, TEXT_CARD_TITLE
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_DIALOG, COLOR_BG_ELEVATED,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY,
+                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_PRIMARY, COLOR_PRIMARY_HOVER,
+                           COLOR_FORM_FOOTER_BORDER,
+                           DIALOG_WIDTH_MIN, DIALOG_WIDTH_PREFERRED, DIALOG_WIDTH_MAX)
 """
 Enterprise Dialog Components.
 Professional dialog windows with standard patterns.
@@ -66,20 +71,30 @@ class EnterpriseDialog(QDialog):
     def _setup_ui(self):
         """Setup dialog UI."""
         self.setWindowTitle(self._title)
-        self.setMinimumWidth(400)
-        self.setMinimumHeight(200)
+        
+        # ── Width Governance ──
+        self.setMinimumWidth(DIALOG_WIDTH_MIN)
+        self.setMaximumWidth(DIALOG_WIDTH_MAX)
+        self.resize(DIALOG_WIDTH_PREFERRED, 400)
+        
+        # ── Surface layering: dialog background ──
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {COLOR_BG_DIALOG};
+            }}
+        """)
         
         # Main layout
         self._main_layout = QVBoxLayout(self)
         self._main_layout.setSpacing(SPACING_NONE)
-        self._main_layout.setContentsMargins(SPACING_NONE,  SPACING_NONE,  SPACING_NONE,  SPACING_NONE)
+        self._main_layout.setContentsMargins(SPACING_NONE, SPACING_NONE, SPACING_NONE, SPACING_NONE)
         
         # Header
         self._header = self._create_header()
         if self._header:
             self._main_layout.addWidget(self._header)
             
-        # Content area
+        # Content area (elevated surface)
         self._content_widget = QWidget()
         self._content_layout = QVBoxLayout(self._content_widget)
         self._content_layout.setSpacing(SPACING_MD)
@@ -100,7 +115,7 @@ class EnterpriseDialog(QDialog):
         layout.setContentsMargins(MARGIN_COMPACT_H, MARGIN_COMPACT_V, MARGIN_COMPACT_H, MARGIN_COMPACT_V)
         
         title_label = QLabel(self._title)
-        title_label.setFont(QFont("Segoe UI", TEXT_DISPLAY, QFont.Weight.Bold))
+        title_label.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
         layout.addWidget(title_label)
         
         layout.addStretch()
@@ -119,19 +134,21 @@ class EnterpriseDialog(QDialog):
         return header
         
     def _create_button_area(self) -> Optional[QWidget]:
-        """Create button area."""
+        """Create button area with anchored footer."""
+        from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+        
         button_area = QFrame()
         button_area.setFixedHeight(60)
         
         layout = QHBoxLayout(button_area)
-        layout.setContentsMargins(MARGIN_COMPACT_H, MARGIN_COMPACT_V, MARGIN_COMPACT_H, MARGIN_COMPACT_V)
+        layout.setContentsMargins(MARGIN_CARD, SPACING_SM, MARGIN_CARD, SPACING_SM)
         
         layout.addStretch()
         
         # Default buttons based on dialog type
         if self._dialog_type == DialogType.CONFIRM:
-            self._yes_btn = QPushButton("Yes")
-            self._no_btn = QPushButton("No")
+            self._yes_btn = EnterpriseButton("Yes", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+            self._no_btn = EnterpriseButton("No", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
             
             self._yes_btn.clicked.connect(self.accept)
             self._no_btn.clicked.connect(self.reject)
@@ -140,13 +157,13 @@ class EnterpriseDialog(QDialog):
             layout.addWidget(self._yes_btn)
             
         elif self._dialog_type == DialogType.ALERT:
-            self._ok_btn = QPushButton("OK")
+            self._ok_btn = EnterpriseButton("OK", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
             self._ok_btn.clicked.connect(self.accept)
             layout.addWidget(self._ok_btn)
             
         else:
-            self._cancel_btn = QPushButton("Cancel")
-            self._save_btn = QPushButton("Save")
+            self._cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+            self._save_btn = EnterpriseButton("Save", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
             
             self._cancel_btn.clicked.connect(self.reject)
             self._save_btn.clicked.connect(self.accept)
@@ -157,26 +174,9 @@ class EnterpriseDialog(QDialog):
         button_area.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_BG_MAIN};
-                border-top: 1px solid {COLOR_BORDER};
-                border-bottom-left-radius: 8px;
-                border-bottom-right-radius: 8px;
-            }}
-            QPushButton {{
-                padding: {SPACING_SM}px 20px;
-                border-radius: {BORDER_RADIUS_SM};
-                font-weight: 600;
-            }}
-            QPushButton[text="Save"] {{
-                background-color: {COLOR_PRIMARY};
-                color: white;
-            }}
-            QPushButton[text="OK"] {{
-                background-color: {COLOR_PRIMARY};
-                color: white;
-            }}
-            QPushButton[text="Yes"] {{
-                background-color: {COLOR_PRIMARY};
-                color: white;
+                border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};
+                border-bottom-left-radius: {BORDER_RADIUS_LG}px;
+                border-bottom-right-radius: {BORDER_RADIUS_LG}px;
             }}
         """)
         
@@ -231,7 +231,7 @@ class ConfirmDialog(EnterpriseDialog):
         # Add message
         message_label = QLabel(message)
         message_label.setWordWrap(True)
-        message_label.setFont(QFont("Segoe UI", TEXT_BODY))
+        message_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.set_content(message_label)
         
         # Connect signals
@@ -270,7 +270,7 @@ class AlertDialog(EnterpriseDialog):
         # Add message with styling
         message_label = QLabel(message)
         message_label.setWordWrap(True)
-        message_label.setFont(QFont("Segoe UI", TEXT_BODY))
+        message_label.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.set_content(message_label)
         
     @staticmethod
@@ -313,7 +313,7 @@ class LoadingDialog(EnterpriseDialog):
         # Add message
         self._message_label = QLabel(message)
         self._message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._message_label.setFont(QFont("Segoe UI", TEXT_LABEL))
+        self._message_label.setFont(QFont("Segoe UI", TEXT_BODY))
         self.set_content(self._message_label)
         
         self.setMinimumWidth(200)

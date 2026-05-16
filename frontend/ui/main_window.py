@@ -13,14 +13,14 @@ from api.client import APIClient
 from security.session_store import clear_session as encrypted_clear_session
 from security.auth_manager import AuthManager
 from ui.role_renderer import RoleRenderer
-from ui.components.toast import get_toast_manager
+from ui.components.notifications import show_warning
 from ui.components.loading_spinner import LoadingOverlay
 from ui.components.navigation_header import NavigationHeader
 from theme.theme_engine import ThemeEngine
 from ui.utils.lazy_loader import LazyScreenManager
 from utils.logger import get_logger, set_active_screen, get_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id, record_screen_load, record_error, detect_error_bursts, generate_operational_insight_report, emit_event
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
-from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY, TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_TABLE)
+from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_TABLE
 
 log = get_logger('ui')
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_FOCUS, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
@@ -250,7 +250,7 @@ class MainWindow(QMainWindow):
         # Outer vertical layout: global bar on top, content below
         self._outer_layout = QVBoxLayout(central_widget)
         self._outer_layout.setContentsMargins(0, 0, 0, 0)
-        self._outer_layout.setSpacing(0)
+        self._outer_layout.setSpacing(SPACING_NONE)
 
         # Global Intelligence Bar
         from ui.cognitive.global_bar import GlobalIntelligenceBar
@@ -266,13 +266,8 @@ class MainWindow(QMainWindow):
         # Inner horizontal layout: sidebar + content
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        main_layout.setSpacing(SPACING_NONE)
         self._outer_layout.addLayout(main_layout)
-        
-        # Create toast manager (positioned at top-right)
-        self.toast_manager = get_toast_manager()
-        self.toast_manager.setParent(self)
-        self.toast_manager.move(self.width() - 300, 20)
         
         # Create loading overlay
         self.loading_overlay = LoadingOverlay(self)
@@ -339,29 +334,13 @@ class MainWindow(QMainWindow):
                 subcontrol-position: top left;
                 padding: 0 5px;
             }}
-            QTableWidget {{
-                background-color: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                gridline-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER};
-            }}
-            QTableWidget::item {{
-                padding: {SPACING_SM}px;
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_BG_ELEVATED};
-                color: {COLOR_TEXT_PRIMARY};
-                padding: {SPACING_SM}px;
-                border: none;
-                font-weight: bold;
-            }}
             QPushButton {{
                 background-color: {COLOR_PRIMARY};
-                color: {COLOR_BG_MAIN};
+                color: {COLOR_TEXT_ON_PRIMARY};
                 border: none;
                 border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px 16px;
-                font-weight: bold;
+                padding: {SPACING_SM}px {SPACING_XL}px;
+                font-weight: 600;
             }}
             QPushButton:hover {{
                 background-color: {COLOR_PRIMARY_HOVER};
@@ -439,6 +418,7 @@ class MainWindow(QMainWindow):
         from ui.purchases.purchase_invoice_screen import PurchaseInvoiceScreen
         from ui.purchases.supplier_screen import SupplierScreen
         from ui.returns.returns_screen import ReturnsScreen
+        from ui.returns.reconciliation_screen import ReconciliationScreen
         _register(1, _b(ProductScreen))
         _register(2, _b(CategoryScreen))
         _register(3, _b(WarehouseScreen))
@@ -499,6 +479,7 @@ class MainWindow(QMainWindow):
         from ui.system.licensing_screen import LicensingScreen
         from ui.system.production_screen import ProductionScreen
         from ui.system.analytics_workspace import AnalyticsWorkspace
+        from ui.system.intelligence_hub_screen import IntelligenceHubScreen
         from ui.control_tower.operations_dashboard import OperationsDashboard
         from ui.observability.observability_console import ObservabilityConsole
         from ui.causal_scoring.decision_workspace import DecisionWorkspace
@@ -507,7 +488,7 @@ class MainWindow(QMainWindow):
         _register(29, _b(FixedAssetsScreen))
         _register(30, _b(AuditScreen))
         _register(31, _b(UserManagementScreen))
-        _register(32, lambda api_client=None: AnalyticsWorkspace(api_client=api_client))
+        _register(32, _b(IntelligenceHubScreen))
         _register(33, _b(InvoiceTemplateManager))
         _register(35, _b(EntityManagementScreen))
         _register(36, _b(LicensingScreen))
@@ -536,6 +517,7 @@ class MainWindow(QMainWindow):
         _register(54, lambda api_client=None: ReportBrowser(report_type="payroll_trend"))
         _register(55, lambda api_client=None: ReportBrowser(report_type="payroll_dept_cost"))
         _register(56, lambda api_client=None: ReportBrowser(report_type="payroll_emp_history"))
+        _register(57, _b(ReconciliationScreen))
 
         main_layout.addWidget(content_frame, 1)
 
@@ -567,7 +549,7 @@ class MainWindow(QMainWindow):
         }
         module = page_to_module.get(index, "dashboard")
         if not self.auth_manager.has_access(module):
-            self.toast_manager.show_warning(f"Access denied: you don't have permission to view {page_title.strip()}")
+            show_warning(f"Access denied: you don't have permission to view {page_title.strip()}")
             return
 
         _start = time.time()
@@ -655,6 +637,7 @@ class MainWindow(QMainWindow):
             34: "Expenses", 35: "Entities", 36: "Licensing", 37: "Production",
             38: "Control Center",
             39: "Observability",
+            57: "Reconciliation",
         }
         
         # Build breadcrumb based on current page category
@@ -674,6 +657,8 @@ class MainWindow(QMainWindow):
             return ["Home", "HR", page_map.get(index, page_title)]
         elif index in [27, 28, 29, 30, 31, 32, 33, 35, 36, 37, 38, 39]:
             return ["Home", "System", page_map.get(index, page_title)]
+        elif index in [9, 57]:
+            return ["Home", "Returns", page_map.get(index, page_title)]
         else:
             return ["Home", page_map.get(index, page_title)]
     
@@ -837,29 +822,13 @@ class MainWindow(QMainWindow):
                     subcontrol-position: top left;
                     padding: 0 5px;
                 }}
-                QTableWidget {{
-                    background-color: {C.COLOR_BG_SURFACE};
-                    color: {C.COLOR_TEXT_PRIMARY};
-                    gridline-color: {C.COLOR_BG_ELEVATED};
-                    border: 1px solid {C.COLOR_BORDER};
-                }}
-                QTableWidget::item {{
-                    padding: {C.SPACING_SM}px;
-                }}
-                QHeaderView::section {{
-                    background-color: {C.COLOR_BG_ELEVATED};
-                    color: {C.COLOR_TEXT_PRIMARY};
-                    padding: {C.SPACING_SM}px;
-                    border: none;
-                    font-weight: bold;
-                }}
                 QPushButton {{
                     background-color: {C.COLOR_PRIMARY};
                     color: {C.COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     border-radius: {C.BORDER_RADIUS_MD};
-                    padding: {C.SPACING_SM}px 16px;
-                    font-weight: bold;
+                    padding: {C.SPACING_SM}px {C.SPACING_XL}px;
+                    font-weight: 600;
                 }}
                 QPushButton:hover {{
                     background-color: {C.COLOR_PRIMARY_HOVER};
@@ -1126,7 +1095,7 @@ class MainWindow(QMainWindow):
     def _do_navigate(self, page_id):
         # Check ui_scopes — deny if user doesn't have access
         if not self.auth_manager.has_access(page_id) and page_id not in ("dashboard", "settings"):
-            self.toast_manager.show_warning(f"Access denied: you don't have permission to view {page_id}")
+            show_warning(f"Access denied: you don't have permission to view {page_id}")
             return
 
         page_map = {
@@ -1153,26 +1122,25 @@ class MainWindow(QMainWindow):
             "budgeting": 20,
             "tax": 21,
             "cost_centers": 22,
-            "cashflow": 23,
-            "employees": 24,
-            "attendance": 25,
-            "leave": 26,
-            "payroll": 27,
-            "backup": 28,
-            "settings": 29,
-            "fixed_assets": 30,
-            "audit": 31,
-            "user_management": 32,
-            "intelligence_hub": 33,
-            "analytics": 33,
-            "invoice_templates": 34,
-            "expenses": 35,
-            "entities": 36,
-            "licensing": 37,
-            "production": 38,
-            "control_center": 39,
-            "operations": 39,
-            "observability": 40,
+            "cashflow": 22,
+            "employees": 23,
+            "attendance": 24,
+            "leave": 25,
+            "payroll": 26,
+            "backup": 27,
+            "settings": 28,
+            "fixed_assets": 29,
+            "audit": 30,
+            "user_management": 31,
+            "intelligence_hub": 32,
+            "invoice_templates": 33,
+            "expenses": 34,
+            "entities": 35,
+            "licensing": 36,
+            "production": 37,
+            "control_center": 38,
+            "operations": 38,
+            "observability": 39,
             "decision_workspace": 48,
             "cash_flow": 49,
             "employee_summary": 50,
@@ -1269,9 +1237,6 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event):
         """Handle window resize events."""
         super().resizeEvent(event)
-        # Update toast manager position
-        if hasattr(self, 'toast_manager'):
-            self.toast_manager.move(self.width() - 300, 20)
         # Update loading overlay geometry
         if hasattr(self, 'loading_overlay'):
             self.loading_overlay.setGeometry(0, 0, self.width(), self.height())

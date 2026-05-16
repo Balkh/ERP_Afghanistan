@@ -11,6 +11,7 @@ from PySide6.QtGui import QFont
 
 from api.client import APIClient
 from api.governance_client import GovernanceAPIClient
+from ui.components.tables import build_table_stylesheet
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_SUCCESS,
                            COLOR_WARNING, COLOR_DANGER, COLOR_BORDER,
@@ -63,12 +64,8 @@ class ApprovalWorkflowScreen(QWidget):
         self.table.setHorizontalHeaderLabels(["ID", "Action", "Risk", "State", "Signatures"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.table.setStyleSheet(f"""
-            QTableWidget {{ background-color: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
-            gridline-color: {COLOR_BORDER}; border: 1px solid {COLOR_BORDER}; }}
-            QHeaderView::section {{ background-color: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
-        """)
+        self.table.setAlternatingRowColors(True)
+        self.table.setStyleSheet(build_table_stylesheet())
         self.table.itemClicked.connect(self._on_workflow_selected)
         left_layout.addWidget(self.table)
 

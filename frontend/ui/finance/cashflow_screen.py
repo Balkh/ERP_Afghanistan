@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
                                   QMessageBox, QComboBox, QGroupBox,
-                                  QFormLayout, QDialog, QDialogButtonBox, QTabWidget,
+                                   QFormLayout, QDialog, QTabWidget,
                                   QDateEdit, QProgressBar, QApplication, QFrame)
 from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QColor
@@ -121,7 +121,7 @@ class CashflowScreen(BaseScreen):
         layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
         
         title_label = QLabel(title)
-        title_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-weight: bold; font-size: 10pt;")
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-weight: bold; font-size: {TEXT_BODY_SMALL}pt;")
         
         value_label = QLabel(value)
         value_label.setObjectName("value_label")

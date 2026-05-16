@@ -72,8 +72,50 @@ COLOR_STATUS_PENDING: str = ""
 COLOR_TEXT_TITLE: str = ""
 COLOR_HEADER_DARK: str = ""
 COLOR_WHATSAPP: str = ""
+COLOR_BORDER_INPUT_HOVER: str = ""
+COLOR_BORDER_FOCUS_RING: str = ""
+COLOR_BORDER_SECTION: str = ""
+COLOR_BG_DIALOG: str = ""
+COLOR_BG_SECTION: str = ""
+COLOR_BG_TOOLTIP: str = ""
+COLOR_BG_HOVER: str = ""
+COLOR_BG_FOCUS: str = ""
+COLOR_FORM_LABEL: str = ""
+COLOR_FORM_LABEL_REQUIRED: str = ""
+COLOR_FORM_DESCRIPTION_BG: str = ""
+COLOR_FORM_SECTION_TITLE: str = ""
+COLOR_FORM_SECTION_DIVIDER: str = ""
+COLOR_FORM_FOOTER_BORDER: str = ""
+COLOR_FOCUS_RING: str = ""
+COLOR_FOCUS_RING_ALPHA: str = ""
+COLOR_HOVER_OVERLAY: str = ""
+COLOR_PRESSED_OVERLAY: str = ""
+COLOR_HELPER_TEXT: str = ""
+COLOR_VALID_SUCCESS: str = ""
+COLOR_VALID_WARNING: str = ""
+COLOR_VALID_ERROR: str = ""
+COLOR_VALID_BG_SUCCESS: str = ""
+COLOR_VALID_BG_WARNING: str = ""
+COLOR_VALID_BG_ERROR: str = ""
+COLOR_INPUT_SUCCESS: str = ""
+COLOR_INPUT_WARNING: str = ""
+COLOR_INPUT_ERROR: str = ""
 COLOR_TEXT: str = ""
 COLOR_BACKGROUND: str = ""
+
+# Dedicated table tokens (Phase 15.2)
+TABLE_BG_PRIMARY: str = ""
+TABLE_BG_SECONDARY: str = ""
+TABLE_BG_HOVER: str = ""
+TABLE_BG_SELECTED: str = ""
+TABLE_GRID_COLOR: str = ""
+TABLE_TEXT_PRIMARY: str = ""
+TABLE_TEXT_MUTED: str = ""
+TABLE_TEXT_SELECTED: str = ""
+TABLE_HEADER_BG: str = ""
+TABLE_HEADER_TEXT: str = ""
+TABLE_SCROLLBAR_BG: str = ""
+TABLE_SCROLLBAR_HANDLE: str = ""
 
 # ═══════════════════════════════════════════════════════════════
 # LIVE THEME SYSTEM — colors switch at runtime
@@ -110,6 +152,11 @@ _THEME_DARK = {
     "COLOR_BG_ELEVATED": "#313244",
     "COLOR_BG_INPUT": "#1e1e2e",
     "COLOR_BG_CARD": "#282838",
+    "COLOR_BG_DIALOG": "#282838",
+    "COLOR_BG_SECTION": "#282838",
+    "COLOR_BG_TOOLTIP": "#313244",
+    "COLOR_BG_HOVER": "#2a2a3c",
+    "COLOR_BG_FOCUS": "#2e2e42",
 
     # ── CONTENT COLORS (high contrast against surfaces) ──
     "COLOR_TEXT_PRIMARY": "#e5e8f0",       # was #cdd6f4 — brighter for better contrast
@@ -160,13 +207,16 @@ _THEME_DARK = {
     "COLOR_SECONDARY_TEXT": "#e5e8f0",     # was #cdd6f4 — matches primary text
     "COLOR_SECONDARY_ACTIVE": "#6c7086",
 
-    # ── BORDERS ──
+        # ── BORDERS ──
     "COLOR_BORDER": "#45475a",
     "COLOR_BORDER_LIGHT": "#38384a",
     "COLOR_BORDER_FOCUS": "#89b4fa",
     "COLOR_BORDER_DIALOG": "#45475a",
     "COLOR_BORDER_TABLE": "#45475a",
     "COLOR_BORDER_INPUT": "#45475a",
+    "COLOR_BORDER_INPUT_HOVER": "#585b70",
+    "COLOR_BORDER_FOCUS_RING": "#89b4fa",
+    "COLOR_BORDER_SECTION": "#38384a",
 
     # ── TABLES ──
     "COLOR_TABLE_GRIDLINE": "#45475a",
@@ -176,9 +226,47 @@ _THEME_DARK = {
     "COLOR_TABLE_BORDER_LIGHT": "#585b70",
     "COLOR_TABLE_HEADER_BG_LIGHT": "#45475a",
 
+    # ── DEDICATED TABLE TOKENS (Phase 15.2) ──
+    "TABLE_BG_PRIMARY": "#1f2430",
+    "TABLE_BG_SECONDARY": "#252b39",
+    "TABLE_BG_HOVER": "#2f3548",
+    "TABLE_BG_SELECTED": "#364a6a",
+    "TABLE_GRID_COLOR": "#45475a",
+    "TABLE_TEXT_PRIMARY": "#e5e8f0",
+    "TABLE_TEXT_MUTED": "#7a7f96",
+    "TABLE_TEXT_SELECTED": "#ffffff",
+    "TABLE_HEADER_BG": "#282838",
+    "TABLE_HEADER_TEXT": "#b8bdd0",
+    "TABLE_SCROLLBAR_BG": "#1e1e2e",
+    "TABLE_SCROLLBAR_HANDLE": "#45475a",
+
     # ── FORMS ──
     "COLOR_FORM_BORDER_LIGHT": "#585b70",
     "COLOR_FORM_TEXT_LIGHT": "#e5e8f0",
+    "COLOR_FORM_LABEL": "#b8bdd0",
+    "COLOR_FORM_LABEL_REQUIRED": "#f38ba8",
+    "COLOR_FORM_DESCRIPTION_BG": "#242436",
+    "COLOR_FORM_SECTION_TITLE": "#e5e8f0",
+    "COLOR_FORM_SECTION_DIVIDER": "#38384a",
+    "COLOR_FORM_FOOTER_BORDER": "#38384a",
+
+    # ── INTERACTION ──
+    "COLOR_FOCUS_RING": "#89b4fa",
+    "COLOR_FOCUS_RING_ALPHA": "rgba(137, 180, 250, 0.25)",
+    "COLOR_HOVER_OVERLAY": "rgba(255, 255, 255, 0.04)",
+    "COLOR_PRESSED_OVERLAY": "rgba(255, 255, 255, 0.08)",
+
+    # ── VALIDATION ──
+    "COLOR_HELPER_TEXT": "#6c7086",
+    "COLOR_VALID_SUCCESS": "#a6e3a1",
+    "COLOR_VALID_WARNING": "#f9e2af",
+    "COLOR_VALID_ERROR": "#f38ba8",
+    "COLOR_VALID_BG_SUCCESS": "#1e3a2f",
+    "COLOR_VALID_BG_WARNING": "#3a3520",
+    "COLOR_VALID_BG_ERROR": "#3a1f2a",
+    "COLOR_INPUT_SUCCESS": "#4a8a5a",
+    "COLOR_INPUT_WARNING": "#8a7a3a",
+    "COLOR_INPUT_ERROR": "#8a3a4a",
 
     # ── LIGHT-THEME-NAMED TOKENS (dark values) ──
     "COLOR_BG_LIGHT": "#313244",
@@ -213,6 +301,11 @@ _THEME_LIGHT = {
     "COLOR_BG_ELEVATED": "#f4f5f8",
     "COLOR_BG_INPUT": "#ffffff",
     "COLOR_BG_CARD": "#ffffff",
+    "COLOR_BG_DIALOG": "#ffffff",
+    "COLOR_BG_SECTION": "#ffffff",
+    "COLOR_BG_TOOLTIP": "#f4f5f8",
+    "COLOR_BG_HOVER": "#f0f1f5",
+    "COLOR_BG_FOCUS": "#e8eaf2",
 
     # ── CONTENT COLORS (high contrast against light surfaces) ──
     "COLOR_TEXT_PRIMARY": "#0d0f14",       # was #111217 — darker for max contrast
@@ -270,6 +363,9 @@ _THEME_LIGHT = {
     "COLOR_BORDER_DIALOG": "#6b6e82",
     "COLOR_BORDER_TABLE": "#6b6e82",
     "COLOR_BORDER_INPUT": "#6b6e82",
+    "COLOR_BORDER_INPUT_HOVER": "#8a8da0",
+    "COLOR_BORDER_FOCUS_RING": "#3a7ae8",
+    "COLOR_BORDER_SECTION": "#d0d2dc",
 
     # ── TABLES ──
     "COLOR_TABLE_GRIDLINE": "#c8cad4",
@@ -279,9 +375,47 @@ _THEME_LIGHT = {
     "COLOR_TABLE_BORDER_LIGHT": "#a0a3b8",
     "COLOR_TABLE_HEADER_BG_LIGHT": "#e8e9ef",
 
+    # ── DEDICATED TABLE TOKENS (Phase 15.2) ──
+    "TABLE_BG_PRIMARY": "#ffffff",
+    "TABLE_BG_SECONDARY": "#f6f7fa",
+    "TABLE_BG_HOVER": "#e8e9ef",
+    "TABLE_BG_SELECTED": "#c8d6e8",
+    "TABLE_GRID_COLOR": "#c8cad4",
+    "TABLE_TEXT_PRIMARY": "#0d0f14",
+    "TABLE_TEXT_MUTED": "#6b6e82",
+    "TABLE_TEXT_SELECTED": "#0d0f14",
+    "TABLE_HEADER_BG": "#e8e9ef",
+    "TABLE_HEADER_TEXT": "#3d3f56",
+    "TABLE_SCROLLBAR_BG": "#edeef2",
+    "TABLE_SCROLLBAR_HANDLE": "#b0b3c0",
+
     # ── FORMS ──
     "COLOR_FORM_BORDER_LIGHT": "#a0a3b8",
     "COLOR_FORM_TEXT_LIGHT": "#0d0f14",
+    "COLOR_FORM_LABEL": "#3d3f56",
+    "COLOR_FORM_LABEL_REQUIRED": "#c42a2a",
+    "COLOR_FORM_DESCRIPTION_BG": "#f6f7fa",
+    "COLOR_FORM_SECTION_TITLE": "#0d0f14",
+    "COLOR_FORM_SECTION_DIVIDER": "#d0d2dc",
+    "COLOR_FORM_FOOTER_BORDER": "#d0d2dc",
+
+    # ── INTERACTION ──
+    "COLOR_FOCUS_RING": "#3a7ae8",
+    "COLOR_FOCUS_RING_ALPHA": "rgba(58, 122, 232, 0.15)",
+    "COLOR_HOVER_OVERLAY": "rgba(0, 0, 0, 0.03)",
+    "COLOR_PRESSED_OVERLAY": "rgba(0, 0, 0, 0.06)",
+
+    # ── VALIDATION ──
+    "COLOR_HELPER_TEXT": "#6b6e82",
+    "COLOR_VALID_SUCCESS": "#168a4a",
+    "COLOR_VALID_WARNING": "#c47a06",
+    "COLOR_VALID_ERROR": "#c42a2a",
+    "COLOR_VALID_BG_SUCCESS": "#e0f5ea",
+    "COLOR_VALID_BG_WARNING": "#fef3cd",
+    "COLOR_VALID_BG_ERROR": "#fde8e8",
+    "COLOR_INPUT_SUCCESS": "#168a4a",
+    "COLOR_INPUT_WARNING": "#c47a06",
+    "COLOR_INPUT_ERROR": "#c42a2a",
 
     # ── LIGHT-THEME-NAMED TOKENS ──
     "COLOR_BG_LIGHT": "#edeef2",
@@ -368,9 +502,9 @@ FONT_SIZE_28 = 28
 
 # Button heights
 BUTTON_HEIGHT_SM = 32
-BUTTON_HEIGHT_MD = 36
-BUTTON_HEIGHT_LG = 40
-BUTTON_HEIGHT_XL = 44
+BUTTON_HEIGHT_MD = 38
+BUTTON_HEIGHT_LG = 46
+BUTTON_HEIGHT_XL = 50
 
 # Input field heights
 INPUT_HEIGHT_SM = 32
@@ -378,8 +512,7 @@ INPUT_HEIGHT_MD = 38
 INPUT_HEIGHT_LG = 44
 INPUT_HEIGHT_XL = 50
 
-# Table row heights
-TABLE_ROW_HEIGHT_SM = 28
+# Table row heights (legacy — use DENSITY_*_ROW for new code)
 TABLE_ROW_HEIGHT_MD = 32
 TABLE_ROW_HEIGHT_LG = 36
 
@@ -542,3 +675,78 @@ STATE_EMPTY_TITLE = "No data available"
 STATE_EMPTY_SUBTITLE = "Records will appear here once created"
 STATE_ERROR_TITLE = "Unable to load data"
 STATE_ERROR_RETRY = "Retry"
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 15.8: DIALOG WIDTH GOVERNANCE
+# ═══════════════════════════════════════════════════════════════
+DIALOG_WIDTH_MIN = 400
+DIALOG_WIDTH_PREFERRED = 580
+DIALOG_WIDTH_MAX = 720
+DIALOG_WIDTH_FORM_MIN = 520
+DIALOG_WIDTH_FORM_PREFERRED = 580
+DIALOG_WIDTH_WIDE = 900
+
+# Adaptive breakpoints (in pixels)
+BREAKPOINT_2COL = 600   # below this, 2-column collapses to 1-column
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 15.8: SECTION SPACING & VISUAL HIERARCHY
+# ═══════════════════════════════════════════════════════════════
+SECTION_VERTICAL_SPACING = SPACING_XXL  # 24px between sections
+SECTION_TITLE_SPACING = SPACING_LG      # 16px below section title
+SECTION_CONTENT_SPACING = SPACING_MD    # 12px within section content
+SECTION_DIVIDER_HEIGHT = 1              # px
+
+# Surface elevation (z-depth simulation via borders/shading)
+# Higher number = visually closer to user
+ELEVATION_DIALOG = 4     # Dialog windows (highest)
+ELEVATION_SECTION = 2    # Form sections (medium)
+ELEVATION_CARD = 1       # Cards (low)
+ELEVATION_INPUT = 0      # Input fields (base)
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 15.8: INTERACTION TIMING
+# ═══════════════════════════════════════════════════════════════
+FOCUS_TRANSITION_MS = 150
+HOVER_TRANSITION_MS = 100
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 15.9: LINE-HEIGHT RHYTHM
+# ═══════════════════════════════════════════════════════════════
+LINE_HEIGHT_TIGHT = 1.2
+LINE_HEIGHT_NORMAL = 1.4
+LINE_HEIGHT_RELAXED = 1.6
+LINE_HEIGHT_SPACED = 1.8
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 15.9: VALIDATION STATE TOKENS
+# ═══════════════════════════════════════════════════════════════
+HELPER_TEXT_MARGIN_TOP = 2      # px above helper text
+HELPER_TEXT_MARGIN_BOTTOM = 4   # px below helper text
+VALIDATION_ICON_SIZE = 14       # px for inline validation icon
+VALIDATION_MESSAGE_MAX_WIDTH = 300
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 15.9: DENSITY REFINEMENT
+# ═══════════════════════════════════════════════════════════════
+# Comfortable mode (dialogs, forms, settings)
+FORM_LABEL_SPACING = SPACING_XS       # 4px between label and input
+FORM_HELPER_SPACING = SPACING_XS       # 4px above helper text
+SECTION_CONTENT_PADDING_V = SPACING_SM  # 8px vertical padding within section
+
+# Compact mode (tables, sidebar, financial)
+COMPACT_ROW_PADDING_H = SPACING_SM     # 8px horizontal padding in rows
+COMPACT_ROW_PADDING_V = SPACING_XS     # 4px vertical padding in rows
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 15.9: MICRO-INTERACTION TIMING
+# ═══════════════════════════════════════════════════════════════
+SELECTION_TRANSITION_MS = 100
+TABLE_HOVER_TRANSITION_MS = 80
+SIDEBAR_HOVER_TRANSITION_MS = 120
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 15.9: EMPTY STATE CONSTANTS
+# ═══════════════════════════════════════════════════════════════
+EMPTY_STATE_ICON_SIZE = 32     # px for empty state indicator
+EMPTY_STATE_SPACING = SPACING_SM  # spacing between empty state elements

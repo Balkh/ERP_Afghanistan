@@ -384,6 +384,8 @@ class JournalEntry(CompanyScopedMixin, TimeStampedUUIDModel):
         ('INVENTORY_ADJ', _('Inventory Adjustment')),
         ('PAYROLL', _('Payroll')),
         ('REVERSAL', _('Reversal')),
+        ('SALE_RETURN', _('Sale Return')),
+        ('PURCHASE_RETURN', _('Purchase Return')),
     ]
 
     entry_number = models.CharField(

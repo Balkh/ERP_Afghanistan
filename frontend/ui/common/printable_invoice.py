@@ -9,8 +9,9 @@ from api.document_action_service import DocumentActionService
 from utils.invoice_template_engine import InvoiceTemplateEngine
 from utils.qr_generator import QRCodeGenerator
 from api.client import APIClient
-from ui.constants import COLOR_WHATSAPP, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER
-from ui.constants import TEXT_LABEL, TEXT_BODY, TEXT_CARD_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE
+from ui.constants import (COLOR_WHATSAPP, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER,
+    SPACING_MD, SPACING_SM, SPACING_XL, SPACING_XS,
+                           TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
 
 
 class PrintableInvoiceDialog(QDialog):
@@ -123,23 +124,23 @@ class PrintableInvoiceDialog(QDialog):
         <html>
         <head>
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 0; padding: 20px; font-size: {TEXT_BODY}px; }}
-                .header {{ background-color: {header_color}; color: white; padding: 20px; border-radius: 5px; }}
+                body {{ font-family: Arial, sans-serif; margin: 0; padding: {SPACING_XL}px; font-size: {TEXT_BODY}px; }}
+                .header {{ background-color: {header_color}; color: white; padding: {SPACING_XL}px; border-radius: 5px; }}
                 .header h1 {{ margin: 0; font-size: {TEXT_SECTION_TITLE}px; }}
-                .header p {{ margin: 5px 0; }}
-                .invoice-info {{ display: flex; justify-content: space-between; margin: 20px 0; }}
+                .header p {{ margin: {SPACING_XS}px 0; }}
+                .invoice-info {{ display: flex; justify-content: space-between; margin: {SPACING_XL}px 0; }}
                 .invoice-info div {{ width: 48%; }}
-                table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-                th {{ background-color: {accent_color}; color: white; padding: 10px; text-align: left; }}
-                td {{ padding: 8px 10px; border-bottom: 1px solid #ddd; }}
+                table {{ width: 100%; border-collapse: collapse; margin: {SPACING_XL}px 0; }}
+                th {{ background-color: {accent_color}; color: white; padding: {SPACING_MD}px; text-align: left; }}
+                td {{ padding: {SPACING_SM}px 10px; border-bottom: 1px solid #ddd; }}
                 tr:nth-child(even) {{ background-color: #f9f9f9; }}
-                .totals {{ text-align: right; margin: 20px 0; }}
+                .totals {{ text-align: right; margin: {SPACING_XL}px 0; }}
                 .totals table {{ width: 300px; margin-left: auto; }}
                 .totals th {{ text-align: right; }}
                 .totals td {{ text-align: right; }}
                 .grand-total {{ font-size: {TEXT_CARD_TITLE}px; font-weight: bold; background-color: {header_color}; color: white; }}
                 .footer {{ text-align: center; margin-top: 40px; color: #666; font-size: {TEXT_TABLE}px; border-top: 1px solid #ddd; padding-top: 10px; }}
-                .status {{ display: inline-block; padding: 5px 10px; border-radius: 3px; font-weight: bold; }}
+                .status {{ display: inline-block; padding: {SPACING_XS}px 10px; border-radius: 3px; font-weight: bold; }}
                 .status-paid {{ background-color: #27ae60; color: white; }}
                 .status-unpaid {{ background-color: #e74c3c; color: white; }}
                 .status-partial {{ background-color: #f39c12; color: white; }}
@@ -254,7 +255,7 @@ class PrintableInvoiceDialog(QDialog):
                 return f'''
                 <div style="text-align: center; margin-top: 15px;">
                     <img src="{qr_uri}" alt="QR Code" width="80" height="80">
-                    <p style="font-size: 10px; color: #666; margin-top: 4px;">Scan to Verify Invoice</p>
+                    <p style="font-size: {TEXT_BODY_SMALL}px; color: #666; margin-top: 4px;">Scan to Verify Invoice</p>
                 </div>
                 '''
         except Exception:

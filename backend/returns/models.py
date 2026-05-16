@@ -25,6 +25,7 @@ class ReturnOrder(TimeStampedUUIDModel):
         ('APPROVED', _('Approved')),
         ('REJECTED', _('Rejected')),
         ('COMPLETED', _('Completed')),
+        ('VOIDED', _('Voided')),
     ]
 
     # Core identification
@@ -125,6 +126,27 @@ class ReturnOrder(TimeStampedUUIDModel):
         related_name='returns',
         verbose_name=_('Journal Entry')
     )
+    
+    # Void fields
+    VOIDED = 'VOIDED'
+    reversal_journal_entry = models.ForeignKey(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='voided_returns',
+        verbose_name=_('Reversal Journal Entry')
+    )
+    voided_by = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='voided_returns',
+        verbose_name=_('Voided By')
+    )
+    voided_at = models.DateTimeField(null=True, blank=True, verbose_name=_('Voided At'))
+    void_reason = models.TextField(blank=True, verbose_name=_('Void Reason'))
 
     class Meta:
         verbose_name = _('Return Order')
@@ -182,9 +204,18 @@ class ReturnOrder(TimeStampedUUIDModel):
         
         # 1. Update Inventory - restore stock based on item conditions
         for item in self.items.all():
-            if item.return_quantity > item.get_original_quantity():
+            original_qty = item.get_original_quantity()
+            
+            # Check total already approved returns for this invoice item
+            already_returned = ReturnItem.objects.filter(
+                invoice_item=item.invoice_item,
+                return_order__status='APPROVED',
+            ).aggregate(total=models.Sum('return_quantity'))['total'] or Decimal('0.00')
+            
+            if item.return_quantity + already_returned > original_qty:
                 raise ValidationError(
-                    _(f'Return quantity for {item.product.name} exceeds invoice quantity.')
+                    _(f'Return quantity for {item.product.name} exceeds remaining invoice quantity. '
+                      f'(Original: {original_qty}, Already returned: {already_returned}, Requested: {item.return_quantity})')
                 )
             item.restore_inventory()
             
@@ -208,9 +239,21 @@ class ReturnOrder(TimeStampedUUIDModel):
                     performed_by=str(employee.id) if hasattr(employee, 'id') else 'system',
                     notes=self.reason,
                 )
-                refund_service.execute_return_refund(refund_request)
-            except Exception:
-                pass
+                refund_result = refund_service.execute_return_refund(refund_request)
+                if not refund_result.get('success', False):
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        f"Refund failed for return {self.return_number}: {refund_result.get('message', 'Unknown error')}. "
+                        f"Return still approved — manual refund may be required."
+                    )
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(
+                    f"Refund exception for return {self.return_number}: {e}. "
+                    f"Return still approved — manual refund required."
+                )
 
         # 5. Update status
         self.status = 'APPROVED'
@@ -220,11 +263,99 @@ class ReturnOrder(TimeStampedUUIDModel):
         self.save()
         
         return True
+
+    @transaction.atomic
+    def void(self, employee, reason=''):
+        """
+        Void an approved return — reverses inventory and accounting entries.
+        MUST be atomic: ALL OR NOTHING.
+        """
+        from django.utils import timezone
+        from inventory.models import StockMovement
+        from accounting.models import JournalEntry
+
+        if self.status != 'APPROVED':
+            raise ValidationError(_('Only approved returns can be voided.'))
+
+        # 1. Reverse inventory movements
+        for item in self.items.all():
+            if item.batch:
+                last_movement = StockMovement.objects.filter(
+                    product=item.product,
+                    batch=item.batch,
+                    reference_type='RETURN',
+                    reference_id=self.return_number,
+                ).order_by('-created_at').first()
+                
+                if last_movement:
+                    # Create opposite movement to reverse
+                    reverse_qty = -last_movement.quantity
+                    StockMovement.objects.create(
+                        product=item.product,
+                        warehouse=last_movement.warehouse,
+                        batch=item.batch,
+                        movement_type='ADJUSTMENT',
+                        reference_type='MANUAL',
+                        reference_id=self.return_number,
+                        quantity=reverse_qty,
+                        notes=f"Void of return {self.return_number}: {reason}"
+                    )
+
+        # 2. Reverse journal entry
+        if self.journal_entry_id:
+            try:
+                original_je = JournalEntry.objects.get(id=self.journal_entry_id)
+                # Create reversal entry with swapped debits/credits
+                from accounting.services.journal_engine import JournalEngine
+                reversal_lines = []
+                for line in original_je.lines.all():
+                    reversal_lines.append({
+                        'account_id': str(line.account.id),
+                        'debit': line.credit,
+                        'credit': line.debit,
+                    })
+                
+                result = JournalEngine.create_entry(
+                    entry_type='REVERSAL',
+                    description=f"Void of return {self.return_number}: {reason}",
+                    lines=reversal_lines,
+                    entry_date=timezone.now().date(),
+                    auto_post=True,
+                    source_module='returns',
+                    source_document=f'return_void_{self.return_number}',
+                    change_reason=reason,
+                )
+                
+                if not result.get('success', True):
+                    raise ValidationError(f"Failed to create reversal entry: {result.get('errors')}")
+                
+                reversal_je_id = result.get('entry_id')
+                if reversal_je_id:
+                    self.reversal_journal_entry = JournalEntry.objects.get(id=reversal_je_id)
+            except JournalEntry.DoesNotExist:
+                pass
+
+        # 3. Reverse customer/supplier balance
+        if self.return_type == 'SALE_RETURN' and self.party:
+            self.party.balance += self.total_amount
+            self.party.save()
+        elif self.return_type == 'PURCHASE_RETURN' and self.supplier:
+            self.supplier.balance += self.total_amount
+            self.supplier.save()
+
+        # 4. Update status
+        self.status = 'VOIDED'
+        self.voided_by = employee
+        self.voided_at = timezone.now()
+        self.void_reason = reason
+        self.save()
+        
+        return True
     
     def _create_accounting_entries(self, employee):
         """Create accounting journal entries for the return with tax and discount reversal."""
         from accounting.services.journal_engine import JournalEngine
-        from accounting.models import JournalEntry, Account
+        from accounting.models import Account
         
         # Get accounts based on return type
         if self.return_type == 'SALE_RETURN':
@@ -249,21 +380,27 @@ class ReturnOrder(TimeStampedUUIDModel):
             # Dr Tax Payable (Total Tax)
             # Cr Accounts Receivable (Grand Total)
             lines = [
-                {'account': sales_return_account, 'debit': total_subtotal_net, 'credit': 0},
+                {'account_id': str(sales_return_account.id), 'debit': total_subtotal_net, 'credit': 0},
             ]
             
             if total_tax > 0:
-                lines.append({'account': tax_account, 'debit': total_tax, 'credit': 0})
+                lines.append({'account_id': str(tax_account.id), 'debit': total_tax, 'credit': 0})
             
-            lines.append({'account': ar_account, 'debit': 0, 'credit': self.total_amount})
+            lines.append({'account_id': str(ar_account.id), 'debit': 0, 'credit': self.total_amount})
             
-            journal_entry = JournalEngine.create_journal_entry(
-                date=self.created_at.date(),
+            result = JournalEngine.create_entry(
+                entry_type='SALE_RETURN',
                 description=description,
-                company_id=self.invoice.company_id if self.invoice else None,
                 lines=lines,
-                created_by=employee
+                entry_date=self.created_at.date(),
+                auto_post=True,
+                source_module='returns',
             )
+            
+            if not result.get('success', True):
+                raise ValidationError(f"Failed to create journal entry: {result.get('errors')}")
+            
+            self.journal_entry_id = result.get('entry_id')
             
             # Update customer balance
             if self.party:
@@ -288,27 +425,32 @@ class ReturnOrder(TimeStampedUUIDModel):
             # Cr Inventory (Net Subtotal)
             # Cr Tax Receivable (Total Tax)
             lines = [
-                {'account': ap_account, 'debit': self.total_amount, 'credit': 0},
-                {'account': inventory_account, 'debit': 0, 'credit': total_subtotal_net},
+                {'account_id': str(ap_account.id), 'debit': self.total_amount, 'credit': 0},
+                {'account_id': str(inventory_account.id), 'debit': 0, 'credit': total_subtotal_net},
             ]
             
             if total_tax > 0:
-                lines.append({'account': tax_account, 'debit': 0, 'credit': total_tax})
+                lines.append({'account_id': str(tax_account.id), 'debit': 0, 'credit': total_tax})
             
-            journal_entry = JournalEngine.create_journal_entry(
-                date=self.created_at.date(),
+            result = JournalEngine.create_entry(
+                entry_type='PURCHASE_RETURN',
                 description=description,
-                company_id=self.purchase_invoice.company_id if self.purchase_invoice else None,
                 lines=lines,
-                created_by=employee
+                entry_date=self.created_at.date(),
+                auto_post=True,
+                source_module='returns',
             )
+            
+            if not result.get('success', True):
+                raise ValidationError(f"Failed to create journal entry: {result.get('errors')}")
+            
+            self.journal_entry_id = result.get('entry_id')
             
             # Update supplier balance
             if self.supplier:
                 self.supplier.balance -= self.total_amount
                 self.supplier.save()
         
-        self.journal_entry = journal_entry
         self.credit_note_number = f"CN-{self.return_number}"
         self.save()
     
@@ -423,6 +565,17 @@ class ReturnItem(TimeStampedUUIDModel):
     def __str__(self):
         return f"{self.product.name} x {self.return_quantity}"
     
+    def clean(self):
+        super().clean()
+        if self.return_quantity <= 0:
+            raise ValidationError({'return_quantity': _('Return quantity must be positive.')})
+        if self.unit_price < 0:
+            raise ValidationError({'unit_price': _('Unit price cannot be negative.')})
+        if self.discount_amount < 0:
+            raise ValidationError({'discount_amount': _('Discount amount cannot be negative.')})
+        if self.tax_amount < 0:
+            raise ValidationError({'tax_amount': _('Tax amount cannot be negative.')})
+    
     def save(self, *args, **kwargs):
         # Total Price = (Qty * Unit Price) - Discount + Tax
         self.total_price = (self.return_quantity * self.unit_price) - self.discount_amount + self.tax_amount
@@ -444,12 +597,24 @@ class ReturnItem(TimeStampedUUIDModel):
         """
         from inventory.models import StockMovement, Batch
         
-        # Determine warehouse
+        # Determine warehouse from batch or stock movements
         warehouse = None
-        if self.return_order.invoice:
-            warehouse = self.return_order.invoice.warehouse
-        elif self.return_order.purchase_invoice:
-            warehouse = self.return_order.purchase_invoice.warehouse
+        if self.batch:
+            # Get warehouse from the most recent stock movement for this batch/product
+            from inventory.models import StockMovement
+            last_movement = StockMovement.objects.filter(
+                product=self.product,
+                batch=self.batch,
+            ).order_by('-created_at').first()
+            if last_movement:
+                warehouse = last_movement.warehouse
+        
+        if not warehouse:
+            # Fallback: try to get from invoice if it has warehouse field
+            if hasattr(self.return_order.invoice, 'warehouse') and self.return_order.invoice:
+                warehouse = self.return_order.invoice.warehouse
+            elif hasattr(self.return_order.purchase_invoice, 'warehouse') and self.return_order.purchase_invoice:
+                warehouse = self.return_order.purchase_invoice.warehouse
         
         if not warehouse:
             raise ValidationError(_('Cannot determine warehouse for inventory restoration.'))
@@ -470,10 +635,8 @@ class ReturnItem(TimeStampedUUIDModel):
             batch=self.batch,
             movement_type=movement_type,
             reference_type='RETURN',
-            quantity=self.return_quantity,
-            reference=f"Return {self.return_order.return_number}",
             reference_id=self.return_order.return_number,
-            company_id=warehouse.company_id,
+            quantity=self.return_quantity,
             notes=f"Condition: {self.get_condition_display()}. {self.notes}"
         )
         

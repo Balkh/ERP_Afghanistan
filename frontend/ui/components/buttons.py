@@ -8,7 +8,7 @@ from PySide6.QtCore import Signal, QSize, Qt
 from PySide6.QtGui import QPainter, QColor, QFontMetrics
 from enum import Enum
 from typing import Optional
-from ui.constants import SPACING_SM, BORDER_RADIUS_SM
+from ui.constants import SPACING_SM, BORDER_RADIUS_SM, BORDER_RADIUS_MD
 
 
 class ButtonVariant(Enum):
@@ -60,16 +60,16 @@ class EnterpriseButton(QPushButton):
         
     def _setup_button(self):
         """Setup button properties based on variant and size."""
-        # Set size policy
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        # Set size policy — Fixed horizontally, Minimum vertically to prevent text clipping
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
         
-        # Set fixed height based on size
+        # Set minimum height based on size (not fixed — allows text to breathe)
         size_config = {
-            ButtonSize.SMALL: 28,
-            ButtonSize.MEDIUM: 36,
-            ButtonSize.LARGE: 44
+            ButtonSize.SMALL: 32,
+            ButtonSize.MEDIUM: 38,
+            ButtonSize.LARGE: 46
         }
-        self.setFixedHeight(size_config.get(self._size, 36))
+        self.setMinimumHeight(size_config.get(self._size, 36))
         
         # Set minimum width based on size
         min_widths = {
@@ -100,6 +100,7 @@ class EnterpriseButton(QPushButton):
                                   COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BG_ELEVATED,
                                   COLOR_SECONDARY_BG, COLOR_SECONDARY_TEXT,
                                   COLOR_SECONDARY_HOVER, COLOR_SECONDARY_ACTIVE)
+        focus_ring = COLOR_PRIMARY
         variant_styles = {
             ButtonVariant.PRIMARY: f"""
                 QPushButton {{
@@ -107,12 +108,18 @@ class EnterpriseButton(QPushButton):
                     color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
+                    border-radius: {BORDER_RADIUS_MD}px;
+                    padding: 6px 16px;
                 }}
                 QPushButton:hover {{
                     background-color: {COLOR_PRIMARY_HOVER};
                 }}
                 QPushButton:pressed {{
                     background-color: {COLOR_PRIMARY_ACTIVE};
+                }}
+                QPushButton:focus {{
+                    outline: 2px solid {focus_ring};
+                    outline-offset: 2px;
                 }}
                 QPushButton:disabled {{
                     background-color: {COLOR_BORDER};
@@ -125,6 +132,8 @@ class EnterpriseButton(QPushButton):
                     color: {COLOR_SECONDARY_TEXT};
                     border: none;
                     font-weight: 600;
+                    border-radius: {BORDER_RADIUS_MD}px;
+                    padding: 6px 16px;
                 }}
                 QPushButton:hover {{
                     background-color: {COLOR_SECONDARY_HOVER};
@@ -132,8 +141,12 @@ class EnterpriseButton(QPushButton):
                 QPushButton:pressed {{
                     background-color: {COLOR_SECONDARY_ACTIVE};
                 }}
+                QPushButton:focus {{
+                    outline: 2px solid {focus_ring};
+                    outline-offset: 2px;
+                }}
                 QPushButton:disabled {{
-                    background-color: {COLOR_BORDER};
+                    background-color: {COLOR_SECONDARY_HOVER};
                     color: {COLOR_TEXT_MUTED};
                 }}
             """,
@@ -143,12 +156,18 @@ class EnterpriseButton(QPushButton):
                     color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
+                    border-radius: {BORDER_RADIUS_MD}px;
+                    padding: 6px 16px;
                 }}
                 QPushButton:hover {{
                     background-color: {COLOR_SUCCESS_HOVER};
                 }}
                 QPushButton:pressed {{
                     background-color: {COLOR_SUCCESS_ACTIVE};
+                }}
+                QPushButton:focus {{
+                    outline: 2px solid {focus_ring};
+                    outline-offset: 2px;
                 }}
                 QPushButton:disabled {{
                     background-color: {COLOR_SUCCESS_MUTED};
@@ -161,12 +180,18 @@ class EnterpriseButton(QPushButton):
                     color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
+                    border-radius: {BORDER_RADIUS_MD}px;
+                    padding: 6px 16px;
                 }}
                 QPushButton:hover {{
                     background-color: {COLOR_DANGER_HOVER};
                 }}
                 QPushButton:pressed {{
                     background-color: {COLOR_DANGER_ACTIVE};
+                }}
+                QPushButton:focus {{
+                    outline: 2px solid {focus_ring};
+                    outline-offset: 2px;
                 }}
                 QPushButton:disabled {{
                     background-color: {COLOR_DANGER_MUTED};
@@ -179,12 +204,18 @@ class EnterpriseButton(QPushButton):
                     color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     font-weight: 600;
+                    border-radius: {BORDER_RADIUS_MD}px;
+                    padding: 6px 16px;
                 }}
                 QPushButton:hover {{
                     background-color: {COLOR_WARNING_HOVER};
                 }}
                 QPushButton:pressed {{
                     background-color: {COLOR_WARNING_ACTIVE};
+                }}
+                QPushButton:focus {{
+                    outline: 2px solid {focus_ring};
+                    outline-offset: 2px;
                 }}
                 QPushButton:disabled {{
                     background-color: {COLOR_WARNING_MUTED};
@@ -197,6 +228,8 @@ class EnterpriseButton(QPushButton):
                     color: {COLOR_PRIMARY};
                     border: 1px solid {COLOR_BORDER};
                     font-weight: 600;
+                    border-radius: {BORDER_RADIUS_MD}px;
+                    padding: 6px 16px;
                 }}
                 QPushButton:hover {{
                     background-color: {COLOR_BG_ELEVATED};
@@ -205,6 +238,10 @@ class EnterpriseButton(QPushButton):
                 QPushButton:pressed {{
                     background-color: {COLOR_BORDER_LIGHT};
                     border: 1px solid {COLOR_PRIMARY_ACTIVE};
+                }}
+                QPushButton:focus {{
+                    outline: 2px solid {focus_ring};
+                    outline-offset: 2px;
                 }}
                 QPushButton:disabled {{
                     color: {COLOR_TEXT_MUTED};
@@ -234,15 +271,28 @@ class EnterpriseButton(QPushButton):
         """Get button size."""
         return self._size
     
-    def set_loading(self, loading: bool):
-        """Set loading state."""
-        self._loading = loading
-        self.setEnabled(not loading)
-        if loading:
-            self.setText("Loading...")
-        else:
-            self._original_text = ""
-            
+    def set_loading(self, loading: bool, loading_text: str = ""):
+        """Set loading state with contextual busy indicator.
+
+        Saves original button text, disables during operation, and
+        shows a loading indicator. Restores original text when done.
+
+        Args:
+            loading: True to show loading state, False to restore.
+            loading_text: Custom loading label (default: auto-derived from text).
+        """
+        if loading and not self._loading:
+            self._original_text = self.text()
+            busy_label = loading_text or f"{self._original_text}..."
+            self.setText(busy_label)
+            self._loading = True
+            self.setEnabled(False)
+        elif not loading and self._loading:
+            self._loading = False
+            self.setEnabled(True)
+            if hasattr(self, '_original_text') and self._original_text:
+                self.setText(self._original_text)
+                self._original_text = ""
     def is_loading(self) -> bool:
         """Check if button is loading."""
         return self._loading

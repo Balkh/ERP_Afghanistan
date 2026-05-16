@@ -1,20 +1,25 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-                                QLineEdit, QComboBox, QTextEdit, QPushButton,
-                                QLabel, QMessageBox, QCheckBox, QGroupBox)
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QWidget, QFrame,
+                                QLineEdit, QComboBox, QTextEdit, QLabel, QCheckBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import extract_list
 from ui.utils.validation import FormValidator
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          TEXT_SECTION_TITLE,
-                          BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, BORDER_RADIUS_MD)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_BODY_SMALL, TEXT_LABEL,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_BG_DIALOG, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER,
+                           COLOR_FORM_DESCRIPTION_BG, COLOR_FORM_FOOTER_BORDER,
+                           INPUT_HEIGHT_MD, BORDER_RADIUS_MD,
+    BORDER_RADIUS_SM,
+                           DIALOG_WIDTH_FORM_MIN, DIALOG_WIDTH_FORM_PREFERRED)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.forms import FormSection
 import re
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE)
 
 
 class AccountFormDialog(QDialog):
-    """Dialog for creating or editing a chart of accounts entry."""
+    """Enterprise account form with enhanced visual hierarchy."""
 
     def __init__(self, parent=None, account_id=None, api_client=None):
         super().__init__(parent)
@@ -22,51 +27,66 @@ class AccountFormDialog(QDialog):
         self.account_id = account_id
         self.is_editing = account_id is not None
         self.parent_accounts = []
+        self.setWindowTitle("Edit Account" if self.is_editing else "New Account")
+        self.setModal(True)
+        self.setMinimumWidth(DIALOG_WIDTH_FORM_MIN)
+        self.resize(DIALOG_WIDTH_FORM_PREFERRED, 550)
         self.setup_ui()
         self.load_parent_accounts()
         if self.is_editing:
             self.load_account()
-            self.setWindowTitle("Edit Account")
-        else:
-            self.setWindowTitle("New Account")
 
     def setup_ui(self):
-        self.setMinimumWidth(500)
-        self.setMinimumHeight(550)
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {COLOR_BG_DIALOG};
+            }}
+            QLineEdit, QComboBox {{
+                background-color: {COLOR_BG_DIALOG};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER_INPUT};
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding: {SPACING_SM}px 10px;
+            }}
+            QLineEdit:focus, QComboBox:focus {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+            QLineEdit:hover, QComboBox:hover {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+            QTextEdit {{
+                background-color: {COLOR_FORM_DESCRIPTION_BG};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER_INPUT};
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding: {SPACING_SM}px 10px;
+            }}
+            QTextEdit:focus {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+        """)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
+        layout.setContentsMargins(SPACING_XXL, SPACING_XL, SPACING_XXL, SPACING_XL)
         layout.setSpacing(SPACING_MD)
 
-        title = QLabel("Edit Account" if self.is_editing else "New Account")
-        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
-        title_font.setWeight(QFont.Weight.Bold)
-        title.setFont(title_font)
+        title = QLabel(self.windowTitle())
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 600; border: none; background: transparent;")
         layout.addWidget(title)
 
-        form_group = QGroupBox("Account Details")
-        form_layout = QFormLayout(form_group)
-        form_layout.setContentsMargins(SPACING_MD, SPACING_MD, SPACING_MD, SPACING_MD)
-        form_layout.setSpacing(SPACING_SM)
-        form_layout.setLabelAlignment(Qt.AlignLeft)
-        form_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+        subtitle = QLabel("Configure account properties")
+        subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; border: none; background: transparent; margin-bottom: {SPACING_SM}px;")
+        layout.addWidget(subtitle)
 
+        # ── Section 1: Account Identity (primary) ──
+        sec1 = FormSection("Account Details", columns=2, primary=True)
         self.code_input = QLineEdit()
         self.code_input.setPlaceholderText("e.g., 1010")
-        self.code_input.setMinimumHeight(INPUT_HEIGHT_MD)
-        form_layout.addRow("Code*:", self.code_input)
-
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("e.g., Cash in Hand")
-        self.name_input.setMinimumHeight(INPUT_HEIGHT_MD)
-        form_layout.addRow("Name*:", self.name_input)
-
         self.type_combo = QComboBox()
         for acc_type in ["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"]:
             self.type_combo.addItem(acc_type, acc_type)
-        self.type_combo.setMinimumHeight(INPUT_HEIGHT_MD)
-        form_layout.addRow("Type*:", self.type_combo)
-
         self.category_combo = QComboBox()
         self.category_combo.addItem("", "")
         categories = [
@@ -84,41 +104,49 @@ class AccountFormDialog(QDialog):
         ]
         for val, label in categories:
             self.category_combo.addItem(label, val)
-        self.category_combo.setMinimumHeight(INPUT_HEIGHT_MD)
-        form_layout.addRow("Category:", self.category_combo)
-
         self.parent_combo = QComboBox()
         self.parent_combo.addItem("None (Top Level)", None)
-        self.parent_combo.setMinimumHeight(INPUT_HEIGHT_MD)
-        form_layout.addRow("Parent Account:", self.parent_combo)
+        sec1.add_field_pair("Code*", self.code_input, "Name*", self.name_input, required1=True, required2=True,
+                           helper1="Numeric code, e.g., 1010 for Cash, 4010 for Revenue")
+        sec1.add_field_pair("Type*", self.type_combo, "Category", self.category_combo,
+                           helper1="Determines financial statement placement")
+        sec1.add_full_width("Parent Account", self.parent_combo,
+                           helper="Select a parent to create a sub-account hierarchy")
+        layout.addWidget(sec1)
 
+        # ── Section 2: Additional Info (secondary) ──
+        sec2 = FormSection("Additional Info", columns=2, primary=False)
         self.description_input = QTextEdit()
-        self.description_input.setMaximumHeight(INPUT_HEIGHT_LG)
-        self.description_input.setMinimumHeight(INPUT_HEIGHT_MD)
-        form_layout.addRow("Description:", self.description_input)
-
+        self.description_input.setMaximumHeight(INPUT_HEIGHT_MD + SPACING_XL)
         self.active_checkbox = QCheckBox("Active")
         self.active_checkbox.setChecked(True)
-        form_layout.addRow("Status:", self.active_checkbox)
+        self.active_checkbox.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none; background: transparent;")
+        sec2.add_full_width("Description", self.description_input)
+        half_widget = QWidget()
+        half_layout = QHBoxLayout(half_widget)
+        half_layout.setContentsMargins(0, 0, 0, 0)
+        half_layout.addWidget(self.active_checkbox)
+        half_layout.addStretch()
+        sec2.add_full_width("Status", half_widget)
+        layout.addWidget(sec2)
 
-        layout.addWidget(form_group)
+        # ── Footer with separation ──
+        footer_line = QFrame()
+        footer_line.setFrameShape(QFrame.HLine)
+        footer_line.setStyleSheet(f"background-color: {COLOR_FORM_FOOTER_BORDER}; border: none; max-height: 1px; margin-top: {SPACING_SM}px;")
+        layout.addWidget(footer_line)
 
-        buttons_layout = QHBoxLayout()
-        buttons_layout.setSpacing(SPACING_SM)
-        buttons_layout.addStretch()
-
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        footer = QHBoxLayout()
+        footer.setSpacing(SPACING_SM)
+        footer.setContentsMargins(0, SPACING_SM, 0, 0)
+        footer.addStretch()
+        cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         cancel_btn.clicked.connect(self.reject)
-
-        save_btn = QPushButton("Save")
-        save_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        save_btn = EnterpriseButton("Save", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         save_btn.clicked.connect(self.save)
-
-        buttons_layout.addWidget(cancel_btn)
-        buttons_layout.addWidget(save_btn)
-
-        layout.addLayout(buttons_layout)
+        footer.addWidget(cancel_btn)
+        footer.addWidget(save_btn)
+        layout.addLayout(footer)
 
     def load_parent_accounts(self):
         try:
@@ -137,24 +165,21 @@ class AccountFormDialog(QDialog):
             self.name_input.setText(account.get("name", ""))
             self.description_input.setPlainText(account.get("description", ""))
             self.active_checkbox.setChecked(account.get("is_active", True))
-
             acc_type = account.get("account_type", "")
             idx = self.type_combo.findData(acc_type)
             if idx >= 0:
                 self.type_combo.setCurrentIndex(idx)
-
             category = account.get("account_category", "") or ""
             idx = self.category_combo.findData(category)
             if idx >= 0:
                 self.category_combo.setCurrentIndex(idx)
-
             parent_id = account.get("parent")
             if parent_id:
                 idx = self.parent_combo.findData(parent_id)
                 if idx >= 0:
                     self.parent_combo.setCurrentIndex(idx)
-
         except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Failed to load account: {e}")
 
     def get_form_data(self):
@@ -170,31 +195,26 @@ class AccountFormDialog(QDialog):
         }
 
     def save(self):
-        """Save account with validation."""
         data = self.get_form_data()
-        
-        # Validate form
         validator = FormValidator()
         validator.validate_required("Account Code", data["code"], "Account code is required")
         validator.validate_required("Account Name", data["name"], "Account name is required")
         validator.validate_required("Account Type", data["account_type"], "Account type is required")
-        
-        # Additional validation for code format (uppercase, numbers, hyphens, underscores only)
         if data["code"] and not re.match(r'^[A-Z0-9\-_]+$', data["code"]):
             validator.validate_error("Account Code", "Account code must contain only uppercase letters, numbers, hyphens, and underscores")
-        
         if validator.has_errors():
-            # Show all validation errors
-            error_messages = "\n".join([f"• {msg}" for msg in validator.get_errors().values()])
+            error_messages = "\n".join([f"\u2022 {msg}" for msg in validator.get_errors().values()])
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Validation Error", f"Please fix the following errors:\n\n{error_messages}")
             return
-
         try:
             if self.is_editing:
                 self.api_client.put(f"/api/accounting/accounts/{self.account_id}/", data=data)
             else:
                 self.api_client.post("/api/accounting/accounts/", data=data)
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self, "Success", "Account saved successfully.")
             self.accept()
         except Exception as e:
+            from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Failed to save account: {e}")

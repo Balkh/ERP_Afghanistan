@@ -4,9 +4,9 @@ from PySide6.QtCore import Qt, Signal, QSize, QTimer, QPropertyAnimation, QEasin
 from PySide6.QtGui import QFont, QIcon
 from theme.theme_engine import ThemeEngine
 from ui.role_manager import UserRole, get_visible_navigation_items, is_navigation_item_visible
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_LABEL)
 from ui.constants import (TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY_SMALL)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BG_HOVER, COLOR_BG_FOCUS, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_DANGER_HOVER, COLOR_DANGER_ACTIVE, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 
 
 class Sidebar(QWidget):
@@ -37,6 +37,7 @@ class Sidebar(QWidget):
         
         self._role = role
         self._navigation_items = {}  # page_id -> button reference
+        self._active_page_id: str = ""  # currently active navigation item
         
         # Setup UI
         self.setup_ui()
@@ -130,7 +131,7 @@ class Sidebar(QWidget):
         
         layout = QVBoxLayout(scroll_content)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(SPACING_NONE)
         
         # Brand/logo area
         brand_frame = QFrame()
@@ -180,6 +181,7 @@ class Sidebar(QWidget):
         
         self._create_group(nav_layout, "Returns", "returns", [
             ("Return Orders", "returns", 9),
+            ("Reconciliation", "reconciliation", 57),
         ])
         
         self._create_group(nav_layout, "Accounting", "accounting", [
@@ -228,8 +230,8 @@ class Sidebar(QWidget):
         ])
         
         self._create_group(nav_layout, "System", "system", [
-            ("Analytics Workspace", "analytics", 32),
-            ("Operations Dashboard", "operations", 38),
+            ("Intelligence Hub", "intelligence_hub", 32),
+            ("Control Center", "control_center", 38),
             ("Observability Console", "observability", 39),
             ("Decision Support", "decision_workspace", 47),
             ("Invoice Templates", "invoice_templates", 33),
@@ -268,7 +270,14 @@ class Sidebar(QWidget):
                 padding: {SPACING_MD}px;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_PRIMARY_HOVER};
+                background-color: {COLOR_DANGER_HOVER};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLOR_DANGER_ACTIVE};
+            }}
+            QPushButton:focus {{
+                outline: 2px solid {COLOR_DANGER_HOVER};
+                outline-offset: 2px;
             }}
         """)
         bottom_layout.addWidget(self.logout_btn)
@@ -281,29 +290,32 @@ class Sidebar(QWidget):
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        main_layout.setSpacing(SPACING_NONE)
         main_layout.addWidget(self._scroll_area)
     
     def _create_nav_button(self, title, page_id, page_index):
-        """Create a navigation button."""
+        """Create a navigation button with enhanced hover/active states."""
         btn = QPushButton(f"  {title}")
         btn.setFont(QFont("Segoe UI", TEXT_LABEL))
-        btn.setFixedHeight(40)
+        btn.setFixedHeight(36)
         btn.setCursor(Qt.PointingHandCursor)
         btn.setStyleSheet(f"""
             QPushButton {{
                 background-color: transparent;
-                color: {COLOR_TEXT_PRIMARY};
+                color: {COLOR_TEXT_SECONDARY};
                 border: none;
                 border-radius: {BORDER_RADIUS_MD};
                 text-align: left;
                 padding-left: 15px;
+                font-weight: 400;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_BORDER};
+                background-color: {COLOR_BG_HOVER};
+                color: {COLOR_TEXT_PRIMARY};
             }}
             QPushButton:pressed {{
-                background-color: {COLOR_BORDER_LIGHT};
+                background-color: {COLOR_BG_FOCUS};
+                color: {COLOR_TEXT_PRIMARY};
             }}
         """)
         btn.setProperty("page_id", page_id)
@@ -323,7 +335,7 @@ class Sidebar(QWidget):
         group_widget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         group_layout = QVBoxLayout(group_widget)
         group_layout.setContentsMargins(0, 0, 0, 0)
-        group_layout.setSpacing(0)
+        group_layout.setSpacing(SPACING_NONE)
 
         # Group header (clickable for expand/collapse)
         header_btn = QPushButton()
@@ -340,7 +352,7 @@ class Sidebar(QWidget):
                 font-size: {TEXT_CARD_TITLE}px;
             }}
             QPushButton:hover {{
-                background-color: {COLOR_BG_ELEVATED};
+                background-color: {COLOR_BG_HOVER};
             }}
         """)
 
@@ -408,7 +420,7 @@ class Sidebar(QWidget):
                         font-size: {TEXT_CARD_TITLE}px;
                     }}
                     QPushButton:hover {{
-                        background-color: {COLOR_BG_ELEVATED};
+                        background-color: {COLOR_BG_HOVER};
                     }}
                 """)
             group_widget.setMaximumHeight(50)
@@ -474,9 +486,59 @@ class Sidebar(QWidget):
                 widget.status_bar.showMessage(f"Loading {page_title}...", 3000)
                 break
     
-    def set_active_item(self, index):
-        """Set the active item programmatically."""
-        pass
+    def _set_button_active(self, btn, active: bool):
+        """Apply active or default style to a navigation button."""
+        if active:
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {COLOR_BG_FOCUS};
+                    color: {COLOR_TEXT_PRIMARY};
+                    border: none;
+                    border-radius: {BORDER_RADIUS_MD};
+                    text-align: left;
+                    padding-left: 15px;
+                    font-weight: 600;
+                }}
+                QPushButton:hover {{
+                    background-color: {COLOR_BG_HOVER};
+                    color: {COLOR_TEXT_PRIMARY};
+                }}
+            """)
+        else:
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: transparent;
+                    color: {COLOR_TEXT_SECONDARY};
+                    border: none;
+                    border-radius: {BORDER_RADIUS_MD};
+                    text-align: left;
+                    padding-left: 15px;
+                    font-weight: 400;
+                }}
+                QPushButton:hover {{
+                    background-color: {COLOR_BG_HOVER};
+                    color: {COLOR_TEXT_PRIMARY};
+                }}
+                QPushButton:pressed {{
+                    background-color: {COLOR_BG_FOCUS};
+                    color: {COLOR_TEXT_PRIMARY};
+                }}
+            """)
+
+    def set_active_item(self, index: int):
+        """Set the active navigation item by index, updating visual state."""
+        # Find the button matching this index
+        for page_id, btn in self._navigation_items.items():
+            btn_index = btn.property("page_index")
+            if btn_index == index:
+                # Deactivate previous active item
+                if self._active_page_id and self._active_page_id in self._navigation_items:
+                    prev_btn = self._navigation_items[self._active_page_id]
+                    self._set_button_active(prev_btn, False)
+                # Activate new item
+                self._active_page_id = page_id
+                self._set_button_active(btn, True)
+                break
 
     def update_theme(self, theme_name):
         """Update sidebar styling based on theme."""
@@ -522,17 +584,20 @@ class Sidebar(QWidget):
             btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: transparent;
-                    color: {COLOR_TEXT_PRIMARY};
+                    color: {COLOR_TEXT_SECONDARY};
                     border: none;
                     border-radius: {BORDER_RADIUS_MD};
                     text-align: left;
                     padding-left: 15px;
+                    font-weight: 400;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_BORDER};
+                    background-color: {COLOR_BG_HOVER};
+                    color: {COLOR_TEXT_PRIMARY};
                 }}
                 QPushButton:pressed {{
-                    background-color: {COLOR_BORDER_LIGHT};
+                    background-color: {COLOR_BG_FOCUS};
+                    color: {COLOR_TEXT_PRIMARY};
                 }}
             """)
 
@@ -551,7 +616,7 @@ class Sidebar(QWidget):
                         font-size: {TEXT_CARD_TITLE}px;
                     }}
                     QPushButton:hover {{
-                        background-color: {COLOR_BG_ELEVATED};
+                        background-color: {COLOR_BG_HOVER};
                     }}
                 """)
                 arrow = getattr(header_btn, '_arrow', None)
@@ -569,10 +634,13 @@ class Sidebar(QWidget):
                     color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     border-radius: {BORDER_RADIUS_LG};
-                padding: {SPACING_MD}px;
+                    padding: {SPACING_MD}px;
                 }}
                 QPushButton:hover {{
-                    background-color: {COLOR_PRIMARY_HOVER};
+                    background-color: {COLOR_DANGER_HOVER};
+                }}
+                QPushButton:pressed {{
+                    background-color: {COLOR_DANGER_ACTIVE};
                 }}
             """)
             self._bottom_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE};")

@@ -1,6 +1,6 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, TEXT_LABEL, TEXT_MONO, TEXT_SECTION_TITLE, TEXT_TABLE)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
-from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_BODY, TEXT_DISPLAY
+from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_BODY, TEXT_DISPLAY, TEXT_CARD_TITLE
 """
 License status screen for Pharmacy ERP.
 Displays current license information and validation status.
@@ -338,7 +338,7 @@ class LicenseDetailsDialog(QWidget):
 
         # Title
         title = QLabel("License Details")
-        title.setFont(QFont("Segoe UI", 16, QFont.Weight.Bold))
+        title.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         layout.addWidget(title)

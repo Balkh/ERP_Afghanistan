@@ -2,8 +2,8 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                  QLabel, QLineEdit,
                                  QComboBox, QGroupBox,
-                                 QMessageBox, QDialog, QDialogButtonBox,
-                                 QFormLayout)
+                                  QMessageBox, QDialog,
+                                  QFormLayout)
 from PySide6.QtCore import Qt
 from api.client import APIClient
 from api.endpoints import get_endpoint
@@ -253,11 +253,16 @@ class EmployeeDialog(QDialog):
         
         layout.addWidget(form_group)
         
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.setMinimumHeight(BUTTON_HEIGHT_MD)
-        buttons.accepted.connect(self.save)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(SPACING_SM)
+        btn_layout.addStretch()
+        cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        cancel_btn.clicked.connect(self.reject)
+        ok_btn = EnterpriseButton("OK", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        ok_btn.clicked.connect(self.save)
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(ok_btn)
+        layout.addLayout(btn_layout)
         
     def _load_departments(self):
         self.department.addItem("Select Department", None)

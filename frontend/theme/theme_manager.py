@@ -224,23 +224,7 @@ class ThemeManager(QObject):
                 color: {fg};
             }}
 
-            /* --- TABLES --- */
-            QTableWidget, QTableView, QTreeView {{
-                background-color: {bg};
-                alternate-background-color: {inp_bg};
-                color: {fg};
-                gridline-color: {border};
-                selection-background-color: {primary};
-                selection-color: white;
-                border: 1px solid {border};
-            }}
-            QHeaderView::section {{
-                background-color: {secondary};
-                color: white;
-                padding: 6px;
-                border: none;
-                font-weight: bold;
-            }}
+            /* --- TABLES (delegated to ui/components/tables.py) --- */
 
             /* --- LISTS --- */
             QListWidget, QListView {{

@@ -89,11 +89,47 @@ class ChartOfAccountsScreen(QFrame):
         tree.setHeaderLabels([
             "Code", "Account Name", "Type", "Category", "Balance", "Status"
         ])
-        tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
+        tree.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        tree.header().setSectionResizeMode(1, QHeaderView.Stretch)
+        tree.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        tree.header().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        tree.header().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        tree.header().setSectionResizeMode(5, QHeaderView.ResizeToContents)
         tree.setSelectionBehavior(QAbstractItemView.SelectRows)
         tree.setSelectionMode(QAbstractItemView.SingleSelection)
         tree.setSortingEnabled(True)
         tree.setAlternatingRowColors(True)
+        tree.setIndentation(24)
+        tree.setStyleSheet(f"""
+            QTreeWidget {{
+                background-color: {COLOR_BG_SURFACE};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                font-size: {TEXT_BODY}px;
+                padding: 4px;
+            }}
+            QTreeWidget::item {{
+                padding: 8px 4px;
+                border-bottom: 1px solid {COLOR_BORDER};
+            }}
+            QTreeWidget::item:selected {{
+                background-color: {COLOR_PRIMARY};
+                color: white;
+            }}
+            QTreeWidget::item:hover {{
+                background-color: {COLOR_BG_SURFACE};
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_BG_SURFACE};
+                color: {COLOR_TEXT_PRIMARY};
+                padding: 8px 4px;
+                border: none;
+                border-bottom: 2px solid {COLOR_BORDER};
+                font-weight: 600;
+                font-size: {TEXT_BODY_SMALL}px;
+            }}
+        """)
         tree.itemSelectionChanged.connect(self._on_selection_changed)
         tree.itemDoubleClicked.connect(self._on_double_click)
 

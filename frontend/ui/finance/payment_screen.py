@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                 QHeaderView, QAbstractItemView, QComboBox, QGroupBox,
                                 QDateEdit, QMessageBox, QApplication)
 from PySide6.QtCore import Qt, QDate
+from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,

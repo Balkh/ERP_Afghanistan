@@ -2,9 +2,11 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                               QLineEdit, QLabel, QFrame, QSizePolicy,
                               QComboBox, QMessageBox)
 from PySide6.QtCore import Qt, Signal
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_LABEL,
-                           COLOR_TEXT_PRIMARY)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_TOOLBAR,
+                           TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_BODY_SMALL,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_BG_DIALOG,
+   BORDER_RADIUS_SM, BORDER_RADIUS_MD,
+                           COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 class BaseInventoryScreen(QWidget):
@@ -27,41 +29,63 @@ class BaseInventoryScreen(QWidget):
         """Setup the base UI components."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE,  MARGIN_PAGE,  MARGIN_PAGE,  MARGIN_PAGE)
-        layout.setSpacing(SPACING_SM + SPACING_XS)
+        layout.setSpacing(SPACING_MD)
         
-        # Header
+        # Header with title and toolbar
         header_layout = QHBoxLayout()
         title_label = QLabel(self.windowTitle())
-        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700; border: none; background: transparent;")
         header_layout.addWidget(title_label)
         header_layout.addStretch()
         
         # Search bar
-        search_label = QLabel("Search:")
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search items...")
+        self.search_input.setMinimumWidth(180)
+        self.search_input.setStyleSheet(f"""
+            QLineEdit {{
+                background-color: {COLOR_BG_DIALOG};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER_INPUT};
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding: {SPACING_SM}px 10px;
+            }}
+            QLineEdit:focus {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+        """)
         self.search_input.textChanged.connect(self.search_text_changed.emit)
         
         # Filter bar
-        filter_label = QLabel("Filter:")
         self.filter_combo = QComboBox()
+        self.filter_combo.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {COLOR_BG_DIALOG};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER_INPUT};
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding: {SPACING_SM}px 10px;
+                min-width: 120px;
+            }}
+            QComboBox:focus {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+        """)
         self.filter_combo.addItem("All", "")
-        # Subclasses should populate filter options
         self.populate_filter_options()
         self.filter_combo.currentTextChanged.connect(
             lambda text: self.filter_changed.emit(self.filter_combo.currentData())
         )
         
-        header_layout.addWidget(search_label)
         header_layout.addWidget(self.search_input)
-        header_layout.addWidget(filter_label)
+        header_layout.addSpacing(SPACING_SM)
         header_layout.addWidget(self.filter_combo)
-        header_layout.addStretch()
         
         layout.addLayout(header_layout)
         
-        # Button bar
+        # Button bar with consistent spacing
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(SPACING_SM)
         self.add_button = EnterpriseButton(text="Add", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.edit_button = EnterpriseButton(text="Edit", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.delete_button = EnterpriseButton(text="Delete", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)

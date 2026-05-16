@@ -22,6 +22,7 @@ from ui.constants import (
     BORDER_RADIUS_MD, BORDER_RADIUS_LG,
     TEXT_TABLE, TEXT_CARD_TITLE, TEXT_SECTION_TITLE, TEXT_LABEL,
     TABLE_ROW_HEIGHT_MD,
+    SPACING_SM,
 )
 
 
@@ -166,7 +167,7 @@ class MiniMetricCard(QFrame):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING_SM, SPACING_XS, SPACING_SM, SPACING_XS)
-        layout.setSpacing(2)
+        layout.setSpacing(SPACING_XS)
 
         self.label = QLabel(label)
         self.label.setFont(QFont("Segoe UI", TEXT_LABEL))

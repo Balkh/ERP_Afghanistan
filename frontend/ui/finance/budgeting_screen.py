@@ -2,8 +2,8 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QGroupBox,
-                                  QFormLayout, QDialog, QDialogButtonBox, QTabWidget,
-                                  QDoubleSpinBox, QApplication, QFrame)
+                                   QFormLayout, QDialog, QTabWidget,
+                                  QDoubleSpinBox, QApplication, QFrame, QWidget)
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
 from api.client import APIClient

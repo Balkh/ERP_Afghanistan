@@ -2,10 +2,10 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QFormLayout, QGroupBox,
-                                  QDialog, QDialogButtonBox, QTextEdit, QComboBox, QFrame)
+                                   QDialog, QTextEdit, QComboBox, QFrame)
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
-from ui.screens.base_screen import BaseScreen
+from ui.screens.base_screen import BaseScreen, ScreenState
 from utils.cache import cached
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
                            TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
@@ -16,6 +16,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
                            COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    PADDING_INPUT_H,
                            COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
@@ -394,7 +395,7 @@ class CustomerDialog(QDialog):
         buttons_layout = QHBoxLayout()
         buttons_layout.setSpacing(SPACING_SM + SPACING_XS)
         
-        self.btn_cancel = QPushButton("Cancel")
+        self.btn_cancel = EnterpriseButton(text="Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_cancel.setMinimumHeight(BUTTON_HEIGHT_MD)
         self.btn_cancel.setStyleSheet(f"""
             QPushButton {{

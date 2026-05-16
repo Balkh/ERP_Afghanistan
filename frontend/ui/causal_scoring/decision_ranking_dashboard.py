@@ -17,10 +17,12 @@ from PySide6.QtGui import QFont
 from api.client import APIClient
 from ui.causal_scoring.causal_scoring_engine import CausalScoringEngine
 from ui.causal_scoring.decision_impact_engine import DecisionImpactEngine
+from ui.components.tables import build_table_stylesheet
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XL,
+    TEXT_BODY, TEXT_PAGE_TITLE,
                            MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD)
 from ui.constants import TEXT_PAGE_TITLE, TEXT_BODY
 
@@ -78,12 +80,7 @@ class DecisionIntelligenceDashboard(QWidget):
             ["Rank", "Decision Type", "Action", "Impact", "Risk", "Overall Score"])
         self.ranked_table.horizontalHeader().setStretchLastSection(True)
         self.ranked_table.setAlternatingRowColors(True)
-        self.ranked_table.setStyleSheet(f"""
-            QTableWidget {{ background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
-            gridline-color: {COLOR_BORDER}; }}
-            QHeaderView::section {{ background: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
-        """)
+        self.ranked_table.setStyleSheet(build_table_stylesheet())
         t1l.addWidget(self.ranked_table)
         tabs.addTab(tab1, "① Ranked Decisions")
 

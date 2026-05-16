@@ -21,6 +21,7 @@ from api.observability_client import ObservabilityAPIClient
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    SPACING_SM,
                            COLOR_INFO, COLOR_BORDER, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XS, TEXT_TABLE, TEXT_BODY, BORDER_RADIUS_SM)
 from runtime.timer_registry import register_timer, unregister_owner
 
@@ -34,7 +35,7 @@ class _IntelBadge(QFrame):
         """)
         layout = QHBoxLayout(self)
         layout.setContentsMargins(6, 2, 6, 2)
-        layout.setSpacing(4)
+        layout.setSpacing(SPACING_XS)
 
         lbl = QLabel(label)
         lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")

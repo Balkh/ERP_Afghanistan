@@ -505,14 +505,15 @@ UserRole.ADMIN: {
         "budgeting", "tax", "cost_centers", "cashflow",
         "fixed_assets", "backup", "audit", "settings", "intelligence_hub",
         "invoice_templates", "user_management", "control_center",
-        "entities", "licensing", "production"
+        "entities", "licensing", "production", "reconciliation"
     },
     UserRole.ACCOUNTANT: {
         "dashboard", "chart_of_accounts", "journal_entries", "account_ledger",
         "trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing",
         "payments", "expenses", "customers", "suppliers", "returns", "sales_invoice", "purchase_invoice",
         "products", "categories", "warehouses", "batches",
-        "budgeting", "tax", "cost_centers", "cashflow", "settings", "intelligence_hub"
+        "budgeting", "tax", "cost_centers", "cashflow", "settings", "intelligence_hub",
+        "reconciliation"
     },
     UserRole.HR: {
         "dashboard", "employees", "attendance", "leave", "payroll",
@@ -539,7 +540,7 @@ UserRole.ADMIN: {
         "trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing",
         "payments", "expenses", "employees", "attendance", "leave", "payroll",
         "budgeting", "tax", "cost_centers", "cashflow",
-        "fixed_assets", "settings", "intelligence_hub"
+        "fixed_assets", "settings", "intelligence_hub", "reconciliation"
     }
 }
 

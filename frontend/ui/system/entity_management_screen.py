@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, 
-                                  QGroupBox, QFormLayout, QDialog, QDialogButtonBox,
+                                   QGroupBox, QFormLayout, QDialog,
                                   QTextEdit)
 from PySide6.QtCore import Qt
 from ui.screens.base_screen import BaseScreen

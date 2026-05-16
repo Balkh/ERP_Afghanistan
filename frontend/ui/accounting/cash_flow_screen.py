@@ -15,15 +15,15 @@ class CashFlowScreen(BaseReportScreen):
         self.report_api_endpoint = "/api/accounting/accounts/cash_flow/"
 
     def run_report(self):
-        self._show_loading(True)
+        self._show_loading()
         try:
             params = self._get_report_params()
             resp = self.api_client.get(self.report_api_endpoint, params=params)
             self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
             self._populate_table()
-            self._show_loading(False)
+            self._show_data()
         except Exception as e:
-            self._show_error(f"Failed to load cash flow: {e}")
+            self._show_empty(f"Failed to load cash flow: {e}")
 
     def _populate_table(self):
         data = self.report_data if isinstance(self.report_data, dict) else {}

@@ -1,4 +1,4 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_XL, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_XL, BORDER_RADIUS_SM, BORDER_RADIUS_LG, BORDER_RADIUS_PILL, PADDING_CARD, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_DISPLAY, TEXT_HELPER, TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
 from ui.constants import (TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_HELPER, TEXT_DISPLAY)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 """
@@ -186,7 +186,7 @@ class ControlCenterScreen(BaseScreen):
         """Build the dashboard UI structure."""
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)  # Zero spacing for special layout
+        main_layout.setSpacing(SPACING_NONE)  # Zero spacing for special layout
         
         # Scroll Area for the whole dashboard
         scroll = QScrollArea()
@@ -402,29 +402,8 @@ class ControlCenterScreen(BaseScreen):
         table.verticalHeader().setVisible(False)
         table.setEditTriggers(QTableWidget.NoEditTriggers)
         table.setAlternatingRowColors(True)
-        table.setStyleSheet(f"""
-            QTableWidget {{
-                background-color: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                border: none;
-                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
-            }}
-            QTableWidget::item {{
-                padding: {SPACING_SM}px;
-                border-bottom: 1px solid {COLOR_BG_ELEVATED};
-            }}
-            QTableWidget::item:selected {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                color: {COLOR_PRIMARY};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                color: {COLOR_PRIMARY};
-                padding: {SPACING_SM}px;
-                border: none;
-                font-weight: bold;
-            }}
-        """)
+        from ui.components.tables import build_table_stylesheet
+        table.setStyleSheet(build_table_stylesheet())
         return table
 
     def _create_fin_metric(self, title, value, color):

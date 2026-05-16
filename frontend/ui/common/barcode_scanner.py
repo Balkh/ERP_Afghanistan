@@ -6,6 +6,7 @@ Handles keyboard wedge scanners, USB barcode scanners, and manual entry.
 from PySide6.QtWidgets import QLineEdit, QFrame, QVBoxLayout, QListWidget, QListWidgetItem, QLabel
 from PySide6.QtCore import Qt, Signal, QTimer, QEvent
 from PySide6.QtGui import QFont, QKeyEvent
+from ui.constants import TEXT_BODY, TEXT_HELPER
 
 
 class BarcodeScannerInput(QLineEdit):
@@ -29,7 +30,7 @@ class BarcodeScannerInput(QLineEdit):
         super().__init__(parent)
         self._api_client = api_client
         self.setPlaceholderText("Scan barcode or search product...")
-        self.setFont(QFont("Consolas", 12))
+        self.setFont(QFont("Consolas", TEXT_BODY))
 
         self._scan_buffer = ""
         self._scan_timer = QTimer()
@@ -162,7 +163,7 @@ class BarcodeSearchResultsDropdown(QFrame):
         layout.setContentsMargins(2, 2, 2, 2)
 
         self.status_label = QLabel()
-        self.status_label.setFont(QFont("Segoe UI", 9, QFont.Weight.Bold))
+        self.status_label.setFont(QFont("Segoe UI", TEXT_HELPER, QFont.Weight.Bold))
         self.status_label.hide()
         layout.addWidget(self.status_label)
 

@@ -163,7 +163,7 @@ class POSScreen(QWidget):
 
         self.scan_input = BarcodeScannerInput(api_client=self.api_client)
         self.scan_input.setFixedHeight(INPUT_HEIGHT_LG)
-        self.scan_input.setFont(QFont("Consolas", 14))
+        self.scan_input.setFont(QFont("Consolas", TEXT_CARD_TITLE))
         self.scan_input.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
             f"border: 2px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_MD}; "
@@ -216,10 +216,8 @@ class POSScreen(QWidget):
         self.search_results.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.search_results.setAlternatingRowColors(True)
         self.search_results.setMaximumHeight(200)
-        self.search_results.setStyleSheet(
-            f"background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; "
-            f"gridline-color: {COLOR_TABLE_BORDER_LIGHT};"
-        )
+        from ui.components.tables import build_table_stylesheet
+        self.search_results.setStyleSheet(build_table_stylesheet())
         self.search_results.doubleClicked.connect(self._add_search_result_to_cart)
         zone_layout.addWidget(self.search_results)
 
@@ -317,10 +315,8 @@ class POSScreen(QWidget):
         self.cart_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.cart_table.setSelectionMode(QAbstractItemView.SingleSelection)
         self.cart_table.setAlternatingRowColors(True)
-        self.cart_table.setStyleSheet(
-            f"background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; "
-            f"gridline-color: {COLOR_TABLE_BORDER_LIGHT};"
-        )
+        from ui.components.tables import build_table_stylesheet
+        self.cart_table.setStyleSheet(build_table_stylesheet())
         self.cart_table.cellChanged.connect(self._on_cart_cell_changed)
         zone_layout.addWidget(self.cart_table)
 

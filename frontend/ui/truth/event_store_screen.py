@@ -11,9 +11,11 @@ from PySide6.QtGui import QFont
 
 from api.client import APIClient
 from api.truth_client import TruthAPIClient
+from ui.components.tables import build_table_stylesheet
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_SUCCESS,
                            COLOR_WARNING, COLOR_DANGER, COLOR_BORDER,
+    TEXT_LABEL, TEXT_PAGE_TITLE,
                            SPACING_LG, SPACING_MD, SPACING_SM, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD)
 from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL
 
@@ -74,12 +76,7 @@ class EventStoreScreen(QWidget):
         self.table.setHorizontalHeaderLabels(["Event ID", "Type", "Domain", "Aggregate", "Timestamp"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
-        self.table.setStyleSheet(f"""
-            QTableWidget {{ background-color: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
-            gridline-color: {COLOR_BORDER}; }}
-            QHeaderView::section {{ background-color: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
-        """)
+        self.table.setStyleSheet(build_table_stylesheet())
         layout.addWidget(self.table)
 
     def _refresh(self):

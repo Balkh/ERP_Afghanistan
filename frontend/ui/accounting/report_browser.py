@@ -183,6 +183,8 @@ REPORT_TYPES = {
 class ReportBrowser(QWidget):
     """Consolidated report browser — handles all accounting/HR/payroll reports."""
 
+    DATE_RANGE_REPORTS = {"profit_loss", "cash_flow"}
+
     def __init__(self, parent=None, report_type="trial_balance"):
         super().__init__(parent)
         self.api_client = APIClient()
@@ -237,12 +239,28 @@ class ReportBrowser(QWidget):
         bar_layout.addWidget(QLabel("Report:"))
         bar_layout.addWidget(self.type_selector)
 
-        bar_layout.addWidget(QLabel("Date:"))
-        self.date_input = QDateEdit()
-        self.date_input.setCalendarPopup(True)
-        self.date_input.setDisplayFormat("yyyy-MM-dd")
-        self.date_input.setDate(date.today())
-        bar_layout.addWidget(self.date_input)
+        self._is_date_range = self.report_type in self.DATE_RANGE_REPORTS
+        if self._is_date_range:
+            bar_layout.addWidget(QLabel("From:"))
+            self.date_from = QDateEdit()
+            self.date_from.setCalendarPopup(True)
+            self.date_from.setDisplayFormat("yyyy-MM-dd")
+            self.date_from.setDate(QDate(date.today().year, date.today().month, date.today().day).addMonths(-1))
+            bar_layout.addWidget(self.date_from)
+
+            bar_layout.addWidget(QLabel("To:"))
+            self.date_to = QDateEdit()
+            self.date_to.setCalendarPopup(True)
+            self.date_to.setDisplayFormat("yyyy-MM-dd")
+            self.date_to.setDate(QDate(date.today().year, date.today().month, date.today().day))
+            bar_layout.addWidget(self.date_to)
+        else:
+            bar_layout.addWidget(QLabel("Date:"))
+            self.date_input = QDateEdit()
+            self.date_input.setCalendarPopup(True)
+            self.date_input.setDisplayFormat("yyyy-MM-dd")
+            self.date_input.setDate(QDate(date.today().year, date.today().month, date.today().day))
+            bar_layout.addWidget(self.date_input)
 
         bar_layout.addStretch()
 
@@ -283,8 +301,68 @@ class ReportBrowser(QWidget):
         if key and key in REPORT_TYPES:
             self.report_type = key
             config = REPORT_TYPES[key]
-            header = self.parent() or self
+            self._is_date_range = self.report_type in self.DATE_RANGE_REPORTS
+            self._rebuild_toolbar()
             self._rebuild_table(config)
+
+    def _rebuild_toolbar(self):
+        toolbar = self.findChild(QGroupBox, "Parameters")
+        if not toolbar:
+            return
+        bar_layout = toolbar.layout()
+        while bar_layout.count() > 0:
+            item = bar_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        self.type_selector = QComboBox()
+        groups = [
+            ("-- Accounting Reports --", ["trial_balance", "profit_loss", "balance_sheet", "cash_flow", "ar_aging", "ap_aging"]),
+            ("-- HR Reports --", ["employee_summary", "attendance_report", "leave_report", "overtime_report"]),
+            ("-- Payroll Reports --", ["payroll_summary", "payroll_trend", "payroll_dept_cost", "payroll_emp_history"]),
+        ]
+        for group_label, keys in groups:
+            self.type_selector.addItem(group_label, None)
+            for k in keys:
+                self.type_selector.addItem(REPORT_TYPES[k]["title"], k)
+            idx = self.type_selector.findData(self.report_type)
+        if idx >= 0:
+            self.type_selector.setCurrentIndex(idx)
+        self.type_selector.currentIndexChanged.connect(self._on_type_changed)
+        bar_layout.addWidget(QLabel("Report:"))
+        bar_layout.addWidget(self.type_selector)
+
+        if self._is_date_range:
+            bar_layout.addWidget(QLabel("From:"))
+            self.date_from = QDateEdit()
+            self.date_from.setCalendarPopup(True)
+            self.date_from.setDisplayFormat("yyyy-MM-dd")
+            self.date_from.setDate(QDate.currentDate().addMonths(-1))
+            bar_layout.addWidget(self.date_from)
+
+            bar_layout.addWidget(QLabel("To:"))
+            self.date_to = QDateEdit()
+            self.date_to.setCalendarPopup(True)
+            self.date_to.setDisplayFormat("yyyy-MM-dd")
+            self.date_to.setDate(QDate.currentDate())
+            bar_layout.addWidget(self.date_to)
+        else:
+            bar_layout.addWidget(QLabel("Date:"))
+            self.date_input = QDateEdit()
+            self.date_input.setCalendarPopup(True)
+            self.date_input.setDisplayFormat("yyyy-MM-dd")
+            self.date_input.setDate(QDate.currentDate())
+            bar_layout.addWidget(self.date_input)
+
+        bar_layout.addStretch()
+
+        self.btn_run = EnterpriseButton(text="Run Report", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.btn_run.clicked.connect(self.run_report)
+        bar_layout.addWidget(self.btn_run)
+
+        self.btn_export = EnterpriseButton(text="Export CSV", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_export.clicked.connect(self._export_csv)
+        bar_layout.addWidget(self.btn_export)
 
     def _rebuild_table(self, config):
         old = self.table
@@ -302,8 +380,14 @@ class ReportBrowser(QWidget):
         self._set_loading(True)
         try:
             params = {}
-            if self.date_input.date() != QDate():
-                params["as_of_date"] = self.date_input.date().toString("yyyy-MM-dd")
+            if self._is_date_range:
+                if hasattr(self, 'date_from') and self.date_from.date() != QDate():
+                    params["start_date"] = self.date_from.date().toString("yyyy-MM-dd")
+                if hasattr(self, 'date_to') and self.date_to.date() != QDate():
+                    params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
+            else:
+                if hasattr(self, 'date_input') and self.date_input.date() != QDate():
+                    params["as_of_date"] = self.date_input.date().toString("yyyy-MM-dd")
             resp = self.api_client.get(config["api"], params=params)
             self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
             self._populate_table(config)
@@ -313,19 +397,10 @@ class ReportBrowser(QWidget):
 
     def _populate_table(self, config):
         data = self.report_data
-        if isinstance(data, dict):
-            if config["data_key"]:
-                items = data.get(config["data_key"], [])
-            else:
-                items = [data]
-        elif isinstance(data, list):
-            items = data
-        else:
-            items = []
+        items = self._extract_items(data, config)
 
-        # Convert flat dicts to row lists
         if not isinstance(items, list):
-            items = [items]
+            items = []
 
         rows = []
         for item in items:
@@ -338,6 +413,157 @@ class ReportBrowser(QWidget):
             rows.append(row)
         self.table.set_data(rows)
         self.summary_label.setText(f"Total rows: {len(rows)}")
+
+    def _extract_items(self, data, config):
+        """Extract the correct list of items from the API response based on report type."""
+        if not isinstance(data, dict):
+            return data if isinstance(data, list) else []
+
+        if self.report_type == "balance_sheet":
+            return self._extract_balance_sheet_items(data)
+        elif self.report_type == "profit_loss":
+            return self._extract_profit_loss_items(data)
+        elif self.report_type == "cash_flow":
+            return self._extract_cash_flow_items(data)
+        elif self.report_type in ("ar_aging", "ap_aging"):
+            return data.get("aging_rows", [])
+        elif config["data_key"]:
+            return data.get(config["data_key"], [])
+        else:
+            return [data]
+
+    def _extract_balance_sheet_items(self, data):
+        """Convert balance sheet nested structure to flat rows."""
+        rows = []
+        for section_key in ("assets", "liabilities", "equity"):
+            section_data = data.get(section_key, {})
+            rows.append({
+                "account_code": "",
+                "account_name": section_key.upper(),
+                "account_type": "",
+                "balance": "",
+            })
+            for section in section_data.get("sections", []):
+                rows.append({
+                    "account_code": "",
+                    "account_name": f"  {section.get('category', '')}",
+                    "account_type": "",
+                    "balance": str(section.get('total', 0)),
+                })
+                for acc in section.get("accounts", []):
+                    rows.append({
+                        "account_code": acc.get("account_code", ""),
+                        "account_name": f"    {acc.get('account_name', '')}",
+                        "account_type": acc.get("category", ""),
+                        "balance": str(acc.get('amount', 0)),
+                    })
+            rows.append({
+                "account_code": "",
+                "account_name": f"Total {section_key.title()}",
+                "account_type": "",
+                "balance": str(section_data.get('total', 0)),
+            })
+            rows.append({"account_code": "", "account_name": "", "account_type": "", "balance": ""})
+
+        is_balanced = data.get("is_balanced", False)
+        diff = data.get("difference", 0)
+        rows.append({
+            "account_code": "",
+            "account_name": "BALANCED" if is_balanced else f"NOT BALANCED (diff: {diff})",
+            "account_type": "",
+            "balance": "",
+        })
+        return rows
+
+    def _extract_profit_loss_items(self, data):
+        """Convert P&L nested structure to flat rows."""
+        rows = []
+        rows.append({"account_code": "", "account_name": "REVENUE", "account_type": "", "balance": ""})
+        for section in data.get("revenue", []):
+            if isinstance(section, dict) and "accounts" in section:
+                rows.append({
+                    "account_code": "",
+                    "account_name": f"  {section.get('category', '')}",
+                    "account_type": "",
+                    "balance": str(section.get('total', 0)),
+                })
+                for acc in section.get("accounts", []):
+                    rows.append({
+                        "account_code": acc.get("account_code", ""),
+                        "account_name": f"    {acc.get('account_name', '')}",
+                        "account_type": acc.get("category", ""),
+                        "balance": str(acc.get('amount', 0)),
+                    })
+        rows.append({"account_code": "", "account_name": "Total Revenue", "account_type": "", "balance": str(data.get('total_revenue', 0))})
+        rows.append({"account_code": "", "account_name": "", "account_type": "", "balance": ""})
+
+        rows.append({"account_code": "", "account_name": "COST OF GOODS SOLD", "account_type": "", "balance": ""})
+        for section in data.get("cogs", []):
+            if isinstance(section, dict) and "accounts" in section:
+                for acc in section.get("accounts", []):
+                    rows.append({
+                        "account_code": acc.get("account_code", ""),
+                        "account_name": f"    {acc.get('account_name', '')}",
+                        "account_type": acc.get("category", ""),
+                        "balance": str(acc.get('amount', 0)),
+                    })
+        rows.append({"account_code": "", "account_name": "Total COGS", "account_type": "", "balance": str(data.get('total_cogs', 0))})
+        rows.append({"account_code": "", "account_name": "", "account_type": "", "balance": ""})
+
+        rows.append({"account_code": "", "account_name": "GROSS PROFIT", "account_type": "", "balance": str(data.get('gross_profit', 0))})
+        rows.append({"account_code": "", "account_name": "", "account_type": "", "balance": ""})
+
+        rows.append({"account_code": "", "account_name": "EXPENSES", "account_type": "", "balance": ""})
+        for section in data.get("expenses", []):
+            if isinstance(section, dict) and "accounts" in section:
+                rows.append({
+                    "account_code": "",
+                    "account_name": f"  {section.get('category', '')}",
+                    "account_type": "",
+                    "balance": str(section.get('total', 0)),
+                })
+                for acc in section.get("accounts", []):
+                    rows.append({
+                        "account_code": acc.get("account_code", ""),
+                        "account_name": f"    {acc.get('account_name', '')}",
+                        "account_type": acc.get("category", ""),
+                        "balance": str(acc.get('amount', 0)),
+                    })
+        rows.append({"account_code": "", "account_name": "Total Expenses", "account_type": "", "balance": str(data.get('total_expenses', 0))})
+        rows.append({"account_code": "", "account_name": "", "account_type": "", "balance": ""})
+
+        rows.append({"account_code": "", "account_name": "NET INCOME", "account_type": "", "balance": str(data.get('net_income', 0))})
+        return rows
+
+    def _extract_cash_flow_items(self, data):
+        """Convert cash flow nested structure to flat rows."""
+        rows = []
+        operating = data.get("operating_activities", {})
+        rows.append({"category": "Operating Activities", "amount": ""})
+        rows.append({"category": "  Net Income", "amount": str(operating.get('net_income', 0))})
+        for wc in operating.get("working_capital_changes", []):
+            rows.append({"category": f"  {wc.get('description', '')}", "amount": str(wc.get('change', 0))})
+        rows.append({"category": "  Net Cash from Operations", "amount": str(operating.get('net_cash_from_operations', 0))})
+        rows.append({"category": "", "amount": ""})
+
+        investing = data.get("investing_activities", {})
+        rows.append({"category": "Investing Activities", "amount": ""})
+        for item in investing.get("items", []):
+            rows.append({"category": f"  {item.get('description', '')}", "amount": str(item.get('change', 0))})
+        rows.append({"category": "  Net Cash from Investing", "amount": str(investing.get('net_cash_from_investing', 0))})
+        rows.append({"category": "", "amount": ""})
+
+        financing = data.get("financing_activities", {})
+        rows.append({"category": "Financing Activities", "amount": ""})
+        for item in financing.get("items", []):
+            rows.append({"category": f"  {item.get('description', '')}", "amount": str(item.get('change', 0))})
+        rows.append({"category": "  Net Cash from Financing", "amount": str(financing.get('net_cash_from_financing', 0))})
+        rows.append({"category": "", "amount": ""})
+
+        rows.append({"category": "NET CHANGE IN CASH", "amount": str(data.get('net_change_in_cash', 0))})
+        rows.append({"category": "Opening Cash Balance", "amount": str(data.get('opening_cash_balance', 0))})
+        rows.append({"category": "Closing Cash Balance", "amount": str(data.get('closing_cash_balance', 0))})
+        return rows
 
     def _set_loading(self, show):
         self.loading_label.setVisible(show)
@@ -368,7 +594,16 @@ class ReportBrowser(QWidget):
         )
         if file_path:
             try:
-                params = {"format": "csv", "as_of_date": self.date_input.date().toString("yyyy-MM-dd")}
+                if self._is_date_range:
+                    params = {"format": "csv"}
+                    if hasattr(self, 'date_from') and self.date_from.date() != QDate():
+                        params["start_date"] = self.date_from.date().toString("yyyy-MM-dd")
+                    if hasattr(self, 'date_to') and self.date_to.date() != QDate():
+                        params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
+                else:
+                    params = {"format": "csv"}
+                    if hasattr(self, 'date_input') and self.date_input.date() != QDate():
+                        params["as_of_date"] = self.date_input.date().toString("yyyy-MM-dd")
                 resp = self.api_client.get(config["api"], params=params)
                 with open(file_path, "w", encoding="utf-8") as f:
                     content = resp if isinstance(resp, str) else str(resp)

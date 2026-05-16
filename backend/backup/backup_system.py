@@ -255,6 +255,7 @@ class BackupManager:
     
     def __init__(self, config: Dict = None):
         self.config = config or BackupConfig().load_config()
+        self._ensure_db_path()
         self.backup_dir = Path(self.config['backup_dir'])
         self.backup_dir.mkdir(parents=True, exist_ok=True)
         
@@ -267,6 +268,17 @@ class BackupManager:
         self.scheduler = None
         
         self.logger = logging.getLogger('backup')
+    
+    def _ensure_db_path(self):
+        if self.config['database'].get('path'):
+            return
+        try:
+            from django.conf import settings
+            db_name = settings.DATABASES['default']['NAME']
+            if db_name and os.path.exists(db_name):
+                self.config['database']['path'] = str(db_name)
+        except Exception:
+            pass
     
     def _setup_logging(self):
         """Setup backup logging"""

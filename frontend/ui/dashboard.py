@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
-                                  QGridLayout, QPushButton, QApplication, QScrollArea)
+                                  QGridLayout, QApplication, QScrollArea)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from ui.role_manager import UserRole
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_HELPER, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
 from ui.constants import (TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY_SMALL, TEXT_TABLE, TEXT_HELPER)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from ui.components.kpi_cards import KPICard, MiniMetricCard, StatusBadge
@@ -20,6 +20,13 @@ class Dashboard(QWidget):
         self._dashboard_data = {}
         self._extra_counts = {}
         self._kpi_labels = {}
+        self._color_map = {
+            'blue': '#3B82F6',
+            'red': '#EF4444',
+            'green': '#10B981',
+            'mauve': '#8B5CF6',
+            'peach': '#F97316',
+        }
 
         self._build_static_ui()
 
@@ -80,7 +87,7 @@ class Dashboard(QWidget):
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(0)
+        root.setSpacing(SPACING_NONE)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -102,16 +109,8 @@ class Dashboard(QWidget):
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         hdr.addWidget(title)
         hdr.addStretch()
-        refresh_btn = QPushButton("Refresh")
-        refresh_btn.setFixedWidth(100)
-        refresh_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BORDER}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px {SPACING_LG}px; font-weight: bold;
-            }}
-            QPushButton:hover {{ background-color: {COLOR_BORDER_LIGHT}; }}
-        """)
+        from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+        refresh_btn = EnterpriseButton("Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         refresh_btn.clicked.connect(self.refresh_data)
         hdr.addWidget(refresh_btn)
         layout.addLayout(hdr)
@@ -185,19 +184,8 @@ class Dashboard(QWidget):
         root.addWidget(scroll)
 
     def _mk_action_btn(self, text, page_index):
-        btn = QPushButton(text)
-        btn.setCursor(Qt.PointingHandCursor)
-        btn.setMinimumHeight(36)
-        btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BORDER}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px 18px; font-weight: bold; font-size: 10pt;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BORDER_LIGHT}; border: 1px solid {COLOR_PRIMARY};
-            }}
-        """)
+        from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+        btn = EnterpriseButton(text, variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         btn.clicked.connect(lambda checked, x=page_index: self._navigate_to(x))
         return btn
 
@@ -384,7 +372,7 @@ class Dashboard(QWidget):
         self._role_stack.addLayout(grid)
 
     def _mini_card(self, label, value, color_key, is_currency):
-        c = self.C.get(color_key, COLOR_PRIMARY)
+        c = self._color_map.get(color_key, COLOR_PRIMARY)
         f = QFrame()
         f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; }}")
         lay = QVBoxLayout(f)
@@ -450,7 +438,7 @@ class Dashboard(QWidget):
         self._alert_stack.addStretch()
 
     def _alert_line(self, label, status, color_key):
-        c = self.C.get(color_key, COLOR_PRIMARY)
+        c = self._color_map.get(color_key, COLOR_PRIMARY)
         box = QFrame()
         box.setStyleSheet(f"""
             QFrame {{

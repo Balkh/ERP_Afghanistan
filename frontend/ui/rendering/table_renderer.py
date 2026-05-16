@@ -1,9 +1,12 @@
+"""
+Legacy TableRenderer — delegates to canonical EnterpriseTable styling.
+No longer contains hardcoded colors or QSS. All styling comes from
+ui/components/tables.py:build_table_stylesheet().
+"""
+
 from PySide6.QtWidgets import QTableWidget, QHeaderView, QAbstractItemView
-from ui.constants import (
-    COLOR_TABLE_HEADER, COLOR_TABLE_ALT, COLOR_TABLE_GRIDLINE,
-    COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER,
-    COLOR_PRIMARY, COLOR_BORDER_LIGHT, COLOR_BG_ELEVATED,
-    TEXT_TABLE, TEXT_TABLE_HEADER, TABLE_ROW_HEIGHT_MD, SPACING_6)
+from ui.components.tables import build_table_stylesheet
+from ui.constants import TABLE_ROW_HEIGHT_MD, SPACING_6
 
 
 class TableRenderer:
@@ -14,32 +17,5 @@ class TableRenderer:
         table.setSelectionMode(QAbstractItemView.SingleSelection)
         table.setEditTriggers(QTableWidget.NoEditTriggers)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.setStyleSheet(f"""
-            QTableWidget {{
-                background-color: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                gridline-color: {COLOR_TABLE_GRIDLINE};
-                font-size: {TEXT_TABLE}px;
-            }}
-            QTableWidget::item {{
-                padding: {SPACING_6}px 8px;
-                border-bottom: 1px solid {COLOR_BORDER_LIGHT};
-            }}
-            QTableWidget::item:selected {{
-                background-color: {COLOR_PRIMARY};
-                color: white;
-            }}
-            QTableWidget::item:hover:!selected {{
-                background-color: {COLOR_BG_ELEVATED};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_TABLE_HEADER};
-                color: {COLOR_TEXT_PRIMARY};
-                padding: {SPACING_6}px 8px;
-                border: none;
-                font-weight: bold;
-                font-size: {TEXT_TABLE_HEADER}px;
-            }}
-        """)
+        table.setStyleSheet(build_table_stylesheet())
         table.verticalHeader().setDefaultSectionSize(TABLE_ROW_HEIGHT_MD)

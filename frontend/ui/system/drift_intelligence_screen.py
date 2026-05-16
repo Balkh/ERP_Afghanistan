@@ -18,6 +18,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
                            COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    TEXT_TABLE,
                            COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from api.drift_intelligence_service import DriftIntelligenceService
 

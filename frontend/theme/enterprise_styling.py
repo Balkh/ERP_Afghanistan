@@ -190,53 +190,11 @@ class EnterpriseStyles:
         """
     
     @staticmethod
-    def get_table_styles(bg_color: str, alt_bg: str, grid_color: str, 
+    def get_table_styles(bg_color: str, alt_bg: str, grid_color: str,
                          header_bg: str, header_fg: str, primary_color: str = "#89b4fa") -> str:
-        """Get table styles."""
-        sel_hover = EnterpriseStyles._lighten(primary_color, 0.3)
-        sel_pressed = EnterpriseStyles._darken(primary_color, 0.1)
-        return f"""
-            QTableWidget, QTableView {{
-                background-color: {bg_color};
-                alternate-background-color: {alt_bg};
-                gridline-color: {grid_color};
-                border: 1px solid {grid_color};
-                border-radius: {Spacing.BORDER_RADIUS_MD}px;
-                font-family: {Typography.FONT_FAMILY_PRIMARY};
-                font-size: {Typography.FONT_SIZE_BODY}pt;
-            }}
-            QTableWidget::item, QTableView::item {{
-                padding: {Spacing.SPACING_SM}px;
-                border: none;
-                border-bottom: 1px solid {grid_color};
-            }}
-            QTableWidget::item:selected, QTableView::item:selected {{
-                background-color: {primary_color};
-                color: white;
-            }}
-            QTableWidget::item:hover:!selected, QTableView::item:hover:!selected {{
-                background-color: {EnterpriseStyles._lighten(bg_color, 0.1)};
-            }}
-            QHeaderView::section {{
-                background-color: {header_bg};
-                color: {header_fg};
-                padding: {Spacing.SPACING_SM}px;
-                border: none;
-                border-bottom: 2px solid {grid_color};
-                font-weight: {Typography.FONT_WEIGHT_SEMIBOLD};
-                font-size: {Typography.FONT_SIZE_BODY}pt;
-            }}
-            QHeaderView::section:hover {{
-                background-color: {sel_hover};
-            }}
-            QHeaderView::section:pressed {{
-                background-color: {sel_pressed};
-            }}
-            QTableWidget QTableCornerButton::section {{
-                background-color: {header_bg};
-                border: none;
-            }}
-        """
+        """Get table styles — delegates to canonical build_table_stylesheet."""
+        from ui.components.tables import build_table_stylesheet
+        return build_table_stylesheet()
     
     @staticmethod
     def get_dialog_styles(bg_color: str, fg_color: str, border_color: str) -> str:

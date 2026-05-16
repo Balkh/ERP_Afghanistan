@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
                                QHeaderView, QDateTimeEdit,
                                QComboBox, QLineEdit, QDateEdit,
                                QMessageBox, QGroupBox, QFormLayout, QDialog, QApplication)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QColor
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
@@ -52,12 +52,14 @@ class AccountLedgerScreen(QFrame):
         self.date_from = QDateEdit()
         self.date_from.setCalendarPopup(True)
         self.date_from.setDisplayFormat("yyyy-MM-dd")
+        self.date_from.setDate(QDate.currentDate().addMonths(-1))
         filter_layout.addWidget(self.date_from)
 
         filter_layout.addWidget(QLabel("To:"))
         self.date_to = QDateEdit()
         self.date_to.setCalendarPopup(True)
         self.date_to.setDisplayFormat("yyyy-MM-dd")
+        self.date_to.setDate(QDate.currentDate())
         filter_layout.addWidget(self.date_to)
 
         filter_layout.addStretch()

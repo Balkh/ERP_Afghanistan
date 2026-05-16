@@ -5,8 +5,8 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QPixmap, QPainter, QColor, QBrush
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER, TEXT_DISPLAY,
                            BORDER_RADIUS_LG,
                            COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
                            COLOR_BORDER, COLOR_BORDER_LIGHT,
@@ -95,7 +95,7 @@ class LoginDialog(QDialog):
         
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING_XXL + SPACING_LG,  SPACING_XXL + SPACING_LG,  SPACING_XXL + SPACING_LG,  SPACING_XXL + SPACING_LG)
-        layout.setSpacing(0)
+        layout.setSpacing(SPACING_NONE)
         
         # Header with logo
         header = QFrame()
@@ -103,7 +103,7 @@ class LoginDialog(QDialog):
         header_layout = QVBoxLayout(header)
         
         logo_label = QLabel("💊")
-        logo_label.setStyleSheet(f"font-size: 36pt; font-weight: 700; color: {COLOR_PRIMARY};")
+        logo_label.setStyleSheet(f"font-size: {TEXT_DISPLAY}pt; font-weight: 700; color: {COLOR_PRIMARY};")
         logo_label.setAlignment(Qt.AlignCenter)
         header_layout.addWidget(logo_label)
         

@@ -20,6 +20,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
+    SPACING_SM,
+    SPACING_XS,
                            MARGIN_PAGE, TEXT_SECTION_TITLE, TEXT_BODY_SMALL, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
 
 
@@ -39,7 +41,7 @@ class _SectionCard(QFrame):
         layout.addWidget(header)
 
         self.content = QVBoxLayout()
-        self.content.setSpacing(4)
+        self.content.setSpacing(SPACING_XS)
         layout.addLayout(self.content)
         layout.addStretch()
 
@@ -80,7 +82,7 @@ class _ClickableCard(QFrame):
             self.setCursor(Qt.PointingHandCursor)
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(2)
+        layout.setSpacing(SPACING_XS)
 
         t = QLabel(title)
         t.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY_SMALL}px;")

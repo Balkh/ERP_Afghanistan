@@ -1,10 +1,11 @@
 """Returns management screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QLineEdit,
-                                  QHeaderView, QMessageBox, QComboBox, QDateEdit,
-                                  QGroupBox, QFormLayout, QDialog, QDialogButtonBox,
-                                  QTextEdit, QInputDialog, QApplication)
+                                   QLabel, QLineEdit,
+                                   QHeaderView, QMessageBox, QComboBox,
+                                    QGroupBox, QFormLayout, QDialog,
+                                   QTextEdit, QInputDialog, QApplication, QFileDialog)
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
@@ -28,6 +29,7 @@ class ReturnsScreen(BaseScreen):
         super().__init__(parent, screen_id, config)
         self._api_client = api_client
         self.returns_data = []
+        self._setup_ui()
     
     def _setup_ui(self):
         """Setup the UI components."""
@@ -64,11 +66,34 @@ class ReturnsScreen(BaseScreen):
         self.reject_button = EnterpriseButton(text="Reject", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
         self.reject_button.clicked.connect(self._reject_return)
         
+        self.void_button = EnterpriseButton(text="Void", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)
+        self.void_button.clicked.connect(self._void_return)
+        self.void_button.setEnabled(False)
+        
+        self.print_button = EnterpriseButton(text="Print Receipt", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.print_button.clicked.connect(self._print_receipt)
+        self.print_button.setEnabled(False)
+        
+        self.export_button = EnterpriseButton(text="Export CSV", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.export_button.clicked.connect(self._export_csv)
+        
         action_layout.addWidget(self.add_button)
         action_layout.addWidget(self.approve_button)
         action_layout.addWidget(self.reject_button)
+        action_layout.addWidget(self.void_button)
+        action_layout.addWidget(self.print_button)
+        action_layout.addWidget(self.export_button)
         action_layout.addStretch()
         layout.addLayout(action_layout)
+
+        # Summary stats label
+        self.summary_label = QLabel("")
+        self.summary_label.setStyleSheet(
+            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; "
+            f"padding: {SPACING_XS}px 0;"
+        )
+        self.summary_label.setVisible(False)
+        layout.addWidget(self.summary_label)
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading return orders...")
@@ -110,13 +135,21 @@ class ReturnsScreen(BaseScreen):
         selected = self.table.selectedItems()
         has_selection = bool(selected)
         
-        self.approve_button.setEnabled(has_selection)
-        self.reject_button.setEnabled(has_selection)
+        self.approve_button.setEnabled(False)
+        self.reject_button.setEnabled(False)
+        self.void_button.setEnabled(False)
+        self.print_button.setEnabled(False)
         
         if has_selection:
             row = selected[0].row()
-            # We can further refine this by checking the status of the selected item
-            # For example, only enable approve/reject if status is PENDING
+            status = self.table.item(row, 5).text() if self.table.item(row, 5) else ""
+            
+            if status == "PENDING":
+                self.approve_button.setEnabled(True)
+                self.reject_button.setEnabled(True)
+            elif status in ("APPROVED", "VOIDED", "COMPLETED"):
+                self.void_button.setEnabled(status == "APPROVED")
+                self.print_button.setEnabled(True)
 
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
@@ -207,13 +240,32 @@ class ReturnsScreen(BaseScreen):
         self.table.setVisible(True)
 
     def _load_returns(self):
-        """Load returns from API or show mock data."""
+        """Load returns from API with server-side filtering."""
         self._show_loading()
         
         if self._api_client:
             try:
                 endpoint = get_endpoint("return-orders")
-                response = self._api_client.get(endpoint)
+                params = {}
+                
+                # Server-side type filter
+                type_filter = self.return_type_filter.currentText()
+                if type_filter == "Sale Return":
+                    params["return_type"] = "SALE_RETURN"
+                elif type_filter == "Purchase Return":
+                    params["return_type"] = "PURCHASE_RETURN"
+                
+                # Server-side status filter
+                status_filter = self.status_filter.currentText()
+                if status_filter != "All Status":
+                    params["status"] = status_filter.upper()
+                
+                # Server-side search
+                search_text = self.search_input.text().strip()
+                if search_text:
+                    params["search"] = search_text
+                
+                response = self._api_client.get(endpoint, params=params)
                 
                 if response and isinstance(response, dict) and response.get("success"):
                     self.returns_data = response.get("data", [])
@@ -221,41 +273,51 @@ class ReturnsScreen(BaseScreen):
                     self.returns_data = response
                 else:
                     self.returns_data = []
+                
+                if not self.returns_data:
+                    self._show_empty("No return orders match your filters")
+                else:
+                    self._populate_table()
+                    self._load_summary()
             except Exception as e:
                 print(f"Error loading returns: {e}")
-                self.returns_data = []
+                self.returns_data = self._get_mock_returns()
+                self._populate_table()
         else:
             self.returns_data = self._get_mock_returns()
-        
-        self._populate_table()
+            self._populate_table()
+
+    def _load_summary(self):
+        """Load and display summary statistics from /summary/ endpoint."""
+        if not self._api_client:
+            return
+        try:
+            response = self._api_client.get("/api/returns/return-orders/summary/")
+            if response and isinstance(response, dict):
+                data = response.get("data", response)
+                summary_text = (
+                    f"Total: {data.get('total', 0)} | "
+                    f"Pending: {data.get('pending', 0)} | "
+                    f"Approved: {data.get('approved', 0)} | "
+                    f"Rejected: {data.get('rejected', 0)} | "
+                    f"Total Amount: {data.get('total_amount', 0):.2f} AFN"
+                )
+                self.summary_label.setText(summary_text)
+                self.summary_label.setVisible(True)
+        except Exception:
+            pass
 
     def _populate_table(self):
-        """Populate table with returns data."""
+        """Populate table with returns data (already filtered server-side)."""
         self.table.setRowCount(0)
         
-        type_filter = self.return_type_filter.currentText()
-        status_filter = self.status_filter.currentText()
-        
-        filtered_data = []
-        for item in self.returns_data:
-            return_type = item.get("return_type", "")
-            status = item.get("status", "")
-            
-            if type_filter == "Sale Return" and return_type != "SALE_RETURN":
-                continue
-            if type_filter == "Purchase Return" and return_type != "PURCHASE_RETURN":
-                continue
-            if status_filter != "All Status" and status_filter.upper() != status.upper():
-                continue
-            filtered_data.append(item)
-
-        if not filtered_data:
+        if not self.returns_data:
             self._show_empty()
             return
 
         self._show_data()
         data = []
-        for item in filtered_data:
+        for item in self.returns_data:
             return_type = item.get("return_type", "")
             status = item.get("status", "")
             amount = float(item.get("total_amount", 0))
@@ -335,8 +397,16 @@ class ReturnsScreen(BaseScreen):
         if reply == QMessageBox.Yes:
             if self._api_client:
                 try:
+                    employee_id, ok = QInputDialog.getText(
+                        self, "Employee ID",
+                        "Enter your employee ID for approval audit:",
+                        text=""
+                    )
+                    if not ok or not employee_id.strip():
+                        return
+                    
                     endpoint = f"/api/returns/return-orders/{return_id}/approve/"
-                    response = self._api_client.post(endpoint, {"employee_id": "00000000-0000-0000-0000-000000000001"})
+                    response = self._api_client.post(endpoint, {"employee_id": employee_id.strip()})
                     
                     if response and isinstance(response, dict) and (response.get("success") or response.get("id")):
                         QMessageBox.information(self, "Success", f"Return {return_number} approved successfully.")
@@ -388,6 +458,64 @@ class ReturnsScreen(BaseScreen):
             else:
                 QMessageBox.information(self, "Success", f"Return {return_number} rejected (offline mode).")
                 self._load_returns()
+
+    def _void_return(self):
+        """Void an approved return."""
+        selected = self.table.selectedItems()
+        if not selected:
+            QMessageBox.warning(self, "No Selection", "Please select a return to void.")
+            return
+        
+        row = selected[0].row()
+        return_number = self.table.item(row, 0).text()
+        
+        return_item = next((item for item in self.returns_data if item.get("return_number") == return_number), None)
+        if not return_item:
+            return
+
+        return_id = return_item.get("id")
+        
+        reply = QMessageBox.question(
+            self, "Void Return",
+            f"Are you sure you want to void return {return_number}?\nThis will reverse inventory and accounting entries.",
+            QMessageBox.Yes | QMessageBox.No
+        )
+        
+        if reply != QMessageBox.Yes:
+            return
+
+        reason, ok = QInputDialog.getText(
+            self, "Void Reason",
+            "Enter reason for voiding (required):",
+            text=""
+        )
+        if not ok or not reason.strip():
+            return
+
+        employee_id, ok = QInputDialog.getText(
+            self, "Employee ID",
+            "Enter your employee ID for audit:",
+            text=""
+        )
+        if not ok or not employee_id.strip():
+            return
+
+        if self._api_client:
+            try:
+                endpoint = f"/api/returns/return-orders/{return_id}/void/"
+                response = self._api_client.post(endpoint, {
+                    "employee_id": employee_id.strip(),
+                    "reason": reason.strip()
+                })
+
+                if response and (response.get("success") or response.get("id")):
+                    QMessageBox.information(self, "Success", f"Return {return_number} voided successfully.")
+                    self._load_returns()
+                else:
+                    err = response.get("error", "Unknown error") if response else "No response"
+                    QMessageBox.critical(self, "Error", f"Failed to void: {err}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"API Error: {e}")
         elif ok:
             QMessageBox.warning(self, "Validation Error", "Rejection reason is required.")
     
@@ -395,6 +523,63 @@ class ReturnsScreen(BaseScreen):
         """View return details."""
         return_number = self.table.item(row, 0).text()
         QMessageBox.information(self, "Return Details", f"Viewing return: {return_number}")
+    
+    def _export_csv(self):
+        """Export return orders to CSV."""
+        if not self._api_client:
+            QMessageBox.warning(self, "No Connection", "CSV export requires API connection.")
+            return
+        
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Export Returns to CSV", "", "CSV Files (*.csv)"
+        )
+        if not file_path:
+            return
+        
+        try:
+            response = self._api_client.get("/api/returns/return-orders/export_csv/", raw_response=True)
+            if response:
+                with open(file_path, 'wb') as f:
+                    f.write(response)
+                QMessageBox.information(self, "Success", f"Returns exported to:\n{file_path}")
+            else:
+                QMessageBox.critical(self, "Error", "Failed to export returns.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Export failed: {e}")
+    
+    def _print_receipt(self):
+        """Print/download PDF receipt for selected return."""
+        selected = self.table.selectedItems()
+        if not selected:
+            QMessageBox.warning(self, "No Selection", "Please select a return to print.")
+            return
+        
+        row = selected[0].row()
+        return_number = self.table.item(row, 0).text()
+        
+        return_item = next((item for item in self.returns_data if item.get("return_number") == return_number), None)
+        if not return_item:
+            return
+        
+        return_id = return_item.get("id")
+        
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Return Receipt", f"return_{return_number}.pdf", "PDF Files (*.pdf)"
+        )
+        if not file_path:
+            return
+        
+        if self._api_client:
+            try:
+                response = self._api_client.get(f"/api/returns/return-orders/{return_id}/receipt_pdf/", raw_response=True)
+                if response:
+                    with open(file_path, 'wb') as f:
+                        f.write(response)
+                    QMessageBox.information(self, "Success", f"Receipt saved to:\n{file_path}")
+                else:
+                    QMessageBox.critical(self, "Error", "Failed to generate receipt.")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"API Error: {e}")
     
     def on_show(self):
         """Called when screen is shown."""
@@ -413,6 +598,27 @@ class ReturnOrderDialog(QDialog):
         self._invoice_data = None
         self._items = []
         self._setup_ui()
+
+    def set_invoice_type(self, return_type):
+        """Pre-select return type (SALE_RETURN or PURCHASE_RETURN)."""
+        idx = 0 if return_type == "SALE_RETURN" else 1
+        self.return_type_cb.setCurrentIndex(idx)
+
+    def prefill_from_invoice(self, invoice_id):
+        """Load invoice data and pre-fill return items."""
+        if not self.api_client:
+            return
+        try:
+            is_sale = self.return_type_cb.currentText() == "Sale Return"
+            endpoint = f"/api/sales/invoices/{invoice_id}/" if is_sale else f"/api/purchases/invoices/{invoice_id}/"
+            resp = self.api_client.get(endpoint)
+            if resp and isinstance(resp, dict):
+                data = resp.get("data", resp)
+                self._invoice_data = data
+                self._items = data.get("items", [])
+                self._populate_items()
+        except Exception:
+            pass
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
@@ -496,7 +702,7 @@ class ReturnOrderDialog(QDialog):
         items_layout.addWidget(self.items_table)
 
         self.summary_label = QLabel("Refund Preview: 0.00 AFN")
-        self.summary_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-weight: bold; font-size: 12pt;")
+        self.summary_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-weight: bold; font-size: {TEXT_BODY}pt;")
         items_layout.addWidget(self.summary_label)
 
         layout.addWidget(items_group)
@@ -684,19 +890,3 @@ class ReturnOrderDialog(QDialog):
                 QMessageBox.critical(self, "Error", f"Failed to create return: {err}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to create return: {e}")
-        endpoint = get_endpoint("return-orders")
-        if self.api_client:
-            try:
-                response = self.api_client.post(endpoint, data)
-                if response and isinstance(response, dict):
-                    if response.get("success") or response.get("id"):
-                        QMessageBox.information(self, "Success", "Return order created successfully.")
-                        self.accept()
-                        return
-                error_msg = response.get("error", {}).get("message", "Failed to create return") if isinstance(response, dict) else "Failed to create return"
-                QMessageBox.warning(self, "Error", error_msg)
-            except Exception as e:
-                QMessageBox.warning(self, "Error", f"Failed to save: {e}")
-        else:
-            QMessageBox.information(self, "Success", "Return order created (offline mode).")
-            self.accept()

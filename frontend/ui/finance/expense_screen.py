@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QTableWidgetItem, QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QDateEdit,
-                                  QGroupBox, QFormLayout, QDialog, QDialogButtonBox,
-                                  QTextEdit, QApplication)
+                                   QGroupBox, QFormLayout, QDialog,
+                                   QTextEdit, QApplication)
 from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QFont
 from ui.screens.base_screen import BaseScreen
 from ui.utils.debounce import Debouncer
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
@@ -232,10 +232,16 @@ class AddExpenseDialog(QDialog):
         
         layout.addLayout(form)
         
-        btns = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        btns.accepted.connect(self.save_expense)
-        btns.rejected.connect(self.reject)
-        layout.addWidget(btns)
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(SPACING_SM)
+        btn_layout.addStretch()
+        cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        cancel_btn.clicked.connect(self.reject)
+        ok_btn = EnterpriseButton("OK", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        ok_btn.clicked.connect(self.save_expense)
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(ok_btn)
+        layout.addLayout(btn_layout)
 
     def _load_accounts(self):
         try:

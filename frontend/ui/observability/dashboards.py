@@ -16,6 +16,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_FOCUS,
                            COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_STATUS_PENDING,
+    TABLE_ROW_HEIGHT_MD, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_HELPER, TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE,
                            BORDER_RADIUS_MD, BORDER_RADIUS_LG, SPACING_6, BORDER_RADIUS_SM)
 from ui.constants import (COLOR_TABLE_HEADER, COLOR_TABLE_ALT, COLOR_TABLE_GRIDLINE,
                           TABLE_ROW_HEIGHT_MD)
@@ -36,31 +37,8 @@ def _make_styled_table(headers, parent=None):
     table.setEditTriggers(QTableWidget.NoEditTriggers)
     table.setSelectionBehavior(QAbstractItemView.SelectRows)
     table.setAlternatingRowColors(True)
-    table.setStyleSheet(f"""
-        QTableWidget {{
-            background-color: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER};
-            gridline-color: {COLOR_TABLE_GRIDLINE};
-            font-size: {TEXT_LABEL}px;
-        }}
-        QTableWidget::item {{
-            padding: {SPACING_XS}px 8px;
-            border-bottom: 1px solid {COLOR_BORDER_LIGHT};
-        }}
-        QTableWidget::item:selected {{
-            background-color: {COLOR_BG_ELEVATED};
-            color: {COLOR_PRIMARY};
-        }}
-        QHeaderView::section {{
-            background-color: {COLOR_TABLE_HEADER};
-            color: {COLOR_PRIMARY};
-            padding: {SPACING_6}px 8px;
-            border: none;
-            font-weight: bold;
-            font-size: {TEXT_TABLE}px;
-        }}
-    """)
+    from ui.components.tables import build_table_stylesheet
+    table.setStyleSheet(build_table_stylesheet())
     return table
 
 

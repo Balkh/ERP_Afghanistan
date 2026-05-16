@@ -9,7 +9,9 @@ from ui.constants import (
     COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_TEXT_MUTED, COLOR_TEXT_PRIMARY,
     COLOR_TEXT_SECONDARY, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
     COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_PRIMARY,
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
+    SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
+    SPACING_SM,
+    TEXT_CARD_TITLE, TEXT_LABEL, TEXT_SECTION_TITLE, TEXT_TABLE,
     MARGIN_PAGE, SPACING_6, BORDER_RADIUS_XL, BORDER_RADIUS_LG, BORDER_RADIUS_PILL, BORDER_RADIUS_MD)
 from ui.constants import TEXT_LABEL, TEXT_CARD_TITLE, TEXT_TABLE, TEXT_SECTION_TITLE
 from ui.system.control_center_screen import ControlCenterScreen
@@ -39,7 +41,7 @@ class IntelligenceHubScreen(BaseScreen):
     def _setup_ui(self):
         main_layout = QHBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
+        main_layout.setSpacing(SPACING_NONE)
 
         content_frame = QFrame()
         content_layout = QVBoxLayout(content_frame)

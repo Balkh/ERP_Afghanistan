@@ -3,13 +3,14 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
                           MARGIN_PAGE,
                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER,
                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+    TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_TABLE,
                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_SM)
 from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_TABLE
 from ui.observability.widgets import LoadingOverlay
@@ -33,7 +34,7 @@ class ObservabilityScreen(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(SPACING_NONE)
 
         header_bar = QFrame()
         header_bar.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border-bottom: 1px solid {COLOR_BORDER};")

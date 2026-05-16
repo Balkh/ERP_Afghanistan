@@ -167,6 +167,80 @@ def main():
     ThemeEngine.instance().apply_theme("dark")
     log.debug("Theme engine initialized", extra={'extra_fields': {'tags': ['theme']}})
 
+    # Apply global stylesheet for dropdown readability (WCAG AA compliant)
+    # ThemeEngine updates module constants; this stylesheet ensures QComboBox
+    # popups have proper contrast in both light and dark themes.
+    from ui.constants import (
+        COLOR_BG_INPUT, COLOR_TEXT_PRIMARY, COLOR_BG_ELEVATED,
+        COLOR_BORDER, COLOR_PRIMARY, COLOR_TEXT_ON_PRIMARY,
+        COLOR_BG_HOVER, COLOR_BG_SURFACE,
+    )
+    app.setStyleSheet(f"""
+        QComboBox {{
+            background-color: {COLOR_BG_INPUT};
+            color: {COLOR_TEXT_PRIMARY};
+            border: 1px solid {COLOR_BORDER};
+            border-radius: 4px;
+            padding: 6px 10px;
+            min-height: 20px;
+        }}
+        QComboBox:focus {{
+            border: 1px solid {COLOR_PRIMARY};
+        }}
+        QComboBox::drop-down {{
+            border: none;
+            width: 24px;
+        }}
+        QComboBox QAbstractItemView {{
+            background-color: {COLOR_BG_ELEVATED};
+            color: {COLOR_TEXT_PRIMARY};
+            selection-background-color: {COLOR_PRIMARY};
+            selection-color: {COLOR_TEXT_ON_PRIMARY};
+            border: 1px solid {COLOR_BORDER};
+            outline: none;
+            padding: 4px 0;
+        }}
+        QComboBox QAbstractItemView::item {{
+            padding: 6px 10px;
+            min-height: 24px;
+        }}
+        QComboBox QAbstractItemView::item:hover {{
+            background-color: {COLOR_BG_HOVER};
+        }}
+        QComboBox QAbstractItemView::item:selected {{
+            background-color: {COLOR_PRIMARY};
+            color: {COLOR_TEXT_ON_PRIMARY};
+        }}
+        QListView {{
+            background-color: {COLOR_BG_SURFACE};
+            color: {COLOR_TEXT_PRIMARY};
+            border: 1px solid {COLOR_BORDER};
+        }}
+        QListView::item {{
+            padding: 6px 10px;
+            min-height: 24px;
+        }}
+        QListView::item:selected {{
+            background-color: {COLOR_PRIMARY};
+            color: {COLOR_TEXT_ON_PRIMARY};
+        }}
+        QMenu {{
+            background-color: {COLOR_BG_ELEVATED};
+            color: {COLOR_TEXT_PRIMARY};
+            border: 1px solid {COLOR_BORDER};
+            padding: 4px 0;
+        }}
+        QMenu::item {{
+            padding: 6px 24px;
+            min-height: 24px;
+        }}
+        QMenu::item:selected {{
+            background-color: {COLOR_PRIMARY};
+            color: {COLOR_TEXT_ON_PRIMARY};
+        }}
+    """)
+    log.debug("Global dropdown stylesheet applied", extra={'extra_fields': {'tags': ['theme']}})
+
     # Initialize license validation
     license_validator = initialize_license_validation()
     log.debug("License validator initialized", extra={'extra_fields': {'tags': ['license']}})
@@ -227,7 +301,7 @@ def main():
     else:
         log.info("Development mode - authentication bypassed", extra={'extra_fields': {'tags': ['auth']}})
         authenticated = True
-        user_data = {"username": "admin", "role": "admin"}
+        user_data = {"username": "admin", "role": "admin", "roles": ["Admin"]}
         dev_token = os.environ.get('PHARMACY_ERP_DEV_TOKEN')
         if not dev_token:
             # Temporary dev token for testing

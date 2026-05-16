@@ -1,5 +1,5 @@
 from decimal import Decimal
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QFrame,
                                QLineEdit, QComboBox, QTextEdit, QPushButton,
                                QLabel, QMessageBox, QDateEdit, QTableWidget,
                                QTableWidgetItem, QHeaderView, QAbstractItemView,
@@ -7,13 +7,19 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.client import APIClient
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD,
     COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_WARNING,
-    COLOR_DANGER, COLOR_INFO, COLOR_BG_MAIN, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
-    COLOR_BORDER_LIGHT_THEME, COLOR_TEXT_ON_PRIMARY, BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, TEXT_SECTION_TITLE, TEXT_CARD_TITLE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BG_LIGHT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_SUCCESS_BG, COLOR_WARNING, COLOR_DANGER, COLOR_DANGER_BG, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
-from ui.rendering.button_renderer import ButtonRenderer, ButtonStyle
-from ui.rendering.table_renderer import TableRenderer
+    COLOR_DANGER, COLOR_INFO, COLOR_BG_MAIN, COLOR_BG_DIALOG, COLOR_BG_SURFACE, COLOR_BG_DIALOG, COLOR_BG_INPUT,
+    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY,
+    COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER,
+    COLOR_SUCCESS_BG, COLOR_DANGER_BG, COLOR_FORM_FOOTER_BORDER,
+    COLOR_FORM_SECTION_TITLE, COLOR_FORM_SECTION_DIVIDER,
+    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+    TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_LABEL,
+    INPUT_HEIGHT_MD, DIALOG_WIDTH_WIDE,
+    SECTION_TITLE_SPACING, SECTION_DIVIDER_HEIGHT)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import build_table_stylesheet
 
 
 class JournalEntryFormDialog(QDialog):
@@ -29,28 +35,39 @@ class JournalEntryFormDialog(QDialog):
         self.load_accounts()
 
     def setup_ui(self):
-        self.setMinimumWidth(900)
+        self.setMinimumWidth(DIALOG_WIDTH_WIDE)
         self.setMinimumHeight(700)
         self.setStyleSheet(f"""
-            QDialog {{ background-color: {COLOR_BG_LIGHT}; }}
+            QDialog {{ background-color: {COLOR_BG_DIALOG}; }}
             QGroupBox {{
-                font-weight: bold;
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
-                margin-top: {SPACING_LG};
-                padding-top: {SPACING_LG};
-                background-color: {COLOR_BG_MAIN};
+                font-weight: 700;
+                font-size: {TEXT_LABEL}pt;
+                color: {COLOR_FORM_SECTION_TITLE};
+                border: 1px solid {COLOR_FORM_SECTION_DIVIDER};
+                border-radius: {BORDER_RADIUS_LG};
+                margin-top: {SECTION_TITLE_SPACING}px;
+                padding-top: {SECTION_TITLE_SPACING + 6}px;
+                background-color: {COLOR_BG_SURFACE};
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                subcontrol-position: top left;
+                padding: 0 {SPACING_MD}px;
+                color: {COLOR_FORM_SECTION_TITLE};
             }}
             QLabel {{ color: {COLOR_TEXT_PRIMARY}; }}
             QLineEdit, QComboBox, QTextEdit, QDateEdit, QDoubleSpinBox {{
                 background-color: {COLOR_BG_INPUT};
                 color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
+                border: 1px solid {COLOR_BORDER_INPUT};
                 border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM};
+                padding: {SPACING_SM}px;
             }}
-            QLineEdit:focus, QComboBox:focus, QTextEdit:focus {{
-                border-color: {COLOR_PRIMARY};
+            QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QDateEdit:focus, QDoubleSpinBox:focus {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+            QLineEdit:hover, QComboBox:hover, QTextEdit:hover, QDateEdit:hover, QDoubleSpinBox:hover {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
             }}
         """)
 
@@ -70,15 +87,16 @@ class JournalEntryFormDialog(QDialog):
         header_layout = QFormLayout(header_group)
         header_layout.setLabelAlignment(Qt.AlignRight)
         header_layout.setSpacing(SPACING_MD + SPACING_XS)
+        header_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
 
         self.entry_type = QComboBox()
-        self.entry_type.setMinimumHeight(30)
+        self.entry_type.setMinimumHeight(INPUT_HEIGHT_MD)
         for t in ["SALE", "PURCHASE", "PAYMENT", "RECEIPT", "ADJUSTMENT", "TRANSFER", "OPENING", "CLOSING"]:
             self.entry_type.addItem(t, t)
         header_layout.addRow("Entry Type:", self.entry_type)
 
         self.entry_date = QDateEdit()
-        self.entry_date.setMinimumHeight(30)
+        self.entry_date.setMinimumHeight(INPUT_HEIGHT_MD)
         self.entry_date.setCalendarPopup(True)
         self.entry_date.setDisplayFormat("yyyy-MM-dd")
         from datetime import date
@@ -87,16 +105,17 @@ class JournalEntryFormDialog(QDialog):
 
         self.description = QTextEdit()
         self.description.setMaximumHeight(80)
+        self.description.setMinimumHeight(INPUT_HEIGHT_MD)
         self.description.setPlaceholderText("Enter overall entry description...")
         header_layout.addRow("Description:", self.description)
 
         self.reference = QLineEdit()
-        self.reference.setMinimumHeight(30)
+        self.reference.setMinimumHeight(INPUT_HEIGHT_MD)
         self.reference.setPlaceholderText("Reference number (optional)")
         header_layout.addRow("Reference:", self.reference)
 
         self.auto_post = QCheckBox("Auto-post after creation")
-        self.auto_post.setStyleSheet("margin-left: 5px;")
+        self.auto_post.setStyleSheet("margin-left: 5px; color: {COLOR_TEXT_PRIMARY};")
         header_layout.addRow("", self.auto_post)
 
         layout.addWidget(header_group)
@@ -104,11 +123,14 @@ class JournalEntryFormDialog(QDialog):
         # Journal Lines
         lines_group = QGroupBox("Journal Lines (Articles)")
         lines_layout = QVBoxLayout(lines_group)
+        lines_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
 
         self.lines_table = QTableWidget()
         self.lines_table.setColumnCount(5)
         self.lines_table.setHorizontalHeaderLabels(["Account", "Line Description", "Debit", "Credit", ""])
-        TableRenderer.style(self.lines_table)
+        table_style = build_table_stylesheet(border_radius=BORDER_RADIUS_MD)
+        self.lines_table.setStyleSheet(table_style)
+        self.lines_table.setAlternatingRowColors(True)
         self.lines_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.lines_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.lines_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -118,10 +140,8 @@ class JournalEntryFormDialog(QDialog):
         lines_layout.addWidget(self.lines_table)
 
         line_buttons = QHBoxLayout()
-        self.btn_add_line = QPushButton("+ Add Line")
-        ButtonRenderer.style(self.btn_add_line, ButtonStyle.PRIMARY, "sm")
-        self.btn_remove_line = QPushButton("- Remove Selected Lines")
-        ButtonRenderer.style(self.btn_remove_line, ButtonStyle.GHOST, "sm")
+        self.btn_add_line = EnterpriseButton("+ Add Line", variant=ButtonVariant.PRIMARY, size=ButtonSize.SMALL)
+        self.btn_remove_line = EnterpriseButton("- Remove Selected", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
         line_buttons.addWidget(self.btn_add_line)
         line_buttons.addWidget(self.btn_remove_line)
         line_buttons.addStretch()
@@ -170,13 +190,10 @@ class JournalEntryFormDialog(QDialog):
         action_buttons = QHBoxLayout()
         action_buttons.addStretch()
 
-        cancel_btn = QPushButton("Cancel")
-        ButtonRenderer.style(cancel_btn, ButtonStyle.GHOST)
+        cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.GHOST, size=ButtonSize.MEDIUM)
         cancel_btn.clicked.connect(self.reject)
 
-        save_btn = QPushButton("Save Entry")
-        ButtonRenderer.style(save_btn, ButtonStyle.SUCCESS)
-        save_btn.setMinimumWidth(150)
+        save_btn = EnterpriseButton("Save Entry", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         save_btn.clicked.connect(self.save)
 
         action_buttons.addWidget(cancel_btn)
@@ -281,7 +298,7 @@ class JournalEntryFormDialog(QDialog):
             self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_SUCCESS_BG};")
         elif total_debit == 0 and total_credit == 0:
             self.balance_label.setText("EMPTY")
-            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_BG_LIGHT};")
+            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_BG_SURFACE};")
         else:
             diff = abs(total_debit - total_credit)
             self.balance_label.setText(f"UNBALANCED ({diff:,.2f})")

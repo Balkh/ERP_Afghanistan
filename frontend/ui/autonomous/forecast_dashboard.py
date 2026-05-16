@@ -16,6 +16,7 @@ from PySide6.QtGui import QFont
 
 from api.client import APIClient
 from api.autonomous_client import AutonomousAPIClient
+from ui.components.tables import build_table_stylesheet
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
@@ -105,12 +106,7 @@ class ForecastDashboard(QWidget):
         self.table.setHorizontalHeaderLabels(["Domain", "Metric", "Current", "Predicted", "Direction", "Confidence"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
-        self.table.setStyleSheet(f"""
-            QTableWidget {{ background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
-            gridline-color: {COLOR_BORDER}; }}
-            QHeaderView::section {{ background: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
-        """)
+        self.table.setStyleSheet(build_table_stylesheet())
         layout.addWidget(self.table)
 
     def _refresh(self):

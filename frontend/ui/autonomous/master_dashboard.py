@@ -19,6 +19,8 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
+    SPACING_SM,
+    SPACING_XS,
                            MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY_SMALL, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
 from runtime.timer_registry import register_timer, unregister_owner
 
@@ -31,7 +33,7 @@ class _KPIWidget(QFrame):
             border-radius: {BORDER_RADIUS_LG}; padding: {SPACING_MD}px; }}
         """)
         layout = QVBoxLayout(self)
-        layout.setSpacing(4)
+        layout.setSpacing(SPACING_XS)
         QLabel(title).setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}px;")
         layout.addWidget(QLabel(title))
         v = QLabel(value)

@@ -68,7 +68,8 @@ class LicensingScreen(BaseScreen):
         self.license_key_input = QLineEdit()
         self.license_key_input.setPlaceholderText("Enter license key...")
         self.license_key_input.setMinimumHeight(INPUT_HEIGHT_MD)
-        activation_layout.addRow("License Key:", self.license_key_input)
+        activate_layout.addWidget(QLabel("License Key:"))
+        activate_layout.addWidget(self.license_key_input)
         
         self.activate_btn = EnterpriseButton(text="Activate System", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.activate_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")

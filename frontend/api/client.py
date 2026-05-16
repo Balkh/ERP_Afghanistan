@@ -48,7 +48,8 @@ class APIClient(QObject):
     def _make_request(self, method: str, endpoint: str, 
                       data: Optional[Dict] = None, 
                       params: Optional[Dict] = None,
-                      headers: Optional[Dict] = None) -> Any:
+                      headers: Optional[Dict] = None,
+                      raw_response: bool = False) -> Any:
         """Make an HTTP request and return the response data."""
         _req_start = time.time()
         # Update loading state
@@ -131,6 +132,11 @@ class APIClient(QObject):
                 record_error(exc_type=f'APIError:{response.status_code}', endpoint=endpoint, category='api')
                 raise APIError(f"API Error: {error_msg}", response.status_code, response)
             
+            # Return raw response content for file downloads
+            if raw_response:
+                self.request_finished.emit(endpoint, True)
+                return response.content
+            
             # Parse JSON response
             try:
                 response_data = response.json() if response.content else {}
@@ -196,19 +202,20 @@ class APIClient(QObject):
             pass
     
     def get(self, endpoint: str, params: Optional[Dict] = None, 
-            headers: Optional[Dict] = None, retries: int = 3) -> Any:
+            headers: Optional[Dict] = None, retries: int = 3, raw_response: bool = False) -> Any:
         """Make a GET request with automatic retries for network issues."""
         last_error = None
         for attempt in range(retries):
             try:
-                return self._make_request("GET", endpoint, params=params, headers=headers)
+                return self._make_request("GET", endpoint, params=params, headers=headers, raw_response=raw_response)
             except APIError as e:
-                # If it's a 4xx error, don't retry (it's a client error)
                 if e.status_code and 400 <= e.status_code < 500:
                     self._show_error_toast("GET", endpoint, str(e))
+                    if raw_response:
+                        return None
                     return {"success": False, "data": [], "error": str(e)}
                 last_error = e
-                time.sleep(1 * (attempt + 1)) # Exponential backoff
+                time.sleep(1 * (attempt + 1))
             except Exception as e:
                 last_error = e
                 time.sleep(1 * (attempt + 1))
@@ -216,6 +223,8 @@ class APIClient(QObject):
         log.error(f"GET {endpoint} failed after {retries} attempts: {last_error}",
                    extra={'extra_fields': {'tags': ['api', 'error'], 'retries': retries}})
         self._show_error_toast("GET", endpoint, f"Connection failed after {retries} retries.")
+        if raw_response:
+            return None
         return {"success": False, "data": [], "error": str(last_error)}
     
     def post(self, endpoint: str, data: Optional[Dict] = None,
@@ -226,24 +235,12 @@ class APIClient(QObject):
         except APIError as e:
             log.warning(f"POST {endpoint} failed: {e}",
                          extra={'extra_fields': {'tags': ['api', 'error'], 'status': e.status_code}})
-            # Show error toast
-            from ui.main_window import MainWindow
-            app = QApplication.instance()
-            for widget in app.topLevelWidgets():
-                if isinstance(widget, MainWindow):
-                    widget.toast_manager.show_error(f"POST {endpoint} failed: {str(e)}")
-                    break
+            self._show_error_toast("POST", endpoint, str(e))
             return {"success": False, "error": {"message": str(e)}}
         except Exception as e:
             log.error(f"POST {endpoint} unexpected error: {e}",
                        extra={'extra_fields': {'tags': ['api', 'error']}})
-            # Show error toast
-            from ui.main_window import MainWindow
-            app = QApplication.instance()
-            for widget in app.topLevelWidgets():
-                if isinstance(widget, MainWindow):
-                    widget.toast_manager.show_error(f"POST {endpoint} failed: {str(e)}")
-                    break
+            self._show_error_toast("POST", endpoint, str(e))
             return {"success": False, "error": {"message": str(e)}}
     
     def put(self, endpoint: str, data: Optional[Dict] = None,
@@ -254,24 +251,12 @@ class APIClient(QObject):
         except APIError as e:
             log.warning(f"PUT {endpoint} failed: {e}",
                          extra={'extra_fields': {'tags': ['api', 'error'], 'status': e.status_code}})
-            # Show error toast
-            from ui.main_window import MainWindow
-            app = QApplication.instance()
-            for widget in app.topLevelWidgets():
-                if isinstance(widget, MainWindow):
-                    widget.toast_manager.show_error(f"PUT {endpoint} failed: {str(e)}")
-                    break
+            self._show_error_toast("PUT", endpoint, str(e))
             return {"success": False, "error": {"message": str(e)}}
         except Exception as e:
             log.error(f"PUT {endpoint} unexpected error: {e}",
                        extra={'extra_fields': {'tags': ['api', 'error']}})
-            # Show error toast
-            from ui.main_window import MainWindow
-            app = QApplication.instance()
-            for widget in app.topLevelWidgets():
-                if isinstance(widget, MainWindow):
-                    widget.toast_manager.show_error(f"PUT {endpoint} failed: {str(e)}")
-                    break
+            self._show_error_toast("PUT", endpoint, str(e))
             return {"success": False, "error": {"message": str(e)}}
     
     def delete(self, endpoint: str, headers: Optional[Dict] = None) -> Any:
@@ -290,12 +275,8 @@ class APIClient(QObject):
     def _show_error_toast(self, method: str, endpoint: str, error: str):
         """Centralized error toast display."""
         try:
-            from ui.main_window import MainWindow
-            app = QApplication.instance()
-            for widget in app.topLevelWidgets():
-                if isinstance(widget, MainWindow):
-                    widget.toast_manager.show_error(f"{method} {endpoint}: {error}")
-                    break
+            from ui.components.notifications import show_error
+            show_error(f"{method} {endpoint}: {error}")
         except Exception:
             pass  # Silently fail if toast unavailable
 

@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QGroupBox,
-                                  QFormLayout, QDialog, QDialogButtonBox, QTabWidget,
+                                   QFormLayout, QDialog, QTabWidget,
                                   QDoubleSpinBox, QCheckBox, QFrame, QApplication)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor

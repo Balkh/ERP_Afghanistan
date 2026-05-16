@@ -15,6 +15,7 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
+    TEXT_BODY, TEXT_SECTION_TITLE,
                            MARGIN_PAGE, BORDER_RADIUS_MD)
 from ui.constants import TEXT_SECTION_TITLE, TEXT_BODY
 

@@ -13,10 +13,13 @@ from PySide6.QtGui import QFont
 
 from api.client import APIClient
 from api.observability_client import ObservabilityAPIClient
+from ui.components.tables import build_table_stylesheet
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
                            COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
+    BORDER_RADIUS_SM,
+    TEXT_BODY, TEXT_PAGE_TITLE,
                            MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM, SPACING_XS)
 from ui.constants import TEXT_PAGE_TITLE, TEXT_BODY
 
@@ -94,9 +97,9 @@ class ReplayTimeTravelScreen(QWidget):
         self.seq_slider.setMaximum(1000)
         self.seq_slider.setStyleSheet(f"""
             QSlider::groove:horizontal {{ height: 6px; background: {COLOR_BORDER};
-            border-radius: 3px; }}
+            border-radius: {BORDER_RADIUS_SM}px; }}
             QSlider::handle:horizontal {{ background: {COLOR_PRIMARY}; width: 14px;
-            border-radius: 7px; margin: -4px 0; }}
+            border-radius: {BORDER_RADIUS_MD}px; margin: -4px 0; }}
         """)
         self.seq_slider.valueChanged.connect(lambda v: self.seq_spin.setValue(v))
         slider_layout.addWidget(self.seq_slider)
@@ -114,12 +117,7 @@ class ReplayTimeTravelScreen(QWidget):
         self.table.setHorizontalHeaderLabels(["Event ID", "Type", "Domain", "Summary"])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
-        self.table.setStyleSheet(f"""
-            QTableWidget {{ background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
-            gridline-color: {COLOR_BORDER}; }}
-            QHeaderView::section {{ background: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_6}px; font-weight: bold; }}
-        """)
+        self.table.setStyleSheet(build_table_stylesheet())
         layout.addWidget(self.table)
 
         # Integrity hash

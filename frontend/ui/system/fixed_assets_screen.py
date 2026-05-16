@@ -2,7 +2,7 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
                                   QHeaderView, QMessageBox, QComboBox, QGroupBox,
-                                  QFormLayout, QDialog, QDialogButtonBox, QTabWidget,
+                                   QFormLayout, QDialog, QTabWidget,
                                   QDoubleSpinBox, QDateEdit)
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
@@ -330,12 +330,16 @@ class AssetDialog(QDialog):
         layout.addLayout(form_layout)
         layout.addStretch()
         
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.setMinimumHeight(BUTTON_HEIGHT_MD)
-        layout.addWidget(buttons)
-        
-        buttons.accepted.connect(self.save)
-        buttons.rejected.connect(self.reject)
+        btn_layout = QHBoxLayout()
+        btn_layout.setSpacing(SPACING_SM)
+        btn_layout.addStretch()
+        cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        cancel_btn.clicked.connect(self.reject)
+        ok_btn = EnterpriseButton("OK", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        ok_btn.clicked.connect(self.save)
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(ok_btn)
+        layout.addLayout(btn_layout)
     
     def save(self):
         if not self.name.text().strip():

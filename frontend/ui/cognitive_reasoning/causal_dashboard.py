@@ -16,7 +16,8 @@ from ui.cognitive_reasoning.what_if_impact_panel import WhatIfImpactPanel
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XL,
+                           COLOR_INFO, COLOR_BORDER, SPACING_NONE, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XL,
+    SPACING_SM,
                            MARGIN_PAGE, BORDER_RADIUS_MD)
 
 
@@ -31,7 +32,7 @@ class CausalReasoningDashboard(QWidget):
     def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        layout.setSpacing(SPACING_NONE)
 
         # Tabs for the 3 panels
         tabs = QTabWidget()

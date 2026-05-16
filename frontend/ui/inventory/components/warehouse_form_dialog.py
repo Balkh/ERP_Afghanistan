@@ -1,76 +1,101 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, 
-                               QLineEdit, QTextEdit, QSpinBox, QDialogButtonBox,
-                               QLabel, QComboBox)
-from PySide6.QtCore import Qt, Slot
-from PySide6.QtGui import QFont
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_DISPLAY)
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFrame,
+                               QLineEdit, QTextEdit, QSpinBox, QLabel, QComboBox)
+from PySide6.QtCore import Qt
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_BODY_SMALL, TEXT_LABEL,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_TEXT_SECONDARY,
+                           COLOR_BG_DIALOG, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER,
+                           COLOR_FORM_FOOTER_BORDER,
+    BORDER_RADIUS_SM,
+    BORDER_RADIUS_MD,
+                           INPUT_HEIGHT_MD, DIALOG_WIDTH_FORM_MIN, DIALOG_WIDTH_FORM_PREFERRED)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.forms import FormSection
+
 
 class WarehouseFormDialog(QDialog):
-    """Dialog for adding/editing warehouses."""
-    
+    """Enterprise warehouse form with enhanced visual hierarchy."""
+
     def __init__(self, parent=None, warehouse_id=None, api_client=None):
         super().__init__(parent)
         self.warehouse_id = warehouse_id
         self.api_client = api_client
         self.setWindowTitle("Add Warehouse" if warehouse_id is None else "Edit Warehouse")
         self.setModal(True)
-        self.resize(400, 300)
+        self.setMinimumWidth(DIALOG_WIDTH_FORM_MIN)
+        self.resize(DIALOG_WIDTH_FORM_PREFERRED, 420)
         self.setup_ui()
         if warehouse_id:
             self.load_warehouse_data()
-    
+
     def setup_ui(self):
-        """Setup the form UI."""
+        self.setStyleSheet(f"""
+            QDialog {{
+                background-color: {COLOR_BG_DIALOG};
+            }}
+            QLineEdit, QComboBox, QSpinBox {{
+                background-color: {COLOR_BG_DIALOG};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER_INPUT};
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding: {SPACING_SM}px 10px;
+            }}
+            QLineEdit:focus, QComboBox:focus, QSpinBox:focus {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+            QLineEdit:hover, QComboBox:hover, QSpinBox:hover {{
+                border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+        """)
+
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
-        layout.setSpacing(SPACING_MD + SPACING_XS)
-        
-        # Title
-        title_label = QLabel(self.windowTitle())
-        title_font = QFont("Segoe UI", TEXT_DISPLAY)
-        title_font.setWeight(QFont.Weight.Bold)
-        title_label.setFont(title_font)
-        layout.addWidget(title_label)
-        
-        # Form layout
-        form_layout = QFormLayout()
-        form_layout.setLabelAlignment(Qt.AlignRight)
-        form_layout.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
-        form_layout.setHorizontalSpacing(15)
-        form_layout.setVerticalSpacing(10)
-        
-        # Name
+        layout.setContentsMargins(SPACING_XXL, SPACING_XL, SPACING_XXL, SPACING_XL)
+        layout.setSpacing(SPACING_MD)
+
+        title = QLabel(self.windowTitle())
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 600; border: none; background: transparent;")
+        layout.addWidget(title)
+
+        subtitle = QLabel("Configure warehouse properties")
+        subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; border: none; background: transparent; margin-bottom: {SPACING_SM}px;")
+        layout.addWidget(subtitle)
+
+        sec = FormSection("Warehouse Details", columns=2, primary=True)
         self.name_input = QLineEdit()
-        self.name_input.setPlaceholderText("Enter warehouse name")
-        form_layout.addRow("Name*:", self.name_input)
-        
-        # Location
+        self.name_input.setPlaceholderText("e.g., Main Warehouse")
         self.location_input = QLineEdit()
-        self.location_input.setPlaceholderText("Enter warehouse location")
-        form_layout.addRow("Location:", self.location_input)
-        
-        # Capacity
+        self.location_input.setPlaceholderText("e.g., Floor 2, Building A")
         self.capacity_input = QSpinBox()
         self.capacity_input.setRange(0, 999999)
         self.capacity_input.setValue(1000)
-        form_layout.addRow("Capacity:", self.capacity_input)
-        
-        # Is Active
         self.active_check = QComboBox()
         self.active_check.addItems(["No", "Yes"])
-        self.active_check.setCurrentIndex(1)  # Default to Yes
-        form_layout.addRow("Is Active:", self.active_check)
-        
-        layout.addLayout(form_layout)
-        
-        # Button box
-        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        button_box.accepted.connect(self.accept)
-        button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
-    
+        self.active_check.setCurrentIndex(1)
+        sec.add_field_pair("Name*", self.name_input, "Location", self.location_input, required1=True,
+                           helper2="e.g., Floor 2, Building A, Main Campus")
+        sec.add_field_pair("Capacity", self.capacity_input, "Is Active", self.active_check,
+                           helper1="Max storage units for this warehouse")
+        layout.addWidget(sec)
+
+        # ── Footer with separation ──
+        footer_line = QFrame()
+        footer_line.setFrameShape(QFrame.HLine)
+        footer_line.setStyleSheet(f"background-color: {COLOR_FORM_FOOTER_BORDER}; border: none; max-height: 1px; margin-top: {SPACING_SM}px;")
+        layout.addWidget(footer_line)
+
+        footer = QHBoxLayout()
+        footer.setSpacing(SPACING_SM)
+        footer.setContentsMargins(0, SPACING_SM, 0, 0)
+        footer.addStretch()
+        cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        cancel_btn.clicked.connect(self.reject)
+        save_btn = EnterpriseButton("Save", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        save_btn.clicked.connect(self.accept)
+        footer.addWidget(cancel_btn)
+        footer.addWidget(save_btn)
+        layout.addLayout(footer)
+
     def load_warehouse_data(self):
-        """Load warehouse data for editing."""
         try:
             response = self.api_client.get(f"/api/inventory/warehouses/{self.warehouse_id}/")
             warehouse = {}
@@ -78,7 +103,6 @@ class WarehouseFormDialog(QDialog):
                 warehouse = response.get('data', {})
             else:
                 warehouse = response
-            
             if warehouse:
                 self.name_input.setText(warehouse.get("name") or "")
                 self.location_input.setText(warehouse.get("location") or "")
@@ -86,35 +110,27 @@ class WarehouseFormDialog(QDialog):
                 self.active_check.setCurrentIndex(1 if warehouse.get("is_active") else 0)
         except Exception as e:
             print(f"Error loading warehouse data: {e}")
-    
+
     def get_form_data(self):
-        """Get the form data as a dictionary."""
         return {
             "name": self.name_input.text().strip(),
             "location": self.location_input.text().strip(),
             "capacity": self.capacity_input.value(),
-            "is_active": self.active_check.currentText() == "Yes"
+            "is_active": self.active_check.currentText() == "Yes",
         }
-    
+
     def accept(self):
-        """Validate and accept the dialog."""
-        # Basic validation
         name = self.name_input.text().strip()
         if not name:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Validation Error", "Warehouse name is required.")
             return
-        
         data = self.get_form_data()
-        
         try:
             if self.warehouse_id:
-                # Update existing warehouse
                 response = self.api_client.put(f"/api/inventory/warehouses/{self.warehouse_id}/", data=data)
             else:
-                # Create new warehouse
                 response = self.api_client.post("/api/inventory/warehouses/", data=data)
-            
             if response.get('success') or 'id' in response:
                 super().accept()
             else:

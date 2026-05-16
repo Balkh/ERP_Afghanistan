@@ -41,6 +41,9 @@
 | **Phase 12.1** | **Intelligence Stability Patch (RuleRegistry, SignalCoordinator)** | ✅ Complete |
 | **Phase 13** | **Decision Intelligence Engine + Configuration Integrity** | ✅ Complete |
 | **Phase 3B.5** | **Intelligence Stabilization Audit (audit layer, health report)** | ✅ Complete |
+| **Phase 6D** | **Returns Cycle (backend models, approval, reconciliation, void/reversal, 39 tests)** | ✅ Complete |
+| **Phase 14** | **Reconciliation UI + Void/Reversal Flow (reconciliation screen, void button, return from invoice)** | ✅ Complete |
+| **Phase 14C** | **Export & Print (CSV export for returns/reconciliation, PDF receipt generation, 3 new tests)** | ✅ Complete |
 
 ### Test Suite Summary
 - **1358+ tests passing** (995 ERP + 363 simulation)

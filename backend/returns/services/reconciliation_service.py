@@ -7,7 +7,7 @@ Invoices and Returns are only transactional inputs.
 """
 
 from decimal import Decimal
-from django.db import transaction
+from django.db import models, transaction
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from dataclasses import dataclass
@@ -120,7 +120,8 @@ class ReconciliationService:
             reconciliation = ReconciliationEntry.objects.create(
                 return_order=return_order,
                 accounting_entry=journal_entry,
-                party=return_order.party or return_order.supplier,
+                party=return_order.party if return_order.party else None,
+                supplier=return_order.supplier if return_order.supplier else None,
                 company_id=return_order.invoice.company_id if return_order.invoice else return_order.purchase_invoice.company_id,
                 transaction_type=TransactionType.RETURN,
                 amount=total_amount,

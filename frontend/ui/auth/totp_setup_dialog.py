@@ -11,7 +11,7 @@ from PySide6.QtGui import QFont, QPixmap
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.constants import (
     SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-    TEXT_SECTION_TITLE, TEXT_BODY, TEXT_LABEL, TEXT_HELPER,
+    TEXT_SECTION_TITLE, TEXT_BODY, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_HELPER,
     BORDER_RADIUS_LG,
     COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BG_SURFACE, COLOR_BORDER,
     COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
@@ -101,7 +101,7 @@ class TOTPSetupDialog(QDialog):
         self.code_input.setMaxLength(6)
         self.code_input.setFixedHeight(48)
         self.code_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.code_input.setStyleSheet("font-size: 18pt; letter-spacing: 8px;")
+        self.code_input.setStyleSheet(f"font-size: {TEXT_CARD_TITLE}pt; letter-spacing: 8px;")
         self.code_input.returnPressed.connect(self._verify_code)
         layout.addWidget(self.code_input)
 

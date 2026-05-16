@@ -17,6 +17,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
                            COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    TEXT_TABLE,
                            COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
@@ -35,8 +36,8 @@ class EcosystemGraphWidget(QWidget):
         self.links = [] # List of (from_id, to_id)
         self.colors = {
             "Invoice": COLOR_PRIMARY,
-            "Workflow": "#f9e2af",
-            "Accounting": "#cba6f7",
+            "Workflow": COLOR_WARNING,
+            "Accounting": COLOR_INFO,
             "Finance": COLOR_STATUS_VALID,
             "Inventory": COLOR_STATUS_WARNING
         }

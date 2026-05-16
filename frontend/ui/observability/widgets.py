@@ -9,6 +9,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+    SPACING_NONE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_SECTION_TITLE, TEXT_TABLE,
                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_PILL, BORDER_RADIUS_SM)
 from ui.constants import COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_STATUS_PENDING
 from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL, TEXT_SECTION_TITLE
@@ -144,7 +145,7 @@ class HealthBar(QProgressBar):
                 font-size: {TEXT_TABLE}px;
                 font-weight: bold;
                 color: {COLOR_TEXT_PRIMARY};
-                padding: 1px;
+                padding: {SPACING_NONE}px;
             }}
             QProgressBar::chunk {{
                 background-color: {color};
@@ -162,7 +163,7 @@ class TimelineEventWidget(QFrame):
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER_LIGHT};
                 border-radius: {BORDER_RADIUS_MD}px;
-                margin: 1px 0px;
+                margin: {SPACING_NONE}px 0px;
             }}
             QFrame#timelineEvent:hover {{
                 border: 1px solid {COLOR_INFO};
@@ -322,7 +323,7 @@ class VirtualTimelineWidget(QScrollArea):
         self._container.setStyleSheet(f"background-color: transparent;")
         self._layout = QVBoxLayout(self._container)
         self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(2)
+        self._layout.setSpacing(SPACING_XS)
         self._layout.addStretch()
         self.setWidget(self._container)
 

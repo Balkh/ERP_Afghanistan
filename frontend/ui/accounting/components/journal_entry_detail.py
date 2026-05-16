@@ -3,11 +3,10 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
                                QAbstractItemView, QGroupBox, QFrame, QPushButton)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_SM, BORDER_RADIUS_LG)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY, TEXT_LABEL, TEXT_SECTION_TITLE)
 from ui.constants import (TEXT_LABEL, TEXT_BODY, TEXT_SECTION_TITLE)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT)
-from ui.rendering.button_renderer import ButtonRenderer, ButtonStyle
-from ui.rendering.table_renderer import TableRenderer
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
 class JournalEntryDetailDialog(QDialog):
@@ -94,7 +93,22 @@ class JournalEntryDetailDialog(QDialog):
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         
-        TableRenderer.style(self.lines_table)
+        self.lines_table.setStyleSheet(f"""
+            QTableWidget {{
+                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
+                background-color: {COLOR_BG_SURFACE};
+                alternate-background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_LG};
+            }}
+            QHeaderView::section {{
+                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
+                color: {COLOR_TEXT_PRIMARY};
+                font-weight: bold;
+                border: none;
+                padding: 6px;
+            }}
+        """)
         lines_layout.addWidget(self.lines_table)
 
         # Totals
@@ -127,8 +141,7 @@ class JournalEntryDetailDialog(QDialog):
         # Footer Actions
         buttons = QHBoxLayout()
         buttons.addStretch()
-        close_btn = QPushButton("Close")
-        ButtonRenderer.style(close_btn, ButtonStyle.PRIMARY, "sm")
+        close_btn = EnterpriseButton(text="Close", variant=ButtonVariant.PRIMARY, size=ButtonSize.SMALL)
         close_btn.clicked.connect(self.reject)
         buttons.addWidget(close_btn)
         layout.addLayout(buttons)

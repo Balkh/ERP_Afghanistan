@@ -55,11 +55,10 @@ class SalesInvoiceScreen(QWidget):
         self.load_customers()
 
     def _check_action(self, action: str) -> bool:
-        """Check if user has permission for a sales action. Shows toast if denied."""
+        """Check if user has permission for a sales action. Shows notification if denied."""
         if self.auth_manager and not self.auth_manager.has_action("sales", action):
-            from ui.components.toast import get_toast_manager
-            toast = get_toast_manager()
-            toast.show_warning(f"Access denied: you don't have permission to {action} sales invoices")
+            from ui.components.notifications import show_warning
+            show_warning(f"Access denied: you don't have permission to {action} sales invoices")
             return False
         return True
 
@@ -212,21 +211,8 @@ class SalesInvoiceScreen(QWidget):
         self.items_table.setMinimumHeight(TABLE_ROW_HEIGHT_LG * 8)
         self.items_table.verticalHeader().setDefaultSectionSize(DENSITY_COMPACT_ROW)
         self.items_table.setAlternatingRowColors(True)
-        self.items_table.setStyleSheet(f"""
-            QTableWidget {{
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
-                background-color: {COLOR_BG_SURFACE};
-                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                padding: {SPACING_XS}px {SPACING_SM}px;
-                font-weight: bold;
-                border: none;
-                font-size: {TEXT_TABLE_HEADER}px;
-            }}
-        """)
+        from ui.components.tables import build_table_stylesheet
+        self.items_table.setStyleSheet(build_table_stylesheet())
 
         zone2_layout.addWidget(self.items_table)
         layout.addLayout(zone2_layout, stretch=1)
@@ -327,6 +313,12 @@ class SalesInvoiceScreen(QWidget):
         self.more_menu.addAction("New Invoice (Ctrl+N)", self.clear_form)
         self.more_btn.setMenu(self.more_menu)
         action_layout.addWidget(self.more_btn)
+
+        # Return action (visible only for dispatched invoices)
+        self.return_btn = EnterpriseButton(text="Create Return", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)
+        self.return_btn.clicked.connect(self.create_return)
+        self.return_btn.setVisible(False)
+        action_layout.addWidget(self.return_btn)
 
         # Workflow actions (hidden by default)
         self.submit_wf_btn = EnterpriseButton(text="Submit for Approval", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
@@ -606,7 +598,6 @@ class SalesInvoiceScreen(QWidget):
         return {
             "customer_id": self.customer_combo.currentData(),
             "customer_name": self.customer_combo.currentText(),
-            "order_date": self.order_date.date().toString("yyyy-MM-dd"),
             "invoice_date": self.invoice_date.date().toString("yyyy-MM-dd"),
             "due_date": self.due_date.date().toString("yyyy-MM-dd"),
             "currency": self.currency_combo.currentText(),
@@ -629,6 +620,7 @@ class SalesInvoiceScreen(QWidget):
         self.confirm_btn.setEnabled(is_draft)
         self.dispatch_btn.setEnabled(is_confirmed)
         self.print_btn.setEnabled(is_dispatched or is_confirmed)
+        self.return_btn.setVisible(is_dispatched)
         
         if is_dispatched:
             self.dispatch_btn.setText("DISPATCHED")
@@ -730,6 +722,22 @@ class SalesInvoiceScreen(QWidget):
         dialog = PrintableInvoiceDialog(self, data, "sale", api_client=self.api_client)
         dialog.exec()
 
+    def create_return(self):
+        """Open return dialog pre-filled with current invoice data."""
+        if not self.current_invoice_id:
+            QMessageBox.warning(self, "No Invoice", "Please save the invoice first.")
+            return
+        
+        try:
+            from ui.returns.returns_screen import ReturnOrderDialog
+            dialog = ReturnOrderDialog(self, api_client=self.api_client)
+            dialog.set_invoice_type("SALE_RETURN")
+            dialog.prefill_from_invoice(self.current_invoice_id)
+            if dialog.exec():
+                QMessageBox.information(self, "Return Created", "Return order created successfully.")
+        except ImportError:
+            QMessageBox.warning(self, "Error", "Returns module not available.")
+
     def remove_selected_item(self):
         """Remove selected row from items table."""
         selected_rows = self.items_table.selectionModel().selectedRows()
@@ -741,7 +749,6 @@ class SalesInvoiceScreen(QWidget):
         """Clear the entire form."""
         self.customer_combo.setCurrentIndex(0)
         self.invoice_number.clear()
-        self.order_date.setDate(QDate.currentDate())
         self.invoice_date.setDate(QDate.currentDate())
         self.due_date.setDate(QDate.currentDate().addDays(30))
         self.notes_input.clear()
