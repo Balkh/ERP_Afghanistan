@@ -5,6 +5,7 @@ from rest_framework import status
 from security.models import AuditLog, UserRole
 from security.authentication import generate_jwt_token, generate_refresh_token, verify_jwt_token
 from security.ui_scopes import resolve_ui_scopes
+from security.permissions import RoleBasedPermission
 from core.api.responses import APIResponse
 from core.api.errors import ErrorCode, create_error_response, get_status_for_error
 from datetime import datetime, timedelta
@@ -61,6 +62,47 @@ def login_view(request):
         expires_at__gt=datetime.now()
     )
     roles = [ur.role.name for ur in user_roles]
+    
+    # ── 2FA Enforcement (staged, role-based) ──
+    requires_2fa = any(
+        ur.role.require_2fa for ur in user_roles
+    )
+    
+    if requires_2fa:
+        from security.totp_service import TOTPService
+        from security.models import TOTPDevice
+        
+        has_confirmed_device = TOTPService.is_enabled(user)
+        totp_code = request.data.get('totp_code')
+        
+        if not has_confirmed_device:
+            # User's role requires 2FA but no device is set up
+            # Return a challenge indicating setup is required
+            # Superusers are exempt from hard lockout (bootstrap safety)
+            if not user.is_superuser:
+                return Response(
+                    create_error_response(
+                        ErrorCode.AUTH_008,
+                        "Your role requires 2FA. Please set up TOTP first."
+                    ),
+                    status=403
+                )
+        elif not totp_code:
+            # Device exists but no TOTP code provided — challenge the user
+            return Response(
+                create_error_response(
+                    ErrorCode.AUTH_009,
+                    "2FA code required. Provide 'totp_code' in the request body."
+                ),
+                status=403
+            )
+        else:
+            # Verify the TOTP code
+            if not TOTPService.verify_code(user, totp_code):
+                return Response(
+                    create_error_response(ErrorCode.AUTH_001, "Invalid 2FA code"),
+                    status=401
+                )
     
     # Resolve UI scopes for frontend
     ui_scopes = resolve_ui_scopes(roles)
@@ -206,6 +248,21 @@ def logout_view(request):
             create_error_response(ErrorCode.AUTH_003, "Authentication required"),
             status=401
         )
+    
+    # Revoke the current access token
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if auth_header.startswith('Bearer '):
+        from security.authentication import verify_jwt_token, blacklist_token
+        try:
+            payload = verify_jwt_token(auth_header.split(' ', 1)[1])
+            jti = payload.get('jti')
+            exp_str = payload.get('exp')
+            if jti:
+                from datetime import datetime
+                exp = datetime.fromtimestamp(exp_str) if exp_str else None
+                blacklist_token(jti, exp=exp)
+        except Exception:
+            pass  # Token may already be invalid — proceed with logout
     
     AuditLog.objects.create(
         action='LOGOUT',
@@ -423,7 +480,7 @@ def notifications_unread_count(request):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([RoleBasedPermission])
 def users_list(request):
     """List or create users."""
     from django.contrib.auth import get_user_model
@@ -536,7 +593,7 @@ def users_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([RoleBasedPermission])
 def users_detail(request, user_id):
     """Get, update, or delete a user."""
     from django.contrib.auth.models import User
@@ -640,7 +697,7 @@ def users_detail(request, user_id):
 
 
 @api_view(['GET', 'POST'])
-@permission_classes([AllowAny])
+@permission_classes([RoleBasedPermission])
 def roles_list(request):
     """List or create roles."""
     from security.models import Role
@@ -698,7 +755,7 @@ def roles_list(request):
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([RoleBasedPermission])
 def roles_detail(request, role_id):
     """Get, update, or delete a role."""
     from security.models import Role, Permission, RolePermission
@@ -777,7 +834,7 @@ def roles_detail(request, role_id):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([RoleBasedPermission])
 def permissions_list(request):
     """List all permissions."""
     if not request.user.is_superuser:
@@ -812,6 +869,7 @@ def permissions_list(request):
 # ── Password Reset Endpoints (Offline: Admin-initiated) ──
 
 @api_view(['POST'])
+@permission_classes([RoleBasedPermission])
 def admin_reset_password(request, user_id):
     """Admin resets a user's password. Returns temporary password."""
     from security.password_reset_service import PasswordResetService
@@ -884,6 +942,7 @@ def change_password(request):
 # ── TOTP / 2FA Endpoints ──
 
 @api_view(['POST'])
+@permission_classes([RoleBasedPermission])
 def totp_setup(request):
     """Generate TOTP secret and QR code for current user."""
     from security.totp_service import TOTPService
@@ -904,6 +963,7 @@ def totp_setup(request):
 
 
 @api_view(['POST'])
+@permission_classes([RoleBasedPermission])
 def totp_verify(request):
     """Verify a TOTP code to confirm setup or authenticate."""
     from security.totp_service import TOTPService
@@ -930,6 +990,7 @@ def totp_verify(request):
 
 
 @api_view(['POST'])
+@permission_classes([RoleBasedPermission])
 def totp_disable(request):
     """Disable TOTP 2FA for current user."""
     from security.totp_service import TOTPService
@@ -946,6 +1007,7 @@ def totp_disable(request):
 
 
 @api_view(['GET'])
+@permission_classes([RoleBasedPermission])
 def totp_status(request):
     """Get TOTP 2FA status for current user."""
     from security.totp_service import TOTPService

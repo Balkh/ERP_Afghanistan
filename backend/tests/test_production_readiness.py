@@ -12,6 +12,7 @@ import uuid
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
+from django.utils import timezone
 from decimal import Decimal
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import get_user_model
@@ -265,7 +266,7 @@ class TestRealERPLoadStress(TestCase):
             purchase_price=10.00,
             sale_price=15.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location='WH'
         )
         
@@ -552,7 +553,7 @@ class TestAdversarialSecurityRetest(TestCase):
             purchase_price=10.00,
             sale_price=15.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location='WH'
         )
         
@@ -767,7 +768,7 @@ class TestAccountingIntegrityUnderExtremeLoad(TestCase):
                         purchase_price=10.00,
                         sale_price=15.00,
                         expiry_date=date.today() + timedelta(days=365),
-                        manufacturing_date=date.today(),
+                        manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
                         location='WH'
                     )
                     success += 1

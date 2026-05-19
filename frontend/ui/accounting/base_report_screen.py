@@ -7,9 +7,9 @@ from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QColor
 from api.client import APIClient
 from datetime import date
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_SECTION_TITLE)
-from ui.constants import (TEXT_SECTION_TITLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, BUTTON_HEIGHT_MD)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
 class BaseReportScreen(QFrame):
@@ -107,27 +107,24 @@ class BaseReportScreen(QFrame):
 
         layout.addStretch()
 
-        self.btn_run = QPushButton("Run Report")
-        self.btn_run.setMinimumHeight(32)
+        self.btn_run = EnterpriseButton(text="Run Report", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_run.clicked.connect(self.run_report)
         layout.addWidget(self.btn_run)
 
-        self.btn_export_csv = QPushButton("Export CSV")
-        self.btn_export_csv.setMinimumHeight(32)
+        self.btn_export_csv = EnterpriseButton(text="Export CSV", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_export_csv.clicked.connect(self.export_csv)
         layout.addWidget(self.btn_export_csv)
 
-        self.btn_print = QPushButton("Print Preview")
-        self.btn_print.setMinimumHeight(32)
+        self.btn_print = EnterpriseButton(text="Print Preview", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_print.clicked.connect(self.print_preview)
         layout.addWidget(self.btn_print)
 
         return toolbar
 
     def _create_table(self):
-        from ui.rendering.table_renderer import TableRenderer
+        from ui.components.tables import build_table_stylesheet
         table = QTableWidget()
-        TableRenderer.style(table)
+        table.setStyleSheet(build_table_stylesheet())
         return table
 
     def run_report(self):

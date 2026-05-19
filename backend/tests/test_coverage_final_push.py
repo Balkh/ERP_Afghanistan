@@ -4,6 +4,7 @@ Comprehensive Service and View Tests for remaining coverage.
 
 from decimal import Decimal
 from datetime import date, timedelta
+from django.utils import timezone
 from django.test import TestCase, TransactionTestCase, Client
 from django.contrib.auth.models import User
 
@@ -133,7 +134,7 @@ class ModelSimpleTests(TransactionTestCase):
             product=prod, batch_number='B1', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('10'), sale_price=Decimal('15'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='WH', is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='WH', is_active=True
         )
         self.assertEqual(batch.remaining_quantity, Decimal('100'))
 
@@ -148,8 +149,8 @@ class ReportGenerationTests(TransactionTestCase):
 
     def test_multiple_date_ranges(self):
         """Test reports with different date ranges."""
-        past = date.today() - timedelta(days=30)
-        future = date.today() + timedelta(days=30)
+        past = timezone.now().date() - timedelta(days=30)
+        future = timezone.now().date() + timedelta(days=30)
 
         lines = [
             {'account_id': str(self.cash.id), 'debit': '1000', 'credit': '0'},
@@ -163,7 +164,7 @@ class ReportGenerationTests(TransactionTestCase):
 
     def test_empty_date_range(self):
         """Test reports with no data in range."""
-        future = date.today() + timedelta(days=365)
+        future = timezone.now().date() + timedelta(days=365)
         pl = FinancialReportEngine.get_profit_and_loss(future, future)
         self.assertEqual(pl['total_revenue'], Decimal('0'))
 

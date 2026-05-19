@@ -398,16 +398,24 @@ class BackupManager:
                 
                 # Encrypt if configured
                 if self.config['encryption'].get('enabled', True):
-                    encrypted_path = final_path.with_suffix(final_path.suffix + '.enc')
-                    password = self._get_encryption_password()
-                    if not self.encryptor.encrypt_file(str(final_path), str(encrypted_path), password):
-                        return {
-                            'success': False,
-                            'error': 'Encryption failed',
-                            'timestamp': start_time.isoformat(),
-                        }
-                    final_path = encrypted_path
-                    os.remove(str(archive_path))
+                    # PHASE 3: Reject encrypted backup if password is not configured
+                    if not self._is_encryption_configured():
+                        self.logger.error(
+                            "Encryption is enabled but PHARMACY_ERP_BACKUP_PASSWORD is not set. "
+                            "Creating unencrypted backup instead. Set the env var for encrypted backups."
+                        )
+                        # Fall through without encryption — better than creating unrecoverable backup
+                    else:
+                        encrypted_path = final_path.with_suffix(final_path.suffix + '.enc')
+                        password = self._get_encryption_password()
+                        if not self.encryptor.encrypt_file(str(final_path), str(encrypted_path), password):
+                            return {
+                                'success': False,
+                                'error': 'Encryption failed',
+                                'timestamp': start_time.isoformat(),
+                            }
+                        final_path = encrypted_path
+                        os.remove(str(archive_path))
                 
                 # Move to backup directory
                 timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -516,17 +524,24 @@ class BackupManager:
         return archive_path
     
     def _get_encryption_password(self) -> str:
-        """Get encryption password from environment variable."""
+        """Get encryption password from environment variable.
+        
+        Raises ValueError if PHARMACY_ERP_BACKUP_PASSWORD is not set.
+        No more ephemeral random passwords — backups must be recoverable.
+        """
         password = os.environ.get('PHARMACY_ERP_BACKUP_PASSWORD')
         if not password:
-            import secrets as secrets_module
-            password = secrets_module.token_urlsafe(32)
-            self.logger.critical(
-                "PHARMACY_ERP_BACKUP_PASSWORD env var not set. "
-                "Using ephemeral random password — backups created now CANNOT be restored later. "
-                "Set PHARMACY_ERP_BACKUP_PASSWORD to a fixed value in production."
+            raise ValueError(
+                "PHARMACY_ERP_BACKUP_PASSWORD environment variable is not set. "
+                "Encrypted backups cannot be created without a fixed password. "
+                "Set PHARMACY_ERP_BACKUP_PASSWORD to a secure value before creating encrypted backups. "
+                "To create unencrypted backups, set encryption.enabled=False in backup config."
             )
         return password
+    
+    def _is_encryption_configured(self) -> bool:
+        """Check if encryption can be safely used."""
+        return bool(os.environ.get('PHARMACY_ERP_BACKUP_PASSWORD'))
     
     def restore_backup(self, backup_path: str, target_db_path: str = None,
                       password: str = None, verify: bool = True) -> Dict:

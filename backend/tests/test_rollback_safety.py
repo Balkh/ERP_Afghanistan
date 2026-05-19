@@ -5,6 +5,7 @@ Validates transactional integrity under failure scenarios.
 
 from decimal import Decimal
 from datetime import date, timedelta
+from django.utils import timezone
 from django.test import TransactionTestCase
 
 from inventory.models import Product, Category, Unit, Warehouse, Batch, StockMovement
@@ -33,7 +34,7 @@ class RollbackIntegrityTest(TransactionTestCase):
             product=self.prod, batch_number='B-ROLL-1', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('5'), sale_price=Decimal('10'),
             expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(), location=str(self.wh.id), is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location=str(self.wh.id), is_active=True
         )
         
         movement = StockIntegrationService.create_stock_movement(
@@ -121,7 +122,7 @@ class ConcurrentSafetyTest(TransactionTestCase):
             product=self.prod, batch_number='B-CONC-1', quantity=50, remaining_quantity=50,
             purchase_price=Decimal('5'), sale_price=Decimal('10'),
             expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(), location=str(self.wh.id), is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location=str(self.wh.id), is_active=True
         )
         
         result = StockIntegrationService.allocate_stock(
@@ -137,7 +138,7 @@ class ConcurrentSafetyTest(TransactionTestCase):
             product=self.prod, batch_number='B-AVAIL-1', quantity=25, remaining_quantity=25,
             purchase_price=Decimal('5'), sale_price=Decimal('10'),
             expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(), location=str(self.wh.id), is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location=str(self.wh.id), is_active=True
         )
         
         total = StockIntegrationService.get_total_available_stock(self.prod, self.wh)

@@ -5,7 +5,7 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone as django_timezone
 
-from inventory.models import Batch, StockMovement, Warehouse, Product
+from inventory.models import Batch, StockMovement, Warehouse, Product, WarehouseTransfer
 from inventory.service import StockSelectionMode, StockAllocation, StockOperationResult
 
 
@@ -170,6 +170,24 @@ class StockIntegrationService:
         Returns:
             StockOperationResult with movements and any issues
         """
+        # Idempotency guard: skip if already processed
+        existing = StockMovement.objects.filter(
+            reference_type='SALE',
+            reference_id=str(invoice_id),
+            movement_type='OUT'
+        )[:1]
+        if existing.exists():
+            existing_ids = list(StockMovement.objects.filter(
+                reference_type='SALE',
+                reference_id=str(invoice_id),
+                movement_type='OUT'
+            ).values_list('id', flat=True))
+            return StockOperationResult(
+                success=True,
+                message='Sale already processed',
+                movements=existing_ids
+            )
+
         result = StockOperationResult(success=True, message='Sale processed successfully')
         all_allocations = []
         all_movements = []
@@ -252,6 +270,24 @@ class StockIntegrationService:
         Returns:
             StockOperationResult with movements and batch info
         """
+        # Idempotency guard: skip if already processed
+        existing = StockMovement.objects.filter(
+            reference_type='PURCHASE',
+            reference_id=str(invoice_id),
+            movement_type='IN'
+        )[:1]
+        if existing.exists():
+            existing_ids = list(StockMovement.objects.filter(
+                reference_type='PURCHASE',
+                reference_id=str(invoice_id),
+                movement_type='IN'
+            ).values_list('id', flat=True))
+            return StockOperationResult(
+                success=True,
+                message='Purchase already processed',
+                movements=existing_ids
+            )
+
         result = StockOperationResult(success=True, message='Purchase processed successfully')
         all_movements = []
         created_batches = []
@@ -538,6 +574,211 @@ class StockIntegrationService:
         Batch.objects.filter(id=batch_id).update(
             remaining_quantity=models.F('remaining_quantity') + quantity_change
         )
+
+    @staticmethod
+    @transaction.atomic
+    def reverse_sale_stock(invoice_id: any) -> StockOperationResult:
+        """Reverse stock movements for a cancelled sales invoice.
+
+        Creates IN movements to restore stock that was deducted by the sale.
+        """
+        result = StockOperationResult(success=True, message='Sale stock reversed')
+        movements = StockMovement.objects.filter(
+            reference_type='SALE',
+            reference_id=str(invoice_id),
+            movement_type='OUT',
+            is_active=True
+        ).select_for_update()
+
+        for movement in movements:
+            reversed_qty = abs(movement.quantity)
+
+            StockIntegrationService.update_batch_quantity(
+                movement.batch_id, reversed_qty
+            )
+
+            new_movement = StockIntegrationService.create_stock_movement(
+                product=movement.product,
+                batch=movement.batch,
+                warehouse=movement.warehouse,
+                movement_type='IN',
+                reference_type='SALE',
+                reference_id=f'CANCEL-{invoice_id}',
+                quantity=reversed_qty,
+                unit_cost=movement.unit_cost,
+                notes=f'Stock restored from cancelled sale #{invoice_id}'
+            )
+            result.movements.append(new_movement.id)
+
+        return result
+
+    @staticmethod
+    @transaction.atomic
+    def reverse_purchase_stock(invoice_id: any) -> StockOperationResult:
+        """Reverse stock movements for a cancelled purchase invoice.
+
+        Creates OUT movements to remove stock that was added by the purchase.
+        """
+        result = StockOperationResult(success=True, message='Purchase stock reversed')
+        movements = StockMovement.objects.filter(
+            reference_type='PURCHASE',
+            reference_id=str(invoice_id),
+            movement_type='IN',
+            is_active=True
+        ).select_for_update()
+
+        for movement in movements:
+            reversed_qty = -abs(movement.quantity)
+
+            StockIntegrationService.update_batch_quantity(
+                movement.batch_id, reversed_qty
+            )
+
+            new_movement = StockIntegrationService.create_stock_movement(
+                product=movement.product,
+                batch=movement.batch,
+                warehouse=movement.warehouse,
+                movement_type='OUT',
+                reference_type='PURCHASE',
+                reference_id=f'CANCEL-{invoice_id}',
+                quantity=reversed_qty,
+                unit_cost=movement.unit_cost,
+                notes=f'Stock removed from cancelled purchase #{invoice_id}'
+            )
+            result.movements.append(new_movement.id)
+
+        return result
+
+    @staticmethod
+    @transaction.atomic
+    def process_transfer(
+        transfer_id: any,
+        items: list[dict],
+        reference_type: str = 'MANUAL'
+    ) -> StockOperationResult:
+        """
+        Process a warehouse transfer (move items from one warehouse to another).
+
+        Args:
+            transfer_id: Transfer ID or WarehouseTransfer instance
+            items: List of dicts with keys:
+                - product: Product instance or ID
+                - quantity: Decimal quantity to transfer
+                - batch_id: (Optional) Specific batch ID
+            reference_type: Type of transfer reference
+
+        Returns:
+            StockOperationResult with movements or errors
+        """
+        result = StockOperationResult(success=False, message='')
+        all_movements = []
+
+        try:
+            if hasattr(transfer_id, 'id'):
+                transfer = transfer_id
+            else:
+                transfer = WarehouseTransfer.objects.get(id=transfer_id)
+
+            if transfer.status not in ['PENDING', 'IN_TRANSIT']:
+                result.errors.append(f'Cannot process transfer with status {transfer.status}')
+                return result
+
+            for item in items:
+                product = item['product']
+                quantity = Decimal(str(item['quantity']))
+                batch_id = item.get('batch_id')
+
+                if quantity <= 0:
+                    result.errors.append(f'Invalid quantity for product {product}')
+                    result.success = False
+                    continue
+
+                product_obj = product if hasattr(product, 'id') else Product.objects.get(id=product)
+                batch = None
+                if batch_id:
+                    batch = Batch.objects.select_for_update().get(id=batch_id)
+                else:
+                    batches = Batch.objects.select_for_update().filter(
+                        product=product_obj,
+                        remaining_quantity__gt=0,
+                        location=str(transfer.source_warehouse.id),
+                        is_active=True
+                    ).order_by('expiry_date')
+                    batch = batches.first()
+
+                if not batch:
+                    result.errors.append(f'No available batch for product {product_obj.name}')
+                    result.success = False
+                    continue
+
+                if batch.remaining_quantity < quantity:
+                    result.errors.append(f'Insufficient stock for {product_obj.name} in source warehouse')
+                    result.success = False
+                    continue
+
+                out_movement = StockIntegrationService.create_stock_movement(
+                    product=product_obj,
+                    batch=batch,
+                    warehouse=transfer.source_warehouse,
+                    movement_type='TRANSFER',
+                    reference_type=reference_type,
+                    reference_id=str(transfer.id),
+                    quantity=-quantity,
+                    unit_cost=batch.purchase_price,
+                    notes=f'Transfer {transfer.transfer_number} - OUT'
+                )
+
+                StockIntegrationService.update_batch_quantity(batch.id, -quantity)
+
+                in_movement = StockIntegrationService.create_stock_movement(
+                    product=product_obj,
+                    batch=batch,
+                    warehouse=transfer.destination_warehouse,
+                    movement_type='TRANSFER',
+                    reference_type=reference_type,
+                    reference_id=str(transfer.id),
+                    quantity=quantity,
+                    unit_cost=batch.purchase_price,
+                    notes=f'Transfer {transfer.transfer_number} - IN'
+                )
+
+                dest_batch = Batch.objects.filter(
+                    product=product_obj,
+                    batch_number=batch.batch_number,
+                    location=str(transfer.destination_warehouse.id)
+                ).select_for_update().first()
+
+                if dest_batch:
+                    dest_batch.remaining_quantity += quantity
+                    dest_batch.save(update_fields=['remaining_quantity'])
+                else:
+                    Batch.objects.create(
+                        product=product_obj,
+                        batch_number=batch.batch_number,
+                        manufacturing_date=batch.manufacturing_date,
+                        expiry_date=batch.expiry_date,
+                        purchase_price=batch.purchase_price,
+                        sale_price=batch.sale_price,
+                        quantity=quantity,
+                        remaining_quantity=quantity,
+                        location=str(transfer.destination_warehouse.id),
+                        is_active=True
+                    )
+
+                all_movements.extend([out_movement.id, in_movement.id])
+
+            if not result.errors:
+                transfer.status = 'COMPLETED'
+                transfer.save(update_fields=['status'])
+                result.success = True
+                result.message = 'Transfer completed successfully'
+
+        except Exception as e:
+            result.errors.append(str(e))
+            result.success = False
+
+        result.movements = all_movements
+        return result
 
     @staticmethod
     def get_stock_levels(

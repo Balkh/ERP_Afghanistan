@@ -11,6 +11,7 @@ import time
 import threading
 import uuid
 from datetime import date, timedelta
+from django.utils import timezone
 from decimal import Decimal
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import get_user_model
@@ -149,7 +150,7 @@ class TestInventoryBoundaryConditions(TestCase):
             quantity=0, remaining_quantity=0,
             purchase_price=10.00, sale_price=15.00,
             expiry_date=date.today() + timedelta(days=30),
-            manufacturing_date=date.today(), location='A-1'
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
         )
         
         self.assertEqual(batch.remaining_quantity, 0)
@@ -172,7 +173,7 @@ class TestInventoryBoundaryConditions(TestCase):
             quantity=10, remaining_quantity=10,
             purchase_price=10.00, sale_price=15.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='A-1'
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
         )
         
         # Attempt to set negative via save (model validation)
@@ -203,7 +204,7 @@ class TestInventoryBoundaryConditions(TestCase):
             quantity=large_qty, remaining_quantity=large_qty,
             purchase_price=Decimal('0.01'), sale_price=Decimal('0.02'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='A-1'
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
         )
         
         self.assertEqual(batch.quantity, large_qty)
@@ -237,7 +238,7 @@ class TestConcurrencyFailureScenarios(TestCase):
             quantity=100, remaining_quantity=100,
             purchase_price=10.00, sale_price=15.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='A-1'
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
         )
         
         results = []
@@ -286,7 +287,7 @@ class TestConcurrencyFailureScenarios(TestCase):
                     quantity=10, remaining_quantity=10,
                     purchase_price=10.00, sale_price=15.00,
                     expiry_date=date.today() + timedelta(days=365),
-                    manufacturing_date=date.today(), location='A-1'
+                    manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
                 )
                 created += 1
             except:
@@ -385,7 +386,7 @@ class TestTenantIsolationEdgeCases(TestCase):
                 quantity=10, remaining_quantity=10,
                 purchase_price=10.00, sale_price=15.00,
                 expiry_date=date.today() + timedelta(days=365),
-                manufacturing_date=date.today(), location=wh.code
+                manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location=wh.code
             )
         
         # Each warehouse has its own batches
@@ -496,7 +497,7 @@ class TestSustainedLoadSimulation(TestCase):
                 quantity=20, remaining_quantity=20,
                 purchase_price=10.00, sale_price=15.00,
                 expiry_date=date.today() + timedelta(days=365),
-                manufacturing_date=date.today(), location=f'LOC{i}'
+                manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location=f'LOC{i}'
             )
             
             # Sales operation
@@ -691,7 +692,7 @@ class TestFailureRecoveryScenarios(TestCase):
             quantity=100, remaining_quantity=100,
             purchase_price=10.00, sale_price=15.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='A-1'
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
         )
         
         # Create stock movements with warehouse
@@ -783,7 +784,7 @@ class TestCriticalPathValidation(TestCase):
             quantity=100, remaining_quantity=100,
             purchase_price=10.00, sale_price=15.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='A-1'
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
         )
         
         # 3. Sales

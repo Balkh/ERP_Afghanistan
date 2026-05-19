@@ -5,6 +5,7 @@ Tests: FEFO/FIFO allocation, warehouse isolation, transactional safety, inventor
 
 from decimal import Decimal
 from datetime import date, timedelta
+from django.utils import timezone
 from django.test import TransactionTestCase
 
 from inventory.models import Product, Category, Unit, Warehouse, Batch, StockMovement
@@ -52,14 +53,14 @@ class StockFEFOAllocationTest(TransactionTestCase):
             product=self.prod, batch_number='B001', quantity=30, remaining_quantity=30,
             purchase_price=Decimal('5.00'), sale_price=Decimal('8.00'),
             expiry_date=date.today() + timedelta(days=150),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh.id), is_active=True
         )
         Batch.objects.create(
             product=self.prod, batch_number='B002', quantity=50, remaining_quantity=50,
             purchase_price=Decimal('5.00'), sale_price=Decimal('8.00'),
             expiry_date=date.today() + timedelta(days=200),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh.id), is_active=True
         )
 
@@ -88,7 +89,7 @@ class StockFIFOAllocationTest(TransactionTestCase):
             product=self.prod, batch_number='B-NEW', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('10.00'), sale_price=Decimal('15.00'),
             expiry_date=date.today() + timedelta(days=300),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh.id), is_active=True
         )
         # Create older batch (should be selected first)
@@ -123,14 +124,14 @@ class StockWarehouseIsolationTest(TransactionTestCase):
             product=self.prod, batch_number='B-WA1', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('5.00'), sale_price=Decimal('8.00'),
             expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh1.id), is_active=True
         )
         Batch.objects.create(
             product=self.prod, batch_number='B-WB1', quantity=50, remaining_quantity=50,
             purchase_price=Decimal('5.00'), sale_price=Decimal('8.00'),
             expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh2.id), is_active=True
         )
 
@@ -147,7 +148,7 @@ class StockWarehouseIsolationTest(TransactionTestCase):
             product=self.prod, batch_number='B-WA2', quantity=30, remaining_quantity=30,
             purchase_price=Decimal('5.00'), sale_price=Decimal('8.00'),
             expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh1.id), is_active=True
         )
 
@@ -173,7 +174,7 @@ class StockInsufficiencyTest(TransactionTestCase):
             product=self.prod, batch_number='B-SMALL', quantity=25, remaining_quantity=25,
             purchase_price=Decimal('3.00'), sale_price=Decimal('5.00'),
             expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh.id), is_active=True
         )
 
@@ -257,7 +258,7 @@ class StockValuationTest(TransactionTestCase):
             product=self.prod, batch_number='B-VAL1', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('7.50'), sale_price=Decimal('12.00'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh.id), is_active=True
         )
 
@@ -273,14 +274,14 @@ class StockValuationTest(TransactionTestCase):
             product=self.prod, batch_number='B-VAL2', quantity=150, remaining_quantity=150,
             purchase_price=Decimal('7.50'), sale_price=Decimal('12.00'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh.id), is_active=True
         )
         Batch.objects.create(
             product=self.prod, batch_number='B-VAL3', quantity=75, remaining_quantity=75,
             purchase_price=Decimal('7.50'), sale_price=Decimal('12.00'),
             expiry_date=date.today() + timedelta(days=400),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh.id), is_active=True
         )
 

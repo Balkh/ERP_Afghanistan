@@ -3,7 +3,8 @@ Jobs API Views
 REST API for background job management.
 """
 from rest_framework import viewsets, status, generics
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
+from security.permissions import RoleBasedPermission
 from rest_framework.response import Response
 from django.db.models import Q
 from django.utils import timezone
@@ -17,7 +18,7 @@ from core.multitenant.context import TenantContext
 class BackgroundJobViewSet(viewsets.ModelViewSet):
     """Background jobs CRUD"""
     queryset = BackgroundJob.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     
     def get_queryset(self):
         qs = super().get_queryset()
@@ -77,7 +78,7 @@ class BackgroundJobViewSet(viewsets.ModelViewSet):
 
 class JobStatusView(generics.GenericAPIView):
     """Get job status"""
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     
     def get(self, request, job_id):
         result = JobService.get_job_status(job_id)
@@ -89,8 +90,8 @@ class JobStatusView(generics.GenericAPIView):
 
 
 class JobActionView(generics.GenericAPIView):
-    """Perform job actions (cancel, retry)"""
-    permission_classes = [AllowAny]
+    """Job actions: cancel, retry, pause"""
+    permission_classes = [RoleBasedPermission]
     
     def post(self, request, job_id):
         action = request.data.get('action')
@@ -113,8 +114,8 @@ class JobActionView(generics.GenericAPIView):
 
 
 class JobStatsView(generics.GenericAPIView):
-    """Get job statistics for control center"""
-    permission_classes = [AllowAny]
+    """Get job statistics"""
+    permission_classes = [RoleBasedPermission]
     
     def get(self, request):
         company_id = TenantContext.get_company_id()
@@ -126,7 +127,7 @@ class JobStatsView(generics.GenericAPIView):
 class ScheduledTaskViewSet(viewsets.ModelViewSet):
     """Scheduled tasks CRUD"""
     queryset = ScheduledTask.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     
     def get_queryset(self):
         return super().get_queryset().order_by('name')
@@ -138,8 +139,8 @@ class ScheduledTaskViewSet(viewsets.ModelViewSet):
 
 
 class RunScheduledTasksView(generics.GenericAPIView):
-    """Manually trigger scheduled task runner"""
-    permission_classes = [AllowAny]
+    """Run pending scheduled tasks"""
+    permission_classes = [RoleBasedPermission]
     
     def post(self, request):
         executed = JobScheduler.run_due_tasks()

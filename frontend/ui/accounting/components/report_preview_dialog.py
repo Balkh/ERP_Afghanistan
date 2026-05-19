@@ -1,7 +1,8 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
                                QPushButton, QLabel, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QTextDocument, QPrinter, QPixmap
+from PySide6.QtGui import QFont, QTextDocument, QPixmap
+from PySide6.QtPrintSupport import QPrinter, QPrintDialog
 from api.document_action_service import DocumentActionService
 from utils.qr_generator import QRCodeGenerator
 from ui.constants import TEXT_DISPLAY, TEXT_MONO, TEXT_BODY, COLOR_WHATSAPP
@@ -80,7 +81,10 @@ class ReportPreviewDialog(QDialog):
 
     def print_report(self):
         printer = QPrinter(QPrinter.HighResolution)
-        dialog = QPrinter.QPrintDialog(printer, self)
+        from PySide6.QtWidgets import QApplication
+        if not QApplication.instance():
+            return
+        dialog = QPrintDialog(printer, self)
         if dialog.exec():
             doc = QTextDocument()
             doc.setPlainText(self.text_content)

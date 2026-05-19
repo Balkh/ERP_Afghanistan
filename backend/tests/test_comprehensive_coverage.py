@@ -5,6 +5,7 @@ Target: Serializers, Permissions, Remaining Views
 
 from datetime import date, timedelta
 from decimal import Decimal
+from django.utils import timezone
 from django.test import TestCase, Client, TransactionTestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
@@ -337,7 +338,7 @@ class UniqueConstraintTests(TransactionTestCase):
         cat = Category.objects.create(name='C')
         prod = Product.objects.create(name='P', sku='P', unit=unit, category=cat)
         
-        Batch.objects.create(product=prod, batch_number='UNIQ-BATCH', manufacturing_date=date.today(), expiry_date=date.today()+timedelta(days=365), purchase_price=Decimal('10'), sale_price=Decimal('20'), quantity=Decimal('100'), remaining_quantity=Decimal('100'), location='L')
+        Batch.objects.create(product=prod, batch_number='UNIQ-BATCH', manufacturing_date=(timezone.now() - timedelta(days=30)).date(), expiry_date=date.today()+timedelta(days=365), purchase_price=Decimal('10'), sale_price=Decimal('20'), quantity=Decimal('100'), remaining_quantity=Decimal('100'), location='L')
 
 
 class DateTimeTests(TransactionTestCase):

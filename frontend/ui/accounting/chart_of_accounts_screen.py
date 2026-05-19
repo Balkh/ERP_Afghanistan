@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QMessageBox, QHeaderView,
-                               QHBoxLayout, QFrame, QAbstractItemView,
-                               QComboBox, QLineEdit, QLabel)
+                               QHBoxLayout, QFrame, QAbstractItemView, QVBoxLayout,
+                               QComboBox, QLineEdit, QLabel, QApplication)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from api.client import APIClient
@@ -11,7 +11,7 @@ from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPAC
                            COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_BG_ELEVATED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
@@ -39,7 +39,6 @@ class ChartOfAccountsScreen(QFrame):
         self._connect_signals()
 
     def _setup_layout(self):
-        from PySide6.QtWidgets import QVBoxLayout
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
         layout.setSpacing(SPACING_SM + SPACING_XS)
@@ -47,6 +46,19 @@ class ChartOfAccountsScreen(QFrame):
         header = QLabel("Chart of Accounts")
         header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(header)
+
+        # Loading and empty states
+        self.loading_label = QLabel("Loading accounts...")
+        self.loading_label.setAlignment(Qt.AlignCenter)
+        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.loading_label.setVisible(False)
+        layout.addWidget(self.loading_label)
+
+        self.empty_label = QLabel("No accounts found. Add an account to get started.")
+        self.empty_label.setAlignment(Qt.AlignCenter)
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.empty_label.setVisible(False)
+        layout.addWidget(self.empty_label)
 
         return layout
 
@@ -59,6 +71,22 @@ class ChartOfAccountsScreen(QFrame):
         self.type_filter.addItem("All Types", "")
         for acc_type in ["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"]:
             self.type_filter.addItem(acc_type, acc_type)
+        self.type_filter.setStyleSheet(f"""
+            QComboBox {{
+                background-color: {COLOR_BG_SURFACE};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding: 4px 8px;
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {COLOR_BG_ELEVATED};
+                color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_PRIMARY};
+                selection-color: white;
+                border: 1px solid {COLOR_BORDER};
+            }}
+        """)
         self.type_filter.setMaximumWidth(150)
         toolbar_layout.addWidget(QLabel("Type:"))
         toolbar_layout.addWidget(self.type_filter)
@@ -144,23 +172,33 @@ class ChartOfAccountsScreen(QFrame):
         self.type_filter.currentTextChanged.connect(self._filter_accounts)
 
     def load_accounts(self):
+        self.loading_label.setVisible(True)
+        self.tree.setVisible(False)
+        self.empty_label.setVisible(False)
         try:
             endpoint = get_endpoint("accounts")
             response = self.api_client.get(endpoint, params={"include_inactive": "true"})
             self.accounts = extract_list(response)
-            self._populate_tree()
+            self.loading_label.setVisible(False)
+            if self.accounts:
+                self._populate_tree()
+                self.tree.setVisible(True)
+            else:
+                self.empty_label.setVisible(True)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to load accounts: {e}")
+            self.loading_label.setVisible(False)
+            self.empty_label.setText(f"Failed to load accounts: {e}")
+            self.empty_label.setVisible(True)
 
     def _populate_tree(self):
         self.tree.clear()
 
-        type_icons = {
-            "ASSET": "💰",
-            "LIABILITY": "📋",
-            "EQUITY": "📊",
-            "REVENUE": "📈",
-            "EXPENSE": "📉",
+        type_labels = {
+            "ASSET": "[ASSET]",
+            "LIABILITY": "[LIABILITY]",
+            "EQUITY": "[EQUITY]",
+            "REVENUE": "[REVENUE]",
+            "EXPENSE": "[EXPENSE]",
         }
 
         root_nodes = {}
@@ -170,7 +208,7 @@ class ChartOfAccountsScreen(QFrame):
             if acc_type not in root_nodes:
                 root_item = QTreeWidgetItem(self.tree)
                 root_item.setText(0, acc_type)
-                root_item.setText(1, f"{type_icons.get(acc_type, '')} {acc_type}")
+                root_item.setText(1, f"{type_labels.get(acc_type, '')} {acc_type}")
                 root_item.setExpanded(True)
                 font = root_item.font(0)
                 font.setBold(True)

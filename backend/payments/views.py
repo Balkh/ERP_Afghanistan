@@ -18,13 +18,14 @@ from payments.serializers import (
     SettlementTransactionSerializer,
 )
 from payments.services import PaymentEngine
+from security.permissions import RoleBasedPermission
 
 
 class PaymentMethodViewSet(viewsets.ModelViewSet):
     """CRUD API for payment methods."""
     queryset = PaymentMethod.objects.filter(is_active=True)
     serializer_class = PaymentMethodSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['method_type', 'is_active', 'is_default']
     search_fields = ['name', 'code', 'provider_name']
@@ -56,6 +57,7 @@ class PaymentAccountViewSet(viewsets.ModelViewSet):
     """CRUD API for payment accounts."""
     queryset = PaymentAccount.objects.filter(is_active=True)
     serializer_class = PaymentAccountSerializer
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['account_type', 'currency', 'is_active', 'is_default']
     search_fields = ['name', 'code', 'provider_name', 'account_number']
@@ -122,6 +124,7 @@ class FinancialTransactionViewSet(viewsets.ModelViewSet):
     """CRUD API for financial transactions."""
     queryset = FinancialTransaction.objects.filter(is_active=True)
     serializer_class = FinancialTransactionSerializer
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['transaction_type', 'status', 'payment_method', 'is_settled']
     search_fields = ['transaction_number', 'description', 'reference_number', 'party_name']
@@ -249,6 +252,7 @@ class SettlementViewSet(viewsets.ModelViewSet):
     """CRUD API for transaction settlements."""
     queryset = TransactionSettlement.objects.all()
     serializer_class = TransactionSettlementSerializer
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['settlement_type', 'status', 'payment_account']
     search_fields = ['settlement_number', 'description', 'external_reference']
@@ -285,6 +289,7 @@ class SettlementViewSet(viewsets.ModelViewSet):
 
 class PaymentDashboardViewSet(viewsets.ViewSet):
     """Dashboard endpoints for payment overview."""
+    permission_classes = [RoleBasedPermission]
 
     @action(detail=False, methods=['get'])
     def overview(self, request):

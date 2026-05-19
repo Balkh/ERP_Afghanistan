@@ -147,6 +147,13 @@ class ReturnOrder(TimeStampedUUIDModel):
     )
     voided_at = models.DateTimeField(null=True, blank=True, verbose_name=_('Voided At'))
     void_reason = models.TextField(blank=True, verbose_name=_('Void Reason'))
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Created By')
+    )
 
     class Meta:
         verbose_name = _('Return Order')

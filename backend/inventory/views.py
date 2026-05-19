@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
-from core.multitenant.views import CompanyScopedViewSetMixin
+from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 from .models import Category, Unit, Product, Batch, Warehouse, StockMovement
 from .serializers.product_serializers import CategorySerializer, UnitSerializer, ProductSerializer
 from .serializers.batch_serializers import BatchSerializer
@@ -18,7 +18,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     """
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     # We'll keep the simple filtering for Category for now
     # Could enhance later if needed
@@ -49,20 +49,20 @@ class UnitViewSet(viewsets.ModelViewSet):
     """Unit of measure CRUD."""
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'symbol', 'description']
     ordering_fields = ['name', 'symbol', 'created_at']
     ordering = ['name']
 
 
-class ProductViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
+class ProductViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     Product CRUD with filtering and search.
     """
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = ProductFilter
     search_fields = ['name', 'generic_name', 'brand_name', 'barcode', 'sku', 'manufacturer']
@@ -330,13 +330,13 @@ class ProductViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         return Response({'valid': True, 'format': fmt, 'barcode': code, 'note': 'Validation only for EAN-13'})
 
 
-class BatchViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
+class BatchViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     Batch CRUD with filtering.
     """
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = BatchFilter
     search_fields = ['batch_number', 'product__name', 'product__generic_name', 'product__brand_name']
@@ -464,13 +464,13 @@ class BatchViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
             )
 
 
-class WarehouseViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
+class WarehouseViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     Warehouse CRUD.
     """
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = WarehouseFilter
     search_fields = ['name', 'code', 'address', 'contact_person']
@@ -480,8 +480,9 @@ class WarehouseViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Optionally filter by active status and default warehouse
+        Respects CompanyScopedViewSetMixin via super()
         """
-        queryset = Warehouse.objects.all()
+        queryset = super().get_queryset()
         is_active = self.request.query_params.get('is_active', None)
         is_default = self.request.query_params.get('is_default', None)
         
@@ -497,7 +498,7 @@ class WarehouseViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """
         Get the default warehouse
         """
-        default_warehouse = Warehouse.objects.filter(is_default=True, is_active=True).first()
+        default_warehouse = self.get_queryset().filter(is_default=True, is_active=True).first()
         if default_warehouse:
             serializer = self.get_serializer(default_warehouse)
             return Response(serializer.data)
@@ -514,7 +515,7 @@ class StockMovementViewSet(viewsets.ModelViewSet):
         'warehouse'
     ).all()
     serializer_class = StockMovementSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = StockMovementFilter
     search_fields = ['product__name', 'product__generic_name', 'product__brand_name', 'batch__batch_number', 'warehouse__name', 'reference_id', 'notes']

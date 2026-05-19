@@ -1,9 +1,7 @@
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
-                               QHeaderView, QDateTimeEdit,
-                               QComboBox, QLineEdit, QDateEdit,
-                               QMessageBox, QGroupBox, QFormLayout, QDialog, QApplication)
+                               QHeaderView, QComboBox, QDateEdit,
+                               QMessageBox, QGroupBox, QApplication)
 from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QColor
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
@@ -69,9 +67,11 @@ class AccountLedgerScreen(QFrame):
         filter_layout.addWidget(self.btn_load)
 
         self.btn_export_csv = EnterpriseButton(text="Export CSV", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_export_csv.clicked.connect(self.export_csv)
         filter_layout.addWidget(self.btn_export_csv)
 
         self.btn_print = EnterpriseButton(text="Print Preview", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_print.clicked.connect(self.print_preview)
         filter_layout.addWidget(self.btn_print)
 
         layout.addWidget(filter_group)

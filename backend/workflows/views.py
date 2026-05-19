@@ -10,38 +10,35 @@ from workflows.models import (
 )
 from workflows.services import WorkflowService, WorkflowValidator
 from core.api.responses import APIResponse
+from security.permissions import RoleBasedPermission
+from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 
 
-class WorkflowInstanceViewSet(viewsets.ModelViewSet):
+class WorkflowInstanceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """Workflow instances CRUD"""
     queryset = WorkflowInstance.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     
     def get_queryset(self):
         qs = super().get_queryset()
-        # Filter by company
-        from core.multitenant.context import TenantContext
-        company_id = TenantContext.get_company_id()
-        if company_id:
-            qs = qs.filter(company_id=company_id)
         return qs
 
 
-class ApprovalChainViewSet(viewsets.ModelViewSet):
+class ApprovalChainViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """Approval chains CRUD"""
     queryset = ApprovalChain.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
 
 
-class ApprovalRequestViewSet(viewsets.ModelViewSet):
+class ApprovalRequestViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """Approval requests CRUD"""
     queryset = ApprovalRequest.objects.all()
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
 
 
 class WorkflowStatusView(generics.GenericAPIView):
     """Get workflow status for an entity"""
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     
     def get(self, request, entity_type, entity_id):
         result = WorkflowService.get_workflow_status(entity_type, entity_id)
@@ -54,7 +51,7 @@ class WorkflowStatusView(generics.GenericAPIView):
 
 class WorkflowActionView(generics.GenericAPIView):
     """Perform workflow action (submit, approve, reject, post, cancel)"""
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     
     def post(self, request, workflow_id):
         action = request.data.get('action')
@@ -116,7 +113,7 @@ class WorkflowActionView(generics.GenericAPIView):
 
 class MyPendingApprovalsView(generics.GenericAPIView):
     """Get pending approval requests for current user"""
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     
     def get(self, request):
         user = request.user
@@ -185,7 +182,7 @@ class MyPendingApprovalsView(generics.GenericAPIView):
 
 class ApprovalRequestActionView(generics.GenericAPIView):
     """Approve or reject an approval request"""
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     
     def post(self, request, request_id):
         action = request.data.get('action')  # 'approve' or 'reject'

@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
-from core.multitenant.views import CompanyScopedViewSetMixin
+from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 from core.view_logging import log_business_event
 from sales.models import Customer, SalesInvoice, SalesItem, CustomerPayment
 from sales.serializers import (
@@ -76,7 +76,7 @@ class SalesAccountingService:
         Credit: Tax Payable (tax)
         Credit: Inventory (1300) - if COGS calculated
         """
-        revenue_amount = invoice.subtotal
+        revenue_amount = invoice.subtotal - invoice.discount
 
         lines = [
             {
@@ -207,7 +207,7 @@ class SalesAccountingService:
         return method_accounts.get(payment_method, cls.CASH_ACCOUNT_CODE)
 
 
-class CustomerViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
+class CustomerViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     CRUD API for Customer management.
     """
@@ -259,7 +259,7 @@ class CustomerViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class SalesInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
+class SalesInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     CRUD API for Sales Invoice management.
     """
@@ -311,19 +311,67 @@ class SalesInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
             customer.save(update_fields=['balance', 'updated_at'])
 
     @action(detail=True, methods=['post'])
-    def confirm(self, request, pk=None):
-        """Confirm a draft invoice."""
+    def cancel(self, request, pk=None):
+        """Cancel an invoice. Idempotent — safe to call multiple times."""
         invoice = self.get_object()
-        if invoice.status != 'DRAFT':
-            log_business_event(request, 'invoice.sales.confirm_blocked',
-                               {'invoice_id': str(pk), 'current_status': invoice.status, 'reason': 'not_draft'})
+
+        # Idempotent: already cancelled
+        if invoice.status == 'CANCELLED':
+            serializer = self.get_serializer(invoice)
+            return Response(serializer.data)
+
+        # Cannot cancel DRAFT (never dispatched, no stock to reverse)
+        if invoice.status == 'DRAFT':
             return Response(
-                {'error': 'Only draft invoices can be confirmed.'},
+                {'error': 'Cannot cancel a draft invoice. Delete it instead.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        invoice.status = 'CONFIRMED'
-        invoice.save(update_fields=['status', 'updated_at'])
-        log_business_event(request, 'invoice.sales.confirmed', {'invoice_id': str(pk)})
+
+        # Cannot cancel PAID — would orphan payment
+        if invoice.status == 'PAID':
+            log_business_event(request, 'invoice.sales.cancel_blocked',
+                               {'invoice_id': str(pk), 'current_status': invoice.status, 'reason': 'paid'})
+            return Response(
+                {'error': 'Cannot cancel a paid invoice.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Cannot cancel PARTIAL_PAID — would orphan partial payment
+        if invoice.status == 'PARTIAL_PAID':
+            log_business_event(request, 'invoice.sales.cancel_blocked',
+                               {'invoice_id': str(pk), 'current_status': invoice.status, 'reason': 'partial_paid'})
+            return Response(
+                {'error': 'Cannot cancel a partially paid invoice. Full refund required first.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            # Reverse stock movements first
+            stock_result = StockIntegrationService.reverse_sale_stock(invoice.id)
+            if not stock_result.success:
+                return Response(
+                    {'error': 'Failed to reverse stock', 'details': stock_result.errors},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Reverse accounting journal entry if exists
+            if invoice.journal_entry_id:
+                reversal_result = SalesAccountingService.reverse_sales_journal_entry(
+                    invoice,
+                    reason=f'Invoice {invoice.invoice_number} cancelled'
+                )
+                if not reversal_result.get('success'):
+                    log_business_event(request, 'invoice.sales.cancel_failed',
+                                       {'invoice_id': str(pk), 'reason': 'reversal_failed', 'errors': reversal_result.get('errors')})
+                    return Response(
+                        {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            invoice.status = 'CANCELLED'
+            invoice.save(update_fields=['status', 'updated_at'])
+
+        log_business_event(request, 'invoice.sales.cancelled', {'invoice_id': str(pk)})
         serializer = self.get_serializer(invoice)
         return Response(serializer.data)
 
@@ -427,23 +475,33 @@ class SalesInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
                 {'error': 'Cannot cancel a paid invoice.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Reverse accounting journal entry if exists
-        if invoice.journal_entry_id:
-            reversal_result = SalesAccountingService.reverse_sales_journal_entry(
-                invoice,
-                reason=f'Invoice {invoice.invoice_number} cancelled'
-            )
-            if not reversal_result.get('success'):
-                log_business_event(request, 'invoice.sales.cancel_failed',
-                                   {'invoice_id': str(pk), 'reason': 'reversal_failed', 'errors': reversal_result.get('errors')})
+
+        with transaction.atomic():
+            # Reverse stock movements first
+            stock_result = StockIntegrationService.reverse_sale_stock(invoice.id)
+            if not stock_result.success:
                 return Response(
-                    {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')},
+                    {'error': 'Failed to reverse stock', 'details': stock_result.errors},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
-        invoice.status = 'CANCELLED'
-        invoice.save(update_fields=['status', 'updated_at'])
+
+            # Reverse accounting journal entry if exists
+            if invoice.journal_entry_id:
+                reversal_result = SalesAccountingService.reverse_sales_journal_entry(
+                    invoice,
+                    reason=f'Invoice {invoice.invoice_number} cancelled'
+                )
+                if not reversal_result.get('success'):
+                    log_business_event(request, 'invoice.sales.cancel_failed',
+                                       {'invoice_id': str(pk), 'reason': 'reversal_failed', 'errors': reversal_result.get('errors')})
+                    return Response(
+                        {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            invoice.status = 'CANCELLED'
+            invoice.save(update_fields=['status', 'updated_at'])
+
         log_business_event(request, 'invoice.sales.cancelled', {'invoice_id': str(pk)})
         serializer = self.get_serializer(invoice)
         return Response(serializer.data)

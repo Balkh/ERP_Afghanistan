@@ -149,15 +149,29 @@ def verify_jwt_token(token, expected_type=None):
         raise exceptions.AuthenticationFailed('Invalid token')
 
 
-# ── Token Blacklist (in-memory, Redis-backed in production) ──
+# ── Token Blacklist (database-backed, survives restarts) ──
+# The in-memory set is retained as a fast-path cache for the current process.
+# The database store is the source of truth.
+
 _token_blacklist: set = set()
 
 
 def blacklist_token(jti: str, exp: datetime.datetime = None) -> None:
-    """Add a token's jti to the blacklist."""
+    """Add a token's jti to the blacklist (persistent + in-memory cache)."""
     _token_blacklist.add(jti)
+    try:
+        from .models import RevokedToken
+        RevokedToken.revoke(jti=jti, expires_at=exp)
+    except Exception:
+        pass  # Graceful degradation — in-memory cache still works
 
 
 def _is_token_blacklisted(jti: str) -> bool:
-    """Check if a token's jti is blacklisted."""
-    return jti in _token_blacklist
+    """Check if a token's jti is blacklisted (cache first, then DB)."""
+    if jti in _token_blacklist:
+        return True
+    try:
+        from .models import RevokedToken
+        return RevokedToken.is_revoked(jti)
+    except Exception:
+        return False

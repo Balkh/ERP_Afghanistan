@@ -6,7 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
-from core.multitenant.views import CompanyScopedViewSetMixin
+from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 from purchases.models import Supplier, PurchaseInvoice, PurchaseItem, SupplierPayment
 from purchases.serializers import (
     SupplierSerializer,
@@ -38,7 +38,7 @@ class PurchaseAccountingService:
         Debit: Tax Receivable (tax)
         Credit: Accounts Payable (total_amount)
         """
-        expense_amount = invoice.subtotal
+        expense_amount = invoice.subtotal - invoice.discount
         
         lines = [
             {
@@ -144,7 +144,7 @@ class PurchaseAccountingService:
         return method_accounts.get(payment_method, cls.CASH_ACCOUNT_CODE)
 
 
-class SupplierViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
+class SupplierViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     CRUD API for Supplier management.
     """
@@ -194,7 +194,7 @@ class SupplierViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class PurchaseInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
+class PurchaseInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     CRUD API for Purchase Invoice management.
     """
@@ -337,28 +337,55 @@ class PurchaseInvoiceViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
-        """Cancel an invoice."""
+        """Cancel an invoice. Idempotent — safe to call multiple times."""
         invoice = self.get_object()
+
+        if invoice.status == 'CANCELLED':
+            serializer = self.get_serializer(invoice)
+            return Response(serializer.data)
+
+        if invoice.status == 'DRAFT':
+            return Response(
+                {'error': 'Cannot cancel a draft invoice. Delete it instead.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         if invoice.status == 'PAID':
             return Response(
                 {'error': 'Cannot cancel a paid invoice.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # Reverse accounting journal entry if exists
-        if invoice.journal_entry_id:
-            reversal_result = PurchaseAccountingService.reverse_purchase_journal_entry(
-                invoice,
-                reason=f'Invoice {invoice.invoice_number} cancelled'
+
+        if invoice.status == 'PARTIAL_PAID':
+            return Response(
+                {'error': 'Cannot cancel a partially paid invoice. Full refund required first.'},
+                status=status.HTTP_400_BAD_REQUEST
             )
-            if not reversal_result.get('success'):
+
+        with transaction.atomic():
+            # Reverse stock movements first
+            stock_result = StockIntegrationService.reverse_purchase_stock(invoice.id)
+            if not stock_result.success:
                 return Response(
-                    {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')},
+                    {'error': 'Failed to reverse stock', 'details': stock_result.errors},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-        
-        invoice.status = 'CANCELLED'
-        invoice.save(update_fields=['status', 'updated_at'])
+
+            # Reverse accounting journal entry if exists
+            if invoice.journal_entry_id:
+                reversal_result = PurchaseAccountingService.reverse_purchase_journal_entry(
+                    invoice,
+                    reason=f'Invoice {invoice.invoice_number} cancelled'
+                )
+                if not reversal_result.get('success'):
+                    return Response(
+                        {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+            invoice.status = 'CANCELLED'
+            invoice.save(update_fields=['status', 'updated_at'])
+
         serializer = self.get_serializer(invoice)
         return Response(serializer.data)
 

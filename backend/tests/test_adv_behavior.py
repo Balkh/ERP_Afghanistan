@@ -5,6 +5,7 @@ Additional inventory and accounting tests.
 from decimal import Decimal
 from datetime import date, timedelta
 from django.test import TransactionTestCase
+from django.utils import timezone
 
 from inventory.models import Product, Category, Unit, Warehouse, Batch
 from accounting.models import Account
@@ -24,7 +25,7 @@ class InventoryAdvancedTest(TransactionTestCase):
             product=self.prod, batch_number='BX1', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('10'), sale_price=Decimal('15'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='WHX', is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='WHX', is_active=True
         )
         self.assertEqual(batch.remaining_quantity, Decimal('100'))
 

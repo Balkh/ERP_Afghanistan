@@ -4,8 +4,8 @@ Financial Reports behavior tests - testing actual report generation logic.
 
 import unittest
 from decimal import Decimal
-from datetime import date
 from django.test import TransactionTestCase
+from django.utils import timezone
 
 from accounting.models import Account, JournalEntry, JournalEntryLine
 from accounting.services.journal_engine import JournalEngine
@@ -33,14 +33,14 @@ class FinancialReportEngineTrialBalanceTest(TransactionTestCase):
 
     def test_get_trial_balance_returns_structure(self):
         """Test that get_trial_balance returns expected structure."""
-        result = FinancialReportEngine.get_trial_balance(date.today())
+        result = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertIn('accounts', result)
         self.assertIn('total_debit', result)
         self.assertIn('total_credit', result)
 
     def test_trial_balance_empty_when_no_entries(self):
         """Test trial balance is empty when no posted entries exist."""
-        result = FinancialReportEngine.get_trial_balance(date.today())
+        result = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertEqual(len(result['accounts']), 0)
 
     @unittest.skip("Known issue: Journal entry posting in tests")
@@ -57,7 +57,7 @@ class FinancialReportEngineTrialBalanceTest(TransactionTestCase):
         )
         JournalEngine.post_entry(result['entry_id'])
         
-        tb_result = FinancialReportEngine.get_trial_balance(date.today())
+        tb_result = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertTrue(len(tb_result['accounts']) > 0)
 
     def test_trial_balance_excludes_unposted_entries(self):
@@ -72,7 +72,7 @@ class FinancialReportEngineTrialBalanceTest(TransactionTestCase):
             lines=lines
         )
         
-        tb_result = FinancialReportEngine.get_trial_balance(date.today())
+        tb_result = FinancialReportEngine.get_trial_balance(timezone.now().date())
         account_codes = [a['code'] for a in tb_result['accounts']]
         self.assertNotIn('1000', account_codes)
 
@@ -89,7 +89,7 @@ class FinancialReportEngineTrialBalanceTest(TransactionTestCase):
         )
         JournalEngine.post_entry(result['entry_id'])
         
-        tb_result = FinancialReportEngine.get_trial_balance(date.today())
+        tb_result = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertEqual(tb_result['total_debit'], tb_result['total_credit'])
 
 
@@ -111,7 +111,7 @@ class FinancialReportEngineProfitAndLossTest(TransactionTestCase):
 
     def test_get_profit_and_loss_returns_structure(self):
         """Test that get_profit_and_loss returns expected structure."""
-        result = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        result = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertIn('revenue', result)
         self.assertIn('expenses', result)
         self.assertIn('net_income', result)
@@ -141,7 +141,7 @@ class FinancialReportEngineProfitAndLossTest(TransactionTestCase):
         )
         JournalEngine.post_entry(exp_result['entry_id'])
         
-        pl_result = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl_result = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl_result['total_revenue'], Decimal('1000.00'))
         self.assertEqual(pl_result['total_expenses'], Decimal('300.00'))
         self.assertEqual(pl_result['net_income'], Decimal('700.00'))
@@ -159,7 +159,7 @@ class FinancialReportEngineProfitAndLossTest(TransactionTestCase):
         )
         JournalEngine.post_entry(exp_result['entry_id'])
         
-        pl_result = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl_result = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl_result['net_income'], Decimal('-800.00'))
 
 
@@ -184,7 +184,7 @@ class FinancialReportEngineBalanceSheetTest(TransactionTestCase):
 
     def test_get_balance_sheet_returns_structure(self):
         """Test that get_balance_sheet returns expected structure."""
-        result = FinancialReportEngine.get_balance_sheet(date.today())
+        result = FinancialReportEngine.get_balance_sheet(timezone.now().date())
         self.assertIn('assets', result)
         self.assertIn('liabilities', result)
         self.assertIn('equity', result)
@@ -202,7 +202,7 @@ class FinancialReportEngineBalanceSheetTest(TransactionTestCase):
         )
         JournalEngine.post_entry(result['entry_id'])
         
-        bs_result = FinancialReportEngine.get_balance_sheet(date.today())
+        bs_result = FinancialReportEngine.get_balance_sheet(timezone.now().date())
         self.assertIn('assets', bs_result)
 
 
@@ -222,7 +222,7 @@ class FinancialReportEngineCashFlowTest(TransactionTestCase):
 
     def test_get_cash_flow_statement_returns_structure(self):
         """Test that get_cash_flow_statement returns expected structure."""
-        result = FinancialReportEngine.get_cash_flow_statement(date.today(), date.today())
+        result = FinancialReportEngine.get_cash_flow_statement(timezone.now().date(), timezone.now().date())
         self.assertIn('operating_activities', result)
         self.assertIn('investing_activities', result)
         self.assertIn('financing_activities', result)
@@ -241,7 +241,7 @@ class FinancialReportEngineCashFlowTest(TransactionTestCase):
         )
         JournalEngine.post_entry(result['entry_id'])
         
-        cf_result = FinancialReportEngine.get_cash_flow_statement(date.today(), date.today())
+        cf_result = FinancialReportEngine.get_cash_flow_statement(timezone.now().date(), timezone.now().date())
         self.assertIn('operating_activities', cf_result)
 
 
@@ -270,7 +270,7 @@ class FinancialReportEngineAccountLedgerTest(TransactionTestCase):
         JournalEngine.post_entry(result['entry_id'])
         
         ledger_result = FinancialReportEngine.get_account_ledger(
-            self.cash.id, date.today(), date.today()
+            self.cash.id, timezone.now().date(), timezone.now().date()
         )
         self.assertIn('account_code', ledger_result)
         self.assertEqual(ledger_result['account_code'], '1000')

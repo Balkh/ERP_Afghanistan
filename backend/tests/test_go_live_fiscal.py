@@ -7,6 +7,7 @@ and skipped test resolution.
 import time
 import uuid
 from datetime import date, timedelta
+from django.utils import timezone
 from decimal import Decimal
 from django.test import TestCase, TransactionTestCase
 from django.contrib.auth import get_user_model
@@ -348,7 +349,7 @@ class TestLongTermDataConsistency(TestCase):
             quantity=100, remaining_quantity=100,
             purchase_price=10.00, sale_price=15.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='A-1'
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
         )
         
         # 2. Create sale
@@ -429,7 +430,7 @@ class TestProductionRiskSimulation(TestCase):
             quantity=50, remaining_quantity=50,
             purchase_price=10.00, sale_price=15.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='A-1'
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='A-1'
         )
         
         # Sequential updates (to avoid SQLite locking)

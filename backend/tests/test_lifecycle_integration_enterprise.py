@@ -5,6 +5,7 @@ Tests complete business flows: Purchase→Inventory→Accounting→Reports.
 
 from decimal import Decimal
 from datetime import date, timedelta
+from django.utils import timezone
 from django.test import TransactionTestCase
 
 from inventory.models import Product, Category, Unit, Warehouse, Batch, StockMovement
@@ -66,7 +67,7 @@ class PurchaseToInventoryToAccountingTest(TransactionTestCase):
             product=self.prod, batch_number='B-PO-001', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('5.00'), sale_price=Decimal('8.00'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location=str(self.wh.id), is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location=str(self.wh.id), is_active=True
         )
 
         total = StockIntegrationService.get_total_available_stock(self.prod, self.wh)
@@ -175,7 +176,7 @@ class InventoryToSalesToCOGSTest(TransactionTestCase):
         JournalEngine.post_entry(result['entry_id'])
 
         # Verify in trial balance
-        tb = FinancialReportEngine.get_trial_balance(date.today())
+        tb = FinancialReportEngine.get_trial_balance(timezone.now().date())
         cash_row = next((a for a in tb['accounts'] if a['account_code'] == '1000'), None)
         sales_row = next((a for a in tb['accounts'] if a['account_code'] == '4000'), None)
 
@@ -212,8 +213,8 @@ class PaymentToLedgerToCashFlowTest(TransactionTestCase):
         JournalEngine.post_entry(result2['entry_id'])
 
         # Verify ledger
-        cash_ledger = FinancialReportEngine.get_account_ledger(str(self.cash.id), date.today(), date.today())
-        ar_ledger = FinancialReportEngine.get_account_ledger(str(self.ar.id), date.today(), date.today())
+        cash_ledger = FinancialReportEngine.get_account_ledger(str(self.cash.id), timezone.now().date(), timezone.now().date())
+        ar_ledger = FinancialReportEngine.get_account_ledger(str(self.ar.id), timezone.now().date(), timezone.now().date())
 
         self.assertEqual(cash_ledger['total_debit'], Decimal('1000'))
         self.assertEqual(ar_ledger['total_credit'], Decimal('1000'))
@@ -246,7 +247,7 @@ class InvoiceToJournalToTrialBalanceTest(TransactionTestCase):
             JournalEngine.post_entry(result['entry_id'])
 
         # Verify trial balance
-        tb = FinancialReportEngine.get_trial_balance(date.today())
+        tb = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertEqual(tb['total_debit'], tb['total_credit'])
         # Total: 1000 + 300 + 500 = 1800 debit, 1000 + 300 + 500 = 1800 credit
 
@@ -302,7 +303,7 @@ class FinancialReportsReflectTransactionsTest(TransactionTestCase):
         result3 = JournalEngine.create_entry('EXPENSE', 'PL-TEST-3', lines3)
         JournalEngine.post_entry(result3['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl['total_revenue'], Decimal('5000'))
         self.assertEqual(pl['total_expenses'], Decimal('3000'))
         self.assertEqual(pl['net_income'], Decimal('2000'))

@@ -151,6 +151,60 @@ class TenantMiddleware:
             TenantContext.clear()
 
 
+class ShadowStrictTenantMiddleware:
+    """
+    SHADOW mode strict tenant enforcement.
+    Logs violations when company context is missing but does NOT block.
+    Use this to measure tenant isolation compliance before activating StrictTenantMiddleware.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+        self.excluded_paths = [
+            '/admin/',
+            '/api/health/',
+        ]
+        self.violation_logger = logging.getLogger('erp.tenant.shadow')
+
+    def __call__(self, request):
+        path = request.path
+        for excluded in self.excluded_paths:
+            if path.startswith(excluded):
+                return self.get_response(request)
+
+        company_id = get_company_from_header(request, HEADER_COMPANY_ID)
+        company_code = get_company_from_header(request, HEADER_COMPANY_CODE)
+
+        if not company_id:
+            company_id = get_company_from_jwt(request)
+        if not company_code:
+            company_code = get_company_from_jwt(request)
+
+        company = resolve_company(company_id, company_code)
+
+        if not company and hasattr(request, 'user') and request.user.is_authenticated:
+            self.violation_logger.warning(
+                "SHADOW STRICT: No company context for user=%s path=%s method=%s",
+                request.user.id, path, request.method
+            )
+
+        if company:
+            TenantContext.set_company_id(str(company.id))
+            TenantContext.set_company_code(company.code)
+            request.company = company
+            request.company_id = str(company.id)
+
+        user = getattr(request, 'user', None)
+        if user and user.is_authenticated:
+            TenantContext.set_user_id(str(user.id))
+
+        try:
+            response = self.get_response(request)
+            return response
+        finally:
+            TenantContext.clear()
+
+
 class StrictTenantMiddleware:
     """
     Strict version of TenantMiddleware.

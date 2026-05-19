@@ -14,13 +14,17 @@ from .serializers import (
     ReturnOrderSerializer, ReturnOrderCreateSerializer,
     ReturnItemSerializer, ReconciliationEntrySerializer
 )
+from security.permissions import RoleBasedPermission
+from core.multitenant.views import CompanyScopedViewSetMixin, UnifiedEnterpriseViewSetMixin
+from core.multitenant.context import TenantContext
 
 
-class ReturnOrderViewSet(viewsets.ModelViewSet):
+class ReturnOrderViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """ViewSet for Return Orders."""
     queryset = ReturnOrder.objects.select_related(
         'invoice', 'purchase_invoice', 'party', 'supplier', 'approved_by'
     ).prefetch_related('items', 'items__product', 'items__batch')
+    permission_classes = [RoleBasedPermission]
     
     def get_serializer_class(self):
         if self.action == 'create':
@@ -29,6 +33,13 @@ class ReturnOrderViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         queryset = super().get_queryset()
+        
+        company_id = TenantContext.get_company_id()
+        if company_id and not self.request.user.is_superuser:
+            queryset = queryset.filter(
+                Q(invoice__company_id=company_id) |
+                Q(purchase_invoice__company_id=company_id)
+            )
         
         return_type = self.request.query_params.get('return_type')
         if return_type:
@@ -378,13 +389,14 @@ class ReturnOrderViewSet(viewsets.ModelViewSet):
             )
 
 
-class ReconciliationEntryViewSet(viewsets.ModelViewSet):
+class ReconciliationEntryViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """ViewSet for Reconciliation Entries."""
     queryset = ReconciliationEntry.objects.select_related(
         'invoice', 'return_order', 'accounting_entry', 'party', 'supplier',
         'company', 'fixed_by'
     )
     serializer_class = ReconciliationEntrySerializer
+    permission_classes = [RoleBasedPermission]
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -396,10 +408,6 @@ class ReconciliationEntryViewSet(viewsets.ModelViewSet):
         transaction_type = self.request.query_params.get('transaction_type')
         if transaction_type:
             queryset = queryset.filter(transaction_type=transaction_type)
-        
-        company_id = self.request.query_params.get('company_id')
-        if company_id:
-            queryset = queryset.filter(company_id=company_id)
         
         return queryset
     

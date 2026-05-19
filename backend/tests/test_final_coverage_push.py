@@ -6,7 +6,7 @@ from decimal import Decimal
 from datetime import date, timedelta
 from django.test import TestCase, TransactionTestCase, Client
 from django.contrib.auth.models import User
-from django.utils import timezone as django_timezone
+from django.utils import timezone
 
 from accounting.models import Account, JournalEntry, JournalEntryLine, Currency, ExchangeRate
 from accounting.services.journal_engine import JournalEngine
@@ -48,7 +48,7 @@ class DeepServiceTests(TransactionTestCase):
             r = JournalEngine.create_entry(entry_type, f'{entry_type} entry', lines)
             JournalEngine.post_entry(r['entry_id'])
 
-        tb = FinancialReportEngine.get_trial_balance(date.today())
+        tb = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertEqual(tb['total_debit'], Decimal('2000'))
         self.assertEqual(tb['total_credit'], Decimal('2000'))
 
@@ -152,7 +152,7 @@ class DeepInventoryTests(TransactionTestCase):
             Batch.objects.create(
                 product=self.prod, batch_number=f'B{i}', quantity=100, remaining_quantity=100,
                 purchase_price=Decimal('10'), sale_price=Decimal('15'),
-                expiry_date=exp_date, manufacturing_date=date.today(),
+                expiry_date=exp_date, manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
                 location='WH-A', is_active=True
             )
 
@@ -165,7 +165,7 @@ class DeepInventoryTests(TransactionTestCase):
             product=self.prod, batch_number='BT1', quantity=50, remaining_quantity=50,
             purchase_price=Decimal('10'), sale_price=Decimal('15'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='WH-A', is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='WH-A', is_active=True
         )
 
         batch.location = 'WH-B'
@@ -183,14 +183,14 @@ class DeepInventoryTests(TransactionTestCase):
         Batch.objects.create(
             product=self.prod, batch_number='BP1X', quantity=200, remaining_quantity=200,
             purchase_price=Decimal('8'), sale_price=Decimal('12'),
-            expiry_date=date.today() + timedelta(days=200), manufacturing_date=date.today(),
+            expiry_date=date.today() + timedelta(days=200), manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location='WH-A', is_active=True
         )
 
         Batch.objects.create(
             product=prod2, batch_number='BP2X', quantity=150, remaining_quantity=150,
             purchase_price=Decimal('5'), sale_price=Decimal('8'),
-            expiry_date=date.today() + timedelta(days=150), manufacturing_date=date.today(),
+            expiry_date=date.today() + timedelta(days=150), manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location='WH-A', is_active=True
         )
 
@@ -298,7 +298,7 @@ class DeepReportTests(TransactionTestCase):
             r = JournalEngine.create_entry('REVENUE', 'Revenue', lines)
             JournalEngine.post_entry(r['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl['total_revenue'], Decimal('1750'))
 
     def test_cash_flow_operations(self):
@@ -310,5 +310,5 @@ class DeepReportTests(TransactionTestCase):
         r = JournalEngine.create_entry('SALE', 'Sale', lines)
         JournalEngine.post_entry(r['entry_id'])
 
-        cf = FinancialReportEngine.get_cash_flow_statement(date.today(), date.today())
+        cf = FinancialReportEngine.get_cash_flow_statement(timezone.now().date(), timezone.now().date())
         self.assertIn('operating_activities', cf)

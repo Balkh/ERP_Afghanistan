@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from core.view_logging import log_business_event
 from core.multitenant.views import CompanyScopedViewSetMixin
+from core.multitenant.context import TenantContext
 from accounting.models import Account, JournalEntry, JournalEntryLine, JournalEventLog
 from accounting.serializers import (
     AccountSerializer,
@@ -24,6 +25,8 @@ from accounting.services.report_exporter import ReportExporter
 from accounting.services.reconciliation import AccountingReconciliationService
 from security.permissions import RoleBasedPermission
 
+# AllowAny retained for read-only utility endpoints (calculate-invoice, convert-currency, etc.)
+
 
 class JournalEventLogViewSet(viewsets.ModelViewSet):
     """
@@ -32,7 +35,7 @@ class JournalEventLogViewSet(viewsets.ModelViewSet):
     """
     queryset = JournalEventLog.objects.all()
     serializer_class = JournalEventLogSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['entry', 'event_type', 'user']
     search_fields = ['entry__entry_number', 'reference', 'notes']
@@ -46,7 +49,7 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Account.objects.filter(is_active=True)
     serializer_class = AccountSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['account_type', 'account_category', 'is_active', 'is_system', 'parent']
     search_fields = ['code', 'name', 'description']
@@ -154,7 +157,8 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
             include_zero = request.GET.get('include_zero', 'false') == 'true'
             fmt = request.GET.get('format', 'json')
         as_of_date = date.fromisoformat(as_of) if as_of else date.today()
-        report = FinancialReportEngine.get_trial_balance(as_of_date, include_zero)
+        company_id = TenantContext.get_company_id()
+        report = FinancialReportEngine.get_trial_balance(as_of_date, include_zero, company_id)
         if fmt == 'csv':
             csv_data = ReportExporter.to_csv(report, 'trial_balance')
             return HttpResponse(csv_data, content_type='text/csv')
@@ -168,7 +172,8 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Generate balance sheet report."""
         as_of = request.query_params.get('as_of_date')
         as_of_date = date.fromisoformat(as_of) if as_of else date.today()
-        report = FinancialReportEngine.get_balance_sheet(as_of_date)
+        company_id = TenantContext.get_company_id()
+        report = FinancialReportEngine.get_balance_sheet(as_of_date, company_id=company_id)
         fmt = request.query_params.get('format') or request.parser_context.get('kwargs', {}).get('format', 'json')
         if fmt == 'csv':
             csv_data = ReportExporter.to_csv(report, 'balance_sheet')
@@ -193,11 +198,13 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         compare_start = request.query_params.get('compare_start_date')
         compare_end = request.query_params.get('compare_end_date')
         group = request.query_params.get('group_by_category', 'true') == 'true'
+        company_id = TenantContext.get_company_id()
         report = FinancialReportEngine.get_profit_and_loss(
             start_date, end_date,
             compare_start=date.fromisoformat(compare_start) if compare_start else None,
             compare_end=date.fromisoformat(compare_end) if compare_end else None,
-            group_by_category=group
+            group_by_category=group,
+            company_id=company_id
         )
         fmt = request.query_params.get('format') or request.parser_context.get('kwargs', {}).get('format', 'json')
         if fmt == 'csv':
@@ -220,7 +227,8 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
             )
         start_date = date.fromisoformat(start)
         end_date = date.fromisoformat(end)
-        report = FinancialReportEngine.get_cash_flow_statement(start_date, end_date)
+        company_id = TenantContext.get_company_id()
+        report = FinancialReportEngine.get_cash_flow_statement(start_date, end_date, company_id)
         fmt = request.query_params.get('format') or request.parser_context.get('kwargs', {}).get('format', 'json')
         if fmt == 'csv':
             csv_data = ReportExporter.to_csv(report, 'cash_flow')
@@ -235,7 +243,8 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Get summary of all account balances by type."""
         as_of = request.query_params.get('as_of_date')
         as_of_date = date.fromisoformat(as_of) if as_of else date.today()
-        summary = FinancialReportEngine.get_account_summary(as_of_date)
+        company_id = TenantContext.get_company_id()
+        summary = FinancialReportEngine.get_account_summary(as_of_date, company_id)
         return Response(summary)
 
     @action(detail=False, methods=['get'])
@@ -257,10 +266,12 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
                 {'error': 'account_id parameter is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        company_id = TenantContext.get_company_id()
         report = FinancialReportEngine.get_account_ledger(
             account_id,
             start_date=date.fromisoformat(start) if start else None,
-            end_date=date.fromisoformat(end) if end else None
+            end_date=date.fromisoformat(end) if end else None,
+            company_id=company_id
         )
         if fmt == 'csv':
             csv_data = ReportExporter.to_csv(report, 'ledger')
@@ -275,7 +286,8 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Generate Accounts Receivable aging report."""
         as_of = request.query_params.get('as_of_date')
         as_of_date = date.fromisoformat(as_of) if as_of else date.today()
-        report = FinancialReportEngine.get_ar_aging(as_of_date)
+        company_id = TenantContext.get_company_id()
+        report = FinancialReportEngine.get_ar_aging(as_of_date, company_id=company_id)
         fmt = request.query_params.get('format', 'json')
         if fmt == 'csv':
             csv_data = ReportExporter.to_csv(report, 'ar_aging')
@@ -290,7 +302,8 @@ class AccountViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         """Generate Accounts Payable aging report."""
         as_of = request.query_params.get('as_of_date')
         as_of_date = date.fromisoformat(as_of) if as_of else date.today()
-        report = FinancialReportEngine.get_ap_aging(as_of_date)
+        company_id = TenantContext.get_company_id()
+        report = FinancialReportEngine.get_ap_aging(as_of_date, company_id=company_id)
         fmt = request.query_params.get('format', 'json')
         if fmt == 'csv':
             csv_data = ReportExporter.to_csv(report, 'ap_aging')
@@ -347,7 +360,7 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = JournalEntry.objects.filter(is_active=True)
     serializer_class = JournalEntrySerializer
-    permission_classes = [AllowAny]
+    permission_classes = [RoleBasedPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['entry_type', 'is_posted', 'is_active']
     search_fields = ['entry_number', 'description', 'reference']
@@ -413,7 +426,7 @@ from django.http import HttpResponse
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([RoleBasedPermission])
 def export_report(request):
     """Export report to various formats."""
     from accounting.services.export_engine import ExportEngine
@@ -464,7 +477,7 @@ def export_report(request):
 
 # Advanced Reports API
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([RoleBasedPermission])
 def advanced_report(request):
     """Generate advanced analytical reports."""
     from accounting.services.advanced_reports import AdvancedReportsService, ReportBuilderService
@@ -536,7 +549,7 @@ def advanced_report(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([RoleBasedPermission])
 def report_options(request):
     """Get available report types and options."""
     return Response({

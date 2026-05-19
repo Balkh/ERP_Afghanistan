@@ -9,6 +9,7 @@ import uuid
 from datetime import date, timedelta
 from decimal import Decimal
 from django.test import TestCase, TransactionTestCase
+from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -67,10 +68,10 @@ class TestInventoryBasics(TestCase):
             purchase_price=8.00,
             sale_price=12.00,
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location='A-1'
         )
-        
+
         # 6. Create stock movement
         movement = StockMovement.objects.create(
             product=product,
@@ -431,10 +432,10 @@ class TestMultiModuleCycle(TestCase):
             purchase_price=5.00,
             sale_price=8.00,
             expiry_date=date.today() + timedelta(days=730),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location='A-1'
         )
-        
+
         # Add stock
         StockMovement.objects.create(
             product=product,
@@ -594,10 +595,10 @@ class TestBatchManagement(TestCase):
             purchase_price=10.00,
             sale_price=15.00,
             expiry_date=date.today() + timedelta(days=30),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location='A-1'
         )
-        
+
         # Query near-expiry
         near_exp = Batch.objects.filter(
             expiry_date__lte=date.today() + timedelta(days=30),
@@ -634,7 +635,7 @@ class TestBatchManagement(TestCase):
                 purchase_price=10.00,
                 sale_price=15.00,
                 expiry_date=date.today() + timedelta(days=180),
-                manufacturing_date=date.today(),
+                manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
                 location=loc
             )
         

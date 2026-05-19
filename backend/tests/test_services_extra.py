@@ -4,6 +4,7 @@ Additional services tests to target low-coverage areas.
 
 from decimal import Decimal
 from datetime import date, timedelta
+from django.utils import timezone
 from django.test import TransactionTestCase
 
 from inventory.models import Product, Category, Unit, Warehouse, Batch, StockMovement
@@ -76,7 +77,7 @@ class StockMovementTypeTest(TransactionTestCase):
             product=self.prod, batch_number='B1', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('10'), sale_price=Decimal('15'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='WH', is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='WH', is_active=True
         )
 
     def test_batch_quantity_update(self):
@@ -92,7 +93,7 @@ class StockMovementTypeTest(TransactionTestCase):
             product=self.prod, batch_number='B2', quantity=50, remaining_quantity=50,
             purchase_price=Decimal('10'), sale_price=Decimal('15'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='WH', is_active=True
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(), location='WH', is_active=True
         )
 
         batches = Batch.objects.filter(product=self.prod, is_active=True)

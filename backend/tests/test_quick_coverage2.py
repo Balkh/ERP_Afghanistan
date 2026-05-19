@@ -33,7 +33,7 @@ class QuickServiceTest(TransactionTestCase):
             r = JournalEngine.create_entry('SALE', f'Sale {i}', lines)
             JournalEngine.post_entry(r['entry_id'])
 
-        tb = FinancialReportEngine.get_trial_balance(date.today())
+        tb = FinancialReportEngine.get_trial_balance(django_timezone.now().date())
         self.assertEqual(tb['total_debit'], Decimal('500'))
 
     def test_multiple_expenses_pl(self):
@@ -55,7 +55,7 @@ class QuickServiceTest(TransactionTestCase):
         JournalEngine.create_entry('EXPENSE', 'Salary', lines2)
         JournalEngine.post_entry(JournalEngine.create_entry('EXPENSE', 'Salary', lines2)['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(django_timezone.now().date(), django_timezone.now().date())
         self.assertEqual(pl['total_expenses'], Decimal('700'))
 
     def test_tax_calculator_combined(self):
@@ -92,7 +92,7 @@ class InventoryStockTest(TransactionTestCase):
             product=self.prod, batch_number='B1', quantity=100, remaining_quantity=100,
             purchase_price=Decimal('10'), sale_price=Decimal('15'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='WH', is_active=True
+            manufacturing_date=(django_timezone.now() - timedelta(days=30)).date(), location='WH', is_active=True
         )
 
         self.assertEqual(batch.remaining_quantity, Decimal('100'))
@@ -108,14 +108,14 @@ class InventoryStockTest(TransactionTestCase):
             product=self.prod, batch_number='B1', quantity=50, remaining_quantity=50,
             purchase_price=Decimal('10'), sale_price=Decimal('15'),
             expiry_date=date.today() + timedelta(days=365),
-            manufacturing_date=date.today(), location='WH', is_active=True
+            manufacturing_date=(django_timezone.now() - timedelta(days=30)).date(), location='WH', is_active=True
         )
 
         Batch.objects.create(
             product=self.prod, batch_number='B2', quantity=75, remaining_quantity=75,
             purchase_price=Decimal('12'), sale_price=Decimal('18'),
             expiry_date=date.today() + timedelta(days=180),
-            manufacturing_date=date.today(), location='WH', is_active=True
+            manufacturing_date=(django_timezone.now() - timedelta(days=30)).date(), location='WH', is_active=True
         )
 
         batches = Batch.objects.filter(product=self.prod, is_active=True)

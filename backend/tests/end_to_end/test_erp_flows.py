@@ -2,7 +2,7 @@
 from django.test import TestCase, TransactionTestCase
 from django.utils import timezone
 from decimal import Decimal
-from datetime import date
+from datetime import date, timedelta
 
 
 class EndToEndFlowTest(TransactionTestCase):
@@ -80,7 +80,7 @@ class EndToEndFlowTest(TransactionTestCase):
             batch_number="BATCH-001",
             quantity=100,
             remaining_quantity=100,
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             expiry_date=date(2027, 12, 31),
             purchase_price=Decimal('10.00'),
             sale_price=Decimal('15.00'),
@@ -182,7 +182,7 @@ class EndToEndFlowTest(TransactionTestCase):
             batch_number="BATCH-002",
             quantity=200,
             remaining_quantity=200,
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             expiry_date=date(2027, 12, 31),
             purchase_price=Decimal('50.00'),
             sale_price=Decimal('100.00'),
@@ -272,7 +272,7 @@ class EndToEndFlowTest(TransactionTestCase):
             batch_number="BATCH-003",
             quantity=100,
             remaining_quantity=100,
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             expiry_date=date(2027, 12, 31),
             purchase_price=Decimal('30.00'),
             sale_price=Decimal('60.00'),
@@ -460,7 +460,7 @@ class ReturnConsistencyTest(TransactionTestCase):
             batch_number="BATCH-005",
             quantity=50,
             remaining_quantity=50,
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             expiry_date=date(2027, 12, 31),
             purchase_price=Decimal('25.00'),
             sale_price=Decimal('50.00'),

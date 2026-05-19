@@ -4,6 +4,7 @@ Extended Tests - Get to 45% Coverage
 
 from datetime import date, timedelta
 from decimal import Decimal
+from django.utils import timezone
 from django.test import TestCase, TransactionTestCase, Client
 from django.contrib.auth.models import User
 
@@ -83,7 +84,7 @@ class MoreModelTests(TransactionTestCase):
             Batch.objects.create(
                 product=product,
                 batch_number=f'BATCH-{i}',
-                manufacturing_date=date.today() - timedelta(days=i*30),
+                manufacturing_date=(timezone.now() - timedelta(days=i*30+30)).date(),
                 expiry_date=date.today() + timedelta(days=365-i*30),
                 purchase_price=Decimal('10'),
                 sale_price=Decimal('20'),

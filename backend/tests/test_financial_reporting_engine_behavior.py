@@ -3,8 +3,8 @@ Financial Reporting Engine behavior tests.
 """
 
 from decimal import Decimal
-from datetime import date
 from django.test import TransactionTestCase
+from django.utils import timezone
 
 from accounting.models import Account, JournalEntry, JournalEntryLine
 from accounting.services.journal_engine import JournalEngine
@@ -22,13 +22,13 @@ class FinancialReportEngineTrialBalanceTest(TransactionTestCase):
 
     def test_trial_balance_returns_dict(self):
         """Test get_trial_balance returns dict structure."""
-        result = FinancialReportEngine.get_trial_balance(date.today())
+        result = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertIsInstance(result, dict)
         self.assertIn('accounts', result)
 
     def test_trial_balance_empty_when_no_data(self):
         """Test trial balance empty when no posted entries."""
-        result = FinancialReportEngine.get_trial_balance(date.today())
+        result = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertEqual(len(result['accounts']), 0)
         self.assertEqual(result['total_debit'], Decimal('0'))
         self.assertEqual(result['total_credit'], Decimal('0'))
@@ -42,7 +42,7 @@ class FinancialReportEngineTrialBalanceTest(TransactionTestCase):
         result = JournalEngine.create_entry('SALE', 'Test sale', lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        tb = FinancialReportEngine.get_trial_balance(date.today())
+        tb = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertTrue(len(tb['accounts']) > 0)
         self.assertEqual(tb['total_debit'], tb['total_credit'])
 
@@ -54,7 +54,7 @@ class FinancialReportEngineTrialBalanceTest(TransactionTestCase):
         ]
         JournalEngine.create_entry('SALE', 'Unposted', lines)
 
-        tb = FinancialReportEngine.get_trial_balance(date.today())
+        tb = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertEqual(len(tb['accounts']), 0)
 
 
@@ -68,14 +68,14 @@ class FinancialReportEngineProfitAndLossTest(TransactionTestCase):
 
     def test_profit_loss_returns_dict(self):
         """Test get_profit_and_loss returns dict structure."""
-        result = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        result = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertIsInstance(result, dict)
         self.assertIn('revenue', result)
         self.assertIn('expenses', result)
 
     def test_profit_loss_empty_when_no_data(self):
         """Test profit/loss empty when no data."""
-        result = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        result = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(result['total_revenue'], Decimal('0'))
         self.assertEqual(result['total_expenses'], Decimal('0'))
 
@@ -88,7 +88,7 @@ class FinancialReportEngineProfitAndLossTest(TransactionTestCase):
         result = JournalEngine.create_entry('SALE', 'Sale', lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl['total_revenue'], Decimal('2000.00'))
 
     def test_profit_loss_with_expenses(self):
@@ -100,7 +100,7 @@ class FinancialReportEngineProfitAndLossTest(TransactionTestCase):
         result = JournalEngine.create_entry('EXPENSE', 'Expense', exp_lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl['total_expenses'], Decimal('800.00'))
 
     def test_profit_loss_net_income_calculation(self):
@@ -119,7 +119,7 @@ class FinancialReportEngineProfitAndLossTest(TransactionTestCase):
         e = JournalEngine.create_entry('EXPENSE', 'Expense', exp_lines)
         JournalEngine.post_entry(e['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl['net_income'], Decimal('700.00'))
 
 
@@ -134,7 +134,7 @@ class FinancialReportEngineBalanceSheetTest(TransactionTestCase):
 
     def test_balance_sheet_returns_dict(self):
         """Test get_balance_sheet returns dict structure."""
-        result = FinancialReportEngine.get_balance_sheet(date.today())
+        result = FinancialReportEngine.get_balance_sheet(timezone.now().date())
         self.assertIsInstance(result, dict)
         self.assertIn('assets', result)
         self.assertIn('liabilities', result)
@@ -142,7 +142,7 @@ class FinancialReportEngineBalanceSheetTest(TransactionTestCase):
 
     def test_balance_sheet_empty_when_no_data(self):
         """Test balance sheet empty when no data."""
-        result = FinancialReportEngine.get_balance_sheet(date.today())
+        result = FinancialReportEngine.get_balance_sheet(timezone.now().date())
         self.assertIn('assets', result)
 
     def test_balance_sheet_with_assets(self):
@@ -154,7 +154,7 @@ class FinancialReportEngineBalanceSheetTest(TransactionTestCase):
         result = JournalEngine.create_entry('GENERAL', 'Capital contribution', lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        bs = FinancialReportEngine.get_balance_sheet(date.today())
+        bs = FinancialReportEngine.get_balance_sheet(timezone.now().date())
         self.assertIn('assets', bs)
 
 
@@ -167,14 +167,14 @@ class FinancialReportEngineCashFlowTest(TransactionTestCase):
 
     def test_cash_flow_returns_dict(self):
         """Test get_cash_flow_statement returns dict structure."""
-        result = FinancialReportEngine.get_cash_flow_statement(date.today(), date.today())
+        result = FinancialReportEngine.get_cash_flow_statement(timezone.now().date(), timezone.now().date())
         self.assertIsInstance(result, dict)
         self.assertIn('operating_activities', result)
         self.assertIn('net_change_in_cash', result)
 
     def test_cash_flow_empty_when_no_data(self):
         """Test cash flow empty when no data."""
-        result = FinancialReportEngine.get_cash_flow_statement(date.today(), date.today())
+        result = FinancialReportEngine.get_cash_flow_statement(timezone.now().date(), timezone.now().date())
         self.assertEqual(result['net_change_in_cash'], Decimal('0'))
 
 
@@ -187,7 +187,7 @@ class FinancialReportEngineAccountLedgerTest(TransactionTestCase):
 
     def test_account_ledger_returns_dict(self):
         """Test get_account_ledger returns dict structure."""
-        result = FinancialReportEngine.get_account_ledger(self.cash.id, date.today(), date.today())
+        result = FinancialReportEngine.get_account_ledger(self.cash.id, timezone.now().date(), timezone.now().date())
         self.assertIsInstance(result, dict)
         self.assertIn('account_code', result)
 
@@ -200,7 +200,7 @@ class FinancialReportEngineAccountLedgerTest(TransactionTestCase):
         result = JournalEngine.create_entry('SALE', 'Test', lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        ledger = FinancialReportEngine.get_account_ledger(self.cash.id, date.today(), date.today())
+        ledger = FinancialReportEngine.get_account_ledger(self.cash.id, timezone.now().date(), timezone.now().date())
         self.assertEqual(len(ledger['entries']), 1)
 
     def test_account_ledger_opening_balance(self):
@@ -212,5 +212,5 @@ class FinancialReportEngineAccountLedgerTest(TransactionTestCase):
         result = JournalEngine.create_entry('SALE', 'Test', lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        ledger = FinancialReportEngine.get_account_ledger(self.cash.id, date.today(), date.today())
+        ledger = FinancialReportEngine.get_account_ledger(self.cash.id, timezone.now().date(), timezone.now().date())
         self.assertIn('opening_balance', ledger)

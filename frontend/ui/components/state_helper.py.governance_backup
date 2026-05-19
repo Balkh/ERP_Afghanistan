@@ -1,0 +1,269 @@
+"""
+Standardized State Helper Components.
+
+Provides consistent loading, empty, and error states across all workspaces.
+Uses semantic COLOR_* tokens for automatic dark/light parity.
+
+Phase 15.9: Enhanced with:
+- Professional empty states with action suggestions
+- Context-aware messages (no emoji)
+- Action buttons for primary workflow progression
+
+Usage:
+    helper = StateHelper(parent_layout)
+    helper.show_loading()
+    helper.show_empty("No invoices", "Create your first invoice to get started")
+    helper.show_error("Connection failed", on_retry=self.refresh)
+    helper.hide()  # Show actual content
+"""
+
+from typing import Optional, Callable, List, Tuple
+
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QFrame, QHBoxLayout
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont
+
+from ui.constants import (
+    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
+    COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER,
+    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+    COLOR_PRIMARY, COLOR_PRIMARY_HOVER,
+    COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
+    BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+    TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_CARD_TITLE,
+    STATE_LOADING, STATE_EMPTY_TITLE, STATE_EMPTY_SUBTITLE,
+    STATE_ERROR_TITLE, STATE_ERROR_RETRY,
+    EMPTY_STATE_ICON_SIZE, EMPTY_STATE_SPACING,
+)
+
+
+class StateHelper:
+    """Manages loading/empty/error state labels in a parent layout.
+
+    Creates a state overlay widget that can be shown/hidden.
+    Actual content should be hidden when states are visible.
+    """
+
+    def __init__(self, parent_layout):
+        self._layout = parent_layout
+        self._state_widget = None
+        self._state_type = None  # "loading", "empty", "error", None
+
+    def show_loading(self, message: str = STATE_LOADING):
+        """Show loading state."""
+        self._clear()
+        self._state_type = "loading"
+
+        container = QFrame()
+        container.setObjectName("stateContainer")
+        container.setStyleSheet(f"""
+            QFrame#stateContainer {{
+                background-color: {COLOR_BG_SURFACE};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_LG}px;
+            }}
+        """)
+
+        layout = QVBoxLayout(container)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(SPACING_MD)
+
+        # Spinner indicator
+        spinner = QLabel("\u23F3")  # Hourglass
+        spinner.setFont(QFont("Segoe UI", TEXT_CARD_TITLE))
+        spinner.setStyleSheet(f"color: {COLOR_PRIMARY}; border: none;")
+        spinner.setAlignment(Qt.AlignCenter)
+        layout.addWidget(spinner)
+
+        # Message
+        msg = QLabel(message)
+        msg.setFont(QFont("Segoe UI", TEXT_BODY))
+        msg.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; border: none;")
+        msg.setAlignment(Qt.AlignCenter)
+        layout.addWidget(msg)
+
+        self._state_widget = container
+        self._layout.addWidget(container)
+
+    def show_empty(
+        self,
+        title: str = STATE_EMPTY_TITLE,
+        subtitle: str = STATE_EMPTY_SUBTITLE,
+        actions: Optional[List[Tuple[str, Callable]]] = None
+    ):
+        """Show empty state with optional action suggestions.
+
+        Args:
+            title: Primary empty state heading.
+            subtitle: Contextual guidance description.
+            actions: List of (button_label, callback) tuples for action suggestions.
+        """
+        self._clear()
+        self._state_type = "empty"
+
+        container = QFrame()
+        container.setObjectName("stateContainer")
+        container.setStyleSheet(f"""
+            QFrame#stateContainer {{
+                background-color: {COLOR_BG_SURFACE};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_LG}px;
+            }}
+        """)
+
+        layout = QVBoxLayout(container)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(EMPTY_STATE_SPACING)
+
+        # Indicator bar (thin geometric line, professional alternative to icon)
+        indicator = QFrame()
+        indicator.setFixedSize(EMPTY_STATE_ICON_SIZE, 3)
+        indicator.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; border: none; border-radius: 1px;")
+        indicator_layout = QHBoxLayout()
+        indicator_layout.setAlignment(Qt.AlignCenter)
+        indicator_layout.addWidget(indicator)
+        layout.addLayout(indicator_layout)
+
+        # Title
+        title_label = QLabel(title)
+        title_label.setFont(QFont("Segoe UI", TEXT_BODY, QFont.Weight.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none;")
+        title_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title_label)
+
+        # Subtitle
+        if subtitle:
+            sub = QLabel(subtitle)
+            sub.setFont(QFont("Segoe UI", TEXT_BODY_SMALL))
+            sub.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; border: none;")
+            sub.setAlignment(Qt.AlignCenter)
+            sub.setWordWrap(True)
+            layout.addWidget(sub)
+
+        # Action suggestion buttons
+        if actions:
+            action_layout = QHBoxLayout()
+            action_layout.setAlignment(Qt.AlignCenter)
+            action_layout.setSpacing(SPACING_SM)
+            for label, callback in actions:
+                btn = QPushButton(label)
+                btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
+                btn.setFixedHeight(36)
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {COLOR_PRIMARY};
+                        color: white;
+                        border: none;
+                        border-radius: {BORDER_RADIUS_MD}px;
+                        padding: {SPACING_SM}px 24px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {COLOR_PRIMARY_HOVER};
+                    }}
+                """)
+                btn.clicked.connect(callback)
+                action_layout.addWidget(btn)
+            layout.addLayout(action_layout)
+
+        self._state_widget = container
+        self._layout.addWidget(container)
+
+    def show_error(
+        self,
+        message: str = STATE_ERROR_TITLE,
+        on_retry=None,
+        actions: Optional[List[Tuple[str, Callable]]] = None
+    ):
+        """Show error state with optional retry and action suggestion buttons.
+
+        Args:
+            message: Error description.
+            on_retry: Callback for retry button (shorthand for single action).
+            actions: Additional (button_label, callback) tuples for actions.
+        """
+        self._clear()
+        self._state_type = "error"
+
+        container = QFrame()
+        container.setObjectName("stateContainer")
+        container.setStyleSheet(f"""
+            QFrame#stateContainer {{
+                background-color: {COLOR_BG_SURFACE};
+                border: 1px solid {COLOR_DANGER};
+                border-radius: {BORDER_RADIUS_LG}px;
+            }}
+        """)
+
+        layout = QVBoxLayout(container)
+        layout.setAlignment(Qt.AlignCenter)
+        layout.setSpacing(EMPTY_STATE_SPACING)
+
+        # Indicator bar (thin line in danger color, professional alternative to warning icon)
+        indicator = QFrame()
+        indicator.setFixedSize(EMPTY_STATE_ICON_SIZE, 3)
+        indicator.setStyleSheet(f"background-color: {COLOR_DANGER}; border: none; border-radius: 1px;")
+        indicator_layout = QHBoxLayout()
+        indicator_layout.setAlignment(Qt.AlignCenter)
+        indicator_layout.addWidget(indicator)
+        layout.addLayout(indicator_layout)
+
+        # Title
+        title_label = QLabel(message)
+        title_label.setFont(QFont("Segoe UI", TEXT_BODY, QFont.Weight.Bold))
+        title_label.setStyleSheet(f"color: {COLOR_DANGER}; border: none;")
+        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setWordWrap(True)
+        layout.addWidget(title_label)
+
+        # Action buttons
+        all_actions = list(actions or [])
+        if on_retry:
+            all_actions.append((STATE_ERROR_RETRY, on_retry))
+
+        if all_actions:
+            action_layout = QHBoxLayout()
+            action_layout.setAlignment(Qt.AlignCenter)
+            action_layout.setSpacing(SPACING_SM)
+            for label, callback in all_actions:
+                btn = QPushButton(label)
+                btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
+                btn.setFixedHeight(36)
+                btn.setStyleSheet(f"""
+                    QPushButton {{
+                        background-color: {COLOR_PRIMARY};
+                        color: white;
+                        border: none;
+                        border-radius: {BORDER_RADIUS_MD}px;
+                        padding: {SPACING_SM}px 24px;
+                    }}
+                    QPushButton:hover {{
+                        background-color: {COLOR_PRIMARY_HOVER};
+                    }}
+                """)
+                btn.clicked.connect(callback)
+                action_layout.addWidget(btn)
+            layout.addLayout(action_layout)
+
+        self._state_widget = container
+        self._layout.addWidget(container)
+
+    def hide(self):
+        """Hide state and show actual content."""
+        self._clear()
+        self._state_type = None
+
+    def _clear(self):
+        """Remove current state widget."""
+        if self._state_widget:
+            self._layout.removeWidget(self._state_widget)
+            self._state_widget.deleteLater()
+            self._state_widget = None
+
+    @property
+    def is_visible(self) -> bool:
+        return self._state_widget is not None
+
+    @property
+    def state_type(self) -> str:
+        return self._state_type or "none"

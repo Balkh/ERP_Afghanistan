@@ -284,6 +284,13 @@ class PurchaseInvoice(CompanyScopedMixin, TimeStampedUUIDModel):
     )
     notes = models.TextField(blank=True, verbose_name=_('Notes'))
     is_active = models.BooleanField(default=True, verbose_name=_('Is Active'))
+    created_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Created By')
+    )
 
     # Accounting integration
     journal_entry_id = models.UUIDField(

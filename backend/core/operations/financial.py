@@ -53,7 +53,7 @@ class FinancialIntegrityMonitor:
 
     @staticmethod
     def check_orphan_lines() -> dict:
-        """Detect orphan journal lines without entry reference."""
+        """Detect journal lines referencing deleted entries."""
         result = {
             'status': 'ok',
             'issues': [],
@@ -61,7 +61,13 @@ class FinancialIntegrityMonitor:
         }
 
         try:
-            orphans = JournalEntryLine.objects.filter(journal_entry__isnull=True)
+            # The FK is non-nullable with CASCADE, but this detects
+            # lines whose entry_id points to a non-existent JournalEntry
+            orphans = JournalEntryLine.objects.filter(
+                entry__isnull=False
+            ).exclude(
+                entry_id__in=JournalEntry.objects.values('id')
+            )
             result['orphan_count'] = orphans.count()
 
             if result['orphan_count'] > 0:
@@ -85,10 +91,11 @@ class FinancialIntegrityMonitor:
         }
 
         try:
+            from django.db.models import Count
             duplicates = JournalEntry.objects.values(
-                'entry_type', 'description', 'date'
+                'entry_type', 'description', 'entry_date'
             ).annotate(
-                count=Sum('id')
+                count=Count('id')
             ).filter(count__gt=1)
 
             result['duplicates_found'] = len(duplicates)
@@ -111,11 +118,12 @@ class FinancialIntegrityMonitor:
         }
 
         try:
+            from django.db.models import Sum, F
             accounts = Account.objects.filter(is_active=True)
             result['accounts_checked'] = accounts.count()
 
             for account in accounts:
-                balance = account.get_balance()
+                balance = account.balance
                 if balance < 0 and account.account_type in ['ASSET', 'REVENUE']:
                     result['issues'].append({
                         'account_id': str(account.id),
@@ -144,13 +152,13 @@ class FinancialIntegrityMonitor:
 
         try:
             reversals = JournalEntry.objects.filter(
-                is_reversal=True,
-                reversed_entry__isnull=False
+                original_entry__isnull=False,
+                entry_type='REVERSAL'
             )
             result['reversals_checked'] = reversals.count()
 
             for entry in reversals:
-                original = entry.reversed_entry
+                original = entry.original_entry
                 if not original or not original.is_reversed:
                     result['broken_chains'] += 1
                     result['issues'].append({

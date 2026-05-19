@@ -123,13 +123,21 @@ class PrintEngine:
         dialog.exec()
 
     def _print_html(self, html: str, title: str, width_mm: Optional[int] = None):
-        printer = QPrinter(QPrinter.HighResolution)
-        printer.setDocName(title)
-        if width_mm:
-            from PySide6.QtCore import QSizeF
-            printer.setPageSize(QPageSize(QSizeF(width_mm, 297)))
-        dialog = QPrintDialog(printer)
-        if dialog.exec() == QPrintDialog.Accepted:
-            doc = QTextDocument()
-            doc.setHtml(html)
-            doc.print_(printer)
+        from PySide6.QtWidgets import QApplication
+        if not QApplication.instance():
+            QMessageBox.warning(None, "No Application", "Printing requires an active application.")
+            return
+        try:
+            printer = QPrinter(QPrinter.HighResolution)
+            printer.setDocName(title)
+            if width_mm:
+                from PySide6.QtCore import QSizeF
+                printer.setPageSize(QPageSize(QSizeF(width_mm, 297)))
+            dialog = QPrintDialog(printer)
+            if dialog.exec() == QPrintDialog.Accepted:
+                doc = QTextDocument()
+                doc.setHtml(html)
+                doc.print_(printer)
+        except RuntimeError as e:
+            QMessageBox.warning(None, "Printer Error",
+                f"Could not print: {e}\n\nPlease check your printer configuration and try again.")

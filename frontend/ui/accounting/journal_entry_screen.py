@@ -130,6 +130,13 @@ class JournalEntryScreen(QFrame):
         type_layout = QVBoxLayout()
         type_layout.addWidget(QLabel("Entry Type:"))
         self.type_filter = QComboBox()
+        self.type_filter.setStyleSheet(f"""
+            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                border: 1px solid {COLOR_BORDER}; }}
+        """)
         self.type_filter.addItem("All", "")
         for t in ["SALE", "PURCHASE", "PAYMENT", "RECEIPT", "ADJUSTMENT", "TRANSFER", "OPENING", "CLOSING", "REVERSAL"]:
             self.type_filter.addItem(t, t)
@@ -141,6 +148,13 @@ class JournalEntryScreen(QFrame):
         status_layout = QVBoxLayout()
         status_layout.addWidget(QLabel("Status:"))
         self.status_filter = QComboBox()
+        self.status_filter.setStyleSheet(f"""
+            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                border: 1px solid {COLOR_BORDER}; }}
+        """)
         self.status_filter.addItem("All", "")
         self.status_filter.addItem("Posted", "posted")
         self.status_filter.addItem("Draft", "draft")

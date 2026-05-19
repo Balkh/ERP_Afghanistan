@@ -6,12 +6,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
-from ui.components.enterprise_table import EnterpriseTable, TableColumn
-from ui.components.enterprise_button import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
                           MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_LABEL,
-                          TEXT_BODY, TEXT_BODY_SMALL, COLOR_BG_SURFACE, COLOR_BORDER,
-                          COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
+                          TEXT_BODY, TEXT_BODY_SMALL, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
+                          COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_PRIMARY,
                           BORDER_RADIUS_LG, BORDER_RADIUS_MD, COLOR_TEXT_TITLE)
 
@@ -77,9 +77,10 @@ class ReconciliationScreen(BaseScreen):
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
-        self.empty_label = QLabel("No reconciliation entries found")
+        self.empty_label = QLabel("No reconciliation entries found\n\nReconciliation matches return orders against invoices to identify discrepancies.\nUse the filters above to narrow results, or click 'Show Mismatches Only' to view unresolved entries.")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px; line-height: 1.6;")
+        self.empty_label.setWordWrap(True)
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -117,6 +118,13 @@ class ReconciliationScreen(BaseScreen):
         status_layout = QVBoxLayout()
         status_layout.addWidget(QLabel("Status:"))
         self.status_filter = QComboBox()
+        self.status_filter.setStyleSheet(f"""
+            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                border: 1px solid {COLOR_BORDER}; }}
+        """)
         self.status_filter.addItems(["All Status", "PENDING", "MATCHED", "MISMATCHED", "FIXED"])
         self.status_filter.setMinimumWidth(140)
         self.status_filter.currentTextChanged.connect(self._load_entries)
@@ -127,6 +135,13 @@ class ReconciliationScreen(BaseScreen):
         type_layout = QVBoxLayout()
         type_layout.addWidget(QLabel("Transaction Type:"))
         self.type_filter = QComboBox()
+        self.type_filter.setStyleSheet(f"""
+            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                border: 1px solid {COLOR_BORDER}; }}
+        """)
         self.type_filter.addItems(["All Types", "INVOICE", "RETURN", "PAYMENT", "ADJUSTMENT"])
         self.type_filter.setMinimumWidth(140)
         self.type_filter.currentTextChanged.connect(self._load_entries)

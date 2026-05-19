@@ -21,7 +21,7 @@ class FinancialReportEngine:
     """
 
     @staticmethod
-    def get_trial_balance(as_of_date: Optional[date] = None, include_zero: bool = False) -> dict:
+    def get_trial_balance(as_of_date: Optional[date] = None, include_zero: bool = False, company_id: Optional[str] = None) -> dict:
         """
         Generate trial balance report.
 
@@ -32,8 +32,13 @@ class FinancialReportEngine:
             as_of_date = date.today()
 
         base_filter = Q(account__is_active=True, entry__is_posted=True, entry__is_active=True, entry__entry_date__lte=as_of_date)
+        if company_id:
+            base_filter = base_filter & Q(account__company_id=company_id)
 
-        accounts = Account.objects.filter(is_active=True).order_by('code')
+        account_filter = Q(is_active=True)
+        if company_id:
+            account_filter = account_filter & Q(company_id=company_id)
+        accounts = Account.objects.filter(account_filter).order_by('code')
         rows = []
         total_debit = Decimal('0.00')
         total_credit = Decimal('0.00')
@@ -93,7 +98,8 @@ class FinancialReportEngine:
         end_date: date,
         compare_start: Optional[date] = None,
         compare_end: Optional[date] = None,
-        group_by_category: bool = True
+        group_by_category: bool = True,
+        company_id: Optional[str] = None
     ) -> dict:
         """
         Generate Profit & Loss (Income Statement) with optional prior-period comparison.
@@ -101,11 +107,11 @@ class FinancialReportEngine:
         Revenue - COGS = Gross Profit
         Gross Profit - Expenses = Net Income
         """
-        current = FinancialReportEngine._get_pnl_section(start_date, end_date, group_by_category)
+        current = FinancialReportEngine._get_pnl_section(start_date, end_date, group_by_category, company_id)
 
         comparison = None
         if compare_start and compare_end:
-            comparison = FinancialReportEngine._get_pnl_section(compare_start, compare_end, group_by_category)
+            comparison = FinancialReportEngine._get_pnl_section(compare_start, compare_end, group_by_category, company_id)
 
         revenue_total = current.get('total_revenue', Decimal('0.00'))
         cogs_total = current.get('total_cogs', Decimal('0.00'))
@@ -152,24 +158,40 @@ class FinancialReportEngine:
         return report
 
     @staticmethod
-    def _get_pnl_section(start_date: date, end_date: date, group_by_category: bool = True) -> dict:
+    def _get_pnl_section(start_date: date, end_date: date, group_by_category: bool = True, company_id: Optional[str] = None) -> dict:
         """Get P&L data for a single period."""
         date_filter = Q(entry__is_posted=True, entry__is_active=True, entry__entry_date__gte=start_date, entry__entry_date__lte=end_date)
+        if company_id:
+            date_filter = date_filter & Q(account__company_id=company_id)
 
         result = {'revenue': [], 'cogs': [], 'expenses': [], 'total_revenue': Decimal('0.00'), 'total_cogs': Decimal('0.00'), 'total_expenses': Decimal('0.00')}
 
-        revenue_accounts = Account.objects.filter(account_type='REVENUE', is_active=True).order_by('code')
-        cogs_accounts = Account.objects.filter(account_category='COST_OF_GOODS_SOLD', is_active=True).order_by('code')
-        expense_accounts = Account.objects.filter(account_type='EXPENSE', is_active=True).order_by('code')
+        base_account_filter = Q(is_active=True)
+        if company_id:
+            base_account_filter = base_account_filter & Q(company_id=company_id)
+        revenue_accounts = Account.objects.filter(base_account_filter & Q(account_type='REVENUE')).order_by('code')
+        cogs_accounts = Account.objects.filter(base_account_filter & Q(account_category='COST_OF_GOODS_SOLD')).order_by('code')
+        expense_accounts = Account.objects.filter(base_account_filter & Q(account_type='EXPENSE')).exclude(account_category='COST_OF_GOODS_SOLD').order_by('code')
 
         def process_accounts(accounts, target_key, total_key):
             grouped = defaultdict(lambda: {'accounts': [], 'total': Decimal('0.00')})
 
-            for account in accounts:
-                lines = JournalEntryLine.objects.filter(account=account).filter(date_filter)
+            account_ids = [a.id for a in accounts]
+            if not account_ids:
+                return grouped
 
-                debit = lines.aggregate(total=Sum('debit'))['total'] or Decimal('0.00')
-                credit = lines.aggregate(total=Sum('credit'))['total'] or Decimal('0.00')
+            lines_agg = JournalEntryLine.objects.filter(
+                account_id__in=account_ids
+            ).filter(date_filter).values('account_id').annotate(
+                total_debit=Sum('debit'),
+                total_credit=Sum('credit')
+            )
+            agg_map = {item['account_id']: item for item in lines_agg}
+
+            for account in accounts:
+                totals = agg_map.get(account.id, {})
+                debit = totals.get('total_debit') or Decimal('0.00')
+                credit = totals.get('total_credit') or Decimal('0.00')
 
                 if account.account_type == 'REVENUE':
                     net = credit - debit
@@ -210,7 +232,7 @@ class FinancialReportEngine:
         return result
 
     @staticmethod
-    def get_balance_sheet(as_of_date: Optional[date] = None, include_net_income: bool = True) -> dict:
+    def get_balance_sheet(as_of_date: Optional[date] = None, include_net_income: bool = True, company_id: Optional[str] = None) -> dict:
         """
         Generate Balance Sheet report.
 
@@ -220,6 +242,8 @@ class FinancialReportEngine:
             as_of_date = date.today()
 
         date_filter = Q(entry__is_posted=True, entry__is_active=True, entry__entry_date__lte=as_of_date)
+        if company_id:
+            date_filter = date_filter & Q(account__company_id=company_id)
 
         def calculate_balances(account_qs, is_positive_debit=False):
             sections = []
@@ -251,20 +275,24 @@ class FinancialReportEngine:
             ]
             return sections, total
 
+        base_account_filter = Q(is_active=True)
+        if company_id:
+            base_account_filter = base_account_filter & Q(company_id=company_id)
+
         asset_sections, total_assets = calculate_balances(
-            Account.objects.filter(account_type='ASSET', is_active=True).order_by('code'),
+            Account.objects.filter(base_account_filter & Q(account_type='ASSET')).order_by('code'),
             is_positive_debit=True
         )
         liability_sections, total_liabilities = calculate_balances(
-            Account.objects.filter(account_type='LIABILITY', is_active=True).order_by('code')
+            Account.objects.filter(base_account_filter & Q(account_type='LIABILITY')).order_by('code')
         )
         equity_sections, total_equity = calculate_balances(
-            Account.objects.filter(account_type='EQUITY', is_active=True).order_by('code')
+            Account.objects.filter(base_account_filter & Q(account_type='EQUITY')).order_by('code')
         )
 
         if include_net_income:
             start_of_year = date(as_of_date.year, 1, 1)
-            pnl = FinancialReportEngine.get_profit_and_loss(start_of_year, as_of_date)
+            pnl = FinancialReportEngine.get_profit_and_loss(start_of_year, as_of_date, company_id=company_id)
             net_income = pnl['net_income']
 
             if net_income != 0:
@@ -295,7 +323,7 @@ class FinancialReportEngine:
         }
 
     @staticmethod
-    def get_cash_flow_statement(start_date: date, end_date: date) -> dict:
+    def get_cash_flow_statement(start_date: date, end_date: date, company_id: Optional[str] = None) -> dict:
         """
         Generate Cash Flow Statement using indirect method.
 
@@ -304,19 +332,25 @@ class FinancialReportEngine:
         Financing Activities (Debt, equity transactions)
         """
         date_filter = Q(entry__is_posted=True, entry__is_active=True, entry__entry_date__gte=start_date, entry__entry_date__lte=end_date)
+        if company_id:
+            date_filter = date_filter & Q(account__company_id=company_id)
 
         # Net Income
-        pnl = FinancialReportEngine.get_profit_and_loss(start_date, end_date)
+        pnl = FinancialReportEngine.get_profit_and_loss(start_date, end_date, company_id=company_id)
         net_income = pnl['net_income']
 
         # Operating activities: changes in working capital
         working_capital_changes = []
         operating_total = net_income
 
+        base_account_filter = Q(is_active=True)
+        if company_id:
+            base_account_filter = base_account_filter & Q(company_id=company_id)
+
         # AR changes (Asset type, increase = cash out)
-        ar_accounts = Account.objects.filter(account_type='ASSET', account_category='CURRENT_ASSET', is_active=True)
+        ar_accounts = Account.objects.filter(base_account_filter & Q(account_type='ASSET', account_category='CURRENT_ASSET'))
         for acc in ar_accounts:
-            change = FinancialReportEngine._get_account_change(acc, start_date, end_date)
+            change = FinancialReportEngine._get_account_change(acc, start_date, end_date, company_id)
             if change != 0:
                 working_capital_changes.append({
                     'account_code': acc.code,
@@ -327,9 +361,9 @@ class FinancialReportEngine:
                 operating_total -= change
 
         # AP changes (Liability type, increase = cash in)
-        ap_accounts = Account.objects.filter(account_type='LIABILITY', account_category='CURRENT_LIABILITY', is_active=True)
+        ap_accounts = Account.objects.filter(base_account_filter & Q(account_type='LIABILITY', account_category='CURRENT_LIABILITY'))
         for acc in ap_accounts:
-            change = FinancialReportEngine._get_account_change(acc, start_date, end_date)
+            change = FinancialReportEngine._get_account_change(acc, start_date, end_date, company_id)
             if change != 0:
                 working_capital_changes.append({
                     'account_code': acc.code,
@@ -342,9 +376,9 @@ class FinancialReportEngine:
         # Investing activities: changes in fixed assets
         investing_activities = []
         investing_total = Decimal('0.00')
-        fa_accounts = Account.objects.filter(account_type='ASSET', account_category__in=['FIXED_ASSET', 'INTANGIBLE_ASSET'], is_active=True)
+        fa_accounts = Account.objects.filter(base_account_filter & Q(account_type='ASSET', account_category__in=['FIXED_ASSET', 'INTANGIBLE_ASSET']))
         for acc in fa_accounts:
-            change = FinancialReportEngine._get_account_change(acc, start_date, end_date)
+            change = FinancialReportEngine._get_account_change(acc, start_date, end_date, company_id)
             if change != 0:
                 investing_activities.append({
                     'account_code': acc.code,
@@ -357,10 +391,10 @@ class FinancialReportEngine:
         # Financing activities: changes in long-term liabilities and equity
         financing_activities = []
         financing_total = Decimal('0.00')
-        lt_accounts = Account.objects.filter(account_type='LIABILITY', account_category='LONG_TERM_LIABILITY', is_active=True)
-        eq_accounts = Account.objects.filter(account_type='EQUITY', is_active=True)
+        lt_accounts = Account.objects.filter(base_account_filter & Q(account_type='LIABILITY', account_category='LONG_TERM_LIABILITY'))
+        eq_accounts = Account.objects.filter(base_account_filter & Q(account_type='EQUITY'))
         for acc in list(lt_accounts) + list(eq_accounts):
-            change = FinancialReportEngine._get_account_change(acc, start_date, end_date)
+            change = FinancialReportEngine._get_account_change(acc, start_date, end_date, company_id)
             if change != 0:
                 is_equity = acc.account_type == 'EQUITY'
                 financing_activities.append({
@@ -374,10 +408,13 @@ class FinancialReportEngine:
         net_change = operating_total + investing_total + financing_total
 
         # Opening cash balance
-        cash_accounts = Account.objects.filter(account_type='ASSET', account_category='CURRENT_ASSET', is_active=True)
+        cash_accounts = Account.objects.filter(base_account_filter & Q(account_type='ASSET', account_category='CURRENT_ASSET'))
         opening_cash = Decimal('0.00')
         for acc in cash_accounts:
-            lines = JournalEntryLine.objects.filter(account=acc).filter(entry__entry_date__lt=start_date, entry__is_posted=True, entry__is_active=True)
+            cash_line_filter = Q(account=acc, entry__entry_date__lt=start_date, entry__is_posted=True, entry__is_active=True)
+            if company_id:
+                cash_line_filter = cash_line_filter & Q(account__company_id=company_id)
+            lines = JournalEntryLine.objects.filter(cash_line_filter)
             d = lines.aggregate(total=Sum('debit'))['total'] or Decimal('0.00')
             c = lines.aggregate(total=Sum('credit'))['total'] or Decimal('0.00')
             opening_cash += d - c
@@ -407,10 +444,13 @@ class FinancialReportEngine:
         }
 
     @staticmethod
-    def _get_account_change(account, start_date: date, end_date: date) -> Decimal:
+    def _get_account_change(account, start_date: date, end_date: date, company_id: Optional[str] = None) -> Decimal:
         """Get the net change in an account balance over a period."""
         before_filter = Q(account=account, entry__is_posted=True, entry__is_active=True, entry__entry_date__lt=start_date)
         during_filter = Q(account=account, entry__is_posted=True, entry__is_active=True, entry__entry_date__gte=start_date, entry__entry_date__lte=end_date)
+        if company_id:
+            before_filter = before_filter & Q(account__company_id=company_id)
+            during_filter = during_filter & Q(account__company_id=company_id)
 
         is_asset = account.account_type in ['ASSET', 'EXPENSE']
 
@@ -425,15 +465,20 @@ class FinancialReportEngine:
         return during_change
 
     @staticmethod
-    def get_account_ledger(account_id, start_date: Optional[date] = None, end_date: Optional[date] = None) -> dict:
+    def get_account_ledger(account_id, start_date: Optional[date] = None, end_date: Optional[date] = None, company_id: Optional[str] = None) -> dict:
         """Get ledger for an account with running balance."""
         try:
-            account = Account.objects.get(id=account_id)
+            account_filter = Q(id=account_id)
+            if company_id:
+                account_filter = account_filter & Q(company_id=company_id)
+            account = Account.objects.get(account_filter)
         except Account.DoesNotExist:
             return {'error': 'Account not found', 'entries': []}
 
-        lines = JournalEntryLine.objects.filter(
-            account_id=account_id, entry__is_posted=True, entry__is_active=True
+        line_filter = Q(account_id=account_id, entry__is_posted=True, entry__is_active=True)
+        if company_id:
+            line_filter = line_filter & Q(account__company_id=company_id)
+        lines = JournalEntryLine.objects.filter(line_filter
         ).select_related('entry').order_by('entry__entry_date', 'entry__created_at')
 
         if start_date:
@@ -445,14 +490,14 @@ class FinancialReportEngine:
         opening_credit = Decimal('0.00')
 
         if start_date:
-            opening_debit = JournalEntryLine.objects.filter(
-                account_id=account_id, entry__is_posted=True, entry__is_active=True,
-                entry__entry_date__lt=start_date
+            opening_filter = Q(account_id=account_id, entry__is_posted=True, entry__is_active=True,
+                               entry__entry_date__lt=start_date)
+            if company_id:
+                opening_filter = opening_filter & Q(account__company_id=company_id)
+            opening_debit = JournalEntryLine.objects.filter(opening_filter
             ).aggregate(total=Sum('debit'))['total'] or Decimal('0.00')
 
-            opening_credit = JournalEntryLine.objects.filter(
-                account_id=account_id, entry__is_posted=True, entry__is_active=True,
-                entry__entry_date__lt=start_date
+            opening_credit = JournalEntryLine.objects.filter(opening_filter
             ).aggregate(total=Sum('credit'))['total'] or Decimal('0.00')
 
         if account.account_type in ['ASSET', 'EXPENSE']:
@@ -493,14 +538,22 @@ class FinancialReportEngine:
         }
 
     @staticmethod
-    def get_account_summary(as_of_date: Optional[date] = None) -> dict:
+    def get_account_summary(as_of_date: Optional[date] = None, company_id: Optional[str] = None) -> dict:
         """Get summary of all account balances by type."""
         if as_of_date is None:
             as_of_date = date.today()
 
+        account_filter = Q(is_active=True)
+        if company_id:
+            account_filter = account_filter & Q(company_id=company_id)
+
+        line_filter = Q(entry__is_posted=True, entry__is_active=True, entry__entry_date__lte=as_of_date)
+        if company_id:
+            line_filter = line_filter & Q(account__company_id=company_id)
+
         summary = {}
         for acc_type in ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE']:
-            accounts = Account.objects.filter(account_type=acc_type, is_active=True)
+            accounts = Account.objects.filter(account_filter & Q(account_type=acc_type))
 
             total_debit = Decimal('0.00')
             total_credit = Decimal('0.00')
@@ -510,6 +563,8 @@ class FinancialReportEngine:
                     account=account, entry__is_posted=True, entry__is_active=True,
                     entry__entry_date__lte=as_of_date
                 )
+                if company_id:
+                    lines = lines.filter(account__company_id=company_id)
                 total_debit += lines.aggregate(total=Sum('debit'))['total'] or Decimal('0.00')
                 total_credit += lines.aggregate(total=Sum('credit'))['total'] or Decimal('0.00')
 
@@ -525,7 +580,7 @@ class FinancialReportEngine:
         return summary
 
     @staticmethod
-    def get_ar_aging(as_of_date: Optional[date] = None, buckets: Optional[list] = None) -> dict:
+    def get_ar_aging(as_of_date: Optional[date] = None, buckets: Optional[list] = None, company_id: Optional[str] = None) -> dict:
         """
         Accounts Receivable Aging Report.
 
@@ -538,7 +593,10 @@ class FinancialReportEngine:
 
         from sales.models import Customer, SalesInvoice
 
-        customers = Customer.objects.filter(is_active=True)
+        customer_filter = Q(is_active=True)
+        if company_id:
+            customer_filter = customer_filter & Q(company_id=company_id)
+        customers = Customer.objects.filter(customer_filter)
         aging_rows = []
         totals = {'current': Decimal('0.00'), 'age_1_30': Decimal('0.00'), 'age_31_60': Decimal('0.00'), 'age_61_90': Decimal('0.00'), 'age_90_plus': Decimal('0.00'), 'total': Decimal('0.00')}
 
@@ -608,7 +666,7 @@ class FinancialReportEngine:
         }
 
     @staticmethod
-    def get_ap_aging(as_of_date: Optional[date] = None, buckets: Optional[list] = None) -> dict:
+    def get_ap_aging(as_of_date: Optional[date] = None, buckets: Optional[list] = None, company_id: Optional[str] = None) -> dict:
         """
         Accounts Payable Aging Report.
 
@@ -621,7 +679,10 @@ class FinancialReportEngine:
 
         from purchases.models import Supplier, PurchaseInvoice
 
-        suppliers = Supplier.objects.filter(is_active=True)
+        supplier_filter = Q(is_active=True)
+        if company_id:
+            supplier_filter = supplier_filter & Q(company_id=company_id)
+        suppliers = Supplier.objects.filter(supplier_filter)
         aging_rows = []
         totals = {'current': Decimal('0.00'), 'age_1_30': Decimal('0.00'), 'age_31_60': Decimal('0.00'), 'age_61_90': Decimal('0.00'), 'age_90_plus': Decimal('0.00'), 'total': Decimal('0.00')}
 

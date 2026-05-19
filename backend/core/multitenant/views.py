@@ -69,6 +69,123 @@ class CompanyScopedViewSetMixin:
             serializer.save()
 
 
+class SafeCompanyScopedViewSetMixin:
+    """
+    Safe tenant enforcement mixin.
+    Unlike CompanyScopedViewSetMixin, this returns empty queryset
+    when no company context is available (safe fallback).
+    
+    Usage:
+        class MyViewSet(SafeCompanyScopedViewSetMixin, ModelViewSet):
+            ...
+    """
+    
+    def get_queryset(self):
+        """Get safely company-scoped queryset."""
+        queryset = super().get_queryset()
+        
+        company_id = TenantContext.get_company_id()
+        if not company_id:
+            return queryset.none()
+        
+        if hasattr(queryset.model, 'company_id') or hasattr(queryset.model, 'company'):
+            return queryset.filter(company_id=company_id)
+        
+        return queryset
+    
+    def perform_create(self, serializer):
+        """Auto-set company on create."""
+        company_id = TenantContext.get_company_id()
+        if company_id and (hasattr(serializer.Meta.model, 'company_id') or hasattr(serializer.Meta.model, 'company')):
+            serializer.save(company_id=company_id)
+        else:
+            serializer.save()
+    
+    def perform_update(self, serializer):
+        """Prevent changing company on update."""
+        if hasattr(serializer.instance, 'company_id') and serializer.instance.company_id:
+            serializer.save(company=serializer.instance.company)
+        else:
+            serializer.save()
+
+
+class CreatedByMixin:
+    """
+    Mixin that auto-sets created_by on object creation.
+    
+    Usage:
+        class MyViewSet(CreatedByMixin, ModelViewSet):
+            ...
+    """
+    
+    def perform_create(self, serializer):
+        if hasattr(serializer, 'validated_data') and 'created_by' not in serializer.validated_data:
+            if hasattr(serializer.Meta.model, 'created_by'):
+                serializer.save(created_by=self.request.user)
+                return
+        serializer.save()
+
+
+class UnifiedEnterpriseViewSetMixin:
+    """
+    Unified enforcement layer combining:
+    - Tenant isolation (lenient, backward-compatible with CompanyScopedViewSetMixin)
+    - Ownership tracking (auto-sets created_by)
+    - Query safety baseline
+
+    SAFETY GUARANTEE: Never blocks execution, backward compatible.
+    Use instead of CompanyScopedViewSetMixin or SafeCompanyScopedViewSetMixin.
+
+    Usage:
+        class MyViewSet(UnifiedEnterpriseViewSetMixin, ModelViewSet):
+            ...
+    """
+
+    def get_queryset(self):
+        """Apply tenant-safe filtering (lenient fallback)."""
+        qs = super().get_queryset()
+
+        if not hasattr(qs.model, "company_id") and not hasattr(qs.model, "company"):
+            return qs
+
+        company_id = TenantContext.get_company_id()
+        if company_id:
+            return qs.filter(company_id=company_id)
+
+        # Lenient fallback: no company context — allow superuser, block others
+        if hasattr(self, "request") and hasattr(self.request, "user") and self.request.user.is_superuser:
+            return qs
+
+        return qs.none()
+
+    def perform_create(self, serializer):
+        """Auto-set company + created_by on create."""
+        kwargs = {}
+        model = serializer.Meta.model
+        has_company = hasattr(model, "company_id") or hasattr(model, "company")
+
+        if has_company:
+            company_id = TenantContext.get_company_id()
+            if company_id:
+                kwargs["company_id"] = company_id
+
+        if hasattr(model, "created_by") and hasattr(self, "request") and self.request.user.is_authenticated:
+            if "created_by" not in serializer.validated_data:
+                kwargs["created_by"] = self.request.user
+
+        if kwargs:
+            serializer.save(**kwargs)
+        else:
+            serializer.save()
+
+    def perform_update(self, serializer):
+        """Prevent changing company on update."""
+        if hasattr(serializer.instance, "company_id") and serializer.instance.company_id:
+            serializer.save(company=serializer.instance.company)
+        else:
+            serializer.save()
+
+
 class CompanyScopedFilter:
     """
     Filter class for DRF to apply company filter.

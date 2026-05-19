@@ -379,9 +379,7 @@ def guardrail_middleware(get_response):
 
         duration_ms = (time.time() - start_time) * 1000
 
-        event_type = SamplingEnforcer.get_event_type(request, duration_ms=duration_ms)
-
-        if SamplingEnforcer.should_sample(event_type):
+        if AdaptiveSamplingSystem.should_sample(request=request, duration_ms=duration_ms):
             perf_check = PerformanceBudgetEnforcer.check_performance(request, duration_ms)
 
             if perf_check['status'] != 'ok':
@@ -391,7 +389,7 @@ def guardrail_middleware(get_response):
 
         response['X-Guardrail-Applied'] = 'true'
 
-        return middleware
+        return response
 
 
 def get_guardrail_status() -> dict:

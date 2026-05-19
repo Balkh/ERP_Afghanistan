@@ -5,8 +5,8 @@ These tests focus on the financial report engine without complex dependencies.
 """
 
 from decimal import Decimal
-from datetime import date, timedelta
 from django.test import TransactionTestCase
+from django.utils import timezone
 
 from accounting.models import Account, JournalEntry, JournalEntryLine
 from accounting.services.journal_engine import JournalEngine
@@ -27,7 +27,7 @@ class TrialBalanceDetailedTest(TransactionTestCase):
 
     def test_trial_balance_zero_state(self):
         """Test trial balance at zero state."""
-        result = FinancialReportEngine.get_trial_balance(date.today())
+        result = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertEqual(result['total_debit'], Decimal('0'))
         self.assertEqual(result['total_credit'], Decimal('0'))
 
@@ -40,7 +40,7 @@ class TrialBalanceDetailedTest(TransactionTestCase):
         result = JournalEngine.create_entry('SALE', 'Sale 1', lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        tb = FinancialReportEngine.get_trial_balance(date.today())
+        tb = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertTrue(tb['total_debit'] > 0)
         self.assertTrue(tb['total_credit'] > 0)
 
@@ -53,7 +53,7 @@ class TrialBalanceDetailedTest(TransactionTestCase):
         result = JournalEngine.create_entry('SALE', 'Sale 2', lines)
         JournalEngine.post_entry(result['entry_id'])
 
-        tb = FinancialReportEngine.get_trial_balance(date.today())
+        tb = FinancialReportEngine.get_trial_balance(timezone.now().date())
         self.assertEqual(tb['total_debit'], tb['total_credit'])
 
 
@@ -68,7 +68,7 @@ class ProfitLossDetailedTest(TransactionTestCase):
 
     def test_pl_zero_revenue(self):
         """Test P&L with zero revenue."""
-        result = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        result = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(result['total_revenue'], Decimal('0'))
 
     def test_pl_with_multiple_revenue_entries(self):
@@ -81,7 +81,7 @@ class ProfitLossDetailedTest(TransactionTestCase):
             r = JournalEngine.create_entry('SALE', f'Sale {i}', lines)
             JournalEngine.post_entry(r['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl['total_revenue'], Decimal('600'))
 
     def test_pl_with_expenses(self):
@@ -93,7 +93,7 @@ class ProfitLossDetailedTest(TransactionTestCase):
         r = JournalEngine.create_entry('EXPENSE', 'Rent', exp_lines)
         JournalEngine.post_entry(r['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl['total_expenses'], Decimal('100'))
 
     def test_pl_net_profit_calculation(self):
@@ -112,7 +112,7 @@ class ProfitLossDetailedTest(TransactionTestCase):
         r2 = JournalEngine.create_entry('EXPENSE', 'Exp', exp)
         JournalEngine.post_entry(r2['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertEqual(pl['net_income'], Decimal('700'))
 
     def test_pl_net_loss(self):
@@ -124,7 +124,7 @@ class ProfitLossDetailedTest(TransactionTestCase):
         r = JournalEngine.create_entry('EXPENSE', 'High expense', exp)
         JournalEngine.post_entry(r['entry_id'])
 
-        pl = FinancialReportEngine.get_profit_and_loss(date.today(), date.today())
+        pl = FinancialReportEngine.get_profit_and_loss(timezone.now().date(), timezone.now().date())
         self.assertLess(pl['net_income'], Decimal('0'))
 
 
@@ -141,7 +141,7 @@ class BalanceSheetDetailedTest(TransactionTestCase):
 
     def test_bs_structure(self):
         """Test balance sheet has required structure."""
-        result = FinancialReportEngine.get_balance_sheet(date.today())
+        result = FinancialReportEngine.get_balance_sheet(timezone.now().date())
         self.assertIn('assets', result)
         self.assertIn('liabilities', result)
         self.assertIn('equity', result)
@@ -155,7 +155,7 @@ class BalanceSheetDetailedTest(TransactionTestCase):
         r = JournalEngine.create_entry('GENERAL', 'Capital', lines)
         JournalEngine.post_entry(r['entry_id'])
 
-        bs = FinancialReportEngine.get_balance_sheet(date.today())
+        bs = FinancialReportEngine.get_balance_sheet(timezone.now().date())
         self.assertIn('assets', bs)
 
 
@@ -169,13 +169,13 @@ class CashFlowDetailedTest(TransactionTestCase):
 
     def test_cf_structure(self):
         """Test cash flow has required structure."""
-        result = FinancialReportEngine.get_cash_flow_statement(date.today(), date.today())
+        result = FinancialReportEngine.get_cash_flow_statement(timezone.now().date(), timezone.now().date())
         self.assertIn('operating_activities', result)
         self.assertIn('net_change_in_cash', result)
 
     def test_cf_zero_state(self):
         """Test cash flow at zero state."""
-        result = FinancialReportEngine.get_cash_flow_statement(date.today(), date.today())
+        result = FinancialReportEngine.get_cash_flow_statement(timezone.now().date(), timezone.now().date())
         self.assertEqual(result['net_change_in_cash'], Decimal('0'))
 
 
@@ -188,7 +188,7 @@ class AccountLedgerDetailedTest(TransactionTestCase):
 
     def test_ledger_structure(self):
         """Test ledger has required structure."""
-        result = FinancialReportEngine.get_account_ledger(self.cash.id, date.today(), date.today())
+        result = FinancialReportEngine.get_account_ledger(self.cash.id, timezone.now().date(), timezone.now().date())
         self.assertIn('account_code', result)
         self.assertIn('entries', result)
 
@@ -201,7 +201,7 @@ class AccountLedgerDetailedTest(TransactionTestCase):
         r = JournalEngine.create_entry('SALE', 'Sale', lines)
         JournalEngine.post_entry(r['entry_id'])
 
-        ledger = FinancialReportEngine.get_account_ledger(self.cash.id, date.today(), date.today())
+        ledger = FinancialReportEngine.get_account_ledger(self.cash.id, timezone.now().date(), timezone.now().date())
         self.assertEqual(len(ledger['entries']), 1)
 
     def test_ledger_running_balance(self):
@@ -214,7 +214,7 @@ class AccountLedgerDetailedTest(TransactionTestCase):
             r = JournalEngine.create_entry('SALE', f'Sale {i}', lines)
             JournalEngine.post_entry(r['entry_id'])
 
-        ledger = FinancialReportEngine.get_account_ledger(self.cash.id, date.today(), date.today())
+        ledger = FinancialReportEngine.get_account_ledger(self.cash.id, timezone.now().date(), timezone.now().date())
         entries = ledger['entries']
         self.assertEqual(entries[0]['running_balance'], Decimal('100'))
         self.assertEqual(entries[1]['running_balance'], Decimal('210'))

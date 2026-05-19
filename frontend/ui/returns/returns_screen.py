@@ -102,9 +102,10 @@ class ReturnsScreen(BaseScreen):
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
-        self.empty_label = QLabel("No return orders found")
+        self.empty_label = QLabel("No return orders found\n\nUse '+ New Return' to create a return order.\nReturns are used to handle damaged, expired, or returned goods from customers or to suppliers.")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px; line-height: 1.6;")
+        self.empty_label.setWordWrap(True)
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -162,6 +163,13 @@ class ReturnsScreen(BaseScreen):
         type_layout = QVBoxLayout()
         type_layout.addWidget(QLabel("Type:"))
         self.return_type_filter = QComboBox()
+        self.return_type_filter.setStyleSheet(f"""
+            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                border: 1px solid {COLOR_BORDER}; }}
+        """)
         self.return_type_filter.addItems(["All Types", "Sale Return", "Purchase Return"])
         self.return_type_filter.setMinimumWidth(150)
         self.return_type_filter.currentTextChanged.connect(self._load_returns)
@@ -172,6 +180,13 @@ class ReturnsScreen(BaseScreen):
         status_layout = QVBoxLayout()
         status_layout.addWidget(QLabel("Status:"))
         self.status_filter = QComboBox()
+        self.status_filter.setStyleSheet(f"""
+            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                border: 1px solid {COLOR_BORDER}; }}
+        """)
         self.status_filter.addItems(["All Status", "Pending", "Approved", "Rejected", "Completed"])
         self.status_filter.setMinimumWidth(150)
         self.status_filter.currentTextChanged.connect(self._load_returns)
@@ -710,17 +725,10 @@ class ReturnOrderDialog(QDialog):
         buttons = QHBoxLayout()
         buttons.addStretch()
 
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.setMinimumHeight(35)
-        cancel_btn.setMinimumWidth(100)
+        cancel_btn = EnterpriseButton(text="Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         cancel_btn.clicked.connect(self.reject)
 
-        save_btn = QPushButton("Save Return")
-        save_btn.setMinimumHeight(35)
-        save_btn.setMinimumWidth(120)
-        save_btn.setStyleSheet(
-            f"background-color: {COLOR_SUCCESS}; color: white; border-radius: {BORDER_RADIUS_MD}px; font-weight: bold;"
-        )
+        save_btn = EnterpriseButton(text="Save Return", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         save_btn.clicked.connect(self.save)
 
         buttons.addWidget(cancel_btn)

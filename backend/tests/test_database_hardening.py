@@ -10,6 +10,7 @@ import pytest
 import uuid
 from decimal import Decimal
 from datetime import date, timedelta
+from django.utils import timezone
 from django.test import TransactionTestCase
 from django.db import transaction
 from django.db.utils import IntegrityError
@@ -70,7 +71,7 @@ class TestUniqueConstraints(TransactionTestCase):
         Batch.objects.create(
             batch_number=bn,
             product=prod,
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             expiry_date=date.today() + timedelta(days=365),
             purchase_price=Decimal("20"), sale_price=Decimal("30"),
             quantity=Decimal("200"), remaining_quantity=Decimal("200"),

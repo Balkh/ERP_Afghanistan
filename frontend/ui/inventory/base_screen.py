@@ -4,9 +4,9 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt, Signal
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_TOOLBAR,
                            TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_BODY_SMALL,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_BG_DIALOG,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_BG_DIALOG, COLOR_BG_ELEVATED,
    BORDER_RADIUS_SM, BORDER_RADIUS_MD,
-                           COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER)
+                           COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, COLOR_BORDER, COLOR_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 class BaseInventoryScreen(QWidget):
@@ -69,6 +69,13 @@ class BaseInventoryScreen(QWidget):
             }}
             QComboBox:focus {{
                 border-color: {COLOR_BORDER_INPUT_HOVER};
+            }}
+            QComboBox QAbstractItemView {{
+                background-color: {COLOR_BG_ELEVATED};
+                color: {COLOR_TEXT_PRIMARY};
+                selection-background-color: {COLOR_PRIMARY};
+                selection-color: white;
+                border: 1px solid {COLOR_BORDER};
             }}
         """)
         self.filter_combo.addItem("All", "")

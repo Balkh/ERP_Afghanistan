@@ -1,11 +1,11 @@
 """Suppliers screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
-                                  QHeaderView, QMessageBox, QFormLayout, QDialog,
-                                  QDialogButtonBox, QComboBox, QTextEdit)
+                                   QHeaderView, QMessageBox, QFormLayout, QDialog,
+                                   QComboBox, QTextEdit, QFrame)
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
-from ui.screens.base_screen import BaseScreen
+from ui.screens.base_screen import BaseScreen, ScreenState
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
                            TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
                            BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
@@ -15,6 +15,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
                            COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    PADDING_INPUT_H,
                            COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn

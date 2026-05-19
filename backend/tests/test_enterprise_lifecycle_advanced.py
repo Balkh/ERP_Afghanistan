@@ -5,6 +5,7 @@ Tests complex real-world workflows with final state validation.
 
 from decimal import Decimal
 from datetime import date, timedelta
+from django.utils import timezone
 from django.test import TransactionTestCase
 
 from inventory.models import Product, Category, Unit, Warehouse, Batch, StockMovement
@@ -94,7 +95,7 @@ class BatchDepletionMultiWarehouseTest(TransactionTestCase):
             product=self.prod, batch_number='B-LATE', quantity=30, remaining_quantity=30,
             purchase_price=Decimal('5.00'), sale_price=Decimal('10.00'),
             expiry_date=date.today() + timedelta(days=200),
-            manufacturing_date=date.today(),
+            manufacturing_date=(timezone.now() - timedelta(days=30)).date(),
             location=str(self.wh1.id), is_active=True
         )
 

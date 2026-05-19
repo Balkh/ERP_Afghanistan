@@ -333,3 +333,65 @@ class TOTPDevice(models.Model):
         self.failed_attempts = 0
         self.locked_until = None
         self.save(update_fields=['failed_attempts', 'locked_until'])
+
+
+class RevokedToken(models.Model):
+    """
+    Persistent token revocation store.
+    Replaces in-memory blacklist so revocations survive server restarts.
+    Expired entries are cleaned up by a management command or periodic task.
+    """
+    id = models.BigAutoField(primary_key=True)
+    jti = models.CharField(max_length=255, unique=True, db_index=True, help_text='JWT ID claim')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='revoked_tokens', null=True, blank=True)
+    token_type = models.CharField(max_length=10, choices=[('access', 'Access'), ('refresh', 'Refresh')], default='access')
+    revoked_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(help_text='Original token expiry — used for cleanup')
+    reason = models.CharField(max_length=50, blank=True, default='', choices=[
+        ('logout', 'User logout'),
+        ('password_change', 'Password changed'),
+        ('admin_revoke', 'Admin revocation'),
+        ('security_event', 'Security event'),
+    ])
+
+    class Meta:
+        db_table = 'security_revoked_token'
+        verbose_name = 'Revoked Token'
+        verbose_name_plural = 'Revoked Tokens'
+        indexes = [
+            models.Index(fields=['expires_at']),
+            models.Index(fields=['user', 'revoked_at']),
+        ]
+        ordering = ['-revoked_at']
+
+    def __str__(self):
+        return f"Revoked token {self.jti[:8]}... (user: {self.user_id}, type: {self.token_type})"
+
+    @classmethod
+    def is_revoked(cls, jti: str) -> bool:
+        """Check if a token JTI is in the revocation store."""
+        return cls.objects.filter(jti=jti).exists()
+
+    @classmethod
+    def revoke(cls, jti: str, user=None, token_type='access', expires_at=None, reason='logout') -> 'RevokedToken':
+        """Add a token to the revocation store."""
+        from django.utils import timezone
+        if expires_at is None:
+            expires_at = timezone.now() + timezone.timedelta(hours=24)
+        obj, _ = cls.objects.get_or_create(
+            jti=jti,
+            defaults={
+                'user': user,
+                'token_type': token_type,
+                'expires_at': expires_at,
+                'reason': reason,
+            }
+        )
+        return obj
+
+    @classmethod
+    def cleanup_expired(cls) -> int:
+        """Remove expired revoked tokens. Returns count of deleted rows."""
+        from django.utils import timezone
+        deleted, _ = cls.objects.filter(expires_at__lt=timezone.now()).delete()
+        return deleted
