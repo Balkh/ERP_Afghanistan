@@ -506,6 +506,28 @@ class SalesInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(invoice)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'])
+    def receipt_pdf(self, request, pk=None):
+        """Generate PDF receipt for a sales invoice."""
+        invoice = self.get_object()
+        mode = request.query_params.get('mode', 'a4')
+
+        try:
+            from core.pdf_generator import generate_sales_invoice_pdf, pdf_response
+            pdf_bytes = generate_sales_invoice_pdf(invoice, mode=mode)
+            filename = f"invoice_{invoice.invoice_number}.pdf"
+            return pdf_response(pdf_bytes, filename)
+        except ImportError:
+            return Response(
+                {'error': 'ReportLab is not installed. Install with: pip install reportlab'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response(
+                {'error': f'Failed to generate PDF: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
 
 class SalesItemViewSet(viewsets.ModelViewSet):
     """

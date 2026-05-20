@@ -17,6 +17,7 @@ class ErrorCode:
     AUTH_007 = "AUTH_007"  # Token already blacklisted
     AUTH_008 = "AUTH_008"  # 2FA setup required
     AUTH_009 = "AUTH_009"  # 2FA code required
+    AUTH_010 = "AUTH_010"  # Rate limit exceeded
 
     # Financial/Accounting errors (FIN_xxx)
     FIN_001 = "FIN_001"  # Journal entry imbalance (debit != credit)
@@ -86,6 +87,7 @@ ERROR_MESSAGES = {
     "AUTH_007": "Token has been blacklisted",
     "AUTH_008": "Your role requires 2FA. Please set up TOTP first",
     "AUTH_009": "2FA code required. Provide 'totp_code' in the request body",
+    "AUTH_010": "Too many requests. Please try again later",
 
     # Financial
     "FIN_001": "Journal entry is imbalanced. Debits must equal credits",
@@ -169,6 +171,7 @@ ERROR_STATUS_MAP = {
     "AUTH_007": 401,
     "AUTH_008": 403,
     "AUTH_009": 403,
+    "AUTH_010": 429,
     "FIN_001": 400,
     "FIN_002": 400,
     "FIN_003": 404,

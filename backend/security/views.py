@@ -909,6 +909,68 @@ def admin_reset_password(request, user_id):
     )
 
 
+# ── Email-based Self-Service Password Reset ──
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_request(request):
+    """Request a password reset email. Always returns success to prevent enumeration."""
+    from security.email_password_reset import EmailPasswordResetService
+
+    email = request.data.get('email', '').strip()
+    if not email:
+        return Response(
+            create_error_response(ErrorCode.VAL_001, "Email is required"),
+            status=400
+        )
+
+    ip_address = request.META.get('REMOTE_ADDR', 'unknown')
+    result = EmailPasswordResetService.request_reset(email, ip_address)
+
+    if result.get('rate_limited'):
+        return Response(
+            create_error_response(ErrorCode.AUTH_010, result['message']),
+            status=429
+        )
+
+    return Response(APIResponse.success(
+        data=None,
+        message=result['message']
+    ))
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    """Confirm password reset with token and new password."""
+    from security.email_password_reset import EmailPasswordResetService
+
+    token = request.data.get('token', '').strip()
+    new_password = request.data.get('new_password', '')
+
+    if not token or not new_password:
+        return Response(
+            create_error_response(ErrorCode.VAL_001, "Token and new password are required"),
+            status=400
+        )
+
+    result = EmailPasswordResetService.confirm_reset(token, new_password)
+
+    if not result['success']:
+        status_code = 400
+        if result.get('error_code') == 'INVALID_TOKEN':
+            status_code = 400
+        return Response(
+            create_error_response(ErrorCode.AUTH_002, result['message']),
+            status=status_code
+        )
+
+    return Response(APIResponse.success(
+        data=None,
+        message=result['message']
+    ))
+
+
 @api_view(['POST'])
 def change_password(request):
     """User changes their own password."""

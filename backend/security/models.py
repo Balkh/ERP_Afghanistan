@@ -263,10 +263,11 @@ class Notification(models.Model):
 class PasswordResetToken(models.Model):
     """
     Secure password reset token with expiration and single-use enforcement.
+    Tokens are stored as SHA-256 hashes to prevent theft if DB is compromised.
     """
     id = models.BigAutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_tokens')
-    token = models.CharField(max_length=128, unique=True, db_index=True)
+    token_hash = models.CharField(max_length=64, unique=True, db_index=True, default='', help_text='SHA-256 hash of the actual token')
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(help_text='Token expiration time (default: 1 hour)')
     used = models.BooleanField(default=False)

@@ -110,6 +110,7 @@ urlpatterns = [
     path('api/jobs/', include('jobs.urls')),
     path('api/core/', include('core.urls')),
     path('api/observability/v1/', include('core.operations.observability.urls')),
+    path('api/insurance/', include('insurance.urls')),
 
     # ─── Phase 5B.6 — API v1 Integration Layer ───
     path('api/v1/governance/', include('core.api.v1.governance_urls')),

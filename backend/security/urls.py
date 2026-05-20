@@ -7,6 +7,7 @@ from security.views import (
     refresh_token_view,
     admin_reset_password,
     totp_setup, totp_verify, totp_disable, totp_status,
+    password_reset_request, password_reset_confirm,
 )
 
 urlpatterns = [
@@ -25,6 +26,9 @@ urlpatterns = [
     path('permissions/', permissions_list, name='permissions-list'),
     # Password reset (offline: admin-initiated)
     path('users/<uuid:user_id>/reset-password/', admin_reset_password, name='admin-reset-password'),
+    # Email-based self-service password reset
+    path('password-reset/request/', password_reset_request, name='password-reset-request'),
+    path('password-reset/confirm/', password_reset_confirm, name='password-reset-confirm'),
     # TOTP / 2FA
     path('totp/setup/', totp_setup, name='totp-setup'),
     path('totp/verify/', totp_verify, name='totp-verify'),

@@ -3,6 +3,7 @@ Production settings for Pharmacy ERP
 Overrides default settings for packaged deployment
 """
 import os
+import sys
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
