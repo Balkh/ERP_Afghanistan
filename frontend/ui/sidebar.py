@@ -80,7 +80,7 @@ class Sidebar(QWidget):
                 "sales": {"sales_invoice", "pos", "customers"},
                 "purchases": {"purchase_invoice", "suppliers"},
                 "returns": {"returns"},
-                "accounting": {"chart_of_accounts", "journal_entries", "account_ledger"},
+                "accounting": {"chart_of_accounts", "journal_entries", "account_ledger", "financial_integrity", "financial_audit"},
                 "reports": {"trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing"},
                 "finance": {"payments", "expenses", "budgeting", "tax", "cost_centers", "cashflow"},
                 "hr": {"employees", "attendance", "leave", "payroll"},
@@ -188,6 +188,8 @@ class Sidebar(QWidget):
             ("Chart of Accounts", "chart_of_accounts", 10),
             ("Journal Entries", "journal_entries", 11),
             ("Account Ledger", "account_ledger", 12),
+            ("Financial Integrity", "financial_integrity", 58),
+            ("Audit Log", "financial_audit", 59),
         ])
         
         self._create_group(nav_layout, "Reports", "reports", [
@@ -206,6 +208,12 @@ class Sidebar(QWidget):
             ("Tax", "tax", 20),
             ("Cost Centers", "cost_centers", 21),
             ("Cash Flow", "cashflow", 22),
+            ("Customer Payments", "customer_payments", 60),
+            ("Supplier Payments", "supplier_payments", 61),
+            ("Allocation Explorer", "allocation_explorer", 62),
+            ("Returns Explainability", "returns_explainability", 63),
+            ("Journal Reversals", "journal_reversals", 64),
+            ("Operations Console", "operations_console", 65),
         ])
         
         self._create_group(nav_layout, "HR", "hr", [

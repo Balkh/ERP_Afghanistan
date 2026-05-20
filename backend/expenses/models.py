@@ -1,6 +1,7 @@
 from django.db import models, transaction
 from decimal import Decimal
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 from core.models import TimeStampedUUIDModel
 from core.multitenant.models import CompanyScopedMixin, CompanyScopedManager
 from accounting.models import Account, JournalEntry
@@ -9,7 +10,9 @@ from payments.models import PaymentAccount
 class Expense(CompanyScopedMixin, TimeStampedUUIDModel):
     """
     Pharmacy expenses (Rent, Electricity, Supplies, etc.)
-    Automatically creates journal entries.
+    Expense.save() is a data staging point ONLY — it does NOT mutate financial state.
+    All financial truth flows through JournalEntry posting.
+    PaymentAccount balance is derived from journal entries, never directly mutated.
     """
     objects = CompanyScopedManager()
     
@@ -50,6 +53,10 @@ class Expense(CompanyScopedMixin, TimeStampedUUIDModel):
     def __str__(self):
         return f"{self.expense_number} - {self.expense_account.name} ({self.amount})"
 
+    def clean(self):
+        if self.amount <= 0:
+            raise ValidationError(_('Expense amount must be positive.'))
+
     @transaction.atomic
     def save(self, *args, **kwargs):
         is_new = self._state.adding
@@ -63,7 +70,13 @@ class Expense(CompanyScopedMixin, TimeStampedUUIDModel):
             self._create_journal_entry()
 
     def _create_journal_entry(self):
-        """Create a journal entry for the expense."""
+        """Create a journal entry for the expense.
+
+        CRITICAL: If journal entry creation fails, the entire transaction rolls back.
+        The Expense record is NOT persisted without an accounting trail.
+        No direct balance mutation occurs — PaymentAccount balance is derived
+        from journal entries via the SSOT Control Plane.
+        """
         from accounting.services.journal_engine import JournalEngine
         
         lines = [
@@ -92,11 +105,12 @@ class Expense(CompanyScopedMixin, TimeStampedUUIDModel):
             auto_post=True
         )
         
-        if result.get('success'):
-            self.journal_entry_id = result.get('entry_id')
-            # Use update to avoid recursion in save()
-            Expense.objects.filter(id=self.id).update(journal_entry_id=self.journal_entry_id)
-            
-            # Update payment account balance
-            self.payment_account.current_balance -= self.amount
-            self.payment_account.save()
+        if not result.get('success'):
+            raise ValidationError(
+                f'Journal entry creation failed for expense {self.expense_number}: '
+                f'{result.get("error", "Unknown error")}. '
+                'Expense cannot be saved without accounting trail.'
+            )
+        
+        self.journal_entry_id = result.get('entry_id')
+        Expense.objects.filter(id=self.id).update(journal_entry_id=self.journal_entry_id)

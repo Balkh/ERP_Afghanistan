@@ -342,13 +342,33 @@ class ReturnOrder(TimeStampedUUIDModel):
             except JournalEntry.DoesNotExist:
                 pass
 
-        # 3. Reverse customer/supplier balance
+        # 3. Reverse customer/supplier balance using centralized sync service
         if self.return_type == 'SALE_RETURN' and self.party:
-            self.party.balance += self.total_amount
-            self.party.save()
+            from core.balance_sync import BalanceSyncService
+            from core.services.financial_audit import FinancialAuditService
+            old_balance = self.party.balance
+            new_balance = BalanceSyncService.sync_customer(self.party, lock=True, user=employee.user if hasattr(employee, 'user') else None, reason=f'Return void: {self.return_number}')
+            FinancialAuditService.log_return_void(
+                return_id=str(self.pk),
+                entity_type='customer',
+                entity_id=str(self.party.pk),
+                balance_before=old_balance,
+                balance_after=new_balance,
+                user=employee.user if hasattr(employee, 'user') else None,
+            )
         elif self.return_type == 'PURCHASE_RETURN' and self.supplier:
-            self.supplier.balance += self.total_amount
-            self.supplier.save()
+            from core.balance_sync import BalanceSyncService
+            from core.services.financial_audit import FinancialAuditService
+            old_balance = self.supplier.balance
+            new_balance = BalanceSyncService.sync_supplier(self.supplier, lock=True, user=employee.user if hasattr(employee, 'user') else None, reason=f'Return void: {self.return_number}')
+            FinancialAuditService.log_return_void(
+                return_id=str(self.pk),
+                entity_type='supplier',
+                entity_id=str(self.supplier.pk),
+                balance_before=old_balance,
+                balance_after=new_balance,
+                user=employee.user if hasattr(employee, 'user') else None,
+            )
 
         # 4. Update status
         self.status = 'VOIDED'
@@ -409,10 +429,10 @@ class ReturnOrder(TimeStampedUUIDModel):
             
             self.journal_entry_id = result.get('entry_id')
             
-            # Update customer balance
+            # Update customer balance via centralized sync
             if self.party:
-                self.party.balance -= self.total_amount
-                self.party.save()
+                from core.balance_sync import BalanceSyncService
+                BalanceSyncService.sync_customer(self.party, lock=True)
         
         else:  # PURCHASE_RETURN
             # Supplier returns - reduce AP, reduce Inventory, reverse Tax
@@ -453,10 +473,10 @@ class ReturnOrder(TimeStampedUUIDModel):
             
             self.journal_entry_id = result.get('entry_id')
             
-            # Update supplier balance
+            # Update supplier balance via centralized sync
             if self.supplier:
-                self.supplier.balance -= self.total_amount
-                self.supplier.save()
+                from core.balance_sync import BalanceSyncService
+                BalanceSyncService.sync_supplier(self.supplier, lock=True)
         
         self.credit_note_number = f"CN-{self.return_number}"
         self.save()

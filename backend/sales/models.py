@@ -221,6 +221,7 @@ class SalesInvoice(CompanyScopedMixin, TimeStampedUUIDModel):
         ('PARTIAL_PAID', _('Partial Paid')),
         ('PAID', _('Paid')),
         ('CANCELLED', _('Cancelled')),
+        ('CREDIT_PENDING', _('Credit Pending Approval')),
     ]
 
     PAYMENT_STATUS_CHOICES = [
@@ -507,81 +508,81 @@ class CustomerPayment(TimeStampedUUIDModel):
             raise ValidationError(_('Payment amount must be positive.'))
 
     def save(self, *args, **kwargs):
-        """Override save to update invoice and customer balances, and create payment transaction."""
+        """Override save to update invoice and customer balances, and create payment transaction.
+        
+        Balance is now synced via BalanceSyncService (no direct mutation).
+        This eliminates the dual-path balance update issue.
+
+        CRITICAL: If payment transaction creation fails, the ENTIRE transaction rolls back.
+        No CustomerPayment record is persisted without a complete accounting trail.
+        """
+        from core.balance_sync import BalanceSyncService
         with transaction.atomic():
             super().save(*args, **kwargs)
             self.update_invoice_paid_amount()
-            self.update_customer_balance()
+            BalanceSyncService.sync_customer(self.customer, lock=True)
             self._create_payment_transaction()
 
     def _create_payment_transaction(self):
         """Create a financial transaction record for this payment.
 
-        CRITICAL FIX: No accounting failure may be silently swallowed.
-        All exceptions are logged and propagated - never silently ignored.
+        CRITICAL: If journal entry creation fails, the exception propagates
+        and the entire transaction (including the CustomerPayment record) rolls back.
+        No ghost payments allowed.
         """
         import logging
         logger = logging.getLogger('erp.sales.payment')
 
-        try:
-            from payments.models import PaymentMethod, PaymentAccount
-            from payments.services import PaymentEngine
+        from payments.models import PaymentAccount
+        from payments.services import PaymentEngine
 
-            method_code_map = {
-                'CASH': 'CASH',
-                'BANK_TRANSFER': 'BANK',
-                'CHEQUE': 'CHEQUE',
-                'CREDIT_CARD': 'CC',
-                'INSURANCE': 'INS',
-                'OTHER': 'OTHER',
-            }
-            method_code = method_code_map.get(self.payment_method, 'CASH')
+        method_code_map = {
+            'CASH': 'CASH',
+            'BANK_TRANSFER': 'BANK',
+            'CHEQUE': 'CHEQUE',
+            'CREDIT_CARD': 'CC',
+            'INSURANCE': 'INS',
+            'OTHER': 'OTHER',
+        }
+        method_code = method_code_map.get(self.payment_method, 'CASH')
 
-            # Get default payment account for this method type
-            payment_account = PaymentAccount.objects.filter(
-                is_active=True
-            ).order_by('code').first()
+        payment_account = PaymentAccount.objects.filter(
+            is_active=True
+        ).order_by('code').first()
 
-            if not payment_account:
-                logger.error(
-                    f"[SALES] No active payment account found for customer payment {self.id}. "
-                    f"Cannot create financial transaction for invoice {self.invoice.invoice_number if self.invoice else 'N/A'}."
-                )
-                return
+        if not payment_account:
+            raise ValidationError(
+                f'No active payment account found for customer payment {self.id}. '
+                f'Cannot create financial transaction. '
+                f'Invoice: {self.invoice.invoice_number if self.invoice else "N/A"}.'
+            )
 
-            if payment_account:
-                result = PaymentEngine.process_receipt(
-                    payment_method_code=method_code,
-                    destination_account_code=payment_account.code,
-                    amount=self.amount,
-                    description=f'Payment from {self.customer.name} for invoice {self.invoice.invoice_number if self.invoice else ""}',
-                    currency='AFN',
-                    party_type='CUSTOMER',
-                    party_id=str(self.customer.id),
-                    party_name=self.customer.name,
-                    invoice_type='SALES',
-                    invoice_id=str(self.invoice.id) if self.invoice else None,
-                    reference_number=self.reference_number,
-                    performed_by='system',
-                )
+        result = PaymentEngine.process_receipt(
+            payment_method_code=method_code,
+            destination_account_code=payment_account.code,
+            amount=self.amount,
+            description=f'Payment from {self.customer.name} for invoice {self.invoice.invoice_number if self.invoice else ""}',
+            currency='AFN',
+            party_type='CUSTOMER',
+            party_id=str(self.customer.id),
+            party_name=self.customer.name,
+            invoice_type='SALES',
+            invoice_id=str(self.invoice.id) if self.invoice else None,
+            reference_number=self.reference_number,
+            performed_by='system',
+        )
 
-                if not result.get('success'):
-                    logger.error(
-                        f"[SALES] PaymentEngine.process_receipt failed for customer payment {self.id}: "
-                        f"{result.get('errors', 'Unknown error')}. "
-                        f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
-                        f"Amount: {self.amount}"
-                    )
-
-        except Exception as e:
-            # CRITICAL: Log but do NOT silently swallow.
-            # Payment record IS created - just accounting link is missing and logged.
+        if not result.get('success'):
+            error_msg = result.get('errors', 'Unknown error')
             logger.error(
-                f"[SALES] Critical: Failed to create accounting entry for customer payment {self.id}: {e}. "
+                f"[SALES] PaymentEngine.process_receipt failed for customer payment {self.id}: "
+                f"{error_msg}. "
                 f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
-                f"Amount: {self.amount}. "
-                f"Payment record exists but accounting trail is INCOMPLETE. Manual reconciliation required.",
-                exc_info=True
+                f"Amount: {self.amount}"
+            )
+            raise ValidationError(
+                f'Payment engine failed for customer payment {self.id}: {error_msg}. '
+                f'Transaction rolled back — no payment record created.'
             )
 
     def update_invoice_paid_amount(self):
@@ -594,17 +595,126 @@ class CustomerPayment(TimeStampedUUIDModel):
             self.invoice.update_payment_status()
             self.invoice.save(update_fields=['paid_amount', 'payment_status', 'updated_at'])
 
-    def update_customer_balance(self):
-        """Update the customer's current balance."""
-        total_invoices = SalesInvoice.objects.filter(
-            customer=self.customer,
-            status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID', 'PAID'],
-            is_active=True
-        ).aggregate(total=models.Sum('total_amount'))['total'] or Decimal('0.00')
+class PaymentAllocation(TimeStampedUUIDModel):
+    """Tracks allocation of unallocated payments to outstanding invoices.
 
-        total_payments = CustomerPayment.objects.filter(
-            customer=self.customer,
-        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+    Enables FIFO (First-In-First-Out) payment strategy:
+    oldest unpaid invoices are paid first.
+    """
+    payment = models.ForeignKey(
+        CustomerPayment,
+        on_delete=models.CASCADE,
+        related_name='allocations',
+        verbose_name=_('Customer Payment'),
+    )
+    invoice = models.ForeignKey(
+        SalesInvoice,
+        on_delete=models.PROTECT,
+        related_name='payment_allocations',
+        verbose_name=_('Sales Invoice'),
+    )
+    allocated_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name=_('Allocated Amount'),
+    )
+    allocated_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Allocated At'),
+    )
+    notes = models.TextField(blank=True, verbose_name=_('Notes'))
 
-        self.customer.balance = total_invoices - total_payments
-        self.customer.save(update_fields=['balance', 'updated_at'])
+    class Meta:
+        verbose_name = _('Payment Allocation')
+        verbose_name_plural = _('Payment Allocations')
+        ordering = ['-allocated_at']
+        indexes = [
+            models.Index(fields=['payment', 'invoice']),
+        ]
+
+
+class CreditApprovalRequest(TimeStampedUUIDModel):
+    """Lightweight credit limit override request for manager approval."""
+
+    STATUS_CHOICES = [
+        ('PENDING', _('Pending')),
+        ('APPROVED', _('Approved')),
+        ('REJECTED', _('Rejected')),
+    ]
+
+    invoice = models.ForeignKey(
+        SalesInvoice,
+        on_delete=models.CASCADE,
+        related_name='credit_requests',
+        verbose_name=_('Invoice'),
+    )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.PROTECT,
+        related_name='credit_requests',
+        verbose_name=_('Customer'),
+    )
+    requested_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name=_('Requested Amount'),
+    )
+    current_balance = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name=_('Current Balance'),
+    )
+    credit_limit = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name=_('Credit Limit'),
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='PENDING',
+        verbose_name=_('Status'),
+    )
+    requested_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='requested_credit_approvals',
+        verbose_name=_('Requested By'),
+    )
+    approved_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_credit_requests',
+        verbose_name=_('Approved By'),
+    )
+    approved_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_('Approved At'),
+    )
+    approval_reason = models.TextField(
+        blank=True,
+        verbose_name=_('Approval Reason'),
+    )
+    rejection_reason = models.TextField(
+        blank=True,
+        verbose_name=_('Rejection Reason'),
+    )
+
+    class Meta:
+        verbose_name = _('Credit Approval Request')
+        verbose_name_plural = _('Credit Approval Requests')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', 'created_at']),
+            models.Index(fields=['customer', 'status']),
+        ]
+
+    def __str__(self):
+        return f"Credit request for {self.customer.name} - {self.requested_amount} ({self.status})"
+
+    def __str__(self):
+        return f"{self.allocated_amount} from {self.payment} to {self.invoice.invoice_number}"

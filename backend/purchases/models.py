@@ -495,87 +495,80 @@ class SupplierPayment(TimeStampedUUIDModel):
             raise ValidationError(_('Payment amount must be positive.'))
 
     def save(self, *args, **kwargs):
-        """Override save to update invoice and supplier balances, and create payment transaction."""
+        """Override save to update invoice and supplier balances, and create payment transaction.
+        
+        Balance is now synced via BalanceSyncService (no direct mutation).
+        This eliminates the dual-path balance update issue.
+
+        CRITICAL: If payment transaction creation fails, the ENTIRE transaction rolls back.
+        No SupplierPayment record is persisted without a complete accounting trail.
+        """
+        from core.balance_sync import BalanceSyncService
         with transaction.atomic():
             super().save(*args, **kwargs)
             self.update_invoice_paid_amount()
-            self.update_supplier_balance()
+            BalanceSyncService.sync_supplier(self.supplier, lock=True)
             self._create_payment_transaction()
 
     def _create_payment_transaction(self):
         """Create a financial transaction record for this payment.
 
-        CRITICAL FIX: No accounting failure may be silently swallowed.
-        All exceptions are logged and propagated - never silently ignored.
+        CRITICAL: If journal entry creation fails, the exception propagates
+        and the entire transaction (including the SupplierPayment record) rolls back.
+        No ghost payments allowed.
         """
         import logging
         logger = logging.getLogger('erp.purchases.payment')
 
-        try:
-            from payments.models import PaymentMethod, PaymentAccount
-            from payments.services import PaymentEngine
+        from payments.models import PaymentAccount
+        from payments.services import PaymentEngine
 
-            method_code_map = {
-                'CASH': 'CASH',
-                'BANK_TRANSFER': 'BANK',
-                'CHEQUE': 'CHEQUE',
-                'CREDIT_CARD': 'CC',
-                'OTHER': 'OTHER',
-            }
-            method_code = method_code_map.get(self.payment_method, 'CASH')
+        method_code_map = {
+            'CASH': 'CASH',
+            'BANK_TRANSFER': 'BANK',
+            'CHEQUE': 'CHEQUE',
+            'CREDIT_CARD': 'CC',
+            'OTHER': 'OTHER',
+        }
+        method_code = method_code_map.get(self.payment_method, 'CASH')
 
-            try:
-                payment_account = PaymentAccount.objects.filter(
-                    is_active=True
-                ).order_by('code').first()
+        payment_account = PaymentAccount.objects.filter(
+            is_active=True
+        ).order_by('code').first()
 
-                if not payment_account:
-                    logger.error(
-                        f"[PURCHASES] No active payment account found for supplier payment {self.id}. "
-                        f"Cannot create financial transaction for invoice {self.invoice.invoice_number if self.invoice else 'N/A'}."
-                    )
-                    return
+        if not payment_account:
+            raise ValidationError(
+                f'No active payment account found for supplier payment {self.id}. '
+                f'Cannot create financial transaction. '
+                f'Invoice: {self.invoice.invoice_number if self.invoice else "N/A"}.'
+            )
 
-                if payment_account:
-                    result = PaymentEngine.process_payment(
-                        payment_method_code=method_code,
-                        source_account_code=payment_account.code,
-                        amount=self.amount,
-                        description=f'Payment to {self.supplier.name} for invoice {self.invoice.invoice_number if self.invoice else ""}',
-                        currency='AFN',
-                        party_type='SUPPLIER',
-                        party_id=str(self.supplier.id),
-                        party_name=self.supplier.name,
-                        invoice_type='PURCHASE',
-                        invoice_id=str(self.invoice.id) if self.invoice else None,
-                        reference_number=self.reference_number,
-                        performed_by='system',
-                    )
+        result = PaymentEngine.process_payment(
+            payment_method_code=method_code,
+            source_account_code=payment_account.code,
+            amount=self.amount,
+            description=f'Payment to {self.supplier.name} for invoice {self.invoice.invoice_number if self.invoice else ""}',
+            currency='AFN',
+            party_type='SUPPLIER',
+            party_id=str(self.supplier.id),
+            party_name=self.supplier.name,
+            invoice_type='PURCHASE',
+            invoice_id=str(self.invoice.id) if self.invoice else None,
+            reference_number=self.reference_number,
+            performed_by='system',
+        )
 
-                    if not result.get('success'):
-                        logger.error(
-                            f"[PURCHASES] PaymentEngine.process_payment failed for supplier payment {self.id}: "
-                            f"{result.get('errors', 'Unknown error')}. "
-                            f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
-                            f"Amount: {self.amount}"
-                        )
-
-            except Exception as e:
-                # CRITICAL: Log but do NOT silently swallow.
-                logger.error(
-                    f"[PURCHASES] Critical: Failed to create accounting entry for supplier payment {self.id}: {e}. "
-                    f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
-                    f"Amount: {self.amount}. "
-                    f"Payment record exists but accounting trail is INCOMPLETE. Manual reconciliation required.",
-                    exc_info=True
-                )
-
-        except Exception as e:
+        if not result.get('success'):
+            error_msg = result.get('errors', 'Unknown error')
             logger.error(
-                f"[PURCHASES] Critical: Failed to create payment transaction for supplier payment {self.id}: {e}. "
+                f"[PURCHASES] PaymentEngine.process_payment failed for supplier payment {self.id}: "
+                f"{error_msg}. "
                 f"Invoice: {self.invoice.invoice_number if self.invoice else 'N/A'}, "
-                f"Amount: {self.amount}.",
-                exc_info=True
+                f"Amount: {self.amount}"
+            )
+            raise ValidationError(
+                f'Payment engine failed for supplier payment {self.id}: {error_msg}. '
+                f'Transaction rolled back — no payment record created.'
             )
 
     def update_invoice_paid_amount(self):
@@ -588,17 +581,44 @@ class SupplierPayment(TimeStampedUUIDModel):
             self.invoice.update_payment_status()
             self.invoice.save(update_fields=['paid_amount', 'payment_status', 'updated_at'])
 
-    def update_supplier_balance(self):
-        """Update the supplier's current balance."""
-        total_invoices = PurchaseInvoice.objects.filter(
-            supplier=self.supplier,
-            status__in=['CONFIRMED', 'RECEIVED', 'PARTIAL_PAID', 'PAID'],
-            is_active=True
-        ).aggregate(total=models.Sum('total_amount'))['total'] or Decimal('0.00')
 
-        total_payments = SupplierPayment.objects.filter(
-            supplier=self.supplier,
-        ).aggregate(total=models.Sum('amount'))['total'] or Decimal('0.00')
+class SupplierPaymentAllocation(TimeStampedUUIDModel):
+    """Tracks allocation of unallocated supplier payments to outstanding purchase invoices.
 
-        self.supplier.balance = total_invoices - total_payments
-        self.supplier.save(update_fields=['balance', 'updated_at'])
+    Enables FIFO (First-In-First-Out) payment strategy for suppliers:
+    oldest unpaid invoices are paid first.
+    Mirrors the sales PaymentAllocation model for supplier parity.
+    """
+    payment = models.ForeignKey(
+        SupplierPayment,
+        on_delete=models.CASCADE,
+        related_name='allocations',
+        verbose_name=_('Supplier Payment'),
+    )
+    invoice = models.ForeignKey(
+        PurchaseInvoice,
+        on_delete=models.PROTECT,
+        related_name='payment_allocations',
+        verbose_name=_('Purchase Invoice'),
+    )
+    allocated_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name=_('Allocated Amount'),
+    )
+    allocated_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name=_('Allocated At'),
+    )
+    notes = models.TextField(blank=True, verbose_name=_('Notes'))
+
+    class Meta:
+        verbose_name = _('Supplier Payment Allocation')
+        verbose_name_plural = _('Supplier Payment Allocations')
+        ordering = ['-allocated_at']
+        indexes = [
+            models.Index(fields=['payment', 'invoice']),
+        ]
+
+    def __str__(self):
+        return f'Allocation: {self.payment} -> {self.invoice} ({self.allocated_amount})'

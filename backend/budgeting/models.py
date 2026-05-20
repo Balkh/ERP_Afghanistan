@@ -1,5 +1,6 @@
 import uuid
 from decimal import Decimal
+from datetime import date
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -91,10 +92,23 @@ class Budget(TimeStampedUUIDModel):
             return Decimal('0.00')
         return (self.variance / self.total_budgeted) * 100
 
+    def refresh_actuals(self):
+        """Recalculate all budget line actuals from posted journal entries.
+
+        This is the ONLY way to update budget actuals — they are derived
+        from JournalEngine truth, never manually set.
+        """
+        from budgeting.services.budget_calculator import BudgetCalculator
+        for line in self.lines.all():
+            BudgetCalculator.update_budget_line_actuals(line)
+        BudgetCalculator.update_budget_totals(self)
+        self.refresh_from_db()
+
 
 class BudgetLine(TimeStampedUUIDModel):
     """
     Model representing a budget line for a specific account.
+    actual_amount is derived from posted journal entries — never manually set.
     """
     budget = models.ForeignKey(
         Budget,
@@ -123,7 +137,9 @@ class BudgetLine(TimeStampedUUIDModel):
         max_digits=15,
         decimal_places=2,
         default=Decimal('0.00'),
-        verbose_name=_('Actual Amount')
+        verbose_name=_('Actual Amount'),
+        help_text=_('Derived from posted journal entries. Read-only.'),
+        editable=False,
     )
 
     class Meta:
@@ -140,11 +156,32 @@ class BudgetLine(TimeStampedUUIDModel):
         return f"{self.budget.name} - {self.account.code} - {self.period}"
 
     @property
+    def computed_actual(self):
+        """Live actual amount computed directly from posted journal entries.
+
+        This is the authoritative value — actual_amount field is a cached
+        snapshot that may be stale until refresh_actuals() is called.
+        """
+        from budgeting.services.budget_calculator import BudgetCalculator
+        start_date, end_date = BudgetCalculator.parse_period(self.period)
+        if not start_date or not end_date:
+            return Decimal('0.00')
+        return BudgetCalculator.calculate_actual_for_account(
+            self.account, start_date, end_date
+        )
+
+    @property
     def variance(self):
-        return self.budgeted_amount - self.actual_amount
+        return self.budgeted_amount - self.computed_actual
 
     @property
     def variance_percentage(self):
         if self.budgeted_amount == 0:
             return Decimal('0.00')
         return (self.variance / self.budgeted_amount) * 100
+
+    def refresh_actual(self):
+        """Update the cached actual_amount from posted journal entries."""
+        from budgeting.services.budget_calculator import BudgetCalculator
+        BudgetCalculator.update_budget_line_actuals(self)
+        self.refresh_from_db()

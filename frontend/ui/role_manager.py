@@ -499,7 +499,7 @@ UserRole.ADMIN: {
         "dashboard", "products", "categories", "warehouses", "batches",
         "sales_invoice", "purchase_invoice", "customers", "suppliers", "returns",
         "sales_invoice", "purchase_invoice", "customers", "suppliers", "returns",
-        "chart_of_accounts", "journal_entries", "account_ledger",
+        "chart_of_accounts", "journal_entries", "account_ledger", "financial_integrity", "financial_audit",
         "trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing",
         "payments", "expenses", "employees", "attendance", "leave", "payroll",
         "budgeting", "tax", "cost_centers", "cashflow",
@@ -536,7 +536,7 @@ UserRole.ADMIN: {
     UserRole.SUPERVISOR: {
         "dashboard", "products", "categories", "warehouses", "batches",
         "sales_invoice", "purchase_invoice", "customers", "suppliers", "returns",
-        "chart_of_accounts", "journal_entries", "account_ledger",
+        "chart_of_accounts", "journal_entries", "account_ledger", "financial_integrity", "financial_audit",
         "trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing",
         "payments", "expenses", "employees", "attendance", "leave", "payroll",
         "budgeting", "tax", "cost_centers", "cashflow",

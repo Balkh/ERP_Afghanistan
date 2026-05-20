@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -8,6 +9,9 @@ from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 from core.view_logging import log_business_event
+from core.balance_sync import BalanceSyncService
+from core.services.financial_integrity import FinancialIntegrityService
+from sales.services.fifo_allocation import FIFOAllocationService
 from sales.models import Customer, SalesInvoice, SalesItem, CustomerPayment
 from sales.serializers import (
     CustomerSerializer,
@@ -258,6 +262,126 @@ class CustomerViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
         serializer = CustomerPaymentSerializer(payments, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'])
+    def statement(self, request, pk=None):
+        """Generate customer statement with running balance."""
+        from core.services.statement_engine import StatementService
+        from datetime import datetime
+
+        customer = self.get_object()
+        from_date_str = request.query_params.get('from_date')
+        to_date_str = request.query_params.get('to_date')
+
+        from_date = datetime.strptime(from_date_str, '%Y-%m-%d').date() if from_date_str else None
+        to_date = datetime.strptime(to_date_str, '%Y-%m-%d').date() if to_date_str else None
+
+        statement = StatementService.customer_statement(customer, from_date, to_date)
+        return Response(statement)
+
+    @action(detail=True, methods=['get'])
+    def credit_risk(self, request, pk=None):
+        """Get comprehensive credit risk visibility for a customer."""
+        from datetime import date
+        from sales.models import CreditApprovalRequest
+
+        customer = self.get_object()
+        today = date.today()
+
+        # Overdue invoices
+        overdue_invoices = SalesInvoice.objects.filter(
+            customer=customer,
+            status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID'],
+            is_active=True,
+            due_date__lt=today,
+        ).order_by('due_date')
+
+        overdue_list = []
+        total_overdue = Decimal('0.00')
+        for inv in overdue_invoices:
+            remaining = inv.total_amount - inv.paid_amount
+            if remaining > 0:
+                days_overdue = (today - inv.due_date).days
+                overdue_list.append({
+                    'invoice_number': inv.invoice_number,
+                    'due_date': inv.due_date.isoformat(),
+                    'remaining': str(remaining),
+                    'days_overdue': days_overdue,
+                })
+                total_overdue += remaining
+
+        # Aging breakdown
+        aging = {
+            'current': Decimal('0.00'),
+            '1_30_days': Decimal('0.00'),
+            '31_60_days': Decimal('0.00'),
+            '61_90_days': Decimal('0.00'),
+            'over_90_days': Decimal('0.00'),
+        }
+
+        for inv in overdue_invoices:
+            remaining = inv.total_amount - inv.paid_amount
+            if remaining <= 0:
+                continue
+            days_overdue = (today - inv.due_date).days
+            if days_overdue <= 30:
+                aging['1_30_days'] += remaining
+            elif days_overdue <= 60:
+                aging['31_60_days'] += remaining
+            elif days_overdue <= 90:
+                aging['61_90_days'] += remaining
+            else:
+                aging['over_90_days'] += remaining
+
+        # Pending credit approvals
+        pending_approvals = CreditApprovalRequest.objects.filter(
+            customer=customer,
+            status='PENDING',
+        ).order_by('-created_at')
+
+        pending_list = []
+        for req in pending_approvals:
+            pending_list.append({
+                'request_id': str(req.pk),
+                'invoice_number': req.invoice.invoice_number,
+                'requested_amount': str(req.requested_amount),
+                'requested_at': req.created_at.isoformat(),
+                'requested_by': req.requested_by.username if req.requested_by else 'unknown',
+            })
+
+        # Risk level calculation
+        utilization = (customer.balance / customer.credit_limit * 100) if customer.credit_limit > 0 else 0
+        if customer.status == 'BLOCKED' or utilization > 100:
+            risk_level = 'CRITICAL'
+        elif utilization > 80 or total_overdue > 0:
+            risk_level = 'HIGH'
+        elif utilization > 60:
+            risk_level = 'MEDIUM'
+        else:
+            risk_level = 'LOW'
+
+        return Response({
+            'customer': {
+                'id': str(customer.pk),
+                'code': customer.code,
+                'name': customer.name,
+                'status': customer.status,
+            },
+            'credit_summary': {
+                'credit_limit': str(customer.credit_limit),
+                'current_balance': str(customer.balance),
+                'available_credit': str(customer.available_credit),
+                'utilization_pct': round(utilization, 1),
+            },
+            'overdue_summary': {
+                'total_overdue': str(total_overdue),
+                'overdue_count': len(overdue_list),
+                'invoices': overdue_list,
+            },
+            'aging': {k: str(v) for k, v in aging.items()},
+            'pending_approvals': pending_list,
+            'risk_level': risk_level,
+        })
+
 
 class SalesInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
@@ -281,34 +405,56 @@ class SalesInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
         return queryset
 
     def perform_create(self, serializer):
-        """Create invoice and update customer balance."""
+        """Create invoice with centralized credit limit enforcement via CreditPolicyEngine."""
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+
+        customer = serializer.validated_data.get('customer')
+        total_amount = serializer.validated_data.get('total_amount', Decimal('0.00'))
+
+        if customer:
+            from core.services.credit_policy_engine import CreditPolicyEngine
+            from core.services.financial_truth_engine import FinancialTruthEngine
+
+            result = CreditPolicyEngine.check_customer_invoice(
+                customer=customer,
+                total_amount=total_amount,
+                user=self.request.user if hasattr(self.request, 'user') else None,
+            )
+
+            if not result.allowed and not result.requires_override:
+                raise ValidationError({'customer': result.reason})
+
+            if not result.allowed and result.requires_override:
+                request_override = self.request.data.get('request_credit_override', False)
+                if request_override:
+                    invoice = serializer.save(status='CREDIT_PENDING')
+                    CreditPolicyEngine.handle_credit_override(
+                        customer=customer,
+                        invoice=invoice,
+                        total_amount=total_amount,
+                        user=self.request.user if hasattr(self.request, 'user') else None,
+                    )
+                    return invoice
+                else:
+                    available = FinancialTruthEngine.get_customer_available_credit(customer)
+                    raise ValidationError({
+                        'customer': f'Credit limit exceeded. Available: {available}, Required: {total_amount}. Use request_credit_override=true to submit for approval.'
+                    })
+
         invoice = serializer.save()
-        self._update_customer_balance(invoice)
+        BalanceSyncService.sync_customer_by_invoice(invoice, lock=True)
 
     def perform_update(self, serializer):
-        """Update invoice and adjust customer balance."""
-        old_total = serializer.instance.total_amount if serializer.instance else Decimal('0.00')
+        """Update invoice and sync customer balance."""
         invoice = serializer.save()
-        self._update_customer_balance(invoice, old_total)
+        BalanceSyncService.sync_customer_by_invoice(invoice, lock=True)
 
     def perform_destroy(self, instance):
-        """Soft delete invoice and adjust customer balance."""
-        old_total = instance.total_amount
+        """Soft delete invoice and sync customer balance."""
         instance.is_active = False
         instance.save(update_fields=['is_active', 'updated_at'])
-        self._adjust_customer_balance(instance.customer, -old_total)
-
-    def _update_customer_balance(self, invoice, old_total=None):
-        """Update customer balance when invoice is created/updated."""
-        if old_total is not None:
-            self._adjust_customer_balance(invoice.customer, -old_total)
-        self._adjust_customer_balance(invoice.customer, invoice.total_amount)
-
-    def _adjust_customer_balance(self, customer, amount):
-        """Adjust customer balance by the given amount."""
-        with transaction.atomic():
-            customer.balance = customer.balance + Decimal(amount)
-            customer.save(update_fields=['balance', 'updated_at'])
+        BalanceSyncService.sync_customer_by_invoice(instance, lock=True)
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
@@ -528,6 +674,96 @@ class SalesInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+    @action(detail=False, methods=['get'])
+    def pending_credit_approvals(self, request):
+        """List all pending credit approval requests."""
+        from sales.models import CreditApprovalRequest
+        from sales.serializers.credit_approval import CreditApprovalRequestSerializer
+
+        pending = CreditApprovalRequest.objects.filter(status='PENDING').order_by('-created_at')
+        serializer = CreditApprovalRequestSerializer(pending, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'])
+    def approve_credit(self, request):
+        """Approve a credit limit override request."""
+        from sales.models import CreditApprovalRequest
+        from core.services.financial_audit import FinancialAuditService
+
+        request_id = request.data.get('request_id')
+        reason = request.data.get('reason', '')
+
+        if not request_id:
+            return Response({'error': 'request_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            credit_request = CreditApprovalRequest.objects.select_for_update().get(pk=request_id, status='PENDING')
+        except CreditApprovalRequest.DoesNotExist:
+            return Response({'error': 'Credit request not found or already processed'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Approve the request
+        credit_request.status = 'APPROVED'
+        credit_request.approved_by = request.user if hasattr(request, 'user') else None
+        credit_request.approved_at = timezone.now()
+        credit_request.approval_reason = reason
+        credit_request.save()
+
+        # Update invoice status from CREDIT_PENDING to CONFIRMED
+        invoice = credit_request.invoice
+        if invoice.status == 'CREDIT_PENDING':
+            invoice.status = 'CONFIRMED'
+            invoice.save(update_fields=['status', 'updated_at'])
+            # Sync balance now that invoice is confirmed
+            BalanceSyncService.sync_customer_by_invoice(invoice, lock=True)
+
+        FinancialAuditService.log_credit_override(
+            customer_id=str(credit_request.customer.pk),
+            customer_name=credit_request.customer.name,
+            credit_limit=credit_request.credit_limit,
+            current_balance=credit_request.current_balance,
+            invoice_amount=credit_request.requested_amount,
+            user=request.user if hasattr(request, 'user') else None,
+        )
+
+        return Response({
+            'success': True,
+            'request_id': str(credit_request.pk),
+            'invoice_id': str(invoice.pk),
+            'approved_by': credit_request.approved_by.username if credit_request.approved_by else 'system',
+            'approved_at': credit_request.approved_at.isoformat(),
+        })
+
+    @action(detail=False, methods=['post'])
+    def reject_credit(self, request):
+        """Reject a credit limit override request."""
+        from sales.models import CreditApprovalRequest
+
+        request_id = request.data.get('request_id')
+        reason = request.data.get('reason', '')
+
+        if not request_id:
+            return Response({'error': 'request_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            credit_request = CreditApprovalRequest.objects.select_for_update().get(pk=request_id, status='PENDING')
+        except CreditApprovalRequest.DoesNotExist:
+            return Response({'error': 'Credit request not found or already processed'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Reject the request
+        credit_request.status = 'REJECTED'
+        credit_request.approved_by = request.user if hasattr(request, 'user') else None
+        credit_request.approved_at = timezone.now()
+        credit_request.rejection_reason = reason
+        credit_request.save()
+
+        # Keep invoice as CREDIT_PENDING (not confirmed, not cancelled)
+        return Response({
+            'success': True,
+            'request_id': str(credit_request.pk),
+            'rejected_by': credit_request.approved_by.username if credit_request.approved_by else 'system',
+            'rejected_at': credit_request.approved_at.isoformat(),
+        })
+
 
 class SalesItemViewSet(viewsets.ModelViewSet):
     """
@@ -557,6 +793,94 @@ class CustomerPaymentViewSet(viewsets.ModelViewSet):
     ordering = ['-payment_date']
 
     def perform_create(self, serializer):
-        """Create payment, update balances, and create journal entry."""
-        payment = serializer.save()
-        payment.update_customer_balance()
+        """Create payment with overpayment prevention and concurrent safety.
+        
+        Balance is now synced automatically via CustomerPayment.save()
+        through BalanceSyncService (no direct mutation needed here).
+        """
+        invoice = serializer.validated_data.get('invoice')
+        customer = serializer.validated_data.get('customer')
+        amount = serializer.validated_data.get('amount', Decimal('0.00'))
+
+        if invoice:
+            with transaction.atomic():
+                locked_invoice = SalesInvoice.objects.select_for_update().get(pk=invoice.pk)
+                remaining = locked_invoice.total_amount - locked_invoice.paid_amount
+                if amount > remaining:
+                    raise ValidationError({
+                        'amount': f'Payment exceeds remaining balance. Remaining: {remaining}, Attempted: {amount}'
+                    })
+                serializer.save()
+        else:
+            with transaction.atomic():
+                if customer:
+                    locked_customer = Customer.objects.select_for_update().get(pk=customer.pk)
+                    if locked_customer.credit_limit and locked_customer.credit_limit > 0:
+                        projected = locked_customer.balance - amount
+                        if projected > locked_customer.credit_limit:
+                            raise ValidationError({
+                                'amount': f'Payment would exceed credit limit. Available credit: {locked_customer.available_credit}'
+                            })
+                serializer.save()
+
+    @action(detail=False, methods=['post'])
+    def fifo_allocate(self, request):
+        """Run FIFO allocation for all unallocated payments."""
+        customer_id = request.data.get('customer_id')
+        if customer_id:
+            try:
+                customer = Customer.objects.get(pk=customer_id)
+                result = FIFOAllocationService.allocate_for_customer(customer, user=request.user if hasattr(request, 'user') else None)
+            except Customer.DoesNotExist:
+                return Response({'error': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            result = FIFOAllocationService.allocate_all_unallocated(user=request.user if hasattr(request, 'user') else None)
+
+        return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def unallocated_payments(self, request):
+        """List unallocated payments eligible for FIFO allocation."""
+        customer_id = request.query_params.get('customer_id')
+        customer = None
+        if customer_id:
+            try:
+                customer = Customer.objects.get(pk=customer_id)
+            except Customer.DoesNotExist:
+                return Response({'error': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        payments = FIFOAllocationService.get_unallocated_payments(customer)
+        return Response(payments)
+
+    @action(detail=False, methods=['get'])
+    def outstanding_invoices(self, request):
+        """List outstanding invoices eligible for FIFO allocation."""
+        customer_id = request.query_params.get('customer_id')
+        customer = None
+        if customer_id:
+            try:
+                customer = Customer.objects.get(pk=customer_id)
+            except Customer.DoesNotExist:
+                return Response({'error': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        invoices = FIFOAllocationService.get_outstanding_invoices(customer)
+        return Response(invoices)
+
+    @action(detail=False, methods=['get'])
+    def financial_integrity(self, request):
+        """Run full financial integrity validation."""
+        result = FinancialIntegrityService.validate_all()
+        return Response(result)
+
+    @action(detail=False, methods=['post'])
+    def fix_balances(self, request):
+        """Auto-fix all customer and supplier balance mismatches."""
+        user = request.user if hasattr(request, 'user') else None
+        customer_result = FinancialIntegrityService.auto_fix_customer_balances(user=user)
+        supplier_result = FinancialIntegrityService.auto_fix_supplier_balances(user=user)
+
+        return Response({
+            'customers': customer_result,
+            'suppliers': supplier_result,
+            'overall_success': customer_result['success'] and supplier_result['success'],
+        })

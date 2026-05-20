@@ -519,6 +519,39 @@ class MainWindow(QMainWindow):
         _register(56, lambda api_client=None: ReportBrowser(report_type="payroll_emp_history"))
         _register(57, _b(ReconciliationScreen))
 
+        # Index 58: Financial Integrity
+        from ui.accounting.financial_integrity_screen import FinancialIntegrityScreen
+        _register(58, lambda api_client=None: FinancialIntegrityScreen())
+
+        # Index 59: Financial Audit Log
+        from ui.accounting.financial_audit_log_screen import FinancialAuditLogScreen
+        _register(59, lambda api_client=None: FinancialAuditLogScreen())
+
+        # Phase 20: Financial Operations Cohesion
+        # Index 60: Customer Payment Workspace
+        from ui.finance.customer_payment_workspace import CustomerPaymentWorkspace
+        _register(60, _b(CustomerPaymentWorkspace))
+
+        # Index 61: Supplier Payment Workspace
+        from ui.finance.supplier_payment_workspace import SupplierPaymentWorkspace
+        _register(61, _b(SupplierPaymentWorkspace))
+
+        # Index 62: Payment Allocation Explorer
+        from ui.finance.payment_allocation_explorer import PaymentAllocationExplorer
+        _register(62, _b(PaymentAllocationExplorer))
+
+        # Index 63: Returns Explainability
+        from ui.finance.returns_explainability import ReturnsExplainabilityScreen
+        _register(63, _b(ReturnsExplainabilityScreen))
+
+        # Index 64: Journal Reversal Explorer
+        from ui.finance.journal_reversal_explorer import JournalReversalExplorer
+        _register(64, _b(JournalReversalExplorer))
+
+        # Index 65: Financial Operations Console
+        from ui.finance.financial_operations_console import FinancialOperationsConsole
+        _register(65, lambda api_client=None: FinancialOperationsConsole(api_client=api_client))
+
         main_layout.addWidget(content_frame, 1)
 
         self.sidebar.page_changed.connect(self.change_page)
@@ -536,9 +569,10 @@ class MainWindow(QMainWindow):
             1: "inventory", 2: "inventory", 3: "inventory", 4: "inventory",
             5: "sales", 6: "purchases", 7: "sales", 8: "purchases",
             9: "returns",
-            10: "accounting", 11: "accounting", 12: "accounting",
+            10: "accounting", 11: "accounting", 12: "accounting", 58: "accounting", 59: "accounting",
             13: "reports", 14: "reports", 15: "reports", 16: "reports", 17: "reports",
             18: "finance", 19: "finance", 20: "finance", 21: "finance", 22: "finance", 34: "finance",
+            60: "finance", 61: "finance", 62: "finance", 63: "finance", 64: "finance", 65: "finance",
             23: "hr", 24: "hr", 25: "hr", 26: "hr",
             49: "hr", 50: "hr", 51: "hr", 52: "hr",
             53: "hr", 54: "hr", 55: "hr", 56: "hr",

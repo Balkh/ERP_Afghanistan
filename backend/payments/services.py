@@ -533,17 +533,32 @@ class PaymentEngine:
                 'credit': txn.amount,
                 'description': f"AR reduction - {txn.party_name}"
             })
-        else:
-            revenue_account = Account.objects.filter(
-                account_type='REVENUE'
-            ).first()
-            if not revenue_account:
-                return {'success': False, 'errors': ['Revenue account not found']}
+        elif txn.party_type == 'SUPPLIER':
+            # Supplier receipts (e.g., supplier credit memos) reduce AP
+            ap_account = Account.objects.filter(code='2100', is_active=True).first()
+            if not ap_account:
+                return {'success': False, 'errors': ['Accounts Payable account (2100) not found']}
             lines.append({
-                'account_id': revenue_account.id,
+                'account_id': ap_account.id,
                 'debit': 0,
                 'credit': txn.amount,
-                'description': f"Revenue - {txn.description}"
+                'description': f"AP reduction - {txn.party_name}"
+            })
+        else:
+            # Unallocated/advance receipt — use Unearned Revenue suspense account
+            suspense_account = Account.objects.filter(code='2200', is_active=True).first()
+            if not suspense_account:
+                # Fallback to first liability account
+                suspense_account = Account.objects.filter(
+                    account_type='LIABILITY', is_active=True
+                ).first()
+            if not suspense_account:
+                return {'success': False, 'errors': ['Unearned Revenue (2200) or liability account not found for unallocated receipt']}
+            lines.append({
+                'account_id': suspense_account.id,
+                'debit': 0,
+                'credit': txn.amount,
+                'description': f"Unallocated receipt - {txn.description}"
             })
 
         if len(lines) < 2:
@@ -572,22 +587,46 @@ class PaymentEngine:
         
         lines = []
 
-        expense_account = Account.objects.filter(
-            account_type='EXPENSE',
-            account_category='OPERATING_EXPENSE'
-        ).first()
-        if not expense_account:
-            expense_account = Account.objects.filter(account_type='EXPENSE', is_active=True).first()
-        
-        if not expense_account:
-            return {'success': False, 'errors': ['Expense account not found for payment journal entry']}
-        
-        lines.append({
-            'account_id': expense_account.id,
-            'debit': txn.amount,
-            'credit': 0,
-            'description': f"Payment {txn.transaction_number} - {txn.description}"
-        })
+        if txn.party_type == 'SUPPLIER':
+            # Supplier payment — reduce Accounts Payable
+            ap_account = Account.objects.filter(code='2100', is_active=True).first()
+            if not ap_account:
+                return {'success': False, 'errors': ['Accounts Payable account (2100) not found']}
+            lines.append({
+                'account_id': ap_account.id,
+                'debit': txn.amount,
+                'credit': 0,
+                'description': f"AP reduction - {txn.party_name} ({txn.transaction_number})"
+            })
+        elif txn.party_type == 'CUSTOMER':
+            # Customer payment (refund/credit) — reduce AR
+            ar_account = Account.objects.filter(code='1200', is_active=True).first()
+            if not ar_account:
+                return {'success': False, 'errors': ['Accounts Receivable account (1200) not found']}
+            lines.append({
+                'account_id': ar_account.id,
+                'debit': txn.amount,
+                'credit': 0,
+                'description': f"AR reduction - {txn.party_name} ({txn.transaction_number})"
+            })
+        else:
+            # Unallocated/general payment — use expense account
+            expense_account = Account.objects.filter(
+                account_type='EXPENSE',
+                account_category='OPERATING_EXPENSE'
+            ).first()
+            if not expense_account:
+                expense_account = Account.objects.filter(account_type='EXPENSE', is_active=True).first()
+            
+            if not expense_account:
+                return {'success': False, 'errors': ['Expense account not found for unallocated payment journal entry']}
+            
+            lines.append({
+                'account_id': expense_account.id,
+                'debit': txn.amount,
+                'credit': 0,
+                'description': f"Payment {txn.transaction_number} - {txn.description}"
+            })
 
         if txn.fee > 0:
             fee_account = Account.objects.filter(

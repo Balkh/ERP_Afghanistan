@@ -118,6 +118,15 @@ urlpatterns = [
     path('api/v1/observability/', include('core.api.v1.observability_urls')),
     path('api/v1/intelligence/', include('core.api.v1.intelligence_urls')),
     path('api/v1/autonomous/', include('core.api.v1.autonomous_urls')),
+
+    # ─── Phase 17 — Financial Intelligence + Completeness Layer ───
+    path('api/v1/financial-intelligence/', include('core.api.v1.ficl_urls')),
+
+    # ─── Phase 18 — Financial Control Tower ───
+    path('api/financial/control-tower/', include('core.api.v1.control_tower_urls')),
+
+    # ─── Phase 20 — Financial Operations Cohesion ───
+    path('api/v1/payment-operations/', include('core.api.v1.payment_operations_urls')),
 ]
 
 # Serve static files in development

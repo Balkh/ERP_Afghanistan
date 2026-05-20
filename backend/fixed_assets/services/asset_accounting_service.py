@@ -8,6 +8,7 @@ from django.utils import timezone
 from accounting.models import Account, JournalEntry, JournalEntryLine
 from accounting.services.journal_engine import JournalEngine
 from fixed_assets.models import FixedAsset, AssetDepreciation, AssetDisposal
+from fixed_assets.services.asset_account_resolver import AssetAccountResolver
 
 
 class AssetAccountingIntegrationService:
@@ -42,6 +43,10 @@ class AssetAccountingIntegrationService:
 
         entry_description = description or f"Purchase of {asset.asset_name} ({asset.asset_code})"
 
+        asset_account = AssetAccountResolver.resolve_asset_account(
+            asset.category.name.upper() if asset.category else 'OTHER'
+        )
+
         entry = JournalEntry.objects.create(
             entry_number=JournalEngine.generate_entry_number('ASSET'),
             entry_date=asset.purchase_date,
@@ -49,6 +54,14 @@ class AssetAccountingIntegrationService:
             description=entry_description,
             reference=asset.asset_code,
             is_posted=True
+        )
+
+        JournalEntryLine.objects.create(
+            entry=entry,
+            account=asset_account,
+            debit=asset.purchase_cost,
+            credit=Decimal('0.00'),
+            description=f"Fixed asset acquisition: {asset.asset_name}"
         )
 
         JournalEntryLine.objects.create(
@@ -155,6 +168,8 @@ class AssetAccountingIntegrationService:
         asset = disposal.asset
         entry_description = description or f"Disposal of {asset.asset_name}"
 
+        asset_account = AssetAccountResolver.resolve_asset_account(asset.category.name.upper() if asset.category else 'OTHER')
+
         entry = JournalEntry.objects.create(
             entry_number=JournalEngine.generate_entry_number('DISP'),
             entry_date=disposal.disposal_date,
@@ -183,9 +198,9 @@ class AssetAccountingIntegrationService:
 
         JournalEntryLine.objects.create(
             entry=entry,
-            account=Account.objects.filter(is_active=True).first(),
-            debit=asset.purchase_cost,
-            credit=Decimal('0.00'),
+            account=asset_account,
+            debit=Decimal('0.00'),
+            credit=asset.purchase_cost,
             description="Remove asset cost"
         )
 

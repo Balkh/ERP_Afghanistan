@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from core.multitenant.views import UnifiedEnterpriseViewSetMixin
+from core.balance_sync import BalanceSyncService
 from purchases.models import Supplier, PurchaseInvoice, PurchaseItem, SupplierPayment
 from purchases.serializers import (
     SupplierSerializer,
@@ -193,6 +194,22 @@ class SupplierViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
         serializer = SupplierPaymentSerializer(payments, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'])
+    def statement(self, request, pk=None):
+        """Generate supplier statement with running balance."""
+        from core.services.statement_engine import StatementService
+        from datetime import datetime
+
+        supplier = self.get_object()
+        from_date_str = request.query_params.get('from_date')
+        to_date_str = request.query_params.get('to_date')
+
+        from_date = datetime.strptime(from_date_str, '%Y-%m-%d').date() if from_date_str else None
+        to_date = datetime.strptime(to_date_str, '%Y-%m-%d').date() if to_date_str else None
+
+        statement = StatementService.supplier_statement(supplier, from_date, to_date)
+        return Response(statement)
+
 
 class PurchaseInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
@@ -215,34 +232,20 @@ class PurchaseInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSe
         return queryset
 
     def perform_create(self, serializer):
-        """Create invoice and update supplier balance."""
+        """Create invoice and sync supplier balance."""
         invoice = serializer.save()
-        self._update_supplier_balance(invoice)
+        BalanceSyncService.sync_supplier_by_invoice(invoice, lock=True)
 
     def perform_update(self, serializer):
-        """Update invoice and adjust supplier balance."""
-        old_total = serializer.instance.total_amount if serializer.instance else Decimal('0.00')
+        """Update invoice and sync supplier balance."""
         invoice = serializer.save()
-        self._update_supplier_balance(invoice, old_total)
+        BalanceSyncService.sync_supplier_by_invoice(invoice, lock=True)
 
     def perform_destroy(self, instance):
-        """Soft delete invoice and adjust supplier balance."""
-        old_total = instance.total_amount
+        """Soft delete invoice and sync supplier balance."""
         instance.is_active = False
         instance.save(update_fields=['is_active', 'updated_at'])
-        self._adjust_supplier_balance(instance.supplier, -old_total)
-
-    def _update_supplier_balance(self, invoice, old_total=None):
-        """Update supplier balance when invoice is created/updated."""
-        if old_total is not None:
-            self._adjust_supplier_balance(invoice.supplier, -old_total)
-        self._adjust_supplier_balance(invoice.supplier, invoice.total_amount)
-
-    def _adjust_supplier_balance(self, supplier, amount):
-        """Adjust supplier balance by the given amount."""
-        with transaction.atomic():
-            supplier.balance = supplier.balance + Decimal(amount)
-            supplier.save(update_fields=['balance', 'updated_at'])
+        BalanceSyncService.sync_supplier_by_invoice(instance, lock=True)
 
     @action(detail=True, methods=['post'])
     def confirm(self, request, pk=None):
@@ -418,6 +421,80 @@ class SupplierPaymentViewSet(viewsets.ModelViewSet):
     ordering = ['-payment_date']
 
     def perform_create(self, serializer):
-        """Create payment, update balances, and create journal entry."""
-        payment = serializer.save()
-        payment.update_supplier_balance()
+        """Create payment with overpayment prevention and concurrent safety.
+        
+        Balance is now synced automatically via SupplierPayment.save()
+        through BalanceSyncService (no direct mutation needed here).
+        """
+        invoice = serializer.validated_data.get('invoice')
+        supplier = serializer.validated_data.get('supplier')
+        amount = serializer.validated_data.get('amount', Decimal('0.00'))
+
+        if invoice:
+            with transaction.atomic():
+                locked_invoice = PurchaseInvoice.objects.select_for_update().get(pk=invoice.pk)
+                remaining = locked_invoice.total_amount - locked_invoice.paid_amount
+                if amount > remaining:
+                    raise ValidationError({
+                        'amount': f'Payment exceeds remaining balance. Remaining: {remaining}, Attempted: {amount}'
+                    })
+                serializer.save()
+        else:
+            with transaction.atomic():
+                serializer.save()
+
+    @action(detail=False, methods=['post'])
+    def fifo_allocate(self, request):
+        """Run FIFO allocation for all unallocated supplier payments."""
+        from purchases.services.fifo_allocation import SupplierFIFOAllocationService
+        from purchases.models import Supplier
+
+        supplier_id = request.data.get('supplier_id')
+        if supplier_id:
+            try:
+                supplier = Supplier.objects.get(pk=supplier_id)
+                result = SupplierFIFOAllocationService.allocate_for_supplier(
+                    supplier, user=request.user if hasattr(request, 'user') else None
+                )
+            except Supplier.DoesNotExist:
+                return Response({'error': 'Supplier not found'}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            result = SupplierFIFOAllocationService.allocate_all_unallocated(
+                user=request.user if hasattr(request, 'user') else None
+            )
+
+        return Response(result)
+
+    @action(detail=False, methods=['get'])
+    def unallocated_payments(self, request):
+        """List unallocated supplier payments eligible for FIFO allocation."""
+        from purchases.services.fifo_allocation import SupplierFIFOAllocationService
+        from purchases.models import Supplier
+
+        supplier_id = request.query_params.get('supplier_id')
+        supplier = None
+        if supplier_id:
+            try:
+                supplier = Supplier.objects.get(pk=supplier_id)
+            except Supplier.DoesNotExist:
+                return Response({'error': 'Supplier not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        payments = SupplierFIFOAllocationService.get_unallocated_payments(supplier)
+        return Response(payments)
+
+    @action(detail=False, methods=['get'])
+    def outstanding_invoices(self, request):
+        """List outstanding purchase invoices eligible for FIFO allocation."""
+        from purchases.services.fifo_allocation import SupplierFIFOAllocationService
+        from purchases.models import Supplier
+
+        supplier_id = request.query_params.get('supplier_id')
+        supplier = None
+        if supplier_id:
+            try:
+                supplier = Supplier.objects.get(pk=supplier_id)
+            except Supplier.DoesNotExist:
+                return Response({'error': 'Supplier not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        invoices = SupplierFIFOAllocationService.get_outstanding_invoices(supplier)
+        return Response(invoices)

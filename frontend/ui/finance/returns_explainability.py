@@ -1,0 +1,202 @@
+"""Phase 20: Returns Explainability UI - explains why returns were processed."""
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
+    QLabel, QComboBox, QDateEdit, QGroupBox, QMessageBox, QApplication,
+    QTextEdit,
+)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
+
+from api.client import APIClient
+from api.endpoints import get_endpoint, extract_list
+from ui.constants import (
+    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE,
+    TEXT_PAGE_TITLE, TEXT_BODY, TEXT_LABEL,
+    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+    COLOR_BG_ELEVATED, COLOR_BG_SURFACE, COLOR_BORDER,
+    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+)
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+
+
+class ReturnsExplainabilityScreen(QWidget):
+    """Returns explainability screen - shows why returns were processed with context."""
+
+    def __init__(self, parent=None, api_client=None):
+        super().__init__(parent)
+        self.api_client = api_client or APIClient()
+        self.returns = []
+        self._is_loading = False
+        self.setup_ui()
+        self.load_returns()
+
+    def setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
+        layout.setSpacing(SPACING_LG)
+
+        # Header
+        header_layout = QHBoxLayout()
+        title = QLabel("Returns Explainability")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header_layout.addWidget(title)
+        header_layout.addStretch()
+
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_refresh.clicked.connect(self.load_returns)
+        header_layout.addWidget(self.btn_refresh)
+
+        layout.addLayout(header_layout)
+
+        # Loading label
+        self.loading_label = QLabel("Loading returns...")
+        self.loading_label.setAlignment(Qt.AlignCenter)
+        self.loading_label.setStyleSheet(
+            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
+        )
+        self.loading_label.setVisible(False)
+        layout.addWidget(self.loading_label)
+
+        # Content
+        self.content_widget = QWidget()
+        content_layout = QVBoxLayout(self.content_widget)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(SPACING_LG)
+
+        # KPI row
+        kpi_layout = QGridLayout()
+        kpi_layout.setSpacing(SPACING_MD)
+        self.kpi_total_returns = MiniMetricCard("Total Returns", "0", COLOR_WARNING)
+        self.kpi_total_value = MiniMetricCard("Total Value", "0.00", COLOR_DANGER)
+        self.kpi_explained = MiniMetricCard("Explained", "0", COLOR_SUCCESS)
+        kpi_layout.addWidget(self.kpi_total_returns, 0, 0)
+        kpi_layout.addWidget(self.kpi_total_value, 0, 1)
+        kpi_layout.addWidget(self.kpi_explained, 0, 2)
+        content_layout.addLayout(kpi_layout)
+
+        # Returns table
+        section = SectionHeader("Return Orders with Explanation")
+        content_layout.addWidget(section)
+
+        columns = [
+            TableColumn("return_number", "Return #", width=120),
+            TableColumn("date", "Date", width=100, align="center"),
+            TableColumn("customer", "Customer", width=150),
+            TableColumn("reason", "Reason", width=150),
+            TableColumn("amount", "Amount", width=100, align="right"),
+            TableColumn("status", "Status", width=80, align="center"),
+            TableColumn("journal_reversed", "Journal Reversed", width=120, align="center"),
+        ]
+        self.returns_table = EnterpriseTable(columns)
+        self.returns_table.set_density("compact")
+        self.returns_table.row_double_clicked.connect(self._show_return_details)
+        content_layout.addWidget(self.returns_table)
+
+        # Explanation panel
+        self.explanation_group = QGroupBox("Return Explanation")
+        self.explanation_group.setFont(QFont("Segoe UI", TEXT_LABEL))
+        self.explanation_group.setStyleSheet(
+            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}"
+        )
+        explanation_layout = QVBoxLayout(self.explanation_group)
+
+        self.explanation_text = QTextEdit()
+        self.explanation_text.setReadOnly(True)
+        self.explanation_text.setStyleSheet(f"""
+            QTextEdit {{
+                background-color: {COLOR_BG_SURFACE};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD};
+                padding: {SPACING_MD}px;
+                color: {COLOR_TEXT_PRIMARY};
+                font-size: {TEXT_BODY}pt;
+            }}
+        """)
+        self.explanation_text.setPlainText("Select a return to view explanation.")
+        explanation_layout.addWidget(self.explanation_text)
+
+        content_layout.addWidget(self.explanation_group)
+
+        layout.addWidget(self.content_widget)
+        self.content_widget.setVisible(False)
+
+    def _show_loading(self, show=True):
+        self._is_loading = show
+        self.loading_label.setVisible(show)
+        self.content_widget.setVisible(not show)
+        self.btn_refresh.setEnabled(not show)
+
+    def _show_data(self):
+        self._is_loading = False
+        self.loading_label.setVisible(False)
+        self.content_widget.setVisible(True)
+        self.btn_refresh.setEnabled(True)
+
+    def _show_error(self, message):
+        self._is_loading = False
+        self.loading_label.setText(message)
+        self.loading_label.setStyleSheet(
+            f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
+        )
+        self.loading_label.setVisible(True)
+        self.content_widget.setVisible(False)
+        self.btn_refresh.setEnabled(True)
+
+    def load_returns(self):
+        """Load returns data."""
+        self._show_loading()
+        try:
+            endpoint = get_endpoint("returns") or "/api/returns/orders/"
+            response = self.api_client.get(endpoint, params={"page_size": 100})
+            self.returns = extract_list(response)
+            self._update_display()
+        except Exception as e:
+            print(f"Error loading returns: {e}")
+            self._show_error(f"Error: {e}")
+        self._show_data()
+
+    def _update_display(self):
+        """Update display with returns data."""
+        total_value = sum(self._safe_float(r.get("total_amount", 0)) for r in self.returns)
+        self.kpi_total_returns.update_value(str(len(self.returns)))
+        self.kpi_total_value.update_value(f"{total_value:,.2f}")
+        self.kpi_explained.update_value(str(len([r for r in self.returns if r.get("reason")])))
+
+        table_data = []
+        for r in self.returns:
+            table_data.append({
+                "return_number": r.get("return_number", ""),
+                "date": str(r.get("return_date", ""))[:10],
+                "customer": r.get("customer_name", ""),
+                "reason": r.get("reason", "")[:30] + "..." if len(r.get("reason", "")) > 30 else r.get("reason", ""),
+                "amount": f"{self._safe_float(r.get('total_amount', 0)):,.2f}",
+                "status": r.get("status", ""),
+                "journal_reversed": "Yes" if r.get("journal_entry_reversed") else "No",
+            })
+        self.returns_table.set_data(table_data)
+
+    def _show_return_details(self, row):
+        """Show detailed explanation for selected return."""
+        if row < len(self.returns):
+            ret = self.returns[row]
+            explanation = (
+                f"Return: {ret.get('return_number', '')}\n"
+                f"Date: {ret.get('return_date', '')}\n"
+                f"Customer: {ret.get('customer_name', '')}\n"
+                f"Reason: {ret.get('reason', 'N/A')}\n"
+                f"Amount: {self._safe_float(ret.get('total_amount', 0)):,.2f}\n"
+                f"Status: {ret.get('status', '')}\n"
+                f"Journal Reversed: {'Yes' if ret.get('journal_entry_reversed') else 'No'}\n"
+                f"\nNotes: {ret.get('notes', 'No additional notes.')}"
+            )
+            self.explanation_text.setPlainText(explanation)
+
+    def _safe_float(self, value, default=0.0):
+        try:
+            return float(value) if value is not None else default
+        except (ValueError, TypeError):
+            return default

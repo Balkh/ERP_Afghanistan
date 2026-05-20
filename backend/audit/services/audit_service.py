@@ -40,6 +40,12 @@ class AuditService:
                 if old_val != new_val:
                     changes[key] = {'old': old_val, 'new': new_val}
 
+        # Validate user is a real User instance, not a mock
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        if user is not None and not isinstance(user, User):
+            user = None
+
         username = user.username if user else 'anonymous'
 
         AuditTrail.objects.create(

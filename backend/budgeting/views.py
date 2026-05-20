@@ -133,20 +133,13 @@ class BudgetViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def update_actuals(self, request, pk=None):
-        """Update actual amounts from journal entries."""
+        """Update actual amounts from posted journal entries.
+
+        Budget actuals are derived from JournalEngine truth only.
+        This endpoint triggers a recalculation — it does NOT allow manual overrides.
+        """
         budget = self.get_object()
-        serializer = BudgetUpdateActualsSerializer(data=request.data)
-        serializer.is_valid()
-        period = serializer.validated_data.get('period')
-
-        lines = budget.lines.all()
-        if period:
-            lines = lines.filter(period=period)
-
-        for line in lines:
-            BudgetCalculator.update_budget_line_actuals(line)
-
-        budget = BudgetCalculator.update_budget_totals(budget)
+        budget.refresh_actuals()
         return Response(BudgetSerializer(budget).data)
 
     @action(detail=True, methods=['get'])
@@ -198,11 +191,7 @@ class BudgetLineViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def update_actual(self, request, pk=None):
-        """Update actual amount from journal entries."""
+        """Update actual amount from posted journal entries for a single line."""
         line = self.get_object()
-        updated_line = BudgetCalculator.update_budget_line_actuals(line)
-
-        budget = updated_line.budget
-        BudgetCalculator.update_budget_totals(budget)
-
-        return Response(BudgetLineSerializer(updated_line).data)
+        line.refresh_actual()
+        return Response(BudgetLineSerializer(line).data)
