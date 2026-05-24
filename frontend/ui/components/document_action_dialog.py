@@ -1,21 +1,35 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_BODY, TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (
+    SPACING_XS,
+    SPACING_SM,
+    SPACING_LG,
+    SPACING_XL,
+    TEXT_BODY,
+    TEXT_LABEL,
+    BORDER_RADIUS_MD,
+    BORDER_RADIUS_LG,
+    COLOR_BG_SURFACE,
+    COLOR_BG_ELEVATED,
+    COLOR_BG_INPUT,
+    COLOR_BORDER_LIGHT,
+    COLOR_TEXT_PRIMARY,
+    COLOR_TEXT_SECONDARY,
+    COLOR_TEXT_MUTED,
+    COLOR_PRIMARY,
+    COLOR_PRIMARY_MUTED,
+    COLOR_WHATSAPP,
+)
+
 """
 Document Action Dialog - Centralized dialog for Printing and Sharing.
 """
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QPushButton, QFrame, QLineEdit, QSizePolicy)
+                               QFrame, QLineEdit)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtGui import QFont
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
-from ui.constants import (SPACING_MD, SPACING_LG, COLOR_PRIMARY,
-                          COLOR_SUCCESS, COLOR_INFO, COLOR_DANGER,
-                          COLOR_TEXT_PRIMARY, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                          COLOR_BORDER_LIGHT, COLOR_TEXT_SECONDARY, COLOR_BG_INPUT,
-                          COLOR_WHATSAPP, COLOR_TEXT_MUTED, COLOR_PRIMARY_MUTED)
 from api.document_action_service import DocumentActionService
-
 
 class DocumentActionDialog(QDialog):
     """
@@ -60,16 +74,14 @@ class DocumentActionDialog(QDialog):
         btn_layout.setSpacing(SPACING_SM + SPACING_XS)
         
         # 1. Print Button
-        self.print_btn = QPushButton("🖨️  Print Document")
+        self.print_btn = EnterpriseButton("🖨️  Print Document", variant=ButtonVariant.PRIMARY, size=ButtonSize.LARGE)
         self.print_btn.setFixedHeight(45)
-        self.print_btn.setStyleSheet(f"background: {COLOR_PRIMARY}; font-weight: bold; border-radius: {BORDER_RADIUS_LG};")
         self.print_btn.clicked.connect(self._on_print)
         btn_layout.addWidget(self.print_btn)
         
         # 2. PDF Button
-        self.pdf_btn = QPushButton("📄  Download as PDF")
+        self.pdf_btn = EnterpriseButton("📄  Download as PDF", variant=ButtonVariant.SECONDARY, size=ButtonSize.LARGE)
         self.pdf_btn.setFixedHeight(45)
-        self.pdf_btn.setStyleSheet(f"background: {COLOR_PRIMARY_MUTED}; font-weight: bold; border-radius: {BORDER_RADIUS_LG};")
         btn_layout.addWidget(self.pdf_btn)
 
         # separator
@@ -93,10 +105,9 @@ class DocumentActionDialog(QDialog):
         if 'customer_phone' in self.data:
             self.phone_input.setText(self.data['customer_phone'])
             
-        self.wa_btn = QPushButton("Share")
+        self.wa_btn = EnterpriseButton("Share", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.wa_btn.setFixedWidth(80)
         self.wa_btn.setFixedHeight(40)
-        self.wa_btn.setStyleSheet(f"background: {COLOR_WHATSAPP}; color: white; font-weight: bold; border-radius: {BORDER_RADIUS_MD};")
         self.wa_btn.clicked.connect(self._on_whatsapp)
         
         wa_row.addWidget(self.phone_input)
@@ -106,9 +117,7 @@ class DocumentActionDialog(QDialog):
         layout.addLayout(btn_layout)
         
         # Close Button
-        close_btn = QPushButton("Cancel")
-        close_btn.setFlat(True)
-        close_btn.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
+        close_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY)
         close_btn.clicked.connect(self.reject)
         layout.addWidget(close_btn, 0, Qt.AlignCenter)
 

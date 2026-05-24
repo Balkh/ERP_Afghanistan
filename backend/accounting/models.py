@@ -668,19 +668,20 @@ class JournalEntryLine(TimeStampedUUIDModel):
             raise ValidationError(_('Cannot have both debit and credit on the same line.'))
 
 
-class FiscalPeriod(TimeStampedUUIDModel):
+class FiscalPeriod(TimeStampedUUIDModel, CompanyScopedMixin):
     """
     Model representing a fiscal accounting period with locking capability.
     Ensures financial compliance by preventing modifications to closed periods.
     """
     STATUS_CHOICES = [
         ('OPEN', _('Open')),
+        ('SOFT_CLOSED', _('Soft Closed')),
         ('CLOSED', _('Closed')),
         ('LOCKED', _('Locked - No Changes Allowed')),
     ]
-    
+
     name = models.CharField(max_length=100, verbose_name=_('Period Name'))
-    code = models.CharField(max_length=20, unique=True, verbose_name=_('Period Code'))
+    code = models.CharField(max_length=20, verbose_name=_('Period Code'))
     start_date = models.DateField(verbose_name=_('Start Date'))
     end_date = models.DateField(verbose_name=_('End Date'))
     status = models.CharField(
@@ -700,46 +701,64 @@ class FiscalPeriod(TimeStampedUUIDModel):
         verbose_name=_('Locked By')
     )
     notes = models.TextField(blank=True, verbose_name=_('Notes'))
-    
+    closing_balance_carried_forward = models.BooleanField(
+        default=False,
+        verbose_name=_('Closing Balance Carried Forward')
+    )
+    closing_completed_at = models.DateTimeField(null=True, blank=True, verbose_name=_('Closing Completed At'))
+    closing_completed_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='completed_period_closures',
+        verbose_name=_('Closing Completed By')
+    )
+
     class Meta:
         verbose_name = _('Fiscal Period')
         verbose_name_plural = _('Fiscal Periods')
         ordering = ['-start_date']
+        unique_together = ['code', 'company']
         indexes = [
             models.Index(fields=['status']),
             models.Index(fields=['is_locked']),
             models.Index(fields=['start_date', 'end_date']),
+            models.Index(fields=['company', 'status']),
         ]
-    
+
     def __str__(self):
         return f"{self.name} ({self.start_date} - {self.end_date}) - {self.status}"
-    
+
     def clean(self):
         """Validate fiscal period."""
         if self.start_date and self.end_date:
             if self.start_date > self.end_date:
                 raise ValidationError(_('End date must be after start date.'))
-    
+
     def save(self, *args, **kwargs):
         """Override save to enforce locking rules."""
         self.full_clean()
-        
-        # Auto-set locked status based on status
+
         if self.status == 'LOCKED':
             self.is_locked = True
         elif self.status == 'OPEN':
             self.is_locked = False
-        
+
         super().save(*args, **kwargs)
-    
+
     def can_modify(self):
         """Check if period allows modifications."""
-        if self.is_locked or self.status == 'LOCKED':
-            return False
-        if self.status == 'CLOSED':
-            return False
-        return True
-    
+        return self.status == 'OPEN' and not self.is_locked
+
+    def can_post(self):
+        """Check if journal entries can be posted in this period."""
+        return self.status == 'OPEN' and not self.is_locked
+
+    def can_reverse(self):
+        """Check if reversals are allowed in this period."""
+        return self.status == 'OPEN' and not self.is_locked
+
     def lock(self, user=None):
         """Lock the period - no changes allowed after this."""
         self.is_locked = True
@@ -748,27 +767,116 @@ class FiscalPeriod(TimeStampedUUIDModel):
         self.locked_at = timezone.now()
         self.locked_by = user
         self.save()
-    
-    def unlock(self):
-        """Unlock the period - requires special permission."""
+
+    def unlock(self, user=None, reason=''):
+        """Unlock the period - requires special permission and audit trail."""
         self.is_locked = False
         self.status = 'OPEN'
         self.locked_at = None
         self.locked_by = None
+        self.closing_balance_carried_forward = False
         self.save()
 
 
-def is_period_locked(entry_date):
-    """Check if a date falls within a locked period."""
+class FiscalPeriodCloseLog(TimeStampedUUIDModel):
+    """
+    Audit trail for all fiscal period closing and reopening actions.
+    Every close, reopen, and status change is logged here.
+    """
+    ACTION_CHOICES = [
+        ('CLOSE', _('Close Period')),
+        ('SOFT_CLOSE', _('Soft Close Period')),
+        ('REOPEN', _('Reopen Period')),
+        ('LOCK', _('Lock Period')),
+        ('CARRY_FORWARD', _('Carry Forward Balances')),
+    ]
+
+    period = models.ForeignKey(
+        FiscalPeriod,
+        on_delete=models.CASCADE,
+        related_name='close_logs',
+        verbose_name=_('Fiscal Period')
+    )
+    action = models.CharField(
+        max_length=20,
+        choices=ACTION_CHOICES,
+        verbose_name=_('Action')
+    )
+    reason = models.TextField(verbose_name=_('Reason'))
+    previous_status = models.CharField(max_length=20, verbose_name=_('Previous Status'))
+    new_status = models.CharField(max_length=20, verbose_name=_('New Status'))
+    performed_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='period_close_actions',
+        verbose_name=_('Performed By')
+    )
+    validation_summary = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name=_('Validation Summary')
+    )
+    affected_entries_count = models.IntegerField(
+        default=0,
+        verbose_name=_('Affected Journal Entries Count')
+    )
+
+    class Meta:
+        verbose_name = _('Fiscal Period Close Log')
+        verbose_name_plural = _('Fiscal Period Close Logs')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['period', 'action']),
+            models.Index(fields=['performed_by']),
+        ]
+
+    def __str__(self):
+        return f"{self.period.code} - {self.action} - {self.created_at}"
+
+
+def is_period_locked(entry_date, company=None):
+    """Check if a date falls within a locked or closed period."""
     from django.utils import timezone
     today = timezone.now().date()
-    
-    # Get any locked period that contains this date
-    locked_period = FiscalPeriod.objects.filter(
-        is_locked=True,
+
+    queryset = FiscalPeriod.objects.filter(
         start_date__lte=entry_date,
-        end_date__gte=entry_date
-    ).first()
+        end_date__gte=entry_date,
+    ).exclude(status='OPEN')
+
+    if company:
+        queryset = queryset.filter(company=company)
+
+    return queryset.exists()
+
+
+def get_period_for_date(entry_date, company=None):
+    """Get the fiscal period for a given date."""
+    queryset = FiscalPeriod.objects.filter(
+        start_date__lte=entry_date,
+        end_date__gte=entry_date,
+    )
+
+    if company:
+        queryset = queryset.filter(company=company)
+
+    return queryset.first()
+
+
+def get_open_period_for_date(entry_date, company=None):
+    """Get the open period for a given date."""
+    queryset = FiscalPeriod.objects.filter(
+        status='OPEN',
+        start_date__lte=entry_date,
+        end_date__gte=entry_date,
+    )
+
+    if company:
+        queryset = queryset.filter(company=company)
+
+    return queryset.first()
     
     return locked_period is not None
 

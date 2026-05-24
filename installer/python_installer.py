@@ -38,7 +38,7 @@ class PythonInstaller:
         """Check if running with administrator privileges"""
         try:
             return ctypes.windll.shell32.IsUserAnAdmin()
-        except:
+        except (AttributeError, OSError):
             return False
     
     def require_admin(self):
@@ -66,7 +66,7 @@ class PythonInstaller:
                 print(f"  ✗ Insufficient disk space ({free_space_mb:.0f} MB free, 500 MB required)")
                 return False
             print(f"  ✓ Disk space: {free_space_mb:.0f} MB available")
-        except:
+        except (PermissionError, FileNotFoundError, OSError):
             print("  ⚠ Could not check disk space")
         
         # Check source directory

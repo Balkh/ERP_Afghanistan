@@ -77,17 +77,15 @@ class Expense(CompanyScopedMixin, TimeStampedUUIDModel):
         No direct balance mutation occurs — PaymentAccount balance is derived
         from journal entries via the SSOT Control Plane.
         """
-        from accounting.services.journal_engine import JournalEngine
-        
+        from core.drift_prevention.migration_router import MigrationRouter
+
         lines = [
-            # Debit: Expense Account
             {
                 'account_code': self.expense_account.code,
                 'debit': self.amount,
                 'credit': 0,
                 'description': f"Expense: {self.description or self.expense_account.name}"
             },
-            # Credit: Cash/Bank Account
             {
                 'account_code': self.payment_account.accounting_account.code,
                 'debit': 0,
@@ -95,16 +93,20 @@ class Expense(CompanyScopedMixin, TimeStampedUUIDModel):
                 'description': f"Payment for {self.expense_number}"
             }
         ]
-        
-        result = JournalEngine.create_entry(
+
+        result = MigrationRouter.create_entry(
+            module='expenses',
+            operation='create_entry',
             entry_type='EXPENSE',
             description=f"Pharmacy Expense {self.expense_number}: {self.description}",
             lines=lines,
             entry_date=self.date,
             reference=self.expense_number,
-            auto_post=True
+            auto_post=True,
+            entity_type='Expense',
+            entity_id=str(self.id),
         )
-        
+
         if not result.get('success'):
             raise ValidationError(
                 f'Journal entry creation failed for expense {self.expense_number}: '

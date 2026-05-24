@@ -10,7 +10,7 @@ Thin REST endpoints for:
 - Full intelligence snapshot
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from typing import Any, Dict
 
@@ -28,7 +28,7 @@ def _err(message: str, code: str = "INT_001", status: int = 400) -> Response:
 # ─── Drift ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_drift_baseline(request, domain: str):
     """Compute baseline statistics for a domain."""
     gw = get_intel_gateway()
@@ -47,7 +47,7 @@ def intel_drift_baseline(request, domain: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_drift_aggregate(request, domain: str, aggregate_id: str):
     """Detect drift for a specific aggregate."""
     gw = get_intel_gateway()
@@ -71,7 +71,7 @@ def intel_drift_aggregate(request, domain: str, aggregate_id: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_drift_all(request, domain: str):
     """Detect drift for all aggregates in a domain."""
     gw = get_intel_gateway()
@@ -93,7 +93,7 @@ def intel_drift_all(request, domain: str):
 # ─── Patterns ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_patterns(request, domain: str):
     """Mine all event patterns for a domain."""
     gw = get_intel_gateway()
@@ -114,7 +114,7 @@ def intel_patterns(request, domain: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_rare_events(request, domain: str):
     """Detect rare events in a domain."""
     gw = get_intel_gateway()
@@ -133,7 +133,7 @@ def intel_rare_events(request, domain: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_bursts(request, domain: str):
     """Detect burst patterns in a domain."""
     gw = get_intel_gateway()
@@ -154,7 +154,7 @@ def intel_bursts(request, domain: str):
 # ─── Anomaly Graph ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_anomaly_graph(request, domain: str):
     """Build cross-domain anomaly graph for a domain."""
     gw = get_intel_gateway()
@@ -172,7 +172,7 @@ def intel_anomaly_graph(request, domain: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_cross_domain_graph(request):
     """Build complete cross-domain anomaly graph."""
     gw = get_intel_gateway()
@@ -191,7 +191,7 @@ def intel_cross_domain_graph(request):
 # ─── Temporal ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_temporal_drift(request, domain: str):
     """Analyze temporal drift for a domain."""
     gw = get_intel_gateway()
@@ -212,7 +212,7 @@ def intel_temporal_drift(request, domain: str):
 # ─── Consistency ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_consistency(request):
     """Analyze consistency deviations across the system."""
     gw = get_intel_gateway()
@@ -232,7 +232,7 @@ def intel_consistency(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_consistency_compare(request):
     """Compare Event Store with Truth Layer reported counts."""
     gw = get_intel_gateway()
@@ -252,7 +252,7 @@ def intel_consistency_compare(request):
 # ─── Snapshot ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_snapshot(request):
     """Get point-in-time intelligence snapshot."""
     gw = get_intel_gateway()
@@ -270,7 +270,7 @@ def intel_snapshot(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def intel_status(request):
     """Get intelligence engine status."""
     gw = get_intel_gateway()

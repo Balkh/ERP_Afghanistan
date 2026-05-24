@@ -3,10 +3,9 @@ Base screen class for all application screens.
 Provides consistent screen lifecycle, navigation, and state management.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame, QGraphicsOpacityEffect
-from PySide6.QtCore import Signal, Qt, QTimer, QPropertyAnimation, QRect
-from PySide6.QtGui import QFont, QColor, QPalette
-from typing import Optional, Dict, Any, Callable
+from PySide6.QtWidgets import QWidget
+from PySide6.QtCore import Signal, Qt, QTimer
+from typing import Optional, Dict, Any
 import logging
 
 from runtime.timer_registry import register_timer, unregister_owner
@@ -73,7 +72,6 @@ class BaseScreen(QWidget):
             
     def _on_state_changed(self, new_state: str):
         """Handle state change."""
-        pass
     
     def set_api_client(self, client):
         """Set API client for data operations."""
@@ -116,7 +114,6 @@ class BaseScreen(QWidget):
         
     def _on_screen_hidden(self):
         """Handle screen hidden. Override in subclasses."""
-        pass
     
     def load_data(self, params: Optional[Dict] = None):
         """Load screen data. Override in subclasses."""
@@ -236,12 +233,16 @@ class BaseFormScreen(BaseScreen):
         is_valid, errors = self.validate_form()
         
         if is_valid:
+            from runtime.ux_telemetry import record_form_action
+            record_form_action("submit")
             self.form_validated.emit(self._form_data)
             self.form_submitted.emit(self._form_data)
             return True
         else:
             for field, error in errors.items():
                 self.show_field_error(field, error)
+            from runtime.ux_telemetry import record_form_action
+            record_form_action("validation_error")
             return False
             
     def show_field_error(self, field: str, error: str):
@@ -256,6 +257,8 @@ class BaseFormScreen(BaseScreen):
         
     def cancel_form(self):
         """Cancel form operation."""
+        from runtime.ux_telemetry import record_form_action
+        record_form_action("cancel")
         self.form_cancelled.emit()
 
 

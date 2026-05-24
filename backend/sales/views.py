@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 from core.view_logging import log_business_event
@@ -22,7 +22,6 @@ from sales.serializers import (
 from inventory.service import StockIntegrationService, StockSelectionMode
 from inventory.models import Warehouse
 from accounting.models import Account
-from accounting.services.journal_engine import JournalEngine
 from security.permissions import RoleBasedPermission
 
 
@@ -130,16 +129,18 @@ class SalesAccountingService:
                 'description': f'Inventory reduction for invoice {invoice.invoice_number}'
             })
 
-        result = JournalEngine.create_entry(
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.create_entry(
+            module='sales',
+            operation='create_entry',
             entry_type='SALE',
             description=f'Sales invoice {invoice.invoice_number} - {invoice.customer.name}',
             lines=lines,
             entry_date=invoice.invoice_date,
             reference=invoice.invoice_number,
             auto_post=True,
-            source_module='sales',
-            source_document=str(invoice.id),
-            change_reason=f'Sales invoice {invoice.invoice_number}'
+            entity_type='SalesInvoice',
+            entity_id=str(invoice.id),
         )
 
         if result.get('success'):
@@ -172,14 +173,21 @@ class SalesAccountingService:
             },
         ]
         
-        return JournalEngine.create_entry(
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.create_entry(
+            module='sales',
+            operation='create_entry',
             entry_type='RECEIPT',
             description=f'Payment received from {payment.customer.name}',
             lines=lines,
             entry_date=payment.payment_date,
             reference=payment.reference_number or '',
-            auto_post=True
+            auto_post=True,
+            entity_type='CustomerPayment',
+            entity_id=str(payment.id),
         )
+
+        return result
 
     @classmethod
     def reverse_sales_journal_entry(cls, invoice: SalesInvoice, reason: str = '') -> dict:
@@ -187,11 +195,16 @@ class SalesAccountingService:
         if not invoice.journal_entry_id:
             return {'success': False, 'errors': ['No journal entry to reverse']}
         
-        result = JournalEngine.reverse_entry(
-            entry_id=invoice.journal_entry_id,
-            reason=reason or f'Invoice {invoice.invoice_number} cancelled'
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.reverse_entry(
+            module='sales',
+            operation='reverse_entry',
+            entry_id=str(invoice.journal_entry_id),
+            reason=reason or f'Invoice {invoice.invoice_number} cancelled',
+            entity_type='SalesInvoice',
+            entity_id=str(invoice.id),
         )
-        
+
         if result.get('success'):
             invoice.journal_entry_id = None
             invoice.save(update_fields=['journal_entry_id', 'updated_at'])
@@ -217,7 +230,7 @@ class CustomerViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Customer.objects.filter(is_active=True)
     serializer_class = CustomerSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active', 'customer_type', 'city', 'country']
     search_fields = ['name', 'code', 'contact_person', 'email', 'phone']
@@ -280,36 +293,27 @@ class CustomerViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'])
     def credit_risk(self, request, pk=None):
-        """Get comprehensive credit risk visibility for a customer."""
+        """Get comprehensive credit risk visibility for a customer using bulk aggregates."""
         from datetime import date
         from sales.models import CreditApprovalRequest
+        from django.db.models import Sum, Count, F
 
         customer = self.get_object()
         today = date.today()
 
-        # Overdue invoices
+        # 1. Optimized Overdue invoices fetch
         overdue_invoices = SalesInvoice.objects.filter(
             customer=customer,
             status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID'],
             is_active=True,
             due_date__lt=today,
-        ).order_by('due_date')
+        ).annotate(
+            remaining=F('total_amount') - F('paid_amount')
+        ).filter(remaining__gt=0).order_by('due_date')
 
+        # Compute aging and total overdue in memory from pre-filtered queryset
         overdue_list = []
         total_overdue = Decimal('0.00')
-        for inv in overdue_invoices:
-            remaining = inv.total_amount - inv.paid_amount
-            if remaining > 0:
-                days_overdue = (today - inv.due_date).days
-                overdue_list.append({
-                    'invoice_number': inv.invoice_number,
-                    'due_date': inv.due_date.isoformat(),
-                    'remaining': str(remaining),
-                    'days_overdue': days_overdue,
-                })
-                total_overdue += remaining
-
-        # Aging breakdown
         aging = {
             'current': Decimal('0.00'),
             '1_30_days': Decimal('0.00'),
@@ -319,10 +323,17 @@ class CustomerViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
         }
 
         for inv in overdue_invoices:
-            remaining = inv.total_amount - inv.paid_amount
-            if remaining <= 0:
-                continue
+            remaining = inv.remaining
             days_overdue = (today - inv.due_date).days
+            
+            overdue_list.append({
+                'invoice_number': inv.invoice_number,
+                'due_date': inv.due_date.isoformat(),
+                'remaining': str(remaining),
+                'days_overdue': days_overdue,
+            })
+            total_overdue += remaining
+            
             if days_overdue <= 30:
                 aging['1_30_days'] += remaining
             elif days_overdue <= 60:
@@ -332,21 +343,22 @@ class CustomerViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
             else:
                 aging['over_90_days'] += remaining
 
-        # Pending credit approvals
-        pending_approvals = CreditApprovalRequest.objects.filter(
+        # 2. Pending credit approvals
+        pending_approvals = list(CreditApprovalRequest.objects.filter(
             customer=customer,
             status='PENDING',
-        ).order_by('-created_at')
+        ).select_related('invoice', 'requested_by').order_by('-created_at'))
 
-        pending_list = []
-        for req in pending_approvals:
-            pending_list.append({
+        pending_list = [
+            {
                 'request_id': str(req.pk),
                 'invoice_number': req.invoice.invoice_number,
                 'requested_amount': str(req.requested_amount),
                 'requested_at': req.created_at.isoformat(),
                 'requested_by': req.requested_by.username if req.requested_by else 'unknown',
-            })
+            }
+            for req in pending_approvals
+        ]
 
         # Risk level calculation
         utilization = (customer.balance / customer.credit_limit * 100) if customer.credit_limit > 0 else 0
@@ -560,13 +572,12 @@ class SalesInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
                 )
                 
                 if not stock_result.success:
-                    return Response(
+                    raise ValidationError(
                         {
                             'error': 'Stock processing failed',
                             'details': stock_result.errors,
                             'shortages': stock_result.stock_shortages,
-                        },
-                        status=status.HTTP_400_BAD_REQUEST
+                        }
                     )
                 
                 invoice.status = 'DISPATCHED'
@@ -609,48 +620,6 @@ class SalesInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({'error': f"Unexpected error during dispatch: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=True, methods=['post'])
-    def cancel(self, request, pk=None):
-        """Cancel an invoice."""
-        invoice = self.get_object()
-        if invoice.status == 'PAID':
-            log_business_event(request, 'invoice.sales.cancel_blocked',
-                               {'invoice_id': str(pk), 'current_status': invoice.status, 'reason': 'paid'})
-            return Response(
-                {'error': 'Cannot cancel a paid invoice.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        with transaction.atomic():
-            # Reverse stock movements first
-            stock_result = StockIntegrationService.reverse_sale_stock(invoice.id)
-            if not stock_result.success:
-                return Response(
-                    {'error': 'Failed to reverse stock', 'details': stock_result.errors},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Reverse accounting journal entry if exists
-            if invoice.journal_entry_id:
-                reversal_result = SalesAccountingService.reverse_sales_journal_entry(
-                    invoice,
-                    reason=f'Invoice {invoice.invoice_number} cancelled'
-                )
-                if not reversal_result.get('success'):
-                    log_business_event(request, 'invoice.sales.cancel_failed',
-                                       {'invoice_id': str(pk), 'reason': 'reversal_failed', 'errors': reversal_result.get('errors')})
-                    return Response(
-                        {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-            invoice.status = 'CANCELLED'
-            invoice.save(update_fields=['status', 'updated_at'])
-
-        log_business_event(request, 'invoice.sales.cancelled', {'invoice_id': str(pk)})
-        serializer = self.get_serializer(invoice)
-        return Response(serializer.data)
 
     @action(detail=True, methods=['get'])
     def receipt_pdf(self, request, pk=None):

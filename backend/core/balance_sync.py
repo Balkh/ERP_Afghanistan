@@ -52,12 +52,14 @@ class BalanceSyncService:
             status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID', 'PAID'],
             is_active=True,
         ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        total_invoices = total_invoices.quantize(Decimal('0.01'))
 
         total_payments = CustomerPayment.objects.filter(
             customer=customer,
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        total_payments = total_payments.quantize(Decimal('0.01'))
 
-        new_balance = total_invoices - total_payments
+        new_balance = (total_invoices - total_payments).quantize(Decimal('0.01'))
         customer.balance = new_balance
         customer.save(update_fields=['balance', 'updated_at'])
 
@@ -103,12 +105,14 @@ class BalanceSyncService:
             status__in=['CONFIRMED', 'RECEIVED', 'PARTIAL_PAID', 'PAID'],
             is_active=True,
         ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        total_invoices = total_invoices.quantize(Decimal('0.01'))
 
         total_payments = SupplierPayment.objects.filter(
             supplier=supplier,
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        total_payments = total_payments.quantize(Decimal('0.01'))
 
-        new_balance = total_invoices - total_payments
+        new_balance = (total_invoices - total_payments).quantize(Decimal('0.01'))
         supplier.balance = new_balance
         supplier.save(update_fields=['balance', 'updated_at'])
 

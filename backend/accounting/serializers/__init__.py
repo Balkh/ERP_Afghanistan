@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from accounting.models import Account, JournalEntry, JournalEntryLine, JournalEventLog
+from accounting.models import Account, JournalEntry, JournalEntryLine, JournalEventLog, FiscalPeriod, FiscalPeriodCloseLog
 
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -195,3 +195,77 @@ class JournalEntrySerializer(serializers.ModelSerializer):
                 )
 
         return data
+
+
+class FiscalPeriodSerializer(serializers.ModelSerializer):
+    can_modify = serializers.BooleanField(read_only=True)
+    can_post = serializers.BooleanField(read_only=True)
+    journal_entry_count = serializers.SerializerMethodField()
+    close_log_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FiscalPeriod
+        fields = [
+            'id', 'name', 'code', 'start_date', 'end_date', 'status',
+            'is_locked', 'locked_at', 'locked_by', 'notes',
+            'closing_balance_carried_forward', 'closing_completed_at',
+            'closing_completed_by', 'can_modify', 'can_post',
+            'journal_entry_count', 'close_log_count',
+            'created_at', 'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'is_locked', 'locked_at']
+
+    def get_journal_entry_count(self, obj):
+        return JournalEntry.objects.filter(
+            entry_date__gte=obj.start_date,
+            entry_date__lte=obj.end_date,
+        ).count()
+
+    def get_close_log_count(self, obj):
+        return obj.close_logs.count()
+
+    def validate(self, data):
+        if data.get('start_date') and data.get('end_date'):
+            if data['start_date'] > data['end_date']:
+                raise serializers.ValidationError('End date must be after start date.')
+        return data
+
+
+class FiscalPeriodCloseLogSerializer(serializers.ModelSerializer):
+    period_code = serializers.CharField(source='period.code', read_only=True)
+    period_name = serializers.CharField(source='period.name', read_only=True)
+    performed_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FiscalPeriodCloseLog
+        fields = [
+            'id', 'period', 'period_code', 'period_name', 'action',
+            'reason', 'previous_status', 'new_status', 'performed_by',
+            'performed_by_name', 'validation_summary', 'affected_entries_count',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'created_at']
+
+    def get_performed_by_name(self, obj):
+        return str(obj.performed_by) if obj.performed_by else 'System'
+
+
+class PeriodClosingReadinessSerializer(serializers.Serializer):
+    period_id = serializers.UUIDField()
+    period_code = serializers.CharField()
+    period_name = serializers.CharField()
+    is_ready = serializers.BooleanField()
+    blocker_count = serializers.IntegerField()
+    warning_count = serializers.IntegerField()
+    blockers = serializers.ListField()
+    warnings = serializers.ListField()
+    summary = serializers.JSONField()
+
+
+class PeriodCloseRequestSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=True, min_length=10)
+    force = serializers.BooleanField(default=False)
+
+
+class PeriodReopenRequestSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=True, min_length=10)

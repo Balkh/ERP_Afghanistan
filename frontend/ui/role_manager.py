@@ -14,10 +14,9 @@ Features:
 
 from enum import Enum
 from typing import Dict, List, Set, Optional, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime
 from dataclasses import dataclass, field
 import hashlib
-import json
 
 
 # =============================================================================
@@ -204,17 +203,14 @@ def generate_cache_key(
 
 class AuthorizationError(Exception):
     """Base authorization error."""
-    pass
 
 
 class InvalidSchemaVersionError(AuthorizationError):
     """Raised when permission schema version is invalid."""
-    pass
 
 
 class DependencyViolationError(AuthorizationError):
     """Raised when permission dependencies are violated."""
-    pass
 
 
 class AuthorizationFallback:
@@ -482,15 +478,21 @@ class AuthorizationResolver:
 # =============================================================================
 
 class UserRole(Enum):
-    """User roles in the ERP system."""
+    """
+    User roles in the ERP system.
+
+    CANONICAL — aligned with backend/core/constants/roles.py, seed_roles.py,
+    and ui_scopes.py. Any addition here MUST also be added at backend layers.
+    """
     ADMIN = "admin"
-    ACCOUNTANT = "accountant"
-    HR = "hr"
-    WAREHOUSE = "warehouse"
-    GENERAL = "general"
+    MANAGER = "manager"
     SUPERVISOR = "supervisor"
-    CASHIER = "cashier"
+    ACCOUNTANT = "accountant"
     PHARMACIST = "pharmacist"
+    CASHIER = "cashier"
+    WAREHOUSE = "warehouse"
+    HR = "hr"
+    GENERAL = "general"
 
 
 # Define which navigation items (by page_id) are accessible for each role
@@ -504,7 +506,7 @@ UserRole.ADMIN: {
         "payments", "expenses", "employees", "attendance", "leave", "payroll",
         "budgeting", "tax", "cost_centers", "cashflow",
         "fixed_assets", "backup", "audit", "settings", "intelligence_hub",
-        "invoice_templates", "user_management", "control_center",
+        "invoice_templates", "company_profile", "user_management", "role_management", "control_center",
         "entities", "licensing", "production", "reconciliation"
     },
     UserRole.ACCOUNTANT: {
@@ -533,6 +535,15 @@ UserRole.ADMIN: {
     UserRole.GENERAL: {
         "dashboard", "customers", "suppliers", "products", "settings",
     },
+    UserRole.MANAGER: {
+        "dashboard", "products", "categories", "warehouses", "batches",
+        "sales_invoice", "purchase_invoice", "customers", "suppliers", "returns",
+        "chart_of_accounts", "journal_entries", "account_ledger",
+        "trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing",
+        "payments", "expenses",
+        "employees", "attendance", "leave", "payroll",
+        "budgeting", "tax", "settings", "intelligence_hub",
+    },
     UserRole.SUPERVISOR: {
         "dashboard", "products", "categories", "warehouses", "batches",
         "sales_invoice", "purchase_invoice", "customers", "suppliers", "returns",
@@ -546,20 +557,25 @@ UserRole.ADMIN: {
 
 
 def get_role_from_user_data(user_data: dict) -> UserRole:
-    """Determine user role from user data returned by login API."""
+    """Determine user role from user data returned by login API.
+
+    Backend sends canonical role names: Admin, Manager, Accountant,
+    Pharmacist, Cashier, Supervisor, Warehouse, HR, General.
+    """
     # Backend sends "roles": ["Admin", "Manager"] (list, Title Case)
     roles_list = user_data.get("roles", [])
     if roles_list:
         primary_role = roles_list[0].lower().strip()
         role_map = {
             "admin": UserRole.ADMIN,
-            "manager": UserRole.SUPERVISOR,
+            "manager": UserRole.MANAGER,
             "accountant": UserRole.ACCOUNTANT,
             "pharmacist": UserRole.PHARMACIST,
             "cashier": UserRole.CASHIER,
+            "supervisor": UserRole.SUPERVISOR,
             "warehouse": UserRole.WAREHOUSE,
-            "hr officer": UserRole.HR,
-            "view only": UserRole.GENERAL,
+            "hr": UserRole.HR,
+            "general": UserRole.GENERAL,
         }
         if primary_role in role_map:
             return role_map[primary_role]

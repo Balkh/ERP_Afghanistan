@@ -26,7 +26,7 @@ class StartupManager:
             import requests
             resp = requests.get("http://localhost:8000/api/ops/health/", timeout=5)
             return resp.status_code == 200
-        except:
+        except (ImportError, requests.RequestException, ConnectionError):
             return False
 
     def start_backend(self, port: int = 8000) -> bool:

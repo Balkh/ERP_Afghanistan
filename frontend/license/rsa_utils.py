@@ -6,11 +6,10 @@ Handles RSA key generation, signing, and verification for license security.
 import rsa
 import json
 import base64
-import hashlib
-from datetime import datetime, date
+from datetime import date
 from typing import Dict, Any, Tuple, Optional
 import os
-from cryptography.hazmat.primitives import hashes, asymmetric, serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
 

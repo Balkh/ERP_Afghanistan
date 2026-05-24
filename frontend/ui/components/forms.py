@@ -1,25 +1,16 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD, COLOR_DANGER, TEXT_ERROR,
-                           TEXT_CARD_TITLE, TEXT_LABEL, TEXT_LABEL_SMALL, TEXT_HELPER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_BG_SURFACE, COLOR_BG_CARD, COLOR_BG_SECTION, COLOR_BORDER, COLOR_BORDER_SECTION,
-                           COLOR_FORM_SECTION_TITLE, COLOR_FORM_SECTION_DIVIDER,
-                           COLOR_HELPER_TEXT, COLOR_VALID_SUCCESS, COLOR_VALID_WARNING, COLOR_VALID_ERROR, COLOR_INPUT_SUCCESS, COLOR_INPUT_WARNING, COLOR_INPUT_ERROR,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, INPUT_HEIGHT_MD,
-                           SECTION_VERTICAL_SPACING, SECTION_TITLE_SPACING, SECTION_DIVIDER_HEIGHT,
-                           HELPER_TEXT_MARGIN_TOP, HELPER_TEXT_MARGIN_BOTTOM, FORM_HELPER_SPACING)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, COLOR_FORM_LABEL_REQUIRED, INPUT_HEIGHT_MD)
 """
 Enterprise Form Components.
 Professional form widgets with validation.
 """
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QFormLayout, QLabel,
-    QLineEdit, QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox,
-    QCheckBox, QRadioButton, QDateEdit, QTimeEdit, QDateTimeEdit,
-    QGroupBox, QScrollArea, QFrame
+    QWidget, QVBoxLayout, QGridLayout, QFormLayout, QLabel, QLineEdit,
+    QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox, QCheckBox,
+    QDateEdit, QTimeEdit, QDateTimeEdit, QGroupBox, QFrame
 )
 from PySide6.QtCore import Signal, Qt, QDate, QTime, QDateTime
-from PySide6.QtGui import QValidator
-from typing import Any, Optional, Callable, Dict, List
+from typing import Any, Optional, Dict, List
 from enum import Enum
 import re
 
@@ -143,28 +134,29 @@ class FormField(QWidget):
         """Setup field UI with helper text and validation support."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(SPACING_XS)
+        layout.setSpacing(SPACING_SM)  # Increased spacing for better readability
         
         # Create label
+        from theme.style_builder import UIStyleBuilder
         self._label_widget = QLabel(self._label)
+        self._label_widget.setStyleSheet(UIStyleBuilder.get_label_style("label"))
         if self._required:
-            self._label_widget.setText(f"{self._label} *")
+            self._label_widget.setText(f"{self._label} <span style='color: {COLOR_FORM_LABEL_REQUIRED};'>*</span>")
         layout.addWidget(self._label_widget)
         
         # Create input based on type
         self._input_widget = self._create_input()
         
         if self._input_widget:
+            # Centralized StyleBuilder abstraction
+            from theme.style_builder import UIStyleBuilder
+            self._input_widget.setStyleSheet(UIStyleBuilder.get_input_style())
             layout.addWidget(self._input_widget)
             
         # Contextual helper text (muted, always visible)
         if self._helper_text:
             self._helper_label = QLabel(self._helper_text)
-            self._helper_label.setStyleSheet(
-                f"color: {COLOR_HELPER_TEXT}; font-size: {TEXT_HELPER}px; "
-                f"border: none; background: transparent; "
-                f"padding: 0; margin: {HELPER_TEXT_MARGIN_TOP}px 0 {HELPER_TEXT_MARGIN_BOTTOM}px 0;"
-            )
+            self._helper_label.setStyleSheet(UIStyleBuilder.get_label_style("muted") + " margin-top: 2px;")
             self._helper_label.setWordWrap(True)
             layout.addWidget(self._helper_label)
         else:
@@ -172,7 +164,7 @@ class FormField(QWidget):
             
         # Validation message label (shown only on error/warning)
         self._validation_label = QLabel()
-        self._validation_label.setStyleSheet(f"color: {COLOR_VALID_ERROR}; font-size: {TEXT_HELPER}px;")
+        self._validation_label.setStyleSheet(UIStyleBuilder.get_label_style("error"))
         self._validation_label.setVisible(False)
         self._validation_label.setWordWrap(True)
         layout.addWidget(self._validation_label)
@@ -329,43 +321,46 @@ class FormField(QWidget):
         
     def set_error(self, message: str):
         """Set error message with inline validation styling."""
+        from theme.style_builder import UIStyleBuilder
         self._error_message = message
         self._validation_state = "error"
         if hasattr(self, '_validation_label'):
             self._validation_label.setText(message)
             self._validation_label.setVisible(True)
-            self._validation_label.setStyleSheet(f"color: {COLOR_VALID_ERROR}; font-size: {TEXT_HELPER}px;")
+            self._validation_label.setStyleSheet(UIStyleBuilder.get_label_style("error"))
         
         # Add error style to input
         if self._input_widget:
-            self._input_widget.setStyleSheet(f"border: 1px solid {COLOR_INPUT_ERROR};")
+            self._input_widget.setStyleSheet(UIStyleBuilder.get_input_style("error"))
             
         self.validation_changed.emit(False, message)
         
     def clear_error(self):
         """Clear error message and reset input styling."""
+        from theme.style_builder import UIStyleBuilder
         self._error_message = ""
         self._validation_state = ""
         if hasattr(self, '_validation_label'):
             self._validation_label.setVisible(False)
         
         if self._input_widget:
-            self._input_widget.setStyleSheet("")
+            self._input_widget.setStyleSheet(UIStyleBuilder.get_input_style("default"))
             
         self.validation_changed.emit(True, "")
         
     def set_success(self, message: str = ""):
         """Set success validation state."""
+        from theme.style_builder import UIStyleBuilder
         self._validation_state = "success"
         if hasattr(self, '_validation_label') and message:
             self._validation_label.setText(message)
             self._validation_label.setVisible(True)
-            self._validation_label.setStyleSheet(f"color: {COLOR_VALID_SUCCESS}; font-size: {TEXT_HELPER}px;")
+            self._validation_label.setStyleSheet(UIStyleBuilder.get_label_style("success"))
         else:
             if hasattr(self, '_validation_label'):
                 self._validation_label.setVisible(False)
         if self._input_widget:
-            self._input_widget.setStyleSheet(f"border: 1px solid {COLOR_INPUT_SUCCESS};")
+            self._input_widget.setStyleSheet(UIStyleBuilder.get_input_style("success"))
         
     def set_options(self, options: List[tuple]):
         """Set options for select fields."""
@@ -593,27 +588,6 @@ class FormSection(QGroupBox):
         section.add_full_width("Description:", text_widget)
     """
 
-    _STYLE = f"""
-        QGroupBox {{
-            font-size: {TEXT_CARD_TITLE}pt;
-            font-weight: 700;
-            color: {COLOR_FORM_SECTION_TITLE};
-            background-color: {COLOR_BG_SECTION};
-            border: 1px solid {COLOR_BORDER_SECTION};
-            border-radius: {BORDER_RADIUS_LG}px;
-            margin-top: {SECTION_TITLE_SPACING}px;
-            padding-top: {SECTION_TITLE_SPACING + 6}px;
-            padding-bottom: {SPACING_XS}px;
-        }}
-        QGroupBox::title {{
-            subcontrol-origin: margin;
-            subcontrol-position: top left;
-            padding: 0 {SPACING_MD}px;
-            color: {COLOR_FORM_SECTION_TITLE};
-            letter-spacing: 0.3px;
-        }}
-    """
-
     def __init__(self, title: str = "", columns: int = 1, primary: bool = True, parent: Optional[QWidget] = None):
         super().__init__(title, parent)
         self._columns = columns
@@ -633,22 +607,8 @@ class FormSection(QGroupBox):
             self._form.setVerticalSpacing(SPACING_MD)
             self._form.setContentsMargins(SPACING_MD, margin_top, SPACING_MD, SPACING_MD)
 
-        if primary:
-            self._STYLE = self._STYLE.replace(
-                f"font-weight: 700",
-                "font-weight: 700"
-            )
-        else:
-            self._STYLE = self._STYLE.replace(
-                "font-weight: 700",
-                "font-weight: 600"
-            )
-            self._STYLE = self._STYLE.replace(
-                f"color: {COLOR_FORM_SECTION_TITLE}",
-                f"color: {COLOR_TEXT_SECONDARY}"
-            )
-
-        self.setStyleSheet(self._STYLE)
+        from theme.style_builder import UIStyleBuilder
+        self.setStyleSheet(UIStyleBuilder.get_form_section_style(primary))
 
     def set_primary(self, primary: bool):
         """Set whether this section is primary (emphasized) or secondary (softer)."""
@@ -656,10 +616,11 @@ class FormSection(QGroupBox):
 
     def _make_label(self, text: str, required: bool = False) -> QLabel:
         """Create a muted label above an input."""
+        from theme.style_builder import UIStyleBuilder
         lbl = QLabel(text)
-        suffix = " *" if required else ""
-        color = COLOR_TEXT_SECONDARY
-        lbl.setStyleSheet(f"color: {color}; font-size: {TEXT_LABEL_SMALL}px; border: none; background: transparent; padding: 0; margin: 0; font-weight: 500;")
+        if required:
+            lbl.setText(f"{text} *")
+        lbl.setStyleSheet(UIStyleBuilder.get_label_style("label_small"))
         return lbl
 
     def _apply_input_height(self, widget: QWidget) -> None:
@@ -680,8 +641,9 @@ class FormSection(QGroupBox):
 
     def _make_helper_label(self, text: str) -> QLabel:
         """Create a contextual helper text label (muted, tiny)."""
+        from theme.style_builder import UIStyleBuilder
         lbl = QLabel(text)
-        lbl.setStyleSheet(f"color: {COLOR_HELPER_TEXT}; font-size: {TEXT_HELPER}px; border: none; background: transparent; padding: 0; margin: 0;")
+        lbl.setStyleSheet(UIStyleBuilder.get_label_style("helper"))
         lbl.setWordWrap(True)
         return lbl
 
@@ -738,10 +700,11 @@ class FormSection(QGroupBox):
 
     def add_separator(self):
         """Add a subtle visual separator between field groups within a section."""
+        from theme.style_builder import UIStyleBuilder
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
-        line.setStyleSheet(f"background-color: {COLOR_FORM_SECTION_DIVIDER}; border: none; max-height: {SECTION_DIVIDER_HEIGHT}px; margin: {SPACING_SM}px 0;")
+        line.setStyleSheet(UIStyleBuilder.get_divider_style())
         if self._columns == 2:
             self._grid.addWidget(line, self._grid_row, 0, 1, 2)
             self._grid_row += 1

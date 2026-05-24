@@ -3,22 +3,19 @@ from decimal import Decimal
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QLineEdit, QComboBox, QPushButton, QGroupBox,
-    QMessageBox, QHeaderView, QTableWidget, QTableWidgetItem,
+    QMessageBox, QHeaderView, QTableWidget,
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
 
 from api.client import APIClient
-from api.endpoints import get_endpoint, extract_list
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-    TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_LABEL,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_DANGER,
-    COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+    SPACING_XS, SPACING_SM, SPACING_LG, TEXT_PAGE_TITLE, TEXT_CARD_TITLE,
+    TEXT_BODY, TEXT_LABEL, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
+    COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_SUCCESS,
+    COLOR_DANGER, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
     COLOR_BORDER, COLOR_VALID_SUCCESS, COLOR_VALID_ERROR,
-    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-    DIALOG_WIDTH_WIDE,
+    BORDER_RADIUS_SM, BORDER_RADIUS_LG, DIALOG_WIDTH_WIDE,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
@@ -181,10 +178,10 @@ class MixedPaymentBuilderDialog(QDialog):
         self.splits_table.setCellWidget(row, 2, amount_input)
 
         # Remove button
-        remove_btn = QPushButton("×")
+        remove_btn = EnterpriseButton("×", variant=ButtonVariant.GHOST)
         remove_btn.setFixedWidth(30)
-        remove_btn.setStyleSheet(f"""
-            QPushButton {{
+        remove_btn.setStyleSheet("""
+            EnterpriseButton {{
                 background-color: transparent;
                 color: {COLOR_DANGER};
                 font-size: 16pt;
@@ -304,7 +301,7 @@ class MixedPaymentBuilderDialog(QDialog):
         return getattr(self, "result_data", None)
 
     def _combo_style(self):
-        return f"""
+        return """
             QComboBox {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -321,7 +318,7 @@ class MixedPaymentBuilderDialog(QDialog):
         """
 
     def _input_style(self):
-        return f"""
+        return """
             QLineEdit {{
                 background-color: {COLOR_BG_INPUT};
                 border: 1px solid {COLOR_BORDER};

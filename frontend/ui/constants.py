@@ -178,10 +178,10 @@ _THEME_DARK = {
     "COLOR_SUCCESS_HOVER": "#94e2d5",
     "COLOR_SUCCESS_ACTIVE": "#74c7a0",
     "COLOR_SUCCESS_MUTED": "#5a7a6a",
-    "COLOR_SUCCESS_BG": "#1e3a2f",
+    "COLOR_SUCCESS_BG": "#1e3a2",
 
     # ── STATE: WARNING ──
-    "COLOR_WARNING": "#f9e2af",
+    "COLOR_WARNING": "#f9e2a",
     "COLOR_WARNING_HOVER": "#fab387",
     "COLOR_WARNING_ACTIVE": "#f38ba8",
     "COLOR_WARNING_MUTED": "#8a7a5a",
@@ -234,7 +234,7 @@ _THEME_DARK = {
     "TABLE_GRID_COLOR": "#45475a",
     "TABLE_TEXT_PRIMARY": "#e5e8f0",
     "TABLE_TEXT_MUTED": "#7a7f96",
-    "TABLE_TEXT_SELECTED": "#ffffff",
+    "TABLE_TEXT_SELECTED": "#fff",
     "TABLE_HEADER_BG": "#282838",
     "TABLE_HEADER_TEXT": "#b8bdd0",
     "TABLE_SCROLLBAR_BG": "#1e1e2e",
@@ -259,9 +259,9 @@ _THEME_DARK = {
     # ── VALIDATION ──
     "COLOR_HELPER_TEXT": "#6c7086",
     "COLOR_VALID_SUCCESS": "#a6e3a1",
-    "COLOR_VALID_WARNING": "#f9e2af",
+    "COLOR_VALID_WARNING": "#f9e2a",
     "COLOR_VALID_ERROR": "#f38ba8",
-    "COLOR_VALID_BG_SUCCESS": "#1e3a2f",
+    "COLOR_VALID_BG_SUCCESS": "#1e3a2",
     "COLOR_VALID_BG_WARNING": "#3a3520",
     "COLOR_VALID_BG_ERROR": "#3a1f2a",
     "COLOR_INPUT_SUCCESS": "#4a8a5a",
@@ -284,7 +284,7 @@ _THEME_DARK = {
     "COLOR_STATUS_VALID": "#a6e3a1",
     "COLOR_STATUS_INVALID": "#f38ba8",
     "COLOR_STATUS_WARNING": "#fab387",
-    "COLOR_STATUS_PENDING": "#f9e2af",
+    "COLOR_STATUS_PENDING": "#f9e2a",
 
     # ── TYPOGRAPHY ──
     "COLOR_TEXT_TITLE": "#e5e8f0",
@@ -296,152 +296,148 @@ _THEME_DARK = {
 
 _THEME_LIGHT = {
     # ── SURFACE COLORS ──
-    "COLOR_BG_MAIN": "#edeef2",
-    "COLOR_BG_SURFACE": "#ffffff",
-    "COLOR_BG_ELEVATED": "#f4f5f8",
-    "COLOR_BG_INPUT": "#ffffff",
-    "COLOR_BG_CARD": "#ffffff",
-    "COLOR_BG_DIALOG": "#ffffff",
-    "COLOR_BG_SECTION": "#ffffff",
-    "COLOR_BG_TOOLTIP": "#f4f5f8",
-    "COLOR_BG_HOVER": "#f0f1f5",
-    "COLOR_BG_FOCUS": "#e8eaf2",
+    "COLOR_BG_MAIN": "#f8fafc",            # Slate-50: Clean, modern off-white
+    "COLOR_BG_SURFACE": "#fff",         # Pure white for cards/surfaces
+    "COLOR_BG_ELEVATED": "#fff",        # Elevated surfaces
+    "COLOR_BG_INPUT": "#fff",           # Pure white for inputs (better contrast)
+    "COLOR_BG_CARD": "#fff",
+    "COLOR_BG_DIALOG": "#fff",
+    "COLOR_BG_SECTION": "#f1f5f9",         # Slate-100: Subtle distinction for sections
+    "COLOR_BG_TOOLTIP": "#1e293b",         # Slate-800: Dark tooltip for light theme
+    "COLOR_BG_HOVER": "#f1f5f9",           # Slate-100
+    "COLOR_BG_FOCUS": "#e2e8f0",           # Slate-200
 
-    # ── CONTENT COLORS (high contrast against light surfaces) ──
-    "COLOR_TEXT_PRIMARY": "#0d0f14",       # was #111217 — darker for max contrast
-    "COLOR_TEXT_SECONDARY": "#3d3f56",     # unchanged — already good
-    "COLOR_TEXT_MUTED": "#6b6e82",         # was #5a5d72 — slightly darker for readability
-    "COLOR_TEXT_ON_PRIMARY": "#ffffff",    # white text on primary buttons
-    "COLOR_TEXT_ON_SUCCESS": "#ffffff",    # white text on success badges
-    "COLOR_TEXT_ON_WARNING": "#1a1508",    # dark text on warning (light bg)
-    "COLOR_TEXT_ON_DANGER": "#ffffff",     # white text on danger badges
+    # ── CONTENT COLORS (High contrast) ──
+    "COLOR_TEXT_PRIMARY": "#020617",       # Slate-950: Almost black for maximum readability
+    "COLOR_TEXT_SECONDARY": "#334155",     # Slate-700: Strong gray
+    "COLOR_TEXT_MUTED": "#64748b",         # Slate-500: Muted but still readable
+    "COLOR_TEXT_ON_PRIMARY": "#fff",
+    "COLOR_TEXT_ON_SUCCESS": "#fff",
+    "COLOR_TEXT_ON_WARNING": "#020617",
+    "COLOR_TEXT_ON_DANGER": "#fff",
 
-    # ── PRIMARY BRAND ──
-    "COLOR_PRIMARY": "#3a7ae8",            # was #4a8ae8 — slightly darker for better text contrast
-    "COLOR_PRIMARY_HOVER": "#2a6ad8",
-    "COLOR_PRIMARY_ACTIVE": "#1a5ac8",
-    "COLOR_PRIMARY_MUTED": "#9aa8c8",      # was #b0b8c8 — more visible when disabled
+    # ── PRIMARY BRAND (Modern Indigo/Blue) ──
+    "COLOR_PRIMARY": "#2563eb",            # Blue-600
+    "COLOR_PRIMARY_HOVER": "#1d4ed8",      # Blue-700
+    "COLOR_PRIMARY_ACTIVE": "#1e40a",     # Blue-800
+    "COLOR_PRIMARY_MUTED": "#93c5fd",      # Blue-300
+    "COLOR_PRIMARY_BG": "#eff6",         # Blue-50
 
-    # ── STATE: SUCCESS ──
-    "COLOR_SUCCESS": "#168a4a",            # was #1a8a4a — slightly darker
-    "COLOR_SUCCESS_HOVER": "#127a3f",
-    "COLOR_SUCCESS_ACTIVE": "#0e6a34",
-    "COLOR_SUCCESS_MUTED": "#8aa89a",
-    "COLOR_SUCCESS_BG": "#e0f5ea",
+    # ── STATE COLORS (Semantic) ──
+    "COLOR_SUCCESS": "#059669",            # Emerald-600
+    "COLOR_SUCCESS_HOVER": "#047857",      # Emerald-700
+    "COLOR_SUCCESS_ACTIVE": "#065f46",
+    "COLOR_SUCCESS_MUTED": "#6ee7b7",
+    "COLOR_SUCCESS_BG": "#ecfdf5",         # Emerald-50
 
     # ── STATE: WARNING ──
-    "COLOR_WARNING": "#c47a06",            # was #d48806 — darker for contrast on light bg
-    "COLOR_WARNING_HOVER": "#b06a05",
-    "COLOR_WARNING_ACTIVE": "#985a04",
-    "COLOR_WARNING_MUTED": "#a89878",
-    "COLOR_WARNING_BG": "#fef3cd",
+    "COLOR_WARNING": "#d97706",            # Amber-600
+    "COLOR_WARNING_HOVER": "#b45309",      # Amber-700
+    "COLOR_WARNING_ACTIVE": "#92400e",
+    "COLOR_WARNING_MUTED": "#fcd34d",
+    "COLOR_WARNING_BG": "#fffbeb",         # Amber-50
 
     # ── STATE: DANGER ──
-    "COLOR_DANGER": "#c42a2a",             # was #d32f2f — slightly darker
-    "COLOR_DANGER_HOVER": "#a71c1c",
-    "COLOR_DANGER_ACTIVE": "#901818",
-    "COLOR_DANGER_MUTED": "#a88888",
-    "COLOR_DANGER_BG": "#fde8e8",
+    "COLOR_DANGER": "#e11d48",             # Rose-600
+    "COLOR_DANGER_HOVER": "#be123c",       # Rose-700
+    "COLOR_DANGER_ACTIVE": "#9f1239",
+    "COLOR_DANGER_MUTED": "#fda4a",
+    "COLOR_DANGER_BG": "#fff1f2",         # Rose-50
 
     # ── STATE: INFO ──
-    "COLOR_INFO": "#2978b5",
-    "COLOR_INFO_HOVER": "#236ba0",
-    "COLOR_INFO_ACTIVE": "#1d5e8c",
-    "COLOR_INFO_MUTED": "#8898a8",
-    "COLOR_INFO_BG": "#eaf2f8",
-
-    # ── SECONDARY BUTTON ──
-    "COLOR_SECONDARY_BG": "#d4d5dc",
-    "COLOR_SECONDARY_HOVER": "#c0c2cc",
-    "COLOR_SECONDARY_TEXT": "#0d0f14",     # was #1a1b2e — matches primary text
-    "COLOR_SECONDARY_ACTIVE": "#a8abb8",
+    "COLOR_INFO": "#0ea5e9",               # Sky-500
+    "COLOR_INFO_HOVER": "#0284c7",
+    "COLOR_INFO_ACTIVE": "#0369a1",
+    "COLOR_INFO_MUTED": "#7dd3fc",
+    "COLOR_INFO_BG": "#f0f9",
 
     # ── BORDERS ──
-    "COLOR_BORDER": "#6b6e82",
-    "COLOR_BORDER_LIGHT": "#c0c2cc",
-    "COLOR_BORDER_FOCUS": "#3a7ae8",
-    "COLOR_BORDER_DIALOG": "#6b6e82",
-    "COLOR_BORDER_TABLE": "#6b6e82",
-    "COLOR_BORDER_INPUT": "#6b6e82",
-    "COLOR_BORDER_INPUT_HOVER": "#8a8da0",
-    "COLOR_BORDER_FOCUS_RING": "#3a7ae8",
-    "COLOR_BORDER_SECTION": "#d0d2dc",
+    "COLOR_BORDER": "#cbd5e1",             # Slate-300: Visible border
+    "COLOR_BORDER_LIGHT": "#e2e8f0",       # Slate-200
+    "COLOR_BORDER_FOCUS": "#2563eb",
+    "COLOR_BORDER_DIALOG": "#cbd5e1",
+    "COLOR_BORDER_TABLE": "#cbd5e1",
+    "COLOR_BORDER_INPUT": "#94a3b8",       # Slate-400: Clear input borders
+    "COLOR_BORDER_INPUT_HOVER": "#64748b", # Slate-500
+    "COLOR_BORDER_FOCUS_RING": "rgba(37, 99, 235, 0.2)",
+    "COLOR_BORDER_SECTION": "#cbd5e1",
 
     # ── TABLES ──
-    "COLOR_TABLE_GRIDLINE": "#c8cad4",
-    "COLOR_TABLE_HEADER": "#e8e9ef",
-    "COLOR_TABLE_ALT": "#f6f7fa",
-    "COLOR_TABLE_GRID": "#c8cad4",
-    "COLOR_TABLE_BORDER_LIGHT": "#a0a3b8",
-    "COLOR_TABLE_HEADER_BG_LIGHT": "#e8e9ef",
+    "COLOR_TABLE_GRIDLINE": "#e2e8f0",
+    "COLOR_TABLE_HEADER": "#f1f5f9",
+    "COLOR_TABLE_ALT": "#f8fafc",
+    "COLOR_TABLE_GRID": "#e2e8f0",
+    "COLOR_TABLE_BORDER_LIGHT": "#e2e8f0",
+    "COLOR_TABLE_HEADER_BG_LIGHT": "#f1f5f9",
 
-    # ── DEDICATED TABLE TOKENS (Phase 15.2) ──
-    "TABLE_BG_PRIMARY": "#ffffff",
-    "TABLE_BG_SECONDARY": "#f6f7fa",
-    "TABLE_BG_HOVER": "#e8e9ef",
-    "TABLE_BG_SELECTED": "#c8d6e8",
-    "TABLE_GRID_COLOR": "#c8cad4",
-    "TABLE_TEXT_PRIMARY": "#0d0f14",
-    "TABLE_TEXT_MUTED": "#6b6e82",
-    "TABLE_TEXT_SELECTED": "#0d0f14",
-    "TABLE_HEADER_BG": "#e8e9ef",
-    "TABLE_HEADER_TEXT": "#3d3f56",
-    "TABLE_SCROLLBAR_BG": "#edeef2",
-    "TABLE_SCROLLBAR_HANDLE": "#b0b3c0",
+    # ── DEDICATED TABLE TOKENS ──
+    "TABLE_BG_PRIMARY": "#fff",
+    "TABLE_BG_SECONDARY": "#f8fafc",
+    "TABLE_BG_HOVER": "#f1f5f9",
+    "TABLE_BG_SELECTED": "#eff6",
+    "TABLE_GRID_COLOR": "#cbd5e1",         # Visible grid lines
+    "TABLE_TEXT_PRIMARY": "#020617",
+    "TABLE_TEXT_MUTED": "#475569",
+    "TABLE_TEXT_SELECTED": "#2563eb",
+    "TABLE_HEADER_BG": "#f1f5f9",          # Stronger header bg
+    "TABLE_HEADER_TEXT": "#1e293b",
+    "TABLE_SCROLLBAR_BG": "#f1f5f9",
+    "TABLE_SCROLLBAR_HANDLE": "#94a3b8",
 
     # ── FORMS ──
-    "COLOR_FORM_BORDER_LIGHT": "#a0a3b8",
-    "COLOR_FORM_TEXT_LIGHT": "#0d0f14",
-    "COLOR_FORM_LABEL": "#3d3f56",
-    "COLOR_FORM_LABEL_REQUIRED": "#c42a2a",
-    "COLOR_FORM_DESCRIPTION_BG": "#f6f7fa",
-    "COLOR_FORM_SECTION_TITLE": "#0d0f14",
-    "COLOR_FORM_SECTION_DIVIDER": "#d0d2dc",
-    "COLOR_FORM_FOOTER_BORDER": "#d0d2dc",
+    "COLOR_FORM_BORDER_LIGHT": "#cbd5e1",
+    "COLOR_FORM_TEXT_LIGHT": "#020617",
+    "COLOR_FORM_LABEL": "#1e293b",         # Strong label color
+    "COLOR_FORM_LABEL_REQUIRED": "#be123c",
+    "COLOR_FORM_DESCRIPTION_BG": "#f1f5f9",
+    "COLOR_FORM_SECTION_TITLE": "#020617",
+    "COLOR_FORM_SECTION_DIVIDER": "#cbd5e1",
+    "COLOR_FORM_FOOTER_BORDER": "#cbd5e1",
 
     # ── INTERACTION ──
-    "COLOR_FOCUS_RING": "#3a7ae8",
-    "COLOR_FOCUS_RING_ALPHA": "rgba(58, 122, 232, 0.15)",
-    "COLOR_HOVER_OVERLAY": "rgba(0, 0, 0, 0.03)",
-    "COLOR_PRESSED_OVERLAY": "rgba(0, 0, 0, 0.06)",
+    "COLOR_FOCUS_RING": "#2563eb",
+    "COLOR_FOCUS_RING_ALPHA": "rgba(37, 99, 235, 0.15)",
+    "COLOR_HOVER_OVERLAY": "rgba(15, 23, 42, 0.02)",
+    "COLOR_PRESSED_OVERLAY": "rgba(15, 23, 42, 0.05)",
 
     # ── VALIDATION ──
-    "COLOR_HELPER_TEXT": "#6b6e82",
-    "COLOR_VALID_SUCCESS": "#168a4a",
-    "COLOR_VALID_WARNING": "#c47a06",
-    "COLOR_VALID_ERROR": "#c42a2a",
-    "COLOR_VALID_BG_SUCCESS": "#e0f5ea",
-    "COLOR_VALID_BG_WARNING": "#fef3cd",
-    "COLOR_VALID_BG_ERROR": "#fde8e8",
-    "COLOR_INPUT_SUCCESS": "#168a4a",
-    "COLOR_INPUT_WARNING": "#c47a06",
-    "COLOR_INPUT_ERROR": "#c42a2a",
+    "COLOR_HELPER_TEXT": "#475569",
+    "COLOR_VALID_SUCCESS": "#065f46",      # Stronger Emerald
+    "COLOR_VALID_WARNING": "#92400e",      # Stronger Amber
+    "COLOR_VALID_ERROR": "#9f1239",        # Stronger Rose
+    "COLOR_VALID_BG_SUCCESS": "#dcfce7",
+    "COLOR_VALID_BG_WARNING": "#fef3c7",
+    "COLOR_VALID_BG_ERROR": "#fee2e2",
+    "COLOR_INPUT_SUCCESS": "#059669",
+    "COLOR_INPUT_WARNING": "#d97706",
+    "COLOR_INPUT_ERROR": "#e11d48",
 
-    # ── LIGHT-THEME-NAMED TOKENS ──
-    "COLOR_BG_LIGHT": "#edeef2",
-    "COLOR_BG_LIGHT_SURFACE": "#ffffff",
-    "COLOR_TEXT_LIGHT": "#0d0f14",
-    "COLOR_TEXT_SECONDARY_LIGHT": "#3d3f56",
-    "COLOR_TEXT_DIALOG": "#0d0f14",
-    "COLOR_BORDER_LIGHT_THEME": "#a0a3b8",
-    "COLOR_MUTED_LIGHT": "#6b6e82",
-    "COLOR_BG_BUTTON_LIGHT": "#e2e3e8",
-    "COLOR_BG_BUTTON_SECONDARY": "#d4d5dc",
-    "COLOR_UI_DIVIDER_LIGHT": "#a0a3b8",
+    # ── LIGHT-THEME-NAMED TOKENS (for legacy support) ──
+    "COLOR_BG_LIGHT": "#f8fafc",
+    "COLOR_BG_LIGHT_SURFACE": "#fff",
+    "COLOR_TEXT_LIGHT": "#0f172a",
+    "COLOR_TEXT_SECONDARY_LIGHT": "#475569",
+    "COLOR_TEXT_DIALOG": "#0f172a",
+    "COLOR_BORDER_LIGHT_THEME": "#e2e8f0",
+    "COLOR_MUTED_LIGHT": "#94a3b8",
+    "COLOR_BG_BUTTON_LIGHT": "#f8fafc",
+    "COLOR_BG_BUTTON_SECONDARY": "#f1f5f9",
+    "COLOR_UI_DIVIDER_LIGHT": "#e2e8f0",
 
     # ── STATUS INDICATORS ──
-    "COLOR_STATUS_VALID": "#168a4a",
-    "COLOR_STATUS_INVALID": "#c42a2a",
-    "COLOR_STATUS_WARNING": "#c47a06",
-    "COLOR_STATUS_PENDING": "#c47a06",
+    "COLOR_STATUS_VALID": "#059669",
+    "COLOR_STATUS_INVALID": "#e11d48",
+    "COLOR_STATUS_WARNING": "#d97706",
+    "COLOR_STATUS_PENDING": "#64748b",
 
     # ── TYPOGRAPHY ──
-    "COLOR_TEXT_TITLE": "#0d0f14",
-    "COLOR_HEADER_DARK": "#2c3e70",
+    "COLOR_TEXT_TITLE": "#0f172a",
+    "COLOR_HEADER_DARK": "#0f172a",
 
     # ── BRAND ──
-    "COLOR_WHATSAPP": "#25D366",
+    "COLOR_WHATSAPP": "#22c55e",
 }
+
 
 
 def set_active_theme(theme_name: str) -> None:
@@ -523,10 +519,10 @@ TEXT_AREA_DESCRIPTION_HEIGHT = 100
 
 # Border radius
 BORDER_RADIUS_SM = 4
-BORDER_RADIUS_MD = 6
-BORDER_RADIUS_LG = 8
-BORDER_RADIUS_XL = 12
-BORDER_RADIUS_PILL = 20
+BORDER_RADIUS_MD = 8        # Modern, softer radius
+BORDER_RADIUS_LG = 12       # For cards and sections
+BORDER_RADIUS_XL = 16
+BORDER_RADIUS_PILL = 99     # Standard pill radius
 
 # Opacity values
 OPACITY_DISABLED = 0.5

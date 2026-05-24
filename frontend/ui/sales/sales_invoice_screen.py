@@ -1,31 +1,22 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
                                 QTableWidget, QTableWidgetItem,
-                                QLineEdit, QLabel, QComboBox, QGroupBox,
-                                QDoubleSpinBox, QDateEdit, QTextEdit, QMessageBox,
-                                QHeaderView, QAbstractItemView, QSplitter, QFrame,
-                                QMenu, QPushButton)
+                                QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
+                                QDateEdit, QMessageBox, QHeaderView, QAbstractItemView,
+                                QFrame, QMenu, QPushButton)
 from PySide6.QtCore import Qt, QDate, Signal
-from PySide6.QtGui import QColor, QFont, QKeySequence, QShortcut
+from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
-from datetime import date
 
 from ui.common.batch_selection import BatchSelectionDialog
 from ui.common.barcode_search import BarcodeSearchLineEdit
 from ui.common.printable_invoice import PrintableInvoiceDialog
 from api.endpoints import get_endpoint
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
-                           TABLE_ROW_HEIGHT_MD, TABLE_ROW_HEIGHT_LG,
-                           BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT,
-                           COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE,
-                           COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
-                           DENSITY_COMPACT_ROW, DENSITY_STANDARD_SPACING, DENSITY_COMPACT_MARGIN)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XXL, MARGIN_PAGE, TEXT_PAGE_TITLE,
+                           TEXT_CARD_TITLE, TEXT_BODY, TEXT_TABLE, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_LG, BORDER_RADIUS_SM, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
+                           COLOR_BORDER, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING,
+                           COLOR_DANGER, COLOR_INFO, DENSITY_COMPACT_ROW)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
@@ -76,7 +67,7 @@ class SalesInvoiceScreen(QWidget):
         header_layout.addStretch()
 
         self.status_label = QLabel("DRAFT")
-        self.status_label.setStyleSheet(f"""
+        self.status_label.setStyleSheet("""
             background-color: {COLOR_TEXT_MUTED};
             color: white;
             padding: {SPACING_XS}px {SPACING_MD}px;
@@ -428,7 +419,6 @@ class SalesInvoiceScreen(QWidget):
 
     def on_barcode_scanned(self, barcode):
         """Handle barcode scan - product selection is already handled by BarcodeSearchLineEdit."""
-        pass
 
     def on_product_selected(self, product):
         """Handle product selection from search or barcode."""
@@ -467,7 +457,7 @@ class SalesInvoiceScreen(QWidget):
         self.items_table.setItem(row, 0, name_item)
 
         # Batch (clickable)
-        batch_btn = QPushButton("Select Batch")
+        batch_btn = EnterpriseButton("Select Batch", variant=ButtonVariant.SECONDARY)
         batch_btn.clicked.connect(lambda checked, r=row: self.select_batch_for_row(r))
         self.items_table.setCellWidget(row, 1, batch_btn)
 
@@ -498,7 +488,7 @@ class SalesInvoiceScreen(QWidget):
         self.items_table.setItem(row, 6, total_item)
 
         # Actions
-        remove_btn = QPushButton("Remove")
+        remove_btn = EnterpriseButton("Remove", variant=ButtonVariant.GHOST)
         remove_btn.setStyleSheet(f"color: {COLOR_DANGER};")
         remove_btn.clicked.connect(lambda checked, r=row: self.items_table.removeRow(r))
         self.items_table.setCellWidget(row, 7, remove_btn)
@@ -535,7 +525,7 @@ class SalesInvoiceScreen(QWidget):
 
     def on_item_changed(self, item):
         """Handle item change in table."""
-        row = item.row()
+        __row = item.row()
         self.recalculate_totals()
 
     def recalculate_totals(self):
@@ -685,7 +675,7 @@ class SalesInvoiceScreen(QWidget):
         """Dispatch invoice and deduct stock — persists to backend."""
         if not self._check_action("dispatch"):
             return
-        data = self.get_invoice_data()
+        __data = self.get_invoice_data()
         if not self.current_invoice_id:
             QMessageBox.warning(self, "Error", "Save the invoice as draft first.")
             return

@@ -28,18 +28,33 @@ class FinancialDiagnostics:
         """Check SSOT (FinancialTruthEngine) consistency.
         
         Compares stored balances vs derived balances for all active
-        customers and suppliers.
+        customers and suppliers using optimized bulk aggregates.
         """
-        from sales.models import Customer
-        from purchases.models import Supplier
+        from sales.models import Customer, SalesInvoice, CustomerPayment
+        from purchases.models import Supplier, PurchaseInvoice, SupplierPayment
         from core.services.financial_truth_engine import FinancialTruthEngine
+        from django.db.models import Sum
 
         mismatches = []
-        total_checked = 0
-
-        for customer in Customer.objects.filter(status='ACTIVE')[:200]:
-            total_checked += 1
-            derived = FinancialTruthEngine.get_customer_balance(customer)
+        
+        # 1. Optimized Customer Check
+        active_customers = list(Customer.objects.filter(status='ACTIVE')[:500])
+        customer_ids = [c.id for c in active_customers]
+        
+        inv_sums = SalesInvoice.objects.filter(
+            customer_id__in=customer_ids,
+            status__in=FinancialTruthEngine.CUSTOMER_BALANCE_STATUSES,
+            is_active=True
+        ).values('customer_id').annotate(total=Sum('total_amount'))
+        inv_map = {item['customer_id']: item['total'] for item in inv_sums}
+        
+        pay_sums = CustomerPayment.objects.filter(
+            customer_id__in=customer_ids
+        ).values('customer_id').annotate(total=Sum('amount'))
+        pay_map = {item['customer_id']: item['total'] for item in pay_sums}
+        
+        for customer in active_customers:
+            derived = inv_map.get(customer.id, Decimal('0')) - pay_map.get(customer.id, Decimal('0'))
             stored = customer.balance
             if abs(derived - stored) > Decimal('0.01'):
                 mismatches.append({
@@ -51,9 +66,24 @@ class FinancialDiagnostics:
                     'difference': str(derived - stored),
                 })
 
-        for supplier in Supplier.objects.filter(status='ACTIVE')[:200]:
-            total_checked += 1
-            derived = FinancialTruthEngine.get_supplier_balance(supplier)
+        # 2. Optimized Supplier Check
+        active_suppliers = list(Supplier.objects.filter(status='ACTIVE')[:500])
+        supplier_ids = [s.id for s in active_suppliers]
+        
+        s_inv_sums = PurchaseInvoice.objects.filter(
+            supplier_id__in=supplier_ids,
+            status__in=FinancialTruthEngine.SUPPLIER_BALANCE_STATUSES,
+            is_active=True
+        ).values('supplier_id').annotate(total=Sum('total_amount'))
+        s_inv_map = {item['supplier_id']: item['total'] for item in s_inv_sums}
+        
+        s_pay_sums = SupplierPayment.objects.filter(
+            supplier_id__in=supplier_ids
+        ).values('supplier_id').annotate(total=Sum('amount'))
+        s_pay_map = {item['supplier_id']: item['total'] for item in s_pay_sums}
+        
+        for supplier in active_suppliers:
+            derived = s_inv_map.get(supplier.id, Decimal('0')) - s_pay_map.get(supplier.id, Decimal('0'))
             stored = supplier.balance
             if abs(derived - stored) > Decimal('0.01'):
                 mismatches.append({
@@ -65,6 +95,7 @@ class FinancialDiagnostics:
                     'difference': str(derived - stored),
                 })
 
+        total_checked = len(active_customers) + len(active_suppliers)
         consistency_pct = (
             ((total_checked - len(mismatches)) / total_checked * 100)
             if total_checked > 0 else 100
@@ -80,28 +111,38 @@ class FinancialDiagnostics:
 
     @staticmethod
     def check_ledger_integrity() -> dict:
-        """Check ledger vs derived mismatch detection.
+        """Check ledger vs derived mismatch detection using bulk aggregates.
         
         Verifies that journal entries match invoice totals.
         """
-        from accounting.models import JournalEntry
+        from accounting.models import JournalEntry, JournalLine
         from sales.models import SalesInvoice
         from purchases.models import PurchaseInvoice
 
         issues = []
 
-        # Check sales invoices with journal entries
-        for inv in SalesInvoice.objects.filter(
+        # 1. Bulk check sales invoices
+        active_sales = SalesInvoice.objects.filter(
             status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID', 'PAID'],
             is_active=True,
-        )[:100]:
-            jes = JournalEntry.objects.filter(
-                source_type='SalesInvoice',
-                source_id=inv.pk,
-            )
-            if jes.exists():
-                total_dr = sum(je.total_debit for je in jes)
-                total_cr = sum(je.total_credit for je in jes)
+        )[:500]
+        sales_ids = [str(s.id) for s in active_sales]
+        
+        # Get all related journal entries in one go
+        jes = JournalEntry.objects.filter(
+            source_type='SalesInvoice',
+            source_id__in=sales_ids,
+        ).prefetch_related('lines')
+        
+        je_map = {}
+        for je in jes:
+            je_map.setdefault(je.source_id, []).append(je)
+            
+        for inv in active_sales:
+            inv_jes = je_map.get(str(inv.id), [])
+            if inv_jes:
+                total_dr = sum(je.total_debit for je in inv_jes)
+                total_cr = sum(je.total_credit for je in inv_jes)
                 if abs(total_dr - total_cr) > Decimal('0.01'):
                     issues.append({
                         'type': 'UNBALANCED_JOURNAL',
@@ -116,19 +157,28 @@ class FinancialDiagnostics:
                         'detail': f'Invoice total ({inv.total_amount}) != Journal sum ({total_dr})',
                         'severity': 'HIGH',
                     })
-
-        # Check purchase invoices
-        for inv in PurchaseInvoice.objects.filter(
+        
+        # 2. Bulk check purchase invoices
+        active_purchases = PurchaseInvoice.objects.filter(
             status__in=['CONFIRMED', 'RECEIVED', 'PARTIAL_PAID', 'PAID'],
             is_active=True,
-        )[:100]:
-            jes = JournalEntry.objects.filter(
-                source_type='PurchaseInvoice',
-                source_id=inv.pk,
-            )
-            if jes.exists():
-                total_dr = sum(je.total_debit for je in jes)
-                total_cr = sum(je.total_credit for je in jes)
+        )[:500]
+        purchase_ids = [str(p.id) for p in active_purchases]
+        
+        p_jes = JournalEntry.objects.filter(
+            source_type='PurchaseInvoice',
+            source_id__in=purchase_ids,
+        ).prefetch_related('lines')
+        
+        p_je_map = {}
+        for je in p_jes:
+            p_je_map.setdefault(je.source_id, []).append(je)
+            
+        for inv in active_purchases:
+            inv_jes = p_je_map.get(str(inv.id), [])
+            if inv_jes:
+                total_dr = sum(je.total_debit for je in inv_jes)
+                total_cr = sum(je.total_credit for je in inv_jes)
                 if abs(total_dr - total_cr) > Decimal('0.01'):
                     issues.append({
                         'type': 'UNBALANCED_JOURNAL',
@@ -195,13 +245,14 @@ class FinancialDiagnostics:
 
     @staticmethod
     def check_credit_enforcement_coverage() -> dict:
-        """Check credit enforcement coverage completeness.
+        """Check credit enforcement coverage completeness using bulk aggregates.
         
         Verifies that all active customers have credit limits set
         and that no blocked customers have outstanding transactions.
         """
-        from sales.models import Customer, SalesInvoice
+        from sales.models import Customer, SalesInvoice, CustomerPayment
         from core.services.financial_truth_engine import FinancialTruthEngine
+        from django.db.models import Sum
 
         total_active = Customer.objects.filter(status='ACTIVE').count()
         no_credit_limit = Customer.objects.filter(
@@ -209,20 +260,50 @@ class FinancialDiagnostics:
             credit_limit__lte=0,
         ).count()
 
-        # Customers with high utilization (>80%)
+        # 1. Bulk check high utilization (>80%)
+        active_customers = list(Customer.objects.filter(status='ACTIVE', credit_limit__gt=0)[:500])
+        customer_ids = [c.id for c in active_customers]
+        
+        inv_sums = SalesInvoice.objects.filter(
+            customer_id__in=customer_ids,
+            status__in=FinancialTruthEngine.CUSTOMER_BALANCE_STATUSES,
+            is_active=True
+        ).values('customer_id').annotate(total=Sum('total_amount'))
+        inv_map = {item['customer_id']: item['total'] for item in inv_sums}
+        
+        pay_sums = CustomerPayment.objects.filter(
+            customer_id__in=customer_ids
+        ).values('customer_id').annotate(total=Sum('amount'))
+        pay_map = {item['customer_id']: item['total'] for item in pay_sums}
+
         high_utilization = 0
-        for customer in Customer.objects.filter(status='ACTIVE', credit_limit__gt=0)[:200]:
-            balance = FinancialTruthEngine.get_customer_balance(customer)
+        for customer in active_customers:
+            derived_balance = inv_map.get(customer.id, Decimal('0')) - pay_map.get(customer.id, Decimal('0'))
             if customer.credit_limit > 0:
-                utilization = balance / customer.credit_limit
+                utilization = derived_balance / customer.credit_limit
                 if utilization >= Decimal('0.8'):
                     high_utilization += 1
 
-        # Blocked customers with outstanding balance
+        # 2. Bulk check blocked customers with outstanding balance
+        blocked_customers = list(Customer.objects.filter(status='BLOCKED')[:200])
+        blocked_ids = [c.id for c in blocked_customers]
+        
+        b_inv_sums = SalesInvoice.objects.filter(
+            customer_id__in=blocked_ids,
+            status__in=FinancialTruthEngine.CUSTOMER_BALANCE_STATUSES,
+            is_active=True
+        ).values('customer_id').annotate(total=Sum('total_amount'))
+        b_inv_map = {item['customer_id']: item['total'] for item in b_inv_sums}
+        
+        b_pay_sums = CustomerPayment.objects.filter(
+            customer_id__in=blocked_ids
+        ).values('customer_id').annotate(total=Sum('amount'))
+        b_pay_map = {item['customer_id']: item['total'] for item in b_pay_sums}
+
         blocked_with_balance = 0
-        for customer in Customer.objects.filter(status='BLOCKED')[:100]:
-            balance = FinancialTruthEngine.get_customer_balance(customer)
-            if balance > Decimal('0.00'):
+        for customer in blocked_customers:
+            derived_balance = b_inv_map.get(customer.id, Decimal('0')) - b_pay_map.get(customer.id, Decimal('0'))
+            if derived_balance > Decimal('0.00'):
                 blocked_with_balance += 1
 
         coverage_pct = (

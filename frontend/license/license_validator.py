@@ -6,10 +6,8 @@ Provides continuous license validation with anti-tamper and rollback protection.
 import sys
 import os
 import time
-import json
-import threading
-from datetime import date, datetime
-from typing import Optional, Tuple, Dict, Any
+from datetime import datetime
+from typing import Optional, Dict, Any
 from PySide6.QtCore import QObject, Signal, QTimer
 
 # Add paths for imports
@@ -18,8 +16,7 @@ sys.path.insert(0, frontend_dir)
 sys.path.insert(0, os.path.join(frontend_dir, 'license'))
 
 from license_service import LicenseService
-from utils.device_fingerprint import generate_device_id
-from trust_anchor import LicenseTrustAnchor, InstallationLock, verify_checksum
+from trust_anchor import LicenseTrustAnchor
 
 
 class LicenseValidationResult:
@@ -39,21 +36,26 @@ class LicenseValidator(QObject):
     """
     Runtime license validation system.
     Validates license at startup and periodically during application runtime.
+    
+    DEV MODE: When dev_mode=True, ALL license checks are bypassed.
+    The validator immediately reports valid and skips periodic validation.
     """
     
     # Signals for UI updates
     license_valid = Signal(bool, str)  # is_valid, message
     license_status_changed = Signal(str)  # status message
     
-    def __init__(self, validation_interval_minutes: int = 60):
+    def __init__(self, validation_interval_minutes: int = 60, dev_mode: bool = False):
         """
         Initialize the license validator.
         
         Args:
             validation_interval_minutes: How often to re-validate license (minutes)
+            dev_mode: If True, skip all license validation (development mode)
         """
         super().__init__()
         
+        self.dev_mode = dev_mode
         self.license_service = LicenseService()
         self.validation_interval_ms = validation_interval_minutes * 60 * 1000
         self.last_validation_result = None
@@ -66,6 +68,15 @@ class LicenseValidator(QObject):
         self.validation_count = 0
         self.failed_validations = 0
         
+        # DEV MODE: Skip all license checks
+        if dev_mode:
+            self.last_validation_result = LicenseValidationResult(
+                True, "Development mode — license checks bypassed"
+            )
+            self.license_valid.emit(True, "Development mode")
+            self.license_status_changed.emit("DEV MODE — license checks bypassed")
+            return
+        
         # Initialize validation
         self._startup_validation()
         
@@ -74,7 +85,11 @@ class LicenseValidator(QObject):
         self.startup_time = datetime.now()
         self.last_system_time = self.startup_time
         
-        # Perform initial validation
+        # Phase 38: Move initial validation to a singleShot to avoid blocking the main thread during startup
+        QTimer.singleShot(500, self._perform_initial_validation)
+
+    def _perform_initial_validation(self):
+        """Perform actual validation logic."""
         result = self.validate_license()
         self.last_validation_result = result
         
@@ -164,12 +179,44 @@ class LicenseValidator(QObject):
         """
         Validate the license comprehensively.
         
+        DEV MODE: Always returns valid immediately.
+        
         Args:
             license_file_path: Optional path to license file (uses default location if None)
             
         Returns:
             LicenseValidationResult object
         """
+        # DEV MODE: Skip all checks
+        if self.dev_mode:
+            return LicenseValidationResult(True, "Development mode — license checks bypassed")
+        
+        # TRIAL: Check if backend reports trial or dev mode
+        try:
+            from api.client import APIClient
+            client = APIClient()
+            response = client.get('/api/licensing/info/')
+            if response and isinstance(response, dict):
+                data = response.get('data', response)
+                mode = data.get('mode', '')
+                if mode == 'dev':
+                    return LicenseValidationResult(True, "Development mode (server)")
+                if mode == 'trial':
+                    days = data.get('days_remaining', 0)
+                    return LicenseValidationResult(
+                        True, f"Trial mode — {days} days remaining"
+                    )
+                if mode == 'licensed':
+                    return LicenseValidationResult(True, data.get('message', 'License is valid'))
+                if mode == 'limited':
+                    return LicenseValidationResult(
+                        False, data.get('message', 'Trial expired. Please activate a license.')
+                    )
+                if mode == 'error':
+                    return LicenseValidationResult(False, data.get('message', 'License error'))
+        except Exception:
+            pass
+        
         try:
             # Load license from file if specified, otherwise use default location
             if license_file_path and os.path.exists(license_file_path):
@@ -308,29 +355,35 @@ class LicenseValidator(QObject):
 _license_validator = None
 
 
-def get_license_validator() -> LicenseValidator:
+def get_license_validator(dev_mode: bool = False) -> LicenseValidator:
     """
     Get the global license validator instance.
     
+    Args:
+        dev_mode: If True, bypass all license validation
+        
     Returns:
         LicenseValidator instance
     """
     global _license_validator
     if _license_validator is None:
-        _license_validator = LicenseValidator()
+        _license_validator = LicenseValidator(dev_mode=dev_mode)
     return _license_validator
 
 
-def initialize_license_validation() -> LicenseValidator:
+def initialize_license_validation(dev_mode: bool = False) -> LicenseValidator:
     """
     Initialize the license validation system.
     Should be called at application startup.
     
+    Args:
+        dev_mode: If True, bypass all license validation
+        
     Returns:
         LicenseValidator instance
     """
     global _license_validator
-    _license_validator = LicenseValidator()
+    _license_validator = LicenseValidator(dev_mode=dev_mode)
     return _license_validator
 
 
@@ -342,7 +395,6 @@ if __name__ == "__main__":
     validator = LicenseValidator(validation_interval_minutes=1)  # 1 minute for testing
     
     # Wait a bit to see validation in action
-    import time
     time.sleep(3)
     
     # Check status

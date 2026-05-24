@@ -1,5 +1,5 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from security.models import AuditLog, UserRole
@@ -240,7 +240,7 @@ def refresh_token_view(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def logout_view(request):
     """Logout user and invalidate session."""
     if not request.user or not request.user.is_authenticated:
@@ -261,8 +261,9 @@ def logout_view(request):
                 from datetime import datetime
                 exp = datetime.fromtimestamp(exp_str) if exp_str else None
                 blacklist_token(jti, exp=exp)
-        except Exception:
-            pass  # Token may already be invalid — proceed with logout
+        except Exception as e:
+            import logging
+            logging.getLogger('security').debug(f"Token blacklist skipped during logout: {e}")
     
     AuditLog.objects.create(
         action='LOGOUT',
@@ -279,7 +280,7 @@ def logout_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def user_profile(request):
     """Get current user profile."""
     if not request.user or not request.user.is_authenticated:
@@ -342,54 +343,8 @@ def user_profile(request):
     ))
 
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def change_password(request):
-    """Change user password."""
-    from django.contrib.auth.password_validation import validate_password
-    
-    old_password = request.data.get('old_password')
-    new_password = request.data.get('new_password')
-    
-    if not old_password or not new_password:
-        return Response(
-            create_error_response(ErrorCode.VAL_001, "Old password and new password are required"),
-            status=400
-        )
-    
-    if not request.user.check_password(old_password):
-        return Response(
-            create_error_response(ErrorCode.AUTH_001, "Invalid old password"),
-            status=400
-        )
-    
-    try:
-        validate_password(new_password, request.user)
-    except Exception as e:
-        return Response(
-            create_error_response(ErrorCode.VAL_002, str(e)),
-            status=400
-        )
-    
-    request.user.set_password(new_password)
-    request.user.save()
-    
-    AuditLog.objects.create(
-        action='UPDATE',
-        user=request.user,
-        username=request.user.username,
-        ip_address=request.META.get('REMOTE_ADDR', 'unknown'),
-        additional_data={'action': 'password_change'}
-    )
-    
-    return Response(APIResponse.success(
-        data=None,
-        message="Password changed successfully"
-    ))
-
-
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def notifications_list(request):
     """Get all notifications for the current user."""
     from security.models import Notification
@@ -436,7 +391,7 @@ def notifications_list(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def notifications_mark_read(request):
     """Mark a notification as read."""
     from security.notification_service import NotificationService
@@ -471,7 +426,7 @@ def notifications_mark_read(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def notifications_unread_count(request):
     """Get unread notification count."""
     from security.notification_service import NotificationService
@@ -972,6 +927,7 @@ def password_reset_confirm(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def change_password(request):
     """User changes their own password."""
     from django.contrib.auth.password_validation import validate_password

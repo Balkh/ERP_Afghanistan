@@ -5,18 +5,15 @@ invoices using the FIFO (First In, First Out) strategy. Shows available
 payments, outstanding invoices, and the allocation results.
 """
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                                QPushButton, QFrame, QGroupBox, QHeaderView,
-                                QTableWidget, QTableWidgetItem, QMessageBox)
+                                QFrame, QGroupBox, QHeaderView, QTableWidget,
+                                QTableWidgetItem, QMessageBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG,
-                           MARGIN_PAGE, MARGIN_CARD,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_TABLE_HEADER,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, MARGIN_CARD,
+                           TEXT_SECTION_TITLE, TEXT_BODY_SMALL,
+                           COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_WARNING,
+                           COLOR_INFO, BORDER_RADIUS_MD)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from api.client import APIClient
 
@@ -72,7 +69,7 @@ class FIFOAllocationDialog(QDialog):
 
         # Unallocated payments table
         payments_group = QGroupBox("Unallocated Payments")
-        payments_group.setStyleSheet(f"""
+        payments_group.setStyleSheet("""
             QGroupBox {{
                 font-size: {TEXT_SECTION_TITLE};
                 font-weight: bold;
@@ -99,7 +96,7 @@ class FIFOAllocationDialog(QDialog):
 
         # Outstanding invoices table
         invoices_group = QGroupBox("Outstanding Invoices (Oldest First)")
-        invoices_group.setStyleSheet(f"""
+        invoices_group.setStyleSheet("""
             QGroupBox {{
                 font-size: {TEXT_SECTION_TITLE};
                 font-weight: bold;
@@ -148,7 +145,7 @@ class FIFOAllocationDialog(QDialog):
 
     def _create_summary_card(self, title, value, color):
         card = QFrame()
-        card.setStyleSheet(f"""
+        card.setStyleSheet("""
             QFrame {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};

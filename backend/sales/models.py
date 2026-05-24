@@ -199,7 +199,9 @@ class Customer(CompanyScopedMixin, TimeStampedUUIDModel):
                 'risk_level': self.risk_level,
                 'available_credit': self.available_credit,
             }
-        except:
+        except Exception as e:
+            import logging
+            logging.getLogger('sales').warning(f"Financial summary fallback for customer {self.id}: {e}")
             return {
                 'total_balance': self.balance,
                 'credit_limit': self.credit_limit,

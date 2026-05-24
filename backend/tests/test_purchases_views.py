@@ -7,11 +7,40 @@ from unittest.mock import patch, MagicMock
 from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework import status
+from accounting.models import Account
+from payments.models import PaymentMethod, PaymentAccount
 from tests.factories import (
     SupplierFactory, PurchaseInvoiceFactory, PurchaseItemFactory,
     SupplierPaymentFactory, ProductFactory, BatchFactory, WarehouseFactory,
     AccountFactory, JournalEntryFactory,
 )
+
+
+def _setup_payment_infrastructure():
+    """Create PaymentAccount and PaymentMethod required by SupplierPayment.save()."""
+    pm, _ = PaymentMethod.objects.get_or_create(
+        code='CASH', defaults={'name': 'Cash', 'method_type': 'CASH', 'is_active': True, 'is_default': True}
+    )
+    # Create all accounts required by PaymentEngine._validate_required_accounts()
+    account_map = {
+        '1000': ('Cash', 'ASSET', 'CURRENT_ASSET'),
+        '1200': ('Accounts Receivable', 'ASSET', 'CURRENT_ASSET'),
+        '1300': ('Inventory', 'ASSET', 'CURRENT_ASSET'),
+        '2100': ('Tax Payable', 'LIABILITY', 'CURRENT_LIABILITY'),
+        '4100': ('Sales Revenue', 'REVENUE', 'OPERATING_REVENUE'),
+        '5100': ('COGS', 'EXPENSE', 'COST_OF_GOODS_SOLD'),
+        '6100': ('Operating Expenses', 'EXPENSE', 'OPERATING_EXPENSE'),
+    }
+    for code, (name, acct_type, category) in account_map.items():
+        AccountFactory.create(code=code, name=name, account_type=acct_type, account_category=category, is_system=True)
+    cash_acct = Account.objects.get(code='1000')
+    PaymentAccount.objects.get_or_create(
+        code='CASH-MAIN', defaults={
+            'name': 'Main Cash', 'account_type': 'CASH',
+            'accounting_account': cash_acct, 'is_active': True, 'is_default': True,
+            'current_balance': Decimal('1000000.00'), 'currency': 'AFN',
+        }
+    )
 
 
 class PurchaseAccountingServiceTests(APITestCase):
@@ -82,6 +111,7 @@ class SupplierViewSetTests(APITestCase):
 
     def setUp(self):
         self.client.force_authenticate(user=self.user)
+        _setup_payment_infrastructure()
         self.supplier = SupplierFactory.create()
 
     def test_list_suppliers(self):
@@ -255,8 +285,13 @@ class SupplierPaymentViewSetTests(APITestCase):
 
     def setUp(self):
         self.client.force_authenticate(user=self.user)
+        _setup_payment_infrastructure()
         self.supplier = SupplierFactory.create()
-        self.invoice = PurchaseInvoiceFactory.create(supplier=self.supplier)
+        self.invoice = PurchaseInvoiceFactory.create(
+            supplier=self.supplier,
+            total_amount=Decimal('1000.00'),
+            subtotal=Decimal('1000.00'),
+        )
         self.payment = SupplierPaymentFactory.create(supplier=self.supplier, invoice=self.invoice)
 
     def test_list_payments(self):

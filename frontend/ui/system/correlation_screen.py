@@ -4,26 +4,19 @@ Visualizes end-to-end business event chains and ERP-wide consistency.
 """
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                               QLabel, QFrame, QScrollArea, QListWidget, 
-                               QListWidgetItem, QHeaderView, QSizePolicy, QGroupBox)
-from PySide6.QtCore import Qt, QPointF, QTimer, QRectF
-from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QLinearGradient
+                               QLabel, QFrame, QListWidget, QListWidgetItem, 
+                               QGroupBox, QTableWidgetItem)
+from PySide6.QtCore import Qt, QPointF
+from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QFont
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, SPACING_6,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BORDER_RADIUS_XL, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-    TEXT_TABLE,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE, TEXT_BODY, TEXT_HELPER,
+                           BORDER_RADIUS_XL, BORDER_RADIUS_LG, BORDER_RADIUS_PILL, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+                           TEXT_TABLE, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
-from ui.screens.base_screen import BaseScreen
-from ui.constants import (COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
 from api.correlation_service import CorrelationIntelligenceService
 
 

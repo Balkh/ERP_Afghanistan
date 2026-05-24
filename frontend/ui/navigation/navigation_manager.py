@@ -3,7 +3,7 @@ Navigation Manager for page routing and history management.
 Provides consistent navigation across all screens.
 """
 
-from PySide6.QtCore import Signal, QObject, QStack
+from PySide6.QtCore import Signal, QObject
 from typing import Optional, Dict, Callable, Any
 import logging
 
@@ -103,7 +103,7 @@ class NavigationManager(QObject):
             self._history.push(self._current_screen, self._current_params)
             
         # Update current
-        old_screen = self._current_screen
+        __old_screen = self._current_screen
         self._current_screen = screen_id
         self._current_params = params
         

@@ -7,34 +7,27 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                 QTableWidget, QTableWidgetItem, QHeaderView,
                                 QLineEdit, QLabel, QComboBox, QPushButton,
                                 QGroupBox, QFrame, QSplitter, QMessageBox,
-                                QScrollArea, QAbstractItemView)
-from PySide6.QtCore import Qt, QDate, Signal, QTimer
-from PySide6.QtGui import QFont, QKeySequence, QShortcut, QColor
+                                QAbstractItemView)
+from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from decimal import Decimal
 from datetime import date
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 
 from ui.common.barcode_scanner import BarcodeScannerInput
 from ui.common.batch_selection import BatchSelectionDialog
 from ui.common.printable_invoice import PrintableInvoiceDialog
 from api.endpoints import get_endpoint
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-    MARGIN_PAGE, MARGIN_CARD,
-    TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
-    TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-    BUTTON_HEIGHT_MD, BUTTON_HEIGHT_LG, BUTTON_HEIGHT_XL,
-    INPUT_HEIGHT_MD, INPUT_HEIGHT_LG,
-    TABLE_ROW_HEIGHT_MD, TABLE_ROW_HEIGHT_LG,
-    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_XL,
-    COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-    COLOR_BORDER, COLOR_BORDER_LIGHT,
-    COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-    COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE,
-    COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-    COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
-    DENSITY_COMPACT_ROW, DENSITY_STANDARD_SPACING,
+    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE,
+    TEXT_SECTION_TITLE, TEXT_CARD_TITLE,
+    TEXT_TABLE, TEXT_HELPER, BUTTON_HEIGHT_MD, BUTTON_HEIGHT_LG,
+    BUTTON_HEIGHT_XL, INPUT_HEIGHT_MD, INPUT_HEIGHT_LG, BORDER_RADIUS_SM, BORDER_RADIUS_MD,
+    BORDER_RADIUS_LG, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
+    COLOR_BORDER, COLOR_TEXT_PRIMARY,
+    COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    COLOR_INFO,
 )
 
 
@@ -120,7 +113,7 @@ class POSScreen(QWidget):
         self.new_btn = self._action_button("New Sale (F2)", COLOR_PRIMARY, self.new_sale)
         header.addWidget(self.new_btn)
 
-        layout.addLayout(header)
+        self.layout().addLayout(header)
 
     def _build_main_splitter(self):
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -440,8 +433,7 @@ class POSScreen(QWidget):
         self.item_count_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
         footer.addWidget(self.item_count_label)
 
-        layout = self.layout()
-        layout.addLayout(footer)
+        self.layout().addLayout(footer)
 
     def _action_button(self, text, color, callback, size="md"):
         btn = QPushButton(text)
@@ -566,12 +558,8 @@ class POSScreen(QWidget):
                         self.search_results.setItem(i, 0, QTableWidgetItem(name))
                         self.search_results.setItem(i, 1, QTableWidgetItem(f"{price:.2f}"))
                         self.search_results.setItem(i, 2, QTableWidgetItem(str(stock)))
-                        add_btn = QPushButton("+")
+                        add_btn = EnterpriseButton("+", variant=ButtonVariant.SUCCESS)
                         add_btn.setFixedWidth(30)
-                        add_btn.setStyleSheet(
-                            f"background-color: {COLOR_SUCCESS}; color: #0f1a14; "
-                            f"border-radius: {BORDER_RADIUS_SM}; font-weight: bold;"
-                        )
                         add_btn.clicked.connect(lambda checked, idx=i: self._add_search_result_to_cart_by_index(idx))
                         self.search_results.setCellWidget(i, 3, add_btn)
         except Exception:
@@ -606,12 +594,8 @@ class POSScreen(QWidget):
             self.cart_table.setItem(i, 4, QTableWidgetItem(f"{item['price']:.2f}"))
             self.cart_table.setItem(i, 5, QTableWidgetItem(f"{item['total']:.2f}"))
 
-            remove_btn = QPushButton("✕")
+            remove_btn = EnterpriseButton("✕", variant=ButtonVariant.DANGER)
             remove_btn.setFixedWidth(28)
-            remove_btn.setStyleSheet(
-                f"background-color: {COLOR_DANGER}; color: white; "
-                f"border-radius: {BORDER_RADIUS_SM}; font-weight: bold;"
-            )
             remove_btn.clicked.connect(lambda checked, idx=i: self._remove_item(idx))
             self.cart_table.setCellWidget(i, 6, remove_btn)
 
@@ -789,7 +773,6 @@ class POSScreen(QWidget):
     def hold_sale(self):
         if not self.cart_items:
             return
-        pass
 
     def recall_sale(self):
         pass

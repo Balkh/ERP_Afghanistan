@@ -2,51 +2,18 @@ import sys
 import os
 import logging
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QMessageBox, QDialog
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from theme.theme_engine import ThemeEngine
 from ui.main_window import MainWindow
-from ui.role_manager import get_role_from_user_data
 from utils.device_fingerprint import generate_device_id
 from license.license_validator import initialize_license_validation
-from security.obfuscator import Obfuscator
-from security.encrypted_config import EncryptedConfig
 from security.tamper_detector import TamperDetector
 from api.client import APIClient
 from security.auth_manager import AuthManager
-from utils.logger import get_logger, init_logging, shutdown as log_shutdown, set_active_screen, capture_health_snapshot, DiagnosticContext, record_error, emit_event
+from utils.logger import get_logger, init_logging, shutdown as log_shutdown, set_active_screen, get_active_screen, capture_health_snapshot, DiagnosticContext, record_error, emit_event
 from security.session_store import load_session as session_store_load, _migrate_from_legacy
 
 log = get_logger(__name__)
-
-
-def check_session_valid(api_client):
-    """Check if saved session is valid (tries encrypted store, falls back to legacy)."""
-    _migrate_from_legacy()
-    try:
-        username, token, refresh_token = session_store_load()
-        if username and token:
-            api_client.set_auth_token(token)
-            if refresh_token:
-                api_client._refresh_token = refresh_token
-            try:
-                from api.endpoints import get_endpoint
-                endpoint = get_endpoint("profile") or "/api/auth/profile/"
-                import requests
-                response = requests.get(
-                    f"{api_client.base_url}{endpoint}",
-                    headers=api_client.session.headers,
-                    timeout=3
-                )
-                if response.status_code == 200:
-                    return True, username
-            except Exception as e:
-                log.warning(f"Session check failed: {e}", extra={'extra_fields': {'tags': ['auth']}})
-    except Exception as e:
-        log.warning(f"Session validation error: {e}", extra={'extra_fields': {'tags': ['auth']}})
-    return False, None
-
-
-_active_screen_context = ""
 
 
 def _get_active_screen_context() -> str:
@@ -118,11 +85,11 @@ def main():
     app.setApplicationName("Pharmacy ERP")
     app.setApplicationVersion("1.0.0")
     
-    dev_mode = os.path.exists('DEVELOPMENT') or os.environ.get('PHARMACY_ERP_DEVELOPMENT', '').lower() in ('true', '1', 'yes')
+    # Dev mode detection: auto-activate when PHARMACY_ERP_DEVELOPMENT is set
+    dev_mode = os.environ.get('PHARMACY_ERP_DEVELOPMENT', 'False').lower() in ('true', '1', 'yes')
     
     log.debug(f"Dev mode: {dev_mode}", extra={'extra_fields': {'tags': ['system']}})
     log.debug(f"DEVELOPMENT file exists: {os.path.exists('DEVELOPMENT')}", extra={'extra_fields': {'tags': ['system']}})
-    log.debug(f"PHARMACY_ERP_DEVELOPMENT env: {os.environ.get('PHARMACY_ERP_DEVELOPMENT', 'NOT SET')}", extra={'extra_fields': {'tags': ['system']}})
     
     if not dev_mode:
         critical_files = [
@@ -137,26 +104,31 @@ def main():
         base_dir = os.path.dirname(os.path.abspath(__file__))
         critical_files = [os.path.join(base_dir, f) for f in critical_files]
         
-        detector = TamperDetector()
-        for file_path in critical_files:
-            if os.path.exists(file_path):
-                detector.add_file(file_path)
+        # Perform tamper detection in a deferred singleShot to avoid startup delay
+        # The app starts, then checks integrity. If failed, it exits.
+        def run_integrity_check():
+            detector = TamperDetector()
+            for file_path in critical_files:
+                if os.path.exists(file_path):
+                    detector.add_file(file_path)
+            
+            baseline_file = os.path.join(base_dir, 'security_baseline.json')
+            if not os.path.exists(baseline_file):
+                detector.save_baseline(baseline_file)
+            else:
+                detector.load_baseline(baseline_file)
+            
+            is_tampered, tampered_files = detector.check_integrity()
+            if is_tampered:
+                msg = "Security error: Tampering detected in critical files.\n"
+                msg += "The following files have been modified:\n"
+                for f in tampered_files:
+                    msg += f"  - {f}\n"
+                msg += "The application will now exit for security reasons."
+                QMessageBox.critical(None, "Security Error", msg)
+                sys.exit(1)
         
-        baseline_file = os.path.join(base_dir, 'security_baseline.json')
-        if not os.path.exists(baseline_file):
-            detector.save_baseline(baseline_file)
-        else:
-            detector.load_baseline(baseline_file)
-        
-        is_tampered, tampered_files = detector.check_integrity()
-        if is_tampered:
-            msg = "Security error: Tampering detected in critical files.\n"
-            msg += "The following files have been modified:\n"
-            for f in tampered_files:
-                msg += f"  - {f}\n"
-            msg += "The application will now exit for security reasons."
-            QMessageBox.critical(None, "Security Error", msg)
-            sys.exit(1)
+        QTimer.singleShot(1000, run_integrity_check)
     
     # Generate and set device ID for licensing
     device_id = generate_device_id()
@@ -170,79 +142,12 @@ def main():
     # Apply global stylesheet for dropdown readability (WCAG AA compliant)
     # ThemeEngine updates module constants; this stylesheet ensures QComboBox
     # popups have proper contrast in both light and dark themes.
-    from ui.constants import (
-        COLOR_BG_INPUT, COLOR_TEXT_PRIMARY, COLOR_BG_ELEVATED,
-        COLOR_BORDER, COLOR_PRIMARY, COLOR_TEXT_ON_PRIMARY,
-        COLOR_BG_HOVER, COLOR_BG_SURFACE,
-    )
-    app.setStyleSheet(f"""
-        QComboBox {{
-            background-color: {COLOR_BG_INPUT};
-            color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER};
-            border-radius: 4px;
-            padding: 6px 10px;
-            min-height: 20px;
-        }}
-        QComboBox:focus {{
-            border: 1px solid {COLOR_PRIMARY};
-        }}
-        QComboBox::drop-down {{
-            border: none;
-            width: 24px;
-        }}
-        QComboBox QAbstractItemView {{
-            background-color: {COLOR_BG_ELEVATED};
-            color: {COLOR_TEXT_PRIMARY};
-            selection-background-color: {COLOR_PRIMARY};
-            selection-color: {COLOR_TEXT_ON_PRIMARY};
-            border: 1px solid {COLOR_BORDER};
-            outline: none;
-            padding: 4px 0;
-        }}
-        QComboBox QAbstractItemView::item {{
-            padding: 6px 10px;
-            min-height: 24px;
-        }}
-        QComboBox QAbstractItemView::item:hover {{
-            background-color: {COLOR_BG_HOVER};
-        }}
-        QComboBox QAbstractItemView::item:selected {{
-            background-color: {COLOR_PRIMARY};
-            color: {COLOR_TEXT_ON_PRIMARY};
-        }}
-        QListView {{
-            background-color: {COLOR_BG_SURFACE};
-            color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER};
-        }}
-        QListView::item {{
-            padding: 6px 10px;
-            min-height: 24px;
-        }}
-        QListView::item:selected {{
-            background-color: {COLOR_PRIMARY};
-            color: {COLOR_TEXT_ON_PRIMARY};
-        }}
-        QMenu {{
-            background-color: {COLOR_BG_ELEVATED};
-            color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER};
-            padding: 4px 0;
-        }}
-        QMenu::item {{
-            padding: 6px 24px;
-            min-height: 24px;
-        }}
-        QMenu::item:selected {{
-            background-color: {COLOR_PRIMARY};
-            color: {COLOR_TEXT_ON_PRIMARY};
-        }}
-    """)
+    from theme.style_builder import UIStyleBuilder
+    app.setStyleSheet(UIStyleBuilder.get_global_style())
     log.debug("Global dropdown stylesheet applied", extra={'extra_fields': {'tags': ['theme']}})
 
-    # Initialize license validation
-    license_validator = initialize_license_validation()
+    # Initialize license validation (dev mode bypasses all checks)
+    license_validator = initialize_license_validation(dev_mode=dev_mode)
     log.debug("License validator initialized", extra={'extra_fields': {'tags': ['license']}})
 
     # Initialize API client
@@ -299,15 +204,16 @@ def main():
             log.error(f"Auth error: {e}", exc_info=True, extra={'extra_fields': {'tags': ['auth']}})
             sys.exit(1)
     else:
-        log.info("Development mode - authentication bypassed", extra={'extra_fields': {'tags': ['auth']}})
+        log.warning("DEVELOPMENT MODE — authentication bypassed (set PHARMACY_ERP_DEVELOPMENT to disable)",
+                     extra={'extra_fields': {'tags': ['auth']}})
         authenticated = True
-        user_data = {"username": "admin", "role": "admin", "roles": ["Admin"]}
+        user_data = {"username": "dev_admin", "role": "admin", "roles": ["Admin"]}
         dev_token = os.environ.get('PHARMACY_ERP_DEV_TOKEN')
-        if not dev_token:
-            # Temporary dev token for testing
-            dev_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxODEwMjAwNjQyLCJpYXQiOjE3Nzg2NjQ2NDIsImp0aSI6IjdkNmIwM2ZlZWFjYzQ0NGM4OTAyMjUyZjYzMTY1YmJjIiwidXNlcl9pZCI6IjEifQ.sKjujPqPsQBuQR0PHeNUsmPOoJEmYdj12bJ8CKiFNeo"
         if dev_token:
             api_client.set_auth_token(dev_token)
+        else:
+            log.warning("No PHARMACY_ERP_DEV_TOKEN set — running without auth token (API calls will fail)",
+                         extra={'extra_fields': {'tags': ['auth']}})
 
     log.debug(f"Authenticated: {authenticated}", extra={'extra_fields': {'tags': ['auth']}})
     log.debug(f"User data: {user_data}", extra={'extra_fields': {'tags': ['auth']}})

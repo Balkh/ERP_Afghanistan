@@ -6,20 +6,16 @@ Phase 16.2: Merged ToastManager capabilities, added keyboard dismiss,
 accessibility support, and governance-compliant IconButton close.
 """
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-    MARGIN_PAGE, BORDER_RADIUS_LG,
-    TEXT_BODY, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_TABLE,
+    TEXT_TABLE, TEXT_LABEL, TEXT_CARD_TITLE, TEXT_BODY,
+    SPACING_XS, SPACING_SM, SPACING_MD, BORDER_RADIUS_LG,
+    COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO, COLOR_TEXT_ON_SUCCESS,
+    COLOR_TEXT_ON_DANGER, COLOR_TEXT_ON_WARNING, COLOR_TEXT_ON_PRIMARY,
 )
-from ui.constants import (
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-    COLOR_TEXT_ON_SUCCESS, COLOR_TEXT_ON_DANGER, COLOR_TEXT_ON_WARNING, COLOR_TEXT_ON_PRIMARY,
-)
-from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_CARD_TITLE, TEXT_BODY
 
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGraphicsOpacityEffect,
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 )
-from PySide6.QtCore import Signal, Qt, QTimer, QPropertyAnimation, QEasingCurve
+from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QFont, QAccessible, QAccessibleEvent
 from enum import Enum
 from typing import Optional, Callable
@@ -40,14 +36,12 @@ WORKFLOW_PAID = "Payment of {} recorded"
 WORKFLOW_CANCELLED = "{} cancelled"
 WORKFLOW_EXPORTED = "{} exported"
 
-
 class NotificationType(Enum):
     """Notification types."""
     INFO = "info"
     SUCCESS = "success"
     WARNING = "warning"
     ERROR = "error"
-
 
 class NotificationDuration(Enum):
     """Notification display duration."""
@@ -56,7 +50,6 @@ class NotificationDuration(Enum):
     LONG = 8000
     PERMANENT = 0
 
-
 # Adaptive text contrast: same pattern as ToastManager._TOAST_CONFIGS
 _NOTIFICATION_STYLES = {
     NotificationType.SUCCESS: {"bg": COLOR_SUCCESS, "text": COLOR_TEXT_ON_SUCCESS},
@@ -64,7 +57,6 @@ _NOTIFICATION_STYLES = {
     NotificationType.WARNING: {"bg": COLOR_WARNING, "text": COLOR_TEXT_ON_WARNING},
     NotificationType.INFO:    {"bg": COLOR_INFO,    "text": COLOR_TEXT_ON_PRIMARY},
 }
-
 
 class NotificationItem(QWidget):
     """
@@ -123,7 +115,7 @@ class NotificationItem(QWidget):
         """)
 
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 8, 8, 8)
+        layout.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_SM, SPACING_SM)
         layout.setSpacing(SPACING_SM)
 
         if self._simple_message:
@@ -193,7 +185,6 @@ class NotificationItem(QWidget):
         self.closed.emit()
         QAccessible.updateAccessibility(QAccessibleEvent(self, QAccessible.Event.Alert))
         super().closeEvent(event)
-
 
 class NotificationManager(QWidget):
     """
@@ -376,11 +367,9 @@ class NotificationManager(QWidget):
         self._notifications.clear()
         self.hide()
 
-
 # ── Global singleton ──
 
 _global_notification_manager: Optional[NotificationManager] = None
-
 
 def get_notification_manager() -> NotificationManager:
     """Get global notification manager."""
@@ -389,28 +378,23 @@ def get_notification_manager() -> NotificationManager:
         _global_notification_manager = NotificationManager()
     return _global_notification_manager
 
-
 # ── Module-level convenience functions (title+message mode) ──
 
 def notify_info(title: str, message: str, duration: int = 5000):
     """Show info notification using global manager."""
     get_notification_manager().info(title, message, duration)
 
-
 def notify_success(title: str, message: str, duration: int = 5000):
     """Show success notification using global manager."""
     get_notification_manager().success(title, message, duration)
-
 
 def notify_warning(title: str, message: str, duration: int = 5000):
     """Show warning notification using global manager."""
     get_notification_manager().warning(title, message, duration)
 
-
 def notify_error(title: str, message: str, duration: int = 8000):
     """Show error notification using global manager."""
     get_notification_manager().error(title, message, duration)
-
 
 # ── Module-level convenience functions (simple message / Toast-style mode) ──
 
@@ -418,16 +402,13 @@ def show_success(message: str, duration: int = 4000):
     """Show success message using global manager."""
     get_notification_manager().show_success(message, duration)
 
-
 def show_error(message: str, duration: int = 8000):
     """Show error message using global manager."""
     get_notification_manager().show_error(message, duration)
 
-
 def show_warning(message: str, duration: int = 5000):
     """Show warning message using global manager."""
     get_notification_manager().show_warning(message, duration)
-
 
 def show_info(message: str, duration: int = 4000):
     """Show info message using global manager."""

@@ -1,0 +1,363 @@
+"""
+DEPRECATED — Legacy theme manager.
+Use ``theme.theme_engine.ThemeEngine`` instead.
+This module will be removed in a future release.
+"""
+import warnings
+warnings.warn(
+    "theme.theme_manager is deprecated. Use theme.theme_engine.ThemeEngine instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)
+
+from PySide6.QtCore import QObject, Signal, Qt
+from PySide6.QtGui import QColor, QPalette
+from PySide6.QtWidgets import QApplication
+
+class ThemeManager(QObject):
+    """DEPRECATED — Use ThemeEngine instead."""
+    theme_changed = Signal(str)  # Emits the theme name when changed
+
+    def __init__(self):
+        super().__init__()
+        self._current_theme = "light"
+        self._themes = {
+            "light": {
+                "primary": QColor("#2563eb"),  # Modern Blue
+                "secondary": QColor("#475569"), # Slate Secondary
+                "background": QColor("#f8fafc"),
+                "foreground": QColor("#0f172a"),
+                "input_background": QColor("#ffffff"),
+                "input_foreground": QColor("#0f172a"),
+                "border": QColor("#e2e8f0"),
+            },
+            "dark": {
+                "primary": QColor("#89b4fa"),  # Lavender/Blue
+                "secondary": "#b8bdd0",
+                "background": QColor("#1e1e2e"),
+                "foreground": QColor("#e5e8f0"),
+                "input_background": QColor("#1e1e2e"),
+                "input_foreground": QColor("#e5e8f0"),
+                "border": QColor("#45475a"),
+            }
+        }
+
+    def current_theme(self):
+        return self._current_theme
+
+    def set_theme(self, theme_name):
+        if theme_name not in self._themes:
+            raise ValueError(f"Unknown theme: {theme_name}")
+        self._current_theme = theme_name
+        self.apply_theme(theme_name)
+        self.theme_changed.emit(theme_name)
+
+    def apply_theme(self, theme_name):
+        """Apply the theme to the QApplication instance."""
+        if theme_name not in self._themes:
+            return
+
+        theme = self._themes[theme_name]
+        app = QApplication.instance()
+        if app is None:
+            return
+
+        palette = QPalette()
+
+        # Set color roles
+        palette.setColor(QPalette.Window, theme["background"])
+        palette.setColor(QPalette.WindowText, theme["foreground"])
+        palette.setColor(QPalette.Base, theme["input_background"])
+        palette.setColor(QPalette.AlternateBase, theme["background"])
+        palette.setColor(QPalette.ToolTipBase, theme["input_background"])
+        palette.setColor(QPalette.ToolTipText, theme["foreground"])
+        palette.setColor(QPalette.Text, theme["foreground"])
+        palette.setColor(QPalette.Button, theme["input_background"])
+        palette.setColor(QPalette.ButtonText, theme["foreground"])
+        palette.setColor(QPalette.BrightText, Qt.red)
+        palette.setColor(QPalette.Link, theme["primary"])
+        palette.setColor(QPalette.Highlight, theme["primary"])
+        palette.setColor(QPalette.HighlightedText, Qt.white)
+
+        app.setPalette(palette)
+
+        # Also set the stylesheet for more complex styling
+        app.setStyleSheet(self._generate_stylesheet(theme))
+
+    def _generate_stylesheet(self, theme):
+        """Generate a stylesheet based on the theme colors.
+        
+        Using semantic tokens from theme dictionary for enterprise consistency.
+        """
+        bg = theme["background"].name()
+        fg = theme["foreground"].name()
+        primary = theme["primary"].name()
+        secondary = theme["secondary"].name()
+        inp_bg = theme["input_background"].name()
+        inp_fg = theme["input_foreground"].name()
+        border = theme["border"].name()
+
+        from ui.constants import (
+            BORDER_RADIUS_MD, TEXT_BODY, TEXT_PAGE_TITLE, COLOR_PRIMARY_HOVER,
+            COLOR_PRIMARY_ACTIVE
+        )
+
+        return f"""
+            /* Global Application Styling */
+            QMainWindow, QDialog, QWidget#main_container {{
+                background-color: {bg};
+                color: {fg};
+                font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            }}
+
+            /* --- TYPOGRAPHY --- */
+            QLabel {{
+                background-color: transparent;
+                color: {fg};
+            }}
+            QLabel#page_title {{
+                font-size: {TEXT_PAGE_TITLE}pt;
+                font-weight: 700;
+                color: {fg};
+            }}
+
+            /* --- BUTTONS --- */
+            QPushButton {{
+                background-color: {primary};
+                color: white;
+                border: 1px solid {primary};
+                padding: 10px 20px;
+                border-radius: {BORDER_RADIUS_MD}px;
+                font-weight: 600;
+                font-size: {TEXT_BODY}pt;
+            }}
+            QPushButton:hover {{
+                background-color: {COLOR_PRIMARY_HOVER};
+                border: 1px solid {COLOR_PRIMARY_HOVER};
+            }}
+            QPushButton:pressed {{
+                background-color: {COLOR_PRIMARY_ACTIVE};
+            }}
+            QPushButton:disabled {{
+                background-color: {border};
+                border: 1px solid {border};
+                color: {fg};
+                opacity: 0.6;
+            }}
+
+            /* --- INPUTS --- */
+            QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox {{
+                background-color: {inp_bg};
+                color: {inp_fg};
+                border: 1px solid {border};
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding: 10px 12px;
+                font-size: {TEXT_BODY}pt;
+            }}
+            QLineEdit:focus, QTextEdit:focus, QComboBox:focus {{
+                border: 2px solid {primary};
+                background-color: {bg};
+            }}
+            QLineEdit:hover, QComboBox:hover {{
+                border: 1px solid {secondary};
+            }}
+
+            /* --- TABLES --- */
+            QTableWidget {{
+                background-color: {bg};
+                gridline-color: {border};
+                border: 1px solid {border};
+                border-radius: {BORDER_RADIUS_MD}px;
+            }}
+            QHeaderView::section {{
+                background-color: {inp_bg};
+                padding: 12px;
+                border: none;
+                border-bottom: 2px solid {border};
+                font-weight: 600;
+            }}
+
+            /* --- GROUP BOX --- */
+            QGroupBox {{
+                background-color: transparent;
+                color: {fg};
+                border: 1px solid {border};
+                border-radius: {BORDER_RADIUS_MD}px;
+                margin-top: 16px;
+                padding: 16px;
+                font-weight: 600;
+            }}
+            QGroupBox::title {{
+                subcontrol-origin: margin;
+                left: 12px;
+                padding: 0 5px;
+                color: {fg};
+            }}
+
+            /* --- CHECKBOX / RADIO --- */
+            QCheckBox, QRadioButton {{
+                color: {fg};
+                spacing: 6px;
+            }}
+            QCheckBox::indicator, QRadioButton::indicator {{
+                width: 16px;
+                height: 16px;
+            }}
+
+            /* --- SCROLL AREA / FRAME --- */
+            QScrollArea {{
+                border: none;
+                background-color: transparent;
+            }}
+            QFrame {{
+                background-color: transparent;
+                color: {fg};
+            }}
+
+            /* --- TABLES (delegated to ui/components/tables.py) --- */
+
+            /* --- LISTS --- */
+            QListWidget, QListView {{
+                background-color: {bg};
+                color: {fg};
+                border: 1px solid {border};
+            }}
+            QListWidget::item:selected, QListView::item:selected {{
+                background-color: {primary};
+                color: white;
+            }}
+
+            /* --- MENU --- */
+            QMenuBar {{
+                background-color: {bg};
+                color: {fg};
+                border-bottom: 1px solid {border};
+            }}
+            QMenuBar::item:selected {{
+                background-color: {primary};
+                color: white;
+            }}
+            QMenu {{
+                background-color: {bg};
+                color: {fg};
+                border: 1px solid {border};
+            }}
+            QMenu::item:selected {{
+                background-color: {primary};
+                color: white;
+            }}
+
+            /* --- TOOLBAR --- */
+            QToolBar {{
+                background-color: {bg};
+                color: {fg};
+                border: none;
+                spacing: 4px;
+                padding: 2px;
+            }}
+            QToolBar::separator {{
+                width: 1px;
+                background-color: {border};
+                margin: 2px 4px;
+            }}
+
+            /* --- STATUS BAR --- */
+            QStatusBar {{
+                background-color: {bg};
+                color: {fg};
+                border-top: 1px solid {border};
+            }}
+            QStatusBar::item {{
+                border: none;
+            }}
+            QStatusBar QLabel {{
+                color: {fg};
+            }}
+
+            /* --- TABS --- */
+            QTabWidget::pane {{
+                border: 1px solid {border};
+                border-radius: 4px;
+                background-color: {bg};
+            }}
+            QTabBar::tab {{
+                background-color: {inp_bg};
+                color: {fg};
+                padding: 8px 12px;
+                margin-right: 2px;
+                border-top-left-radius: 4px;
+                border-top-right-radius: 4px;
+            }}
+            QTabBar::tab:selected {{
+                background-color: {primary};
+                color: white;
+            }}
+            QTabBar::tab:!selected {{
+                margin-top: 2px;
+            }}
+
+            /* --- SCROLLBAR --- */
+            QScrollBar:vertical {{
+                background-color: {inp_bg};
+                width: 10px;
+                margin: 0;
+                border: none;
+            }}
+            QScrollBar::handle:vertical {{
+                background-color: {border};
+                min-height: 30px;
+                border-radius: 5px;
+            }}
+            QScrollBar::handle:vertical:hover {{
+                background-color: {primary};
+            }}
+            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
+                height: 0;
+            }}
+            QScrollBar:horizontal {{
+                background-color: {inp_bg};
+                height: 10px;
+                margin: 0;
+                border: none;
+            }}
+            QScrollBar::handle:horizontal {{
+                background-color: {border};
+                min-width: 30px;
+                border-radius: 5px;
+            }}
+            QScrollBar::handle:horizontal:hover {{
+                background-color: {primary};
+            }}
+            QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
+                width: 0;
+            }}
+
+            /* --- PROGRESS BAR --- */
+            QProgressBar {{
+                background-color: {inp_bg};
+                color: {fg};
+                border: 1px solid {border};
+                border-radius: 4px;
+                text-align: center;
+                height: 20px;
+            }}
+            QProgressBar::chunk {{
+                background-color: {primary};
+                border-radius: 3px;
+            }}
+
+            /* --- SPLITTER --- */
+            QSplitter::handle {{
+                background-color: {border};
+                width: 2px;
+                height: 2px;
+            }}
+        """
+
+    def get_color(self, role, theme_name=None):
+        """Get a color for a specific role from the current or specified theme."""
+        if theme_name is None:
+            theme_name = self._current_theme
+        if theme_name not in self._themes:
+            return QColor()
+        return self._themes[theme_name].get(role, QColor())

@@ -6,7 +6,7 @@ Provides typed access to:
 - Truth verification (claim, existence, aggregate)
 - Reports (stock, ledger, trial balance, employees, orders)
 """
-from typing import Any, Dict, List, Optional
+from typing import Optional
 from api.client import APIClient
 
 

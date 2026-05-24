@@ -3,29 +3,17 @@ Drift Intelligence Screen - Predictive ERP Integrity Dashboard.
 Visualizes system drift, risk heatmaps, and predictive warnings.
 """
 
-import time
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                               QLabel, QFrame, QScrollArea, QListWidget, 
-                               QListWidgetItem, QSizePolicy, QGroupBox)
-from PySide6.QtCore import Qt, QPointF, QTimer
-from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QLinearGradient
+                               QLabel, QListWidget, QListWidgetItem, QGroupBox)
+from PySide6.QtCore import Qt, QPointF
+from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QFont
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BORDER_RADIUS_SM, BORDER_RADIUS_LG, BORDER_RADIUS_XL,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-    TEXT_TABLE,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, TEXT_SECTION_TITLE, TEXT_BODY,
+                           TEXT_HELPER, BORDER_RADIUS_SM, BORDER_RADIUS_LG, BORDER_RADIUS_XL, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
+                           COLOR_TEXT_PRIMARY, COLOR_PRIMARY, COLOR_SUCCESS,
+                           COLOR_WARNING, COLOR_DANGER, TEXT_TABLE, COLOR_STATUS_VALID,
+                           COLOR_INFO)
 from api.drift_intelligence_service import DriftIntelligenceService
-
-from ui.screens.base_screen import BaseScreen
-from ui.constants import (COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
-from api.drift_intelligence_service import DriftIntelligenceService
-
 
 class DriftGaugeWidget(QWidget):
     """Circular gauge for displaying Drift Score."""
@@ -66,7 +54,6 @@ class DriftGaugeWidget(QWidget):
         painter.setFont(QFont("Segoe UI", TEXT_HELPER))
         painter.drawText(0, self.height() - 15, self.width(), 15, Qt.AlignCenter, self.title)
 
-
 class RiskHeatmapWidget(QWidget):
     """Grid-based heatmap for module risk levels."""
     def __init__(self, modules):
@@ -94,7 +81,7 @@ class RiskHeatmapWidget(QWidget):
             elif risk == "MEDIUM": color = COLOR_WARNING
             
             x = 10 + i * cell_w
-            rect = QPointF(x, 10), QPointF(x + cell_w - 5, 60)
+            __rect = QPointF(x, 10), QPointF(x + cell_w - 5, 60)
             
             painter.setPen(Qt.NoPen)
             painter.setBrush(QBrush(QColor(color)))
@@ -103,7 +90,6 @@ class RiskHeatmapWidget(QWidget):
             painter.setPen(QColor(COLOR_TEXT_PRIMARY))
             painter.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))
             painter.drawText(int(x), 75, int(cell_w - 5), 15, Qt.AlignCenter, mod)
-
 
 class DriftIntelligenceScreen(BaseScreen):
     """Drift Intelligence Dashboard - Predictive System Analytics."""

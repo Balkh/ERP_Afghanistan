@@ -1,7 +1,7 @@
 import time
 import requests
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 class ControlCenterService:
     """

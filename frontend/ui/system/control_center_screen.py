@@ -1,30 +1,55 @@
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_XL, BORDER_RADIUS_SM, BORDER_RADIUS_LG, BORDER_RADIUS_PILL, PADDING_CARD, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_DISPLAY, TEXT_HELPER, TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
-from ui.constants import (TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_HELPER, TEXT_DISPLAY)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (
+    SPACING_NONE,
+    SPACING_XS,
+    SPACING_SM,
+    SPACING_MD,
+    SPACING_LG,
+    SPACING_XL,
+    MARGIN_PAGE,
+    BORDER_RADIUS_XL,
+    BORDER_RADIUS_SM,
+    BORDER_RADIUS_LG,
+    BORDER_RADIUS_PILL,
+    TEXT_BODY,
+    TEXT_CARD_TITLE,
+    TEXT_DISPLAY,
+    TEXT_SECTION_TITLE,
+    TEXT_TABLE,
+    COLOR_BG_MAIN,
+    COLOR_BG_SURFACE,
+    COLOR_BG_ELEVATED,
+    COLOR_BG_INPUT,
+    COLOR_BORDER,
+    COLOR_TEXT_PRIMARY,
+    COLOR_TEXT_SECONDARY,
+    COLOR_TEXT_MUTED,
+    COLOR_PRIMARY,
+    COLOR_SUCCESS,
+    COLOR_WARNING,
+    COLOR_DANGER,
+    COLOR_STATUS_VALID,
+    COLOR_INFO,
+)
+
 """
 Control Center Screen - Real-time ERP Monitoring Dashboard.
 Provides centralized operational visibility and system intelligence.
 """
 
 import time
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                               QLabel, QFrame, QScrollArea, QProgressBar,
-                               QListWidget, QListWidgetItem, QHeaderView,
-                               QTableWidget, QTableWidgetItem, QPushButton,
-                               QSizePolicy, QGroupBox)
-from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSize
-from PySide6.QtGui import QFont, QColor, QIcon, QPainter, QLinearGradient
+                               QLabel, QFrame, QScrollArea, QListWidget,
+                               QListWidgetItem, QHeaderView, QTableWidget,
+                               QTableWidgetItem, QPushButton, QSizePolicy,
+                               QGroupBox)
+from PySide6.QtCore import Qt, QThread, Signal, QTimer
+from PySide6.QtGui import QFont, QColor, QPainter
 
-from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-                          COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                          COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                          COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                          COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
-                          MARGIN_PAGE, PADDING_CARD)
+from ui.screens.base_screen import BaseScreen
+
 from api.control_center_service import ControlCenterService
-from runtime.timer_registry import register_timer, unregister_owner
-
+from runtime.timer_registry import register_timer
 
 class DataFetchThread(QThread):
     """Worker thread for fetching dashboard data asynchronously using the Service Layer."""
@@ -49,7 +74,6 @@ class DataFetchThread(QThread):
 
     def stop(self):
         self._is_running = False
-
 
 class SparklineWidget(QWidget):
     """Lightweight trend indicator using a line chart."""
@@ -91,7 +115,6 @@ class SparklineWidget(QWidget):
         for i in range(len(points) - 1):
             painter.drawLine(points[i][0], points[i][1], points[i+1][0], points[i+1][1])
 
-
 class KPICard(QFrame):
     """A stylized card for displaying a single KPI metric with trend."""
     def __init__(self, title, value, subtitle="", color=COLOR_PRIMARY, icon=None):
@@ -101,7 +124,7 @@ class KPICard(QFrame):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.default_color = color
         
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QFrame#kpiCard {{
                 background-color: {COLOR_BG_MAIN};
                 border: 1px solid {COLOR_BG_ELEVATED};
@@ -165,7 +188,6 @@ class KPICard(QFrame):
             self.sparkline.color = color
             self.sparkline.update()
 
-
 class ControlCenterScreen(BaseScreen):
     """Enterprise Control Center - Real-time monitoring dashboard."""
     
@@ -192,7 +214,7 @@ class ControlCenterScreen(BaseScreen):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setStyleSheet(f"background-color: transparent;")
+        scroll.setStyleSheet("background-color: transparent;")
         
         content_widget = QWidget()
         content_widget.setStyleSheet(f"background-color: {COLOR_BG_INPUT};")
@@ -211,7 +233,7 @@ class ControlCenterScreen(BaseScreen):
         self.health_bar = QFrame()
         self.health_bar.setFixedHeight(30)
         self.health_bar.setMinimumWidth(200)
-        self.health_bar.setStyleSheet(f"""
+        self.health_bar.setStyleSheet("""
             background-color: {COLOR_BG_ELEVATED};
             border-radius: {BORDER_RADIUS_PILL}px;
             border: 1px solid {COLOR_BORDER};
@@ -225,7 +247,7 @@ class ControlCenterScreen(BaseScreen):
         health_layout.addStretch()
 
         self.status_badge = QLabel("LIVE MONITORING")
-        self.status_badge.setStyleSheet(f"""
+        self.status_badge.setStyleSheet("""
             background-color: {COLOR_BG_ELEVATED};
             color: {COLOR_STATUS_VALID};
             padding: {SPACING_XS}px 10px;
@@ -237,7 +259,7 @@ class ControlCenterScreen(BaseScreen):
         self.last_update_label = QLabel("Last update: Never")
         self.last_update_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px;")
         
-        self.refresh_btn = QPushButton("Manual Refresh")
+        self.refresh_btn = EnterpriseButton("Manual Refresh", variant=ButtonVariant.SECONDARY)
         self.refresh_btn.setFixedWidth(120)
         self.refresh_btn.clicked.connect(self._fetch_data)
         
@@ -253,7 +275,7 @@ class ControlCenterScreen(BaseScreen):
         # Active Alerts Panel
         self.alerts_panel = QFrame()
         self.alerts_panel.setVisible(False)
-        self.alerts_panel.setStyleSheet(f"""
+        self.alerts_panel.setStyleSheet("""
             background-color: {COLOR_BORDER};
             border-radius: {BORDER_RADIUS_LG};
             border: 1px solid {COLOR_DANGER};
@@ -372,7 +394,7 @@ class ControlCenterScreen(BaseScreen):
         """Create a stylized group box for a section."""
         group = QGroupBox(title)
         group.setMinimumHeight(min_height)
-        group.setStyleSheet(f"""
+        group.setStyleSheet("""
             QGroupBox {{
                 color: {COLOR_PRIMARY};
                 font-size: {TEXT_DISPLAY}px;

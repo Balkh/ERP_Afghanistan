@@ -3,21 +3,17 @@ Consolidated Report Browser — replaces 13 individual report screens.
 Supports Accounting, HR, and Payroll report types via configuration.
 """
 
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
                                 QDateEdit, QGroupBox, QMessageBox, QFileDialog,
                                 QApplication)
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtCore import Qt, QDate, QThread, Signal
 from datetime import date
 from api.client import APIClient
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_BORDER_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
+                           BORDER_RADIUS_MD, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED)
+from ui.screens.base_screen import BaseScreen
 
 
 REPORT_TYPES = {
@@ -180,17 +176,38 @@ REPORT_TYPES = {
 }
 
 
-class ReportBrowser(QWidget):
+class ReportWorker(QThread):
+    finished = Signal(object)
+    error = Signal(str)
+
+    def __init__(self, api_client, api_url, params):
+        super().__init__()
+        self.api_client = api_client
+        self.api_url = api_url
+        self.params = params
+
+    def run(self):
+        try:
+            resp = self.api_client.get(self.api_url, params=self.params)
+            self.finished.emit(resp)
+        except Exception as e:
+            self.error.emit(str(e))
+
+
+class ReportBrowser(BaseScreen):
     """Consolidated report browser — handles all accounting/HR/payroll reports."""
 
     DATE_RANGE_REPORTS = {"profit_loss", "cash_flow"}
 
     def __init__(self, parent=None, report_type="trial_balance"):
-        super().__init__(parent)
+        super().__init__(parent, screen_id=f"report_{report_type}")
         self.api_client = APIClient()
         self.report_type = report_type
         self.report_data = {}
         self._build_ui()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — report data comes from Run Report."""
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
@@ -205,7 +222,7 @@ class ReportBrowser(QWidget):
 
         # Toolbar with type selector + date + actions
         toolbar = QGroupBox("Parameters")
-        toolbar.setStyleSheet(f"""
+        toolbar.setStyleSheet("""
             QGroupBox {{
                 font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;
                 color: {COLOR_TEXT_PRIMARY};
@@ -377,23 +394,31 @@ class ReportBrowser(QWidget):
         config = REPORT_TYPES.get(self.report_type)
         if not config:
             return
+        
         self._set_loading(True)
-        try:
-            params = {}
-            if self._is_date_range:
-                if hasattr(self, 'date_from') and self.date_from.date() != QDate():
-                    params["start_date"] = self.date_from.date().toString("yyyy-MM-dd")
-                if hasattr(self, 'date_to') and self.date_to.date() != QDate():
-                    params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
-            else:
-                if hasattr(self, 'date_input') and self.date_input.date() != QDate():
-                    params["as_of_date"] = self.date_input.date().toString("yyyy-MM-dd")
-            resp = self.api_client.get(config["api"], params=params)
-            self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
-            self._populate_table(config)
-            self._set_loading(False)
-        except Exception as e:
-            self._set_empty(f"Error: {e}")
+        
+        params = {}
+        if self._is_date_range:
+            if hasattr(self, 'date_from') and self.date_from.date() != QDate():
+                params["start_date"] = self.date_from.date().toString("yyyy-MM-dd")
+            if hasattr(self, 'date_to') and self.date_to.date() != QDate():
+                params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
+        else:
+            if hasattr(self, 'date_input') and self.date_input.date() != QDate():
+                params["as_of_date"] = self.date_input.date().toString("yyyy-MM-dd")
+        
+        self.worker = ReportWorker(self.api_client, config["api"], params)
+        self.worker.finished.connect(lambda resp: self._on_report_finished(resp, config))
+        self.worker.error.connect(self._on_report_error)
+        self.worker.start()
+
+    def _on_report_finished(self, resp, config):
+        self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
+        self._populate_table(config)
+        self._set_loading(False)
+
+    def _on_report_error(self, err_msg):
+        self._set_empty(f"Error: {err_msg}")
 
     def _populate_table(self, config):
         data = self.report_data

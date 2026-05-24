@@ -10,7 +10,7 @@ theme_engine.py imports them — never redefines color values.
 import logging
 import time
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QWidget, QFrame
+from PySide6.QtWidgets import QWidget
 from typing import Dict, Optional, Callable
 
 import ui.constants as _constants
@@ -26,8 +26,8 @@ DARK_COLORS: Dict[str, str] = dict(_constants._THEME_DARK)
 LIGHT_COLORS: Dict[str, str] = dict(_constants._THEME_LIGHT)
 
 _THEMES: Dict[str, Dict[str, str]] = {
-    "dark": DARK_COLORS,
-    "light": LIGHT_COLORS,
+    "dark": _constants._THEME_DARK,
+    "light": _constants._THEME_LIGHT,
 }
 
 
@@ -128,14 +128,27 @@ class ThemeEngine(QObject):
 
     def refresh_widget_tree(self, root: QWidget) -> None:
         """Re-style common widget types in a widget tree using current COLOR_* tokens.
-        Non-recursive — only top-level children. Avoids deep DOM traversal.
+        Recursive DOM traversal for comprehensive styling update.
         """
+        if not root:
+            return
+            
+        # Update current widget if it has a stylesheet
+        if hasattr(root, 'styleSheet') and root.styleSheet():
+            # Trigger style re-computation
+            root.setStyleSheet(root.styleSheet())
+            
+        # Recurse into children
         for child in root.findChildren(QWidget):
-            try:
-                if isinstance(child, QFrame):
-                    pass
-            except Exception:
-                continue
+            if hasattr(child, 'styleSheet') and child.styleSheet():
+                child.setStyleSheet(child.styleSheet())
+                
+            # Special handling for certain complex widgets
+            from PySide6.QtWidgets import QTableWidget
+            if isinstance(child, QTableWidget):
+                child.horizontalHeader().setStyleSheet(child.horizontalHeader().styleSheet())
+                child.verticalHeader().setStyleSheet(child.verticalHeader().styleSheet())
+                child.viewport().update()
 
     def refresh_safe(self, fn: Callable[[], None], name: str = "") -> None:
         """Execute a refresh callback with logging instead of silent swallow."""

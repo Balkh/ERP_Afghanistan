@@ -5,18 +5,13 @@ Allows users to activate the software using license files.
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                                QFileDialog, QMessageBox, QGroupBox,
-                               QTextEdit, QFrame, QApplication)
+                               QApplication)
 from PySide6.QtCore import Qt, Signal
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_SM,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
+                           TEXT_HELPER, BORDER_RADIUS_MD, BORDER_RADIUS_SM, COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
 import os
 import sys
 

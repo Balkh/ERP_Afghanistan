@@ -1,8 +1,6 @@
-from PySide6.QtWidgets import (QLineEdit, QTableWidget, QTableWidgetItem,
-                               QHeaderView, QAbstractItemView, QVBoxLayout,
-                               QFrame, QLabel, QListWidget, QListWidgetItem)
+from PySide6.QtWidgets import (QLineEdit, QVBoxLayout, QFrame,
+                               QListWidget, QListWidgetItem)
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont
 
 
 class BarcodeSearchLineEdit(QLineEdit):

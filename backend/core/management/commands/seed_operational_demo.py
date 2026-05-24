@@ -124,7 +124,7 @@ class Command(BaseCommand):
                 invoice.tax = (subtotal - invoice.discount) * Decimal('0.10')
                 invoice.total_amount = subtotal - invoice.discount + invoice.tax
                 invoice.save()
-            except Exception as e:
+            except Exception:
                 pass
 
         self.stdout.write(self.style.SUCCESS(f'  Created {SalesInvoice.objects.count()} sales invoices'))
@@ -167,7 +167,7 @@ class Command(BaseCommand):
 
                 invoice.total_amount = subtotal
                 invoice.save()
-            except Exception as e:
+            except Exception:
                 pass
 
         self.stdout.write(self.style.SUCCESS(f'  Created {PurchaseInvoice.objects.count()} purchase invoices'))
@@ -229,7 +229,7 @@ class Command(BaseCommand):
                         'current_book_value': Decimal(value),
                     }
                 )
-            except Exception as e:
+            except Exception:
                 pass
 
         self.stdout.write(self.style.SUCCESS(f'  Created {FixedAsset.objects.count()} fixed assets'))

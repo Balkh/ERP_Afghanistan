@@ -8,7 +8,6 @@ Provides typed access to:
 - Temporal drift analysis
 - Consistency deviation analysis
 """
-from typing import Any, Dict, List, Optional
 from api.client import APIClient
 
 

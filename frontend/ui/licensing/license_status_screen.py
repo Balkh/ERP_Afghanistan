@@ -1,16 +1,16 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, TEXT_LABEL, TEXT_MONO, TEXT_SECTION_TITLE, TEXT_TABLE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
-from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_BODY, TEXT_DISPLAY, TEXT_CARD_TITLE
 """
 License status screen for Pharmacy ERP.
 Displays current license information and validation status.
 """
 
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, BORDER_RADIUS_MD, BORDER_RADIUS_SM, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, TEXT_LABEL, TEXT_MONO, TEXT_SECTION_TITLE, TEXT_TABLE)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_DANGER, COLOR_STATUS_VALID)
+
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QPushButton, QGroupBox, QFrame, QTextEdit,
-                               QProgressBar)
+                               QPushButton, QGroupBox, QTextEdit, QMessageBox)
 from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont, QPixmap, QColor
+from PySide6.QtGui import QFont
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 import os
 import sys
 from datetime import datetime
@@ -117,7 +117,7 @@ class LicenseStatusScreen(QWidget):
         self.details_text.setMaximumHeight(200)
         self.details_text.setReadOnly(True)
         self.details_text.setFont(QFont("Consolas", TEXT_TABLE))
-        self.details_text.setStyleSheet(f"""
+        self.details_text.setStyleSheet("""
             QTextEdit {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
@@ -134,52 +134,13 @@ class LicenseStatusScreen(QWidget):
         # Buttons
         button_layout = QHBoxLayout()
         
-        self.refresh_button = QPushButton("Refresh Status")
-        self.refresh_button.setMinimumHeight(36)
-        self.refresh_button.setFont(QFont("Segoe UI", TEXT_LABEL))
-        self.refresh_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BORDER};
-                color: {COLOR_TEXT_PRIMARY};
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px 16px;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BORDER_LIGHT};
-            }}
-            QPushButton:pressed {{
-                background-color: {COLOR_BG_ELEVATED};
-            }}
-        """)
+        self.refresh_button = EnterpriseButton("Refresh Status", variant=ButtonVariant.SECONDARY)
         self.refresh_button.clicked.connect(self.refresh_license_status)
         button_layout.addWidget(self.refresh_button)
 
         button_layout.addStretch()
 
-        self.view_license_button = QPushButton("View License File")
-        self.view_license_button.setMinimumHeight(36)
-        self.view_license_button.setFont(QFont("Segoe UI", TEXT_LABEL))
-        self.view_license_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_PRIMARY};
-                color: {COLOR_BG_MAIN};
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px 16px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_PRIMARY_HOVER};
-            }}
-            QPushButton:pressed {{
-                background-color: {COLOR_PRIMARY_ACTIVE};
-            }}
-            QPushButton:disabled {{
-                background-color: {COLOR_BG_ELEVATED};
-                color: {COLOR_TEXT_MUTED};
-            }}
-        """)
+        self.view_license_button = EnterpriseButton("View License File", variant=ButtonVariant.SECONDARY)
         self.view_license_button.clicked.connect(self.view_license_file)
         self.view_license_button.setEnabled(False)
         button_layout.addWidget(self.view_license_button)
@@ -271,13 +232,13 @@ class LicenseStatusScreen(QWidget):
                     exp_date = date.fromisoformat(expiration_str)
                     is_expired = date.today() > exp_date
                     details.append(f"Expired: {'Yes' if is_expired else 'No'} ({expiration_str})")
-                except:
+                except (ValueError, TypeError):
                     details.append(f"Expiration Date: {expiration_str} (Invalid format)")
             else:
                 details.append("Expiration: Not set (Perpetual license)")
             
             # Check if we can verify signature (would need public key)
-            details.append(f"Signature Verification: Available (checked at runtime)")
+            details.append("Signature Verification: Available (checked at runtime)")
             
             self.details_text.setPlainText("\n".join(details))
             self.view_license_button.setEnabled(True)
@@ -298,11 +259,11 @@ class LicenseStatusScreen(QWidget):
         self.update_license_info()
         
         # Re-enable button after short delay
-        from PySide6.QtCore import QTimer
-        QTimer.singleShot(1000, lambda: (
-            setattr(self.refresh_button, 'setEnabled', True),
-            setattr(self.refresh_button, 'setText', 'Refresh Status')
-        ))
+        QTimer.singleShot(1000, self._reenable_refresh_button)
+    
+    def _reenable_refresh_button(self):
+        self.refresh_button.setEnabled(True)
+        self.refresh_button.setText('Refresh Status')
     
     def view_license_file(self):
         """View the current license file in a dialog."""
@@ -347,7 +308,7 @@ class LicenseDetailsDialog(QWidget):
         details_text = QTextEdit()
         details_text.setReadOnly(True)
         details_text.setFont(QFont("Consolas", TEXT_BODY))
-        details_text.setStyleSheet(f"""
+        details_text.setStyleSheet("""
             QTextEdit {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
@@ -365,20 +326,7 @@ class LicenseDetailsDialog(QWidget):
         layout.addWidget(details_text)
 
         # Close button
-        close_button = QPushButton("Close")
-        close_button.setFont(QFont("Segoe UI", TEXT_LABEL))
-        close_button.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BORDER};
-                color: {COLOR_TEXT_PRIMARY};
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px 20px;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_BORDER_LIGHT};
-            }}
-        """)
+        close_button = EnterpriseButton("Close", variant=ButtonVariant.SECONDARY)
         close_button.clicked.connect(self.close)
         layout.addWidget(close_button)
 

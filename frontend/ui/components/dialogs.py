@@ -1,24 +1,27 @@
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V, COLOR_HEADER_DARK, BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, DIALOG_WIDTH_MAX, DIALOG_WIDTH_MIN, DIALOG_WIDTH_PREFERRED, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, TEXT_LABEL)
-from ui.constants import TEXT_BODY, TEXT_LABEL, TEXT_DISPLAY, TEXT_CARD_TITLE
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_DIALOG, COLOR_BG_ELEVATED,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_PRIMARY, COLOR_PRIMARY_HOVER,
-                           COLOR_FORM_FOOTER_BORDER,
-                           DIALOG_WIDTH_MIN, DIALOG_WIDTH_PREFERRED, DIALOG_WIDTH_MAX)
+from ui.constants import (
+    SPACING_NONE, SPACING_SM, SPACING_MD, SPACING_LG,
+    COLOR_BG_DIALOG, COLOR_BG_MAIN, COLOR_HEADER_DARK, COLOR_FORM_FOOTER_BORDER,
+    COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY,
+    COLOR_BG_SECTION, COLOR_BORDER,
+    BORDER_RADIUS_LG,
+    DIALOG_WIDTH_MIN, DIALOG_WIDTH_PREFERRED, DIALOG_WIDTH_MAX,
+    TEXT_CARD_TITLE, TEXT_BODY, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V,
+)
+
 """
 Enterprise Dialog Components.
 Professional dialog windows with standard patterns.
 """
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QWidget, QFrame, QSpacerItem, QSizePolicy
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QWidget,
+    QFrame
 )
-from PySide6.QtCore import Signal, Qt, QSize
-from PySide6.QtGui import QFont, QIcon, QPixmap, QPainter
-from typing import Optional, Callable, Dict, Any
+from PySide6.QtCore import Signal, Qt
+from PySide6.QtGui import QFont
+from typing import Optional, Dict, Any
 from enum import Enum
-
+import time
 
 class DialogType(Enum):
     """Dialog types."""
@@ -26,7 +29,6 @@ class DialogType(Enum):
     ALERT = "alert"
     INPUT = "input"
     CUSTOM = "custom"
-
 
 class DialogButton(Enum):
     """Standard dialog buttons."""
@@ -37,7 +39,6 @@ class DialogButton(Enum):
     SAVE = "save"
     DELETE = "delete"
     CLOSE = "close"
-
 
 class EnterpriseDialog(QDialog):
     """
@@ -57,6 +58,8 @@ class EnterpriseDialog(QDialog):
         self._dialog_type = dialog_type
         self._result_data: Dict[str, Any] = {}
         
+        self._open_ts: float = 0.0
+
         if flags:
             self.setWindowFlags(flags)
         else:
@@ -123,11 +126,11 @@ class EnterpriseDialog(QDialog):
         header.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_HEADER_DARK};
-                border-top-left-radius: 8px;
-                border-top-right-radius: 8px;
+                border-top-left-radius: {BORDER_RADIUS_LG}px;
+                border-top-right-radius: {BORDER_RADIUS_LG}px;
             }}
             QLabel {{
-                color: white;
+                color: {COLOR_TEXT_ON_PRIMARY};
             }}
         """)
         
@@ -182,6 +185,17 @@ class EnterpriseDialog(QDialog):
         
         return button_area
     
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._open_ts = time.time()
+
+    def done(self, code):
+        if self._open_ts:
+            duration_ms = (time.time() - self._open_ts) * 1000
+            from runtime.ux_telemetry import record_dialog
+            record_dialog(self._dialog_type.value, duration_ms)
+        super().done(code)
+
     def set_content(self, widget: QWidget):
         """Set main content widget."""
         # Clear existing content
@@ -210,7 +224,6 @@ class EnterpriseDialog(QDialog):
     def set_result(self, data: Dict[str, Any]):
         """Set dialog result data."""
         self._result_data = data
-
 
 class ConfirmDialog(EnterpriseDialog):
     """
@@ -251,7 +264,6 @@ class ConfirmDialog(EnterpriseDialog):
         """Show confirm dialog and return result."""
         dialog = ConfirmDialog(title, message, parent)
         return dialog.exec() == QDialog.DialogCode.Accepted
-
 
 class AlertDialog(EnterpriseDialog):
     """
@@ -294,7 +306,6 @@ class AlertDialog(EnterpriseDialog):
         """Show error alert."""
         AlertDialog.show(title, message, "error", parent)
 
-
 class LoadingDialog(EnterpriseDialog):
     """
     Loading dialog with spinner.
@@ -318,7 +329,6 @@ class LoadingDialog(EnterpriseDialog):
         
         self.setMinimumWidth(200)
         self.setMinimumHeight(100)
-
 
 def confirm_dialog(parent, title: str, message: str) -> bool:
     """

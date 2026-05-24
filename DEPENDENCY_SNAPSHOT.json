@@ -1,0 +1,63 @@
+{
+    "timestamp": "2026-05-23T14:30:00",
+    "phase": "37_STABILITY_CONTAINMENT",
+    "dependencies": {
+        "backend": {
+            "pharmacy": {
+                "type": "module",
+                "imports": [],
+                "test_references": [
+                    "backend/tests/test_pharmacy_rules.py",
+                    "backend/tests/test_returns_hardening.py"
+                ],
+                "status": "UNUSED_SAFE_ARCHIVE"
+            },
+            "core.services.transaction_service": {
+                "type": "class",
+                "imports": [
+                    "core.services.__init__"
+                ],
+                "runtime_consumers": [],
+                "status": "UNUSED_SAFE_ARCHIVE"
+            },
+            "core.operations.decision_engine": {
+                "type": "class",
+                "imports": [
+                    "config.urls"
+                ],
+                "test_references": [
+                    "backend/tests/test_decision_engine.py"
+                ],
+                "status": "TEST_ONLY"
+            },
+            "management.commands.seed_erp_data": {
+                "type": "command",
+                "duplicate_of": "core.management.commands.seed_erp_data",
+                "status": "DUPLICATE_DELETE"
+            }
+        },
+        "frontend": {
+            "ui.system.production_screen": {
+                "type": "ui_screen",
+                "mainWindow_registration": 37,
+                "sidebar_reference": "production",
+                "status": "LEGACY_ACTIVE_ARCHIVE"
+            },
+            "ui.cognitive.cognitive_dashboard": {
+                "type": "ui_screen",
+                "status": "UNUSED_SAFE_ARCHIVE"
+            },
+            "ui.cognitive_reasoning.causal_dashboard": {
+                "type": "ui_screen",
+                "status": "UNUSED_SAFE_ARCHIVE"
+            }
+        }
+    },
+    "protected_cores": [
+        "JournalEngine",
+        "JournalGateway",
+        "MigrationRouter",
+        "StockIntegrationService",
+        "FinancialTruthEngine"
+    ]
+}

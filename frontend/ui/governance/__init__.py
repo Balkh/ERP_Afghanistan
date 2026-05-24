@@ -7,6 +7,4 @@ Core modules:
 - consistency_audit: Pattern consistency scoring (typography, hierarchy, etc.)
 """
 
-from .registry import REGISTRY, Primitive, ComponentCategory, is_approved, get_primitive
-from .audit_scanner import GovernanceScanner, ScanReport, Violation, Severity
-from .consistency_audit import ConsistencyEngine, ConsistencyReport
+

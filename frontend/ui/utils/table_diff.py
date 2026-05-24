@@ -1,5 +1,4 @@
-from PySide6.QtWidgets import QTableWidget, QTableWidgetItem
-from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QTableWidgetItem
 
 
 def diff_update_table(table, rows, col_count=None):

@@ -3,27 +3,20 @@ Workflow Intelligence Screen - Live Decision Tracking System.
 Provides visual analytics and real-time tracking for ERP workflows.
 """
 
-import time
 from datetime import datetime, timedelta
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                               QLabel, QFrame, QScrollArea, QListWidget, 
-                               QListWidgetItem, QHeaderView, QSizePolicy, 
-                               QGroupBox, QProgressBar)
-from PySide6.QtCore import Qt, QThread, Signal, QTimer, QSize, QPointF
-from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QLinearGradient
+                               QLabel, QListWidget, QListWidgetItem, QGroupBox)
+from PySide6.QtCore import Qt, QTimer, QPointF
+from PySide6.QtGui import QColor, QPainter, QPen, QBrush, QFont
 
-from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BORDER_RADIUS_SM, BORDER_RADIUS_LG, BORDER_RADIUS_XL,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_PRIMARY_MUTED,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.screens.base_screen import BaseScreen
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE,
+                           TEXT_SECTION_TITLE, TEXT_BODY, TEXT_TABLE, TEXT_TABLE_HEADER, BORDER_RADIUS_SM, BORDER_RADIUS_LG, BORDER_RADIUS_XL, COLOR_BG_MAIN, COLOR_BG_SURFACE,
+                           COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TABLE_BORDER_LIGHT,
+                           COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+                           COLOR_PRIMARY_MUTED, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID)
 from api.client import APIClient
-from runtime.timer_registry import register_timer, unregister_owner
+from runtime.timer_registry import register_timer
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
@@ -51,7 +44,7 @@ class WorkflowPipelineWidget(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
         
         w = self.width()
-        h = self.height()
+        __h = self.height()
         margin = 20
         step_w = (w - 2 * margin) / len(self.stages)
         
@@ -254,7 +247,8 @@ class WorkflowIntelligenceScreen(BaseScreen):
             try:
                 dt = datetime.fromisoformat(created_at)
                 age = str(datetime.now() - dt).split('.')[0]
-            except: age = "Unknown"
+            except (ValueError, TypeError):
+                age = "Unknown"
             active_data.append({
                 "col0": inst.get('content_type', ''),
                 "col1": inst.get('object_reference', ''),
@@ -280,7 +274,8 @@ class WorkflowIntelligenceScreen(BaseScreen):
                         item = QListWidgetItem(f"⚠️ WARNING: {inst.get('object_reference')} pending for > 6h")
                         item.setForeground(QColor(COLOR_WARNING))
                         self.bottleneck_list.addItem(item)
-                except: pass
+                except Exception:
+                    pass
         
         if self.bottleneck_list.count() == 0:
             self.bottleneck_list.addItem("No workflow bottlenecks detected.")

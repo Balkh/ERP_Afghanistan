@@ -1,30 +1,24 @@
 import time
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                                QLabel, QFrame, QScrollArea, QTableWidget,
-                                QTableWidgetItem, QHeaderView, QComboBox,
-                                QPushButton, QListWidget, QListWidgetItem,
-                                QSplitter, QTextEdit, QSizePolicy, QAbstractItemView,
-                                QTabWidget)
-from PySide6.QtCore import Qt, Signal, Slot, QSize
+                                QLabel, QFrame, QTableWidget, QTableWidgetItem,
+                                QHeaderView, QComboBox, QPushButton,
+                                QListWidget, QListWidgetItem, QSplitter,
+                                QTextEdit, QAbstractItemView, QTabWidget)
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
 
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-                          MARGIN_PAGE, PADDING_CARD,
-                          COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                          COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                          COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                          COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                          COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_FOCUS,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_STATUS_PENDING,
-    TABLE_ROW_HEIGHT_MD, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_HELPER, TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, SPACING_6, BORDER_RADIUS_SM)
-from ui.constants import (COLOR_TABLE_HEADER, COLOR_TABLE_ALT, COLOR_TABLE_GRIDLINE,
-                          TABLE_ROW_HEIGHT_MD)
-from ui.constants import TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_HELPER
-from ui.observability.widgets import (StatusIndicator, MetricCard, SeverityBadge,
-                                       HealthBar, LoadingOverlay, SectionHeader,
-                                       VirtualTimelineWidget, TrendArrow, IncidentCard,
-                                       TimelineEventWidget)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, COLOR_PRIMARY,
+                          COLOR_SUCCESS, COLOR_WARNING,
+                          COLOR_DANGER, COLOR_INFO, COLOR_TEXT_PRIMARY,
+                          COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
+                          COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT,
+                          COLOR_STATUS_VALID, COLOR_STATUS_WARNING, TEXT_LABEL, TEXT_PAGE_TITLE,
+                          TEXT_TABLE, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           SPACING_6, BORDER_RADIUS_SM)
+from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_TABLE
+from ui.observability.widgets import (StatusIndicator, MetricCard, HealthBar,
+                                       SectionHeader, VirtualTimelineWidget)
 from ui.observability.base_view_model import AsyncDataLoader
 
 
@@ -228,7 +222,7 @@ class ObservabilityMainScreen(_BaseDashboard):
         )
         incidents = d.get("incidents", {})
         count = incidents.get("active_count", 0)
-        self.incident_card.update_value(count, f"Active incidents")
+        self.incident_card.update_value(count, "Active incidents")
         stability = d.get("stability", {})
         score = stability.get("score", 0)
         self.stability_card.update_value(f"{score}%", "System stability")
@@ -360,7 +354,7 @@ class UnifiedTimelineView(_BaseDashboard):
         layout.addWidget(self.timeline, 1)
 
         pagination = QHBoxLayout()
-        self.prev_btn = QPushButton("◀ Prev")
+        self.prev_btn = EnterpriseButton("◀ Prev", variant=ButtonVariant.SECONDARY)
         self.prev_btn.clicked.connect(self._prev_page)
         pagination.addWidget(self.prev_btn)
         pagination.addStretch()
@@ -369,7 +363,7 @@ class UnifiedTimelineView(_BaseDashboard):
         self.page_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
         pagination.addWidget(self.page_label)
         pagination.addStretch()
-        self.next_btn = QPushButton("Next ▶")
+        self.next_btn = EnterpriseButton("Next ▶", variant=ButtonVariant.SECONDARY)
         self.next_btn.clicked.connect(self._next_page)
         pagination.addWidget(self.next_btn)
         layout.addLayout(pagination)
@@ -756,7 +750,7 @@ class DigitalTwinTelemetryView(_BaseDashboard):
         layout.addLayout(summary_grid)
 
         tab = QTabWidget()
-        tab.setStyleSheet(f"""
+        tab.setStyleSheet("""
             QTabWidget::pane {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER};

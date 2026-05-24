@@ -1,36 +1,36 @@
 """Phase 20: Journal Reversal Explorer - tracks journal entry reversals."""
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QComboBox, QDateEdit, QGroupBox, QMessageBox, QApplication,
+    QLabel,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE,
-    TEXT_PAGE_TITLE, TEXT_BODY, TEXT_LABEL,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_DANGER,
-    COLOR_BG_ELEVATED, COLOR_BORDER,
-    BORDER_RADIUS_SM, BORDER_RADIUS_LG,
+    SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
+    COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+    COLOR_SUCCESS, COLOR_DANGER,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.screens.base_screen import BaseScreen
 
 
-class JournalReversalExplorer(QWidget):
+class JournalReversalExplorer(BaseScreen):
     """Journal reversal explorer - tracks and explains journal entry reversals."""
 
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="journal_reversals")
         self.api_client = api_client or APIClient()
         self.journal_entries = []
         self._is_loading = False
         self.setup_ui()
         self.load_reversals()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — we load in __init__."""
 
     def setup_ui(self):
         layout = QVBoxLayout(self)

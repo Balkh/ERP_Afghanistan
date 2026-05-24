@@ -1,37 +1,34 @@
 """Phase 20: Supplier Payment Workspace screen."""
-from decimal import Decimal
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QComboBox, QDateEdit, QGroupBox, QScrollArea,
-    QMessageBox, QApplication, QSplitter,
+    QLabel, QComboBox, QGroupBox, QMessageBox, QApplication,
+    QSplitter,
 )
-from PySide6.QtCore import Qt, QDate, Signal, Qt as QtCore
+from PySide6.QtCore import Qt, Signal, Qt as QtCore
 from PySide6.QtGui import QFont
 
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-    TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-    COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_CARD,
-    COLOR_BORDER, COLOR_BORDER_LIGHT,
-    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE,
+    TEXT_BODY, TEXT_LABEL, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING,
+    COLOR_DANGER, COLOR_BG_ELEVATED, COLOR_BORDER,
+    BORDER_RADIUS_SM, BORDER_RADIUS_LG,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
-from ui.components.kpi_cards import KPICard, MiniMetricCard, SectionHeader
+from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.screens.base_screen import BaseScreen
 
 
-class SupplierPaymentWorkspace(QWidget):
+class SupplierPaymentWorkspace(BaseScreen):
     """Supplier payment workspace - unified view for supplier payment operations."""
 
     payment_processed = Signal(dict)
     allocation_completed = Signal(dict)
 
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="supplier_payments")
         self.api_client = api_client or APIClient()
         self.supplier_id = None
         self.supplier_data = None
@@ -39,6 +36,9 @@ class SupplierPaymentWorkspace(QWidget):
         self.unallocated_payments = []
         self._is_loading = False
         self.setup_ui()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — we load on supplier selection."""
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -214,7 +214,7 @@ class SupplierPaymentWorkspace(QWidget):
         return section
 
     def _combo_style(self):
-        return f"""
+        return """
             QComboBox {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};

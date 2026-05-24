@@ -44,10 +44,13 @@ class CashPaymentWorkflowTests(BaseTestCase):
 
     def test_cash_payment_creation(self):
         """Should create cash payment successfully."""
-        cash_method = PaymentMethodFactory.create(
-            name="Cash",
+        cash_method, _ = PaymentMethod.objects.get_or_create(
             code="CASH",
-            method_type="CASH"
+            defaults={
+                'name': "Cash",
+                'method_type': "CASH",
+                'is_active': True,
+            }
         )
 
         self.assertEqual(cash_method.method_type, "CASH")
@@ -55,10 +58,13 @@ class CashPaymentWorkflowTests(BaseTestCase):
 
     def test_cash_payment_transaction(self):
         """Should process cash payment transaction."""
-        cash_method = PaymentMethodFactory.create(
-            name="Cash",
+        cash_method, _ = PaymentMethod.objects.get_or_create(
             code="CASH",
-            method_type="CASH"
+            defaults={
+                'name': "Cash",
+                'method_type': "CASH",
+                'is_active': True,
+            }
         )
 
         cash_account = PaymentAccountFactory.create(
@@ -124,20 +130,26 @@ class BankTransferWorkflowTests(BaseTestCase):
 
     def test_bank_transfer_creation(self):
         """Should create bank transfer payment method."""
-        bank_method = PaymentMethodFactory.create(
-            name="Bank Transfer",
+        bank_method, _ = PaymentMethod.objects.get_or_create(
             code="BANK",
-            method_type="BANK_TRANSFER"
+            defaults={
+                'name': "Bank Transfer",
+                'method_type': "BANK_TRANSFER",
+                'is_active': True,
+            }
         )
 
         self.assertEqual(bank_method.method_type, "BANK_TRANSFER")
 
     def test_bank_transfer_transaction(self):
         """Should process bank transfer transaction."""
-        bank_method = PaymentMethodFactory.create(
-            name="Bank Transfer",
+        bank_method, _ = PaymentMethod.objects.get_or_create(
             code="BANK",
-            method_type="BANK_TRANSFER"
+            defaults={
+                'name': "Bank Transfer",
+                'method_type': "BANK_TRANSFER",
+                'is_active': True,
+            }
         )
 
         bank_account = PaymentAccountFactory.create(
@@ -164,12 +176,15 @@ class BankTransferWorkflowTests(BaseTestCase):
 
     def test_bank_transfer_fee_calculation(self):
         """Bank transfer should calculate fees correctly."""
-        bank_method = PaymentMethodFactory.create(
-            name="Bank Transfer",
+        bank_method, _ = PaymentMethod.objects.update_or_create(
             code="BANK",
-            method_type="BANK_TRANSFER",
-            fee_percentage=Decimal('0.50'),
-            fee_fixed=Decimal('10.00')
+            defaults={
+                'name': "Bank Transfer",
+                'method_type': "BANK_TRANSFER",
+                'is_active': True,
+                'fee_percentage': Decimal('0.50'),
+                'fee_fixed': Decimal('10.00'),
+            }
         )
 
         amount = Decimal('5000.00')
@@ -587,11 +602,15 @@ class MultiCurrencyPaymentValidationTests(BaseTestCase):
 
     def test_fee_calculation_multi_currency(self):
         """Should calculate fees for multi-currency transactions."""
-        method = PaymentMethodFactory.create(
-            name="Bank Transfer",
+        method, _ = PaymentMethod.objects.update_or_create(
             code="BANK",
-            fee_percentage=Decimal('1.00'),
-            fee_fixed=Decimal('5.00')
+            defaults={
+                'name': "Bank Transfer",
+                'method_type': "BANK_TRANSFER",
+                'is_active': True,
+                'fee_percentage': Decimal('1.00'),
+                'fee_fixed': Decimal('5.00'),
+            }
         )
 
         afn_fee = method.calculate_fee(Decimal('1000.00'))

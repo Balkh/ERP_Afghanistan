@@ -6,13 +6,12 @@ Usage:
     python -m ui.governance.audit_scanner scan [--path frontend/ui] [--severity CRITICAL]
     python -m ui.governance.audit_scanner report
 """
-import ast
 import os
 import re
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -135,7 +134,7 @@ class RuleChecker:
         for match in FORBIDDEN_RAW_PATTERNS["hex_color"]["pattern"].finditer(line):
             hex_val = match.group().strip('"')
             # Skip white/black or standard CSS named colors used in constants
-            if hex_val.lower() in ("#ffffff", "#000000", "#fff", "#000"):
+            if hex_val.lower() in ("#fff", "#000000", "#", "#000"):
                 continue
             # Skip if used within a COLOR_* token definition
             if "COLOR_" in line and "=" in line:
@@ -261,7 +260,7 @@ class RuleChecker:
                     severity=Severity.CRITICAL,
                     rule_id="GOV-007",
                     message=f"Forbidden renderer layer usage: '{renderer}'",
-                    suggested_fix=f"Replace with approved primitive from ui.components",
+                    suggested_fix="Replace with approved primitive from ui.components",
                     snippet=line.strip(),
                 )
         return None

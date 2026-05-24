@@ -8,7 +8,7 @@ Thin REST endpoints for:
 - Reports (stock, ledger, trial balance, etc.)
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from typing import Any, Dict, Optional
 
@@ -43,7 +43,7 @@ def _parse_domain(d: str) -> Domain:
 # ─── Event Store ───
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_event_emit(request):
     """Emit a single event to the Event Store."""
     gw = get_truth_gateway()
@@ -65,7 +65,7 @@ def truth_event_emit(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_events_list(request):
     """List events from the Event Store."""
     gw = get_truth_gateway()
@@ -101,7 +101,7 @@ def truth_events_list(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_event_detail(request, event_id: str):
     """Get a single event by ID."""
     gw = get_truth_gateway()
@@ -114,7 +114,7 @@ def truth_event_detail(request, event_id: str):
 # ─── Truth Verification ───
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_verify_claim(request):
     """Verify a claim against the Event Store."""
     gw = get_truth_gateway()
@@ -138,7 +138,7 @@ def truth_verify_claim(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_verify_aggregate(request, domain: str, aggregate_id: str):
     """Verify and reconstruct an aggregate's state."""
     gw = get_truth_gateway()
@@ -150,7 +150,7 @@ def truth_verify_aggregate(request, domain: str, aggregate_id: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_event_exists(request, event_id: str):
     """Check if an event exists in the store."""
     gw = get_truth_gateway()
@@ -161,7 +161,7 @@ def truth_event_exists(request, event_id: str):
 # ─── Projections ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_projection_rebuild(request, domain: str):
     """Rebuild and return projection state for a domain."""
     gw = get_truth_gateway()
@@ -176,7 +176,7 @@ def truth_projection_rebuild(request, domain: str):
 # ─── Reports ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_reports_stock_levels(request):
     """Get current stock levels (inventory report)."""
     gw = get_truth_gateway()
@@ -192,7 +192,7 @@ def truth_reports_stock_levels(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_reports_ledger(request):
     """Get current ledger balances."""
     gw = get_truth_gateway()
@@ -207,7 +207,7 @@ def truth_reports_ledger(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_reports_trial_balance(request):
     """Get trial balance."""
     gw = get_truth_gateway()
@@ -219,7 +219,7 @@ def truth_reports_trial_balance(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_reports_employees(request):
     """Get employee roster."""
     gw = get_truth_gateway()
@@ -231,7 +231,7 @@ def truth_reports_employees(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_reports_orders(request):
     """Get order status report."""
     gw = get_truth_gateway()
@@ -243,7 +243,7 @@ def truth_reports_orders(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_store_summary(request):
     """Get Event Store summary."""
     gw = get_truth_gateway()
@@ -251,7 +251,7 @@ def truth_store_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def truth_consistency(request):
     """Run consistency check on Event Store."""
     gw = get_truth_gateway()

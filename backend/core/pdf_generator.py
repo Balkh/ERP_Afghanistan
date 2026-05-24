@@ -11,6 +11,32 @@ from typing import Optional
 from django.http import HttpResponse
 
 
+def _get_company_info():
+    """Load company branding from the active Company model (single source of truth).
+
+    Returns a dict with: name, address, phone, email, tax_number.
+    Falls back to safe defaults only if no active company exists.
+    """
+    from core.models.system import Company
+
+    company = Company.objects.active()
+    if company:
+        return {
+            "name": company.name,
+            "address": company.address or "",
+            "phone": company.phone or "",
+            "email": company.email or "",
+            "tax_number": company.tax_number or "",
+        }
+    return {
+        "name": "Pharmacy ERP",
+        "address": "",
+        "phone": "",
+        "email": "",
+        "tax_number": "",
+    }
+
+
 def _get_styles():
     """Get standardized paragraph styles for PDF documents."""
     from reportlab.lib import colors
@@ -149,6 +175,41 @@ def _add_barcode_placeholder(story, text='', width=200, height=30):
     story.append(bc_table)
 
 
+def _add_company_details(story, company):
+    """Add company address/contact details to the PDF story after the title.
+
+    Renders address, phone, email, and tax_number in a compact centered block.
+    Skips empty fields gracefully.
+    """
+    from reportlab.lib import colors
+    from reportlab.platypus import Table, TableStyle, Spacer
+
+    lines = []
+    if company.get("address"):
+        lines.append(company["address"])
+    if company.get("phone"):
+        lines.append(f"Tel: {company['phone']}")
+    if company.get("email"):
+        lines.append(f"Email: {company['email']}")
+    if company.get("tax_number"):
+        lines.append(f"Tax#: {company['tax_number']}")
+
+    if not lines:
+        return
+
+    contact_text = " | ".join(lines)
+    contact_table = Table([[contact_text]], colWidths=[460])
+    contact_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#666666')),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(contact_table)
+    story.append(Spacer(1, 4))
+
+
 def generate_sales_invoice_pdf(invoice, mode='a4'):
     """Generate PDF for a sales invoice.
 
@@ -183,8 +244,10 @@ def generate_sales_invoice_pdf(invoice, mode='a4'):
 
     story = []
 
-    story.append(Paragraph('Pharmacy ERP', styles['title']))
+    company = _get_company_info()
+    story.append(Paragraph(company["name"], styles['title']))
     story.append(Paragraph('Sales Invoice', styles['subtitle']))
+    _add_company_details(story, company)
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=12))
 
     # Invoice info
@@ -248,7 +311,7 @@ def generate_sales_invoice_pdf(invoice, mode='a4'):
     # Footer
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6))
     story.append(Paragraph(
-        f'Generated on {date.today()} | Pharmacy ERP | Invoice {invoice.invoice_number}',
+        f'Generated on {date.today()} | {company["name"]} | Invoice {invoice.invoice_number}',
         styles['footer']
     ))
 
@@ -292,8 +355,10 @@ def generate_return_receipt_pdf(return_order, mode='a4'):
 
     story = []
 
-    story.append(Paragraph('Pharmacy ERP', styles['title']))
+    company = _get_company_info()
+    story.append(Paragraph(company["name"], styles['title']))
     story.append(Paragraph('Return Receipt', styles['subtitle']))
+    _add_company_details(story, company)
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=12))
 
     # Return info
@@ -368,8 +433,434 @@ def generate_return_receipt_pdf(return_order, mode='a4'):
     # Footer
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6))
     story.append(Paragraph(
-        f'Generated on {date.today()} | Pharmacy ERP | Return {return_order.return_number}',
+        f'Generated on {date.today()} | {company["name"]} | Return {return_order.return_number}',
         styles['footer']
+    ))
+
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
+
+def generate_customer_statement_pdf(customer, statements_data, generated_by=''):
+    """Generate a customer account statement PDF.
+
+    Args:
+        customer: Customer model instance
+        statements_data: dict with invoices, payments, balance info
+        generated_by: User who generated the statement
+
+    Returns:
+        bytes: PDF content
+    """
+    from datetime import date
+    from decimal import Decimal
+    from io import BytesIO
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import inch, mm
+    from reportlab.lib import colors
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    )
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        topMargin=0.75 * inch, bottomMargin=0.75 * inch,
+        leftMargin=0.75 * inch, rightMargin=0.75 * inch
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=4, alignment=TA_CENTER)
+    subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=10, spaceAfter=8, alignment=TA_CENTER, textColor=colors.HexColor('#666666'))
+    heading_style = ParagraphStyle('Head', parent=styles['Heading2'], fontSize=11, spaceBefore=10, spaceAfter=4)
+    normal_style = ParagraphStyle('Norm', parent=styles['Normal'], fontSize=9, spaceAfter=2)
+    footer_style = ParagraphStyle('Foot', parent=styles['Normal'], fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#999999'))
+    right_style = ParagraphStyle('Right', parent=styles['Normal'], fontSize=9, alignment=TA_RIGHT)
+    bold_style = ParagraphStyle('Bold', parent=styles['Normal'], fontSize=9, fontName='Helvetica-Bold')
+
+    story = []
+
+    company = _get_company_info()
+    story.append(Paragraph(company["name"], title_style))
+    story.append(Paragraph('Customer Account Statement', subtitle_style))
+    _add_company_details(story, company)
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=10))
+
+    info_rows = [
+        ['Customer:', customer.name, 'Code:', customer.code],
+        ['Balance:', f"{customer.balance:.2f}", 'Credit Limit:', f"{customer.credit_limit:.2f}" if customer.credit_limit else 'N/A'],
+        ['Statement Date:', str(date.today()), 'Generated By:', generated_by or 'System'],
+    ]
+    story.append(Table(info_rows, colWidths=[80, 200, 80, 140]).setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ])))
+    story.append(Spacer(1, 10))
+
+    invoices = statements_data.get('invoices', [])
+    if invoices:
+        story.append(Paragraph('Outstanding Invoices', heading_style))
+        inv_rows = [['#', 'Invoice #', 'Date', 'Due Date', 'Total', 'Paid', 'Balance']]
+        for i, inv in enumerate(invoices, 1):
+            inv_rows.append([
+                str(i), inv.get('invoice_number', ''), str(inv.get('invoice_date', '')),
+                str(inv.get('due_date', '')), f"{inv.get('total', 0):.2f}",
+                f"{inv.get('paid', 0):.2f}", f"{inv.get('balance', 0):.2f}"
+            ])
+        inv_table = Table(inv_rows, colWidths=[30, 90, 70, 70, 80, 80, 80])
+        inv_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a2e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        story.append(inv_table)
+        story.append(Spacer(1, 8))
+
+    payments = statements_data.get('payments', [])
+    if payments:
+        story.append(Paragraph('Recent Payments', heading_style))
+        pay_rows = [['#', 'Reference', 'Date', 'Method', 'Amount']]
+        for i, pay in enumerate(payments, 1):
+            pay_rows.append([
+                str(i), pay.get('reference', ''), str(pay.get('date', '')),
+                pay.get('method', ''), f"{pay.get('amount', 0):.2f}"
+            ])
+        pay_table = Table(pay_rows, colWidths=[30, 120, 80, 100, 100])
+        pay_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a2e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        story.append(pay_table)
+        story.append(Spacer(1, 8))
+
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6))
+    story.append(Paragraph(
+        f'Generated on {date.today()} | {company["name"]} | Customer: {customer.name}',
+        footer_style
+    ))
+
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
+
+def generate_supplier_statement_pdf(supplier, statements_data, generated_by=''):
+    """Generate a supplier account statement PDF."""
+    from datetime import date
+    from decimal import Decimal
+    from io import BytesIO
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import inch, mm
+    from reportlab.lib import colors
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    )
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        topMargin=0.75 * inch, bottomMargin=0.75 * inch,
+        leftMargin=0.75 * inch, rightMargin=0.75 * inch
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=4, alignment=TA_CENTER)
+    subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=10, spaceAfter=8, alignment=TA_CENTER, textColor=colors.HexColor('#666666'))
+    heading_style = ParagraphStyle('Head', parent=styles['Heading2'], fontSize=11, spaceBefore=10, spaceAfter=4)
+    normal_style = ParagraphStyle('Norm', parent=styles['Normal'], fontSize=9, spaceAfter=2)
+    footer_style = ParagraphStyle('Foot', parent=styles['Normal'], fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#999999'))
+
+    story = []
+
+    company = _get_company_info()
+    story.append(Paragraph(company["name"], title_style))
+    story.append(Paragraph('Supplier Account Statement', subtitle_style))
+    _add_company_details(story, company)
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=10))
+
+    info_rows = [
+        ['Supplier:', supplier.name, 'Code:', supplier.code],
+        ['Balance:', f"{supplier.balance:.2f}", 'Statement Date:', str(date.today())],
+        ['Generated By:', generated_by or 'System', '', ''],
+    ]
+    story.append(Table(info_rows, colWidths=[80, 200, 100, 120]).setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ])))
+    story.append(Spacer(1, 10))
+
+    invoices = statements_data.get('invoices', [])
+    if invoices:
+        story.append(Paragraph('Outstanding Invoices', heading_style))
+        inv_rows = [['#', 'Invoice #', 'Date', 'Due Date', 'Total', 'Paid', 'Balance']]
+        for i, inv in enumerate(invoices, 1):
+            inv_rows.append([
+                str(i), inv.get('invoice_number', ''), str(inv.get('invoice_date', '')),
+                str(inv.get('due_date', '')), f"{inv.get('total', 0):.2f}",
+                f"{inv.get('paid', 0):.2f}", f"{inv.get('balance', 0):.2f}"
+            ])
+        inv_table = Table(inv_rows, colWidths=[30, 90, 70, 70, 80, 80, 80])
+        inv_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a2e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        story.append(inv_table)
+        story.append(Spacer(1, 8))
+
+    payments = statements_data.get('payments', [])
+    if payments:
+        story.append(Paragraph('Recent Payments', heading_style))
+        pay_rows = [['#', 'Reference', 'Date', 'Method', 'Amount']]
+        for i, pay in enumerate(payments, 1):
+            pay_rows.append([
+                str(i), pay.get('reference', ''), str(pay.get('date', '')),
+                pay.get('method', ''), f"{pay.get('amount', 0):.2f}"
+            ])
+        pay_table = Table(pay_rows, colWidths=[30, 120, 80, 100, 100])
+        pay_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a2e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        story.append(pay_table)
+        story.append(Spacer(1, 8))
+
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6))
+    story.append(Paragraph(
+        f'Generated on {date.today()} | {company["name"]} | Supplier: {supplier.name}',
+        footer_style
+    ))
+
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
+
+def generate_period_closing_summary_pdf(period, closing_data, generated_by=''):
+    """Generate a fiscal period closing summary PDF."""
+    from datetime import date
+    from decimal import Decimal
+    from io import BytesIO
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import inch, mm
+    from reportlab.lib import colors
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    )
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        topMargin=0.75 * inch, bottomMargin=0.75 * inch,
+        leftMargin=0.75 * inch, rightMargin=0.75 * inch
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=4, alignment=TA_CENTER)
+    subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=10, spaceAfter=8, alignment=TA_CENTER, textColor=colors.HexColor('#666666'))
+    heading_style = ParagraphStyle('Head', parent=styles['Heading2'], fontSize=11, spaceBefore=10, spaceAfter=4)
+    normal_style = ParagraphStyle('Norm', parent=styles['Normal'], fontSize=9, spaceAfter=2)
+    footer_style = ParagraphStyle('Foot', parent=styles['Normal'], fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#999999'))
+    green_style = ParagraphStyle('Green', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#228B22'))
+    red_style = ParagraphStyle('Red', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#CC0000'))
+
+    story = []
+
+    company = _get_company_info()
+    story.append(Paragraph(company["name"], title_style))
+    story.append(Paragraph('Fiscal Period Closing Summary', subtitle_style))
+    _add_company_details(story, company)
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=10))
+
+    info_rows = [
+        ['Period:', period.name, 'Code:', period.code],
+        ['Start Date:', str(period.start_date), 'End Date:', str(period.end_date)],
+        ['Status:', period.status, 'Generated By:', generated_by or 'System'],
+    ]
+    story.append(Table(info_rows, colWidths=[80, 200, 80, 140]).setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ])))
+    story.append(Spacer(1, 10))
+
+    summary = closing_data.get('summary', {})
+    story.append(Paragraph('Period Summary', heading_style))
+    summary_rows = [
+        ['Total Journal Entries:', str(summary.get('total_journal_entries', 0))],
+        ['Posted Entries:', str(summary.get('posted_journal_entries', 0))],
+        ['Total Debits:', summary.get('total_debits', '0.00')],
+        ['Total Credits:', summary.get('total_credits', '0.00')],
+    ]
+    story.append(Table(summary_rows, colWidths=[150, 350]).setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+    ])))
+    story.append(Spacer(1, 8))
+
+    blockers = closing_data.get('blockers', [])
+    if blockers:
+        story.append(Paragraph('Blockers', heading_style))
+        for b in blockers:
+            story.append(Paragraph(f"  • {b.get('message', '')}", red_style))
+        story.append(Spacer(1, 4))
+
+    warnings = closing_data.get('warnings', [])
+    if warnings:
+        story.append(Paragraph('Warnings', heading_style))
+        for w in warnings:
+            story.append(Paragraph(f"  • {w.get('message', '')}", normal_style))
+        story.append(Spacer(1, 4))
+
+    if not blockers and not warnings:
+        story.append(Paragraph('No blockers or warnings — period is clean.', green_style))
+        story.append(Spacer(1, 8))
+
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6))
+    story.append(Paragraph(
+        f'Generated on {date.today()} | {company["name"]} | Period: {period.code}',
+        footer_style
+    ))
+
+    doc.build(story)
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes
+
+
+def generate_reversal_audit_pdf(entry, impact_data, generated_by=''):
+    """Generate a reversal audit trail PDF."""
+    from datetime import date
+    from decimal import Decimal
+    from io import BytesIO
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import inch, mm
+    from reportlab.lib import colors
+    from reportlab.platypus import (
+        SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
+    )
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4,
+        topMargin=0.75 * inch, bottomMargin=0.75 * inch,
+        leftMargin=0.75 * inch, rightMargin=0.75 * inch
+    )
+
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=16, spaceAfter=4, alignment=TA_CENTER)
+    subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=10, spaceAfter=8, alignment=TA_CENTER, textColor=colors.HexColor('#666666'))
+    heading_style = ParagraphStyle('Head', parent=styles['Heading2'], fontSize=11, spaceBefore=10, spaceAfter=4)
+    normal_style = ParagraphStyle('Norm', parent=styles['Normal'], fontSize=9, spaceAfter=2)
+    footer_style = ParagraphStyle('Foot', parent=styles['Normal'], fontSize=7, alignment=TA_CENTER, textColor=colors.HexColor('#999999'))
+    red_style = ParagraphStyle('Red', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#CC0000'))
+    green_style = ParagraphStyle('Green', parent=styles['Normal'], fontSize=9, textColor=colors.HexColor('#228B22'))
+
+    story = []
+
+    company = _get_company_info()
+    story.append(Paragraph(company["name"], title_style))
+    story.append(Paragraph('Reversal Audit Report', subtitle_style))
+    _add_company_details(story, company)
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=10))
+
+    info_rows = [
+        ['Entry #:', entry.entry_number, 'Type:', entry.entry_type],
+        ['Date:', str(entry.entry_date), 'Status:', 'Posted' if entry.is_posted else 'Draft'],
+        ['Generated By:', generated_by or 'System', 'Date:', str(date.today())],
+    ]
+    story.append(Table(info_rows, colWidths=[80, 200, 80, 140]).setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (2, 0), (2, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+    ])))
+    story.append(Spacer(1, 10))
+
+    story.append(Paragraph('Entry Description', heading_style))
+    story.append(Paragraph(entry.description, normal_style))
+    story.append(Spacer(1, 8))
+
+    story.append(Paragraph('Affected Accounts', heading_style))
+    accounts = impact_data.get('affected_accounts', [])
+    if accounts:
+        acc_rows = [['Code', 'Name', 'Type', 'Debit', 'Credit', 'Rev Debit', 'Rev Credit']]
+        for acc in accounts:
+            acc_rows.append([
+                acc.get('account_code', ''), acc.get('account_name', ''),
+                acc.get('account_type', ''), acc.get('current_debit', '0'),
+                acc.get('current_credit', '0'), acc.get('reversal_debit', '0'),
+                acc.get('reversal_credit', '0'),
+            ])
+        acc_table = Table(acc_rows, colWidths=[50, 100, 70, 70, 70, 70, 70])
+        acc_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1a1a2e')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#dddddd')),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f5f5f5')]),
+        ]))
+        story.append(acc_table)
+        story.append(Spacer(1, 8))
+
+    chain = impact_data.get('reversal_chain', [])
+    if chain:
+        story.append(Paragraph('Reversal Chain', heading_style))
+        for node in chain:
+            story.append(Paragraph(
+                f"  → {node.get('entry_number', '')} ({node.get('entry_type', '')}) - {node.get('entry_date', '')}",
+                normal_style
+            ))
+        story.append(Spacer(1, 8))
+
+    blockers = impact_data.get('blockers', [])
+    if blockers:
+        story.append(Paragraph('Safety Blockers', heading_style))
+        for b in blockers:
+            story.append(Paragraph(f"  ✗ {b.get('message', '')}", red_style))
+        story.append(Spacer(1, 4))
+
+    if impact_data.get('is_safe', True):
+        story.append(Paragraph('Reversal is SAFE — no blockers detected.', green_style))
+        story.append(Spacer(1, 8))
+
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#cccccc'), spaceAfter=6))
+    story.append(Paragraph(
+        f'Generated on {date.today()} | {company["name"]} | Entry: {entry.entry_number}',
+        footer_style
     ))
 
     doc.build(story)

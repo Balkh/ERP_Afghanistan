@@ -1,11 +1,11 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
-                               QTableWidget, QTableWidgetItem, QPushButton,
-                               QLineEdit, QLabel, QHeaderView, QAbstractItemView,
-                               QComboBox, QMessageBox)
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTableWidget,
+                               QTableWidgetItem, QPushButton, QLineEdit,
+                               QLabel, QHeaderView, QAbstractItemView, QComboBox,
+                               QMessageBox)
 from PySide6.QtCore import Qt, Signal
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 from PySide6.QtGui import QFont
-from datetime import date
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_TABLE, TEXT_CARD_TITLE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, TEXT_TABLE, TEXT_CARD_TITLE)
 
 
 class BatchSelectionDialog(QDialog):
@@ -86,11 +86,11 @@ class BatchSelectionDialog(QDialog):
 
         # Buttons
         button_layout = QHBoxLayout()
-        self.select_button = QPushButton("Select Batch")
+        self.select_button = EnterpriseButton("Select Batch", variant=ButtonVariant.PRIMARY)
         self.select_button.clicked.connect(self.accept_selection)
         self.select_button.setEnabled(False)
 
-        cancel_button = QPushButton("Cancel")
+        cancel_button = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY)
         cancel_button.clicked.connect(self.reject)
 
         button_layout.addWidget(self.select_button)

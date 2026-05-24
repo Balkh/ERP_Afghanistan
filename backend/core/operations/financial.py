@@ -26,9 +26,9 @@ class FinancialIntegrityMonitor:
             result['total_checked'] = entries.count()
 
             for entry in entries:
-                lines = JournalEntryLine.objects.filter(journal_entry=entry)
-                total_debit = sum(line.debit for line in lines)
-                total_credit = sum(line.credit for line in lines)
+                lines = JournalEntryLine.objects.filter(entry=entry)
+                total_debit = sum(line.debit or Decimal('0.00') for line in lines)
+                total_credit = sum(line.credit or Decimal('0.00') for line in lines)
 
                 if total_debit != total_credit:
                     result['unbalanced'] += 1
@@ -158,8 +158,17 @@ class FinancialIntegrityMonitor:
             result['reversals_checked'] = reversals.count()
 
             for entry in reversals:
-                original = entry.original_entry
-                if not original or not original.is_reversed:
+                try:
+                    original = entry.original_entry
+                except Exception:
+                    result['broken_chains'] += 1
+                    result['issues'].append({
+                        'reversal_id': str(entry.id),
+                        'original_id': None,
+                        'reason': 'Original entry not accessible (deleted or broken FK)'
+                    })
+                    continue
+                if not original or original.reversed_by_entry is None:
                     result['broken_chains'] += 1
                     result['issues'].append({
                         'reversal_id': str(entry.id),

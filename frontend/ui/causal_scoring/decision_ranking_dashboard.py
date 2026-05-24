@@ -8,22 +8,19 @@ Phase 5B.12 — Decision Intelligence Dashboard.
 4. Decision Comparison Panel
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QFrame, QTextEdit, QTabWidget,
-                                 QTableWidget, QTableWidgetItem, QHeaderView,
-                                 QComboBox, QGroupBox)
+                                 QPushButton, QTextEdit, QTabWidget, QTableWidget,
+                                 QTableWidgetItem)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
-
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 from api.client import APIClient
 from ui.causal_scoring.causal_scoring_engine import CausalScoringEngine
 from ui.causal_scoring.decision_impact_engine import DecisionImpactEngine
 from ui.components.tables import build_table_stylesheet
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XL,
-    TEXT_BODY, TEXT_PAGE_TITLE,
-                           MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD)
+                           COLOR_TEXT_PRIMARY, COLOR_PRIMARY, COLOR_BORDER,
+                           SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XL,
+                           TEXT_BODY, TEXT_PAGE_TITLE, MARGIN_PAGE, BORDER_RADIUS_MD)
 from ui.constants import TEXT_PAGE_TITLE, TEXT_BODY
 
 
@@ -51,18 +48,14 @@ class DecisionIntelligenceDashboard(QWidget):
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         header.addWidget(title)
 
-        self.refresh_btn = QPushButton("⟳ Refresh All")
-        self.refresh_btn.setStyleSheet(f"""
-            QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px {SPACING_LG}px; font-weight: bold; }}
-        """)
+        self.refresh_btn = EnterpriseButton("⟳ Refresh All", variant=ButtonVariant.PRIMARY)
         self.refresh_btn.clicked.connect(self._refresh_all)
         header.addWidget(self.refresh_btn, alignment=Qt.AlignRight)
 
         layout.addLayout(header)
 
         tabs = QTabWidget()
-        tabs.setStyleSheet(f"""
+        tabs.setStyleSheet("""
             QTabWidget::pane {{ border: none; background: {COLOR_BG_MAIN}; }}
             QTabBar::tab {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             padding: {SPACING_MD}px {SPACING_XL}px; border: 1px solid {COLOR_BORDER};
@@ -89,7 +82,7 @@ class DecisionIntelligenceDashboard(QWidget):
         t2l = QVBoxLayout(tab2)
         self.causal_text = QTextEdit()
         self.causal_text.setReadOnly(True)
-        self.causal_text.setStyleSheet(f"""
+        self.causal_text.setStyleSheet("""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
@@ -102,7 +95,7 @@ class DecisionIntelligenceDashboard(QWidget):
         t3l = QVBoxLayout(tab3)
         self.matrix_text = QTextEdit()
         self.matrix_text.setReadOnly(True)
-        self.matrix_text.setStyleSheet(f"""
+        self.matrix_text.setStyleSheet("""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
@@ -115,7 +108,7 @@ class DecisionIntelligenceDashboard(QWidget):
         t4l = QVBoxLayout(tab4)
         self.compare_text = QTextEdit()
         self.compare_text.setReadOnly(True)
-        self.compare_text.setStyleSheet(f"""
+        self.compare_text.setStyleSheet("""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}

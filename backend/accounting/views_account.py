@@ -3,7 +3,7 @@ from datetime import date
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 from django.core.exceptions import ValidationError
@@ -378,8 +378,13 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def post_entry(self, request, pk=None):
         """Post a journal entry (locks it from further editing)."""
-        from accounting.services.journal_engine import JournalEngine
-        result = JournalEngine.post_entry(pk)
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.post_entry(
+            module='accounting',
+            operation='post_entry',
+            entry_id=pk,
+            posted_by=str(request.user.id) if request.user.is_authenticated else '',
+        )
         log_business_event(request, 'journal_entry.posted', {'entry_id': pk, 'success': result.get('success')})
         if result.get('success'):
             entry = JournalEntry.objects.get(id=pk)
@@ -402,13 +407,67 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def reverse_entry(self, request, pk=None):
         """Reverse a posted journal entry."""
-        from accounting.services.journal_engine import JournalEngine
+        from core.drift_prevention.migration_router import MigrationRouter
         reason = request.data.get('reason', '')
-        result = JournalEngine.reverse_entry(pk, reason=reason)
+        result = MigrationRouter.reverse_entry(
+            module='accounting',
+            operation='reverse_entry',
+            entry_id=pk,
+            reason=reason,
+            reversed_by=str(request.user.id) if request.user.is_authenticated else '',
+            entity_type='JournalEntry',
+            entity_id=pk,
+        )
         log_business_event(request, 'journal_entry.reversed', {'entry_id': pk, 'reason': reason, 'success': result.get('success')})
         if result.get('success'):
             return Response(result)
         return Response(result, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def reversal_impact(self, request, pk=None):
+        """Analyze reversal impact before executing."""
+        from accounting.services.reversal_safety import ReversalSafetyService
+        from core.api.responses import APIResponse
+
+        try:
+            impact = ReversalSafetyService.analyze_impact(pk)
+            return APIResponse.success(data=impact.to_dict())
+        except ValidationError as e:
+            return APIResponse.error(message=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['get'])
+    def reversal_chain(self, request, pk=None):
+        """Get reversal chain visualization."""
+        from accounting.services.reversal_safety import ReversalSafetyService
+        from core.api.responses import APIResponse
+
+        try:
+            chain = ReversalSafetyService.get_reversal_chain_visualization(pk)
+            return APIResponse.success(data=chain)
+        except ValidationError as e:
+            return APIResponse.error(message=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'])
+    def safe_reverse(self, request, pk=None):
+        """Execute reversal with full safety validation."""
+        from accounting.services.reversal_safety import ReversalSafetyService
+        from core.api.responses import APIResponse
+
+        reason = request.data.get('reason', '')
+        try:
+            result = ReversalSafetyService.execute_reversal(
+                entry_id=pk,
+                reason=reason,
+                reversed_by=str(request.user),
+            )
+            log_business_event(request, 'journal_entry.safe_reversed', {
+                'entry_id': pk,
+                'reason': reason,
+                'reversal_entry_id': result.get('reversal_entry_id'),
+            })
+            return APIResponse.success(data=result, message='Journal entry reversed safely.')
+        except ValidationError as e:
+            return APIResponse.error(message=str(e), status_code=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=True, methods=['get'])
     def event_history(self, request, pk=None):
@@ -418,10 +477,22 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         serializer = JournalEventLogSerializer(events, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'])
+    def export_reversal_audit_pdf(self, request, pk=None):
+        """Export reversal audit PDF for a journal entry."""
+        from accounting.services.reversal_safety import ReversalSafetyService
+        from core.pdf_generator import generate_reversal_audit_pdf, pdf_response
+
+        entry = self.get_object()
+        impact = ReversalSafetyService.analyze_impact(pk)
+        pdf_bytes = generate_reversal_audit_pdf(
+            entry, impact.to_dict(), generated_by=str(request.user)
+        )
+        return pdf_response(pdf_bytes, f'reversal_audit_{entry.entry_number}.pdf')
+
 
 # Export API Views
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
 from django.http import HttpResponse
 
 

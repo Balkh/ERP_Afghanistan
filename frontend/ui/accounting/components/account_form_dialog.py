@@ -1,46 +1,38 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QWidget, QFrame,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QWidget, QFrame,
                                 QLineEdit, QComboBox, QTextEdit, QLabel, QCheckBox)
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import extract_list
 from ui.utils.validation import FormValidator
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_BODY_SMALL, TEXT_LABEL,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_BG_DIALOG, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER,
-                           COLOR_FORM_DESCRIPTION_BG, COLOR_FORM_FOOTER_BORDER,
-                           INPUT_HEIGHT_MD, BORDER_RADIUS_MD,
-    BORDER_RADIUS_SM,
-                           DIALOG_WIDTH_FORM_MIN, DIALOG_WIDTH_FORM_PREFERRED)
+from ui.constants import (SPACING_SM, SPACING_MD, SPACING_XL, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_BODY_SMALL, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_MUTED, COLOR_BG_DIALOG, COLOR_BORDER_INPUT,
+                           COLOR_BORDER_INPUT_HOVER, COLOR_FORM_DESCRIPTION_BG, COLOR_FORM_FOOTER_BORDER,
+                           INPUT_HEIGHT_MD, BORDER_RADIUS_MD, DIALOG_WIDTH_FORM_MIN,
+                           DIALOG_WIDTH_FORM_PREFERRED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.forms import FormSection
+from ui.components.dialogs import EnterpriseDialog, DialogType
 import re
 
 
-class AccountFormDialog(QDialog):
+class AccountFormDialog(EnterpriseDialog):
     """Enterprise account form with enhanced visual hierarchy."""
 
     def __init__(self, parent=None, account_id=None, api_client=None):
-        super().__init__(parent)
+        title = "Edit Account" if account_id is not None else "New Account"
+        super().__init__(title, DialogType.CUSTOM, parent)
         self.api_client = api_client or APIClient()
         self.account_id = account_id
         self.is_editing = account_id is not None
         self.parent_accounts = []
-        self.setWindowTitle("Edit Account" if self.is_editing else "New Account")
-        self.setModal(True)
-        self.setMinimumWidth(DIALOG_WIDTH_FORM_MIN)
-        self.resize(DIALOG_WIDTH_FORM_PREFERRED, 550)
-        self.setup_ui()
+        content = self._build_content()
+        self.set_content(content)
         self.load_parent_accounts()
         if self.is_editing:
             self.load_account()
 
-    def setup_ui(self):
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: {COLOR_BG_DIALOG};
-            }}
+    def _build_content(self):
+        content = QWidget()
+        content.setStyleSheet("""
             QLineEdit, QComboBox {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
@@ -66,13 +58,9 @@ class AccountFormDialog(QDialog):
             }}
         """)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_XXL, SPACING_XL, SPACING_XXL, SPACING_XL)
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING_MD)
-
-        title = QLabel(self.windowTitle())
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 600; border: none; background: transparent;")
-        layout.addWidget(title)
 
         subtitle = QLabel("Configure account properties")
         subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; border: none; background: transparent; margin-bottom: {SPACING_SM}px;")
@@ -130,23 +118,30 @@ class AccountFormDialog(QDialog):
         sec2.add_full_width("Status", half_widget)
         layout.addWidget(sec2)
 
-        # ── Footer with separation ──
-        footer_line = QFrame()
-        footer_line.setFrameShape(QFrame.HLine)
-        footer_line.setStyleSheet(f"background-color: {COLOR_FORM_FOOTER_BORDER}; border: none; max-height: 1px; margin-top: {SPACING_SM}px;")
-        layout.addWidget(footer_line)
+        return content
 
-        footer = QHBoxLayout()
-        footer.setSpacing(SPACING_SM)
-        footer.setContentsMargins(0, SPACING_SM, 0, 0)
-        footer.addStretch()
+    def _create_button_area(self):
+        button_area = QFrame()
+        button_area.setFixedHeight(60)
+
+        layout = QHBoxLayout(button_area)
+        layout.setContentsMargins(SPACING_XXL, SPACING_SM, SPACING_XXL, SPACING_SM)
+
+        layout.addStretch()
         cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         cancel_btn.clicked.connect(self.reject)
         save_btn = EnterpriseButton("Save", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         save_btn.clicked.connect(self.save)
-        footer.addWidget(cancel_btn)
-        footer.addWidget(save_btn)
-        layout.addLayout(footer)
+        layout.addWidget(cancel_btn)
+        layout.addWidget(save_btn)
+
+        button_area.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLOR_BG_DIALOG};
+                border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};
+            }}
+        """)
+        return button_area
 
     def load_parent_accounts(self):
         try:

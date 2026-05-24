@@ -1,11 +1,12 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
                                QPushButton, QLabel, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QTextDocument, QPixmap
+from PySide6.QtGui import QFont, QTextDocument
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog
 from api.document_action_service import DocumentActionService
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 from utils.qr_generator import QRCodeGenerator
-from ui.constants import TEXT_DISPLAY, TEXT_MONO, TEXT_BODY, COLOR_WHATSAPP
+from ui.constants import TEXT_DISPLAY, TEXT_BODY, COLOR_WHATSAPP
 
 
 class ReportPreviewDialog(QDialog):
@@ -56,24 +57,19 @@ class ReportPreviewDialog(QDialog):
         buttons = QHBoxLayout()
         buttons.addStretch()
 
-        self.btn_print = QPushButton("Print")
-        self.btn_print.setMinimumHeight(32)
+        self.btn_print = EnterpriseButton("Print", variant=ButtonVariant.SECONDARY)
         self.btn_print.clicked.connect(self.print_report)
         buttons.addWidget(self.btn_print)
 
-        self.btn_pdf = QPushButton("Save as PDF")
-        self.btn_pdf.setMinimumHeight(32)
+        self.btn_pdf = EnterpriseButton("Save as PDF", variant=ButtonVariant.SECONDARY)
         self.btn_pdf.clicked.connect(self.save_pdf)
         buttons.addWidget(self.btn_pdf)
 
-        self.btn_share = QPushButton("Share to WhatsApp")
-        self.btn_share.setMinimumHeight(32)
-        self.btn_share.setStyleSheet(f"background-color: {COLOR_WHATSAPP}; color: white; font-weight: bold;")
+        self.btn_share = EnterpriseButton("Share to WhatsApp", variant=ButtonVariant.SUCCESS)
         self.btn_share.clicked.connect(self.share_report)
         buttons.addWidget(self.btn_share)
 
-        self.btn_close = QPushButton("Close")
-        self.btn_close.setMinimumHeight(32)
+        self.btn_close = EnterpriseButton("Close", variant=ButtonVariant.SECONDARY)
         self.btn_close.clicked.connect(self.reject)
         buttons.addWidget(self.btn_close)
 
@@ -93,7 +89,7 @@ class ReportPreviewDialog(QDialog):
 
     def save_pdf(self):
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save as PDF", "report.pdf", "PDF Files (*.pdf)"
+            self, "Save as PDF", "report.pd", "PDF Files (*.pdf)"
         )
         if file_path:
             printer = QPrinter(QPrinter.HighResolution)

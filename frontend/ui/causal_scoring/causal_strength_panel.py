@@ -5,20 +5,18 @@ Shows top 3 strongest causal paths per anomaly/risk/forecast.
 Highlights strong vs weak links, bottleneck nodes, and weighted chains.
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QFrame, QTextEdit, QComboBox,
-                                 QGroupBox, QTableWidget, QTableWidgetItem,
-                                 QHeaderView)
-from PySide6.QtCore import Qt, QTimer
+                                 QPushButton, QTextEdit, QComboBox, QGroupBox,
+                                 QTableWidget, QTableWidgetItem)
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont
-
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 from api.client import APIClient
 from ui.causal_scoring.causal_scoring_engine import CausalScoringEngine
 from ui.components.tables import build_table_stylesheet
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE, SPACING_6, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, BORDER_RADIUS_MD)
+from ui.constants import (COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_PRIMARY,
+                           COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+                           COLOR_BORDER, SPACING_LG, SPACING_SM, MARGIN_PAGE,
+                           SPACING_6, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, BORDER_RADIUS_MD)
 
 
 _CHAIN_COLORS = [COLOR_DANGER, COLOR_WARNING, COLOR_INFO]
@@ -53,11 +51,7 @@ class CausalStrengthPanel(QWidget):
         header.addWidget(QLabel("Domain:"))
         header.addWidget(self.domain_combo)
 
-        analyze_btn = QPushButton("⟳ Analyze Paths")
-        analyze_btn.setStyleSheet(f"""
-            QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
-        """)
+        analyze_btn = EnterpriseButton("⟳ Analyze Paths", variant=ButtonVariant.PRIMARY)
         analyze_btn.clicked.connect(self._analyze)
         header.addWidget(analyze_btn)
 
@@ -66,7 +60,7 @@ class CausalStrengthPanel(QWidget):
         # Top 3 paths
         for i in range(3):
             group = QGroupBox(f"Path #{i + 1}")
-            group.setStyleSheet(f"""
+            group.setStyleSheet("""
                 QGroupBox {{ color: {_CHAIN_COLORS[i]}; font-weight: bold;
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
                 padding: {SPACING_SM}px; padding-top: 18px; }}
@@ -75,7 +69,7 @@ class CausalStrengthPanel(QWidget):
             text = QTextEdit()
             text.setReadOnly(True)
             text.setObjectName(f"path_{i}")
-            text.setStyleSheet(f"""
+            text.setStyleSheet("""
                 QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: none; font-family: 'Consolas', monospace; font-size: {TEXT_CARD_TITLE}px; }}
             """)
@@ -85,7 +79,7 @@ class CausalStrengthPanel(QWidget):
 
         # Summary table
         summary_group = QGroupBox("All Nodes — Scored & Ranked")
-        summary_group.setStyleSheet(f"""
+        summary_group.setStyleSheet("""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
             border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; padding-top: 18px; }}
         """)

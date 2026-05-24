@@ -2,8 +2,8 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLineEdit,
                                QTableWidget, QTableWidgetItem, QHeaderView,
                                QPushButton, QLabel, QAbstractItemView)
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import COLOR_SUCCESS
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 
 class ProductSelectionDialog(QDialog):
     """Professional product selection dialog with search."""
@@ -51,12 +51,11 @@ class ProductSelectionDialog(QDialog):
         btns = QHBoxLayout()
         btns.addStretch()
         
-        self.select_btn = QPushButton("Select")
+        self.select_btn = EnterpriseButton("Select", variant=ButtonVariant.PRIMARY)
         self.select_btn.clicked.connect(self.accept_selection)
-        self.select_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
         btns.addWidget(self.select_btn)
         
-        self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY)
         self.cancel_btn.clicked.connect(self.reject)
         btns.addWidget(self.cancel_btn)
         

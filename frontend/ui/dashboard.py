@@ -1,12 +1,11 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
                                   QGridLayout, QApplication, QScrollArea)
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont
 from ui.role_manager import UserRole
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_HELPER, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
-from ui.constants import (TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY_SMALL, TEXT_TABLE, TEXT_HELPER)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
-from ui.components.kpi_cards import KPICard, MiniMetricCard, StatusBadge
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_6, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_HELPER, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_INFO, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
+from ui.components.kpi_cards import KPICard
 from theme.theme_engine import ThemeEngine
 
 
@@ -21,11 +20,11 @@ class Dashboard(QWidget):
         self._extra_counts = {}
         self._kpi_labels = {}
         self._color_map = {
-            'blue': '#3B82F6',
-            'red': '#EF4444',
-            'green': '#10B981',
-            'mauve': '#8B5CF6',
-            'peach': '#F97316',
+            'blue': COLOR_PRIMARY,
+            'red': COLOR_DANGER,
+            'green': COLOR_SUCCESS,
+            'mauve': COLOR_INFO,
+            'peach': COLOR_WARNING,
         }
 
         self._build_static_ui()
@@ -50,7 +49,7 @@ class Dashboard(QWidget):
 
     def refresh_theme(self):
         """Re-apply dashboard stylesheets with current theme colors."""
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QWidget#dashboard {{ background-color: {COLOR_BG_MAIN}; }}
         """)
         for child in self.findChildren(QScrollArea):
@@ -81,7 +80,7 @@ class Dashboard(QWidget):
                     item.widget().deleteLater()
 
         self.setObjectName("dashboard")
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QWidget#dashboard {{ background-color: {COLOR_BG_MAIN}; }}
         """)
 
@@ -166,7 +165,7 @@ class Dashboard(QWidget):
         af.setObjectName("actionsCard")
         af.setStyleSheet(f"QFrame#actionsCard {{ background: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; }}")
         al = QHBoxLayout(af)
-        al.setContentsMargins(20, 12, 20, 12)
+        al.setContentsMargins(SPACING_XL, SPACING_MD, SPACING_XL, SPACING_MD)
         al.setSpacing(SPACING_MD)
 
         al_title = QLabel("Quick Actions")
@@ -231,8 +230,6 @@ class Dashboard(QWidget):
         data = self._dashboard_data
         fin = data.get('financial', {}) or {}
         inv = data.get('inventory', {}) or {}
-        hr = data.get('hr', {}) or {}
-
         # KPI labels
         inv_ov = inv.get('overview', {}) or {}
         bal = fin.get('balance_summary', {}) or {}
@@ -376,7 +373,7 @@ class Dashboard(QWidget):
         f = QFrame()
         f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; }}")
         lay = QVBoxLayout(f)
-        lay.setContentsMargins(12, 8, 12, 8)
+        lay.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_MD, SPACING_SM)
         lay.setSpacing(SPACING_XS)
 
         lbl = QLabel(label)
@@ -440,7 +437,7 @@ class Dashboard(QWidget):
     def _alert_line(self, label, status, color_key):
         c = self._color_map.get(color_key, COLOR_PRIMARY)
         box = QFrame()
-        box.setStyleSheet(f"""
+        box.setStyleSheet("""
             QFrame {{
                 background-color: {COLOR_BORDER};
                 border: 1px solid {COLOR_BORDER_LIGHT};
@@ -449,7 +446,7 @@ class Dashboard(QWidget):
             }}
         """)
         row = QHBoxLayout(box)
-        row.setContentsMargins(10, 6, 10, 6)
+        row.setContentsMargins(SPACING_SM, SPACING_6, SPACING_SM, SPACING_6)
         row.setSpacing(SPACING_SM)
 
         dot = QLabel("●")

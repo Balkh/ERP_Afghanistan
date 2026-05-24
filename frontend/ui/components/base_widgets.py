@@ -4,7 +4,7 @@ Provides reusable foundation for all UI components.
 """
 
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QVBoxLayout, QGridLayout
-from PySide6.QtCore import Signal, Property, Qt
+from PySide6.QtCore import Signal, Qt
 from typing import Optional, Dict, Any, List
 import logging
 
@@ -61,15 +61,12 @@ class BaseWidget(QWidget):
             
     def _initialize_ui(self):
         """Override in subclasses to initialize UI."""
-        pass
     
     def _connect_signals(self):
         """Override in subclasses to connect signals."""
-        pass
     
     def reset(self):
         """Reset widget to initial state."""
-        pass
     
     def validate(self) -> tuple[bool, str]:
         """Validate widget data. Returns (is_valid, error_message)."""
@@ -81,7 +78,6 @@ class BaseWidget(QWidget):
     
     def set_data(self, data: Dict[str, Any]):
         """Set widget data from dictionary."""
-        pass
 
 
 class BaseContainerWidget(BaseWidget):
@@ -182,7 +178,6 @@ class BaseFormWidget(BaseWidget):
         
     def _update_error_display(self):
         """Override in subclasses to update error display."""
-        pass
 
 
 class BaseListWidget(BaseWidget):
@@ -247,35 +242,3 @@ class BaseListWidget(BaseWidget):
         
     def _refresh_display(self):
         """Override in subclasses to refresh display."""
-        pass
-
-
-class BaseDialogWidget(BaseWidget):
-    """
-    Base widget for dialog windows.
-    """
-    
-    accepted = Signal()
-    rejected = Signal()
-    
-    def __init__(self, parent: Optional[QWidget] = None, config: Optional[Dict] = None):
-        self._dialog_title = config.get('title', 'Dialog') if config else 'Dialog'
-        self._dialog_width = config.get('width', 400)
-        self._dialog_height = config.get('height', 300)
-        super().__init__(parent, config)
-        
-    def accept(self):
-        """Accept dialog."""
-        self.accepted.emit()
-        
-    def reject(self):
-        """Reject dialog."""
-        self.rejected.emit()
-        
-    def get_result(self):
-        """Get dialog result."""
-        return self._result if hasattr(self, '_result') else None
-    
-    def set_result(self, result):
-        """Set dialog result."""
-        self._result = result

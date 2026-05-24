@@ -4,21 +4,19 @@ Phase 5B.7 — Anomaly Investigation Screen.
 Drift → Patterns → Related Events → Replay → Root Cause.
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QTextEdit, QLineEdit, QSplitter,
-                                 QTableWidget, QTableWidgetItem, QHeaderView, QComboBox)
+                                 QPushButton, QTextEdit, QSplitter, QComboBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 
 from api.client import APIClient
 from api.intelligence_client import IntelligenceAPIClient
 from api.observability_client import ObservabilityAPIClient
 from api.truth_client import TruthAPIClient
 from ui.control_tower.workflow_engine import get_router
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-    TEXT_SECTION_TITLE,
+from ui.constants import (COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_TEXT_PRIMARY,
+                           COLOR_WARNING, COLOR_INFO,
+                           COLOR_BORDER, SPACING_LG, SPACING_SM, TEXT_SECTION_TITLE,
                            MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
 from ui.constants import TEXT_SECTION_TITLE
 
@@ -53,11 +51,7 @@ class AnomalyInvestigationScreen(QWidget):
         self.domain_combo.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; background: {COLOR_BG_SURFACE}; padding: {SPACING_6}px;")
         sel_layout.addWidget(self.domain_combo)
 
-        refresh_btn = QPushButton("⟳ Analyze")
-        refresh_btn.setStyleSheet(f"""
-            QPushButton {{ background: {COLOR_WARNING}; color: white; border: none;
-            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
-        """)
+        refresh_btn = EnterpriseButton("⟳ Analyze", variant=ButtonVariant.WARNING)
         refresh_btn.clicked.connect(self._analyze)
         sel_layout.addWidget(refresh_btn)
         layout.addLayout(sel_layout)
@@ -70,7 +64,7 @@ class AnomalyInvestigationScreen(QWidget):
         self.drift_text = QTextEdit()
         self.drift_text.setReadOnly(True)
         self.drift_text.setPlaceholderText("Drift & anomaly data...")
-        self.drift_text.setStyleSheet(f"""
+        self.drift_text.setStyleSheet("""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
@@ -84,7 +78,7 @@ class AnomalyInvestigationScreen(QWidget):
         self.replay_text = QTextEdit()
         self.replay_text.setReadOnly(True)
         self.replay_text.setPlaceholderText("Replay & root cause data...")
-        self.replay_text.setStyleSheet(f"""
+        self.replay_text.setStyleSheet("""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
@@ -104,12 +98,7 @@ class AnomalyInvestigationScreen(QWidget):
             ("⏱ Temporal", self._load_temporal),
             ("📋 Consistency", self._load_consistency),
         ]:
-            btn = QPushButton(label)
-            btn.setStyleSheet(f"""
-                QPushButton {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}
-                QPushButton:hover {{ background: {COLOR_INFO}; color: white; }}
-            """)
+            btn = EnterpriseButton(label, variant=ButtonVariant.SECONDARY)
             btn.clicked.connect(cb)
             actions.addWidget(btn)
         layout.addLayout(actions)

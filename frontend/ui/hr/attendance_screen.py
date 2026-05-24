@@ -1,20 +1,13 @@
 """Attendance screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                 QLabel, QLineEdit,
-                                 QComboBox, QGroupBox,
-                                 QDateEdit, QMessageBox)
+                                 QLabel, QGroupBox,
+                                 QDateEdit)
 from PySide6.QtCore import Qt, QDate
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_BORDER_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+from ui.constants import (SPACING_XS, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_PAGE_TITLE,
+                           TEXT_BODY, TEXT_LABEL, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
@@ -49,7 +42,7 @@ class AttendanceScreen(BaseScreen):
 
         # Filters
         filter_bar = QGroupBox("Filter by Date")
-        filter_bar.setStyleSheet(f"""
+        filter_bar.setStyleSheet("""
             QGroupBox {{
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_LG};

@@ -4,7 +4,7 @@ Aggregates data from Sales, Accounting, Inventory, and Workflows into a unified 
 """
 
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 class CorrelationIntelligenceService:
     """

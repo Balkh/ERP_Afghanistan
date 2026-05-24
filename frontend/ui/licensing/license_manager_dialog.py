@@ -1,11 +1,10 @@
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, BORDER_RADIUS_MD, BORDER_RADIUS_LG, SPACING_SM)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, BORDER_RADIUS_MD, BORDER_RADIUS_LG, SPACING_SM)
 """
 License manager dialog for Pharmacy ERP.
 Provides a tabbed interface for license activation and status viewing.
 """
 
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QTabWidget, QMessageBox)
-from PySide6.QtCore import Qt
 import sys
 import os
 
@@ -31,7 +30,7 @@ class LicenseManagerDialog(QDialog):
     def setup_ui(self):
         """Set up the user interface."""
         # Set dark theme stylesheet
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QDialog {{
                 background-color: {COLOR_BG_MAIN};
             }}
@@ -93,11 +92,12 @@ class LicenseManagerDialog(QDialog):
         self.tab_widget.addTab(self.license_status_screen, "License Status")
         
         # Add close button
-        from PySide6.QtWidgets import QPushButton, QHBoxLayout
+        from PySide6.QtWidgets import QHBoxLayout
+        from ui.components.buttons import EnterpriseButton, ButtonVariant
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         
-        close_button = QPushButton("Close")
+        close_button = EnterpriseButton("Close", variant=ButtonVariant.SECONDARY)
         close_button.clicked.connect(self.accept)
         button_layout.addWidget(close_button)
         

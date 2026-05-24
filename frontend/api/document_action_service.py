@@ -14,11 +14,11 @@ class DocumentActionService:
     """
     
     @staticmethod
-    def share_via_whatsapp(doc_type: str, data: Dict[str, Any], phone: str = ""):
+    def share_via_whatsapp(doc_type: str, data: Dict[str, Any], phone: str = "", company_name: str = "Pharmacy ERP"):
         """
         Generate a professional message and open WhatsApp.
         """
-        message = DocumentActionService.generate_share_text(doc_type, data)
+        message = DocumentActionService.generate_share_text(doc_type, data, company_name)
         encoded_msg = urllib.parse.quote(message)
         
         # Format phone if provided (ensure international format without +)
@@ -28,11 +28,10 @@ class DocumentActionService:
         webbrowser.open(url)
 
     @staticmethod
-    def generate_share_text(doc_type: str, data: Dict[str, Any]) -> str:
+    def generate_share_text(doc_type: str, data: Dict[str, Any], company_name: str = "Pharmacy ERP") -> str:
         """
         Create a formatted text for sharing.
         """
-        company_name = "Pharmacy ERP" # Should come from config
         now = datetime.now().strftime("%Y-%m-%d %H:%M")
         
         if doc_type == "invoice":
@@ -41,12 +40,12 @@ class DocumentActionService:
             customer = data.get('customer_name', 'Valued Customer')
             
             msg = f"💊 *{company_name} - Invoice*\n"
-            msg += f"--------------------------\n"
+            msg += "--------------------------\n"
             msg += f"📄 *Invoice #:* {inv_no}\n"
             msg += f"👤 *Customer:* {customer}\n"
             msg += f"💰 *Total Amount:* {total} AFN\n"
             msg += f"📅 *Date:* {now}\n"
-            msg += f"--------------------------\n"
+            msg += "--------------------------\n"
             
             items = data.get('items', [])
             if items:
@@ -60,7 +59,7 @@ class DocumentActionService:
                 if len(items) > 5:
                     msg += f"... and {len(items)-5} more items.\n"
             
-            msg += f"\nThank you for your business!"
+            msg += "\nThank you for your business!"
             return msg
             
         elif doc_type == "report":
@@ -68,7 +67,7 @@ class DocumentActionService:
             period = data.get('period', 'N/A')
             
             msg = f"📊 *{company_name} - {name}*\n"
-            msg += f"--------------------------\n"
+            msg += "--------------------------\n"
             msg += f"📅 *Period:* {period}\n"
             msg += f"🕒 *Generated:* {now}\n"
             

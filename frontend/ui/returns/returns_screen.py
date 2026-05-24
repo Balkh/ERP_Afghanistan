@@ -3,21 +3,17 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                    QLabel, QLineEdit,
                                    QHeaderView, QMessageBox, QComboBox,
                                     QGroupBox, QFormLayout, QDialog,
-                                   QTextEdit, QInputDialog, QApplication, QFileDialog)
+                                   QTextEdit, QInputDialog, QApplication, QFileDialog,
+                                   QTableWidget, QTableWidgetItem, QAbstractItemView)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT,
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE,
+                           TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+                           COLOR_PRIMARY,
+                           COLOR_TEXT_TITLE, COLOR_BORDER_DIALOG, COLOR_BORDER_INPUT)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
@@ -163,7 +159,7 @@ class ReturnsScreen(BaseScreen):
         type_layout = QVBoxLayout()
         type_layout.addWidget(QLabel("Type:"))
         self.return_type_filter = QComboBox()
-        self.return_type_filter.setStyleSheet(f"""
+        self.return_type_filter.setStyleSheet("""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
@@ -180,7 +176,7 @@ class ReturnsScreen(BaseScreen):
         status_layout = QVBoxLayout()
         status_layout.addWidget(QLabel("Status:"))
         self.status_filter = QComboBox()
-        self.status_filter.setStyleSheet(f"""
+        self.status_filter.setStyleSheet("""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
@@ -208,27 +204,9 @@ class ReturnsScreen(BaseScreen):
         return bar
 
     def _create_modern_table(self):
-        return EnterpriseTable([])
+        table = EnterpriseTable([])
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         return table
-    
-    def _view_return(self, row):
-        """View details of a return order."""
-        # This is typically called on double click or if there was a view button
-        return_number = self.table.item(row, 0).text()
-        return_item = next((item for item in self.returns_data if item.get("return_number") == return_number), None)
-        
-        if return_item:
-            # For now, just show a message or we could open the dialog in read-only mode
-            details = f"Return #: {return_item.get('return_number')}\n"
-            details += f"Type: {return_item.get('return_type')}\n"
-            details += f"Party: {return_item.get('party_name', return_item.get('supplier_name', ''))}\n"
-            details += f"Amount: {return_item.get('total_amount')}\n"
-            details += f"Status: {return_item.get('status')}\n"
-            details += f"Reason: {return_item.get('reason')}\n"
-            details += f"Notes: {return_item.get('notes', '')}"
-            
-            QMessageBox.information(self, "Return Details", details)
 
     def _on_search(self, text):
         """Handle search input."""
@@ -534,10 +512,7 @@ class ReturnsScreen(BaseScreen):
         elif ok:
             QMessageBox.warning(self, "Validation Error", "Rejection reason is required.")
     
-    def _view_return(self, row):
-        """View return details."""
-        return_number = self.table.item(row, 0).text()
-        QMessageBox.information(self, "Return Details", f"Viewing return: {return_number}")
+
     
     def _export_csv(self):
         """Export return orders to CSV."""
@@ -579,7 +554,7 @@ class ReturnsScreen(BaseScreen):
         return_id = return_item.get("id")
         
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Return Receipt", f"return_{return_number}.pdf", "PDF Files (*.pdf)"
+            self, "Save Return Receipt", f"return_{return_number}.pd", "PDF Files (*.pdf)"
         )
         if not file_path:
             return

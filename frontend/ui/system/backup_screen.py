@@ -12,20 +12,16 @@ ARCHITECTURE LOCK — DO NOT MODIFY WITHOUT REVIEW:
     GUARDRAIL 6: No fallback state computation — if SSOT fails, show UNAVAILABLE
 """
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
-                                QLabel, QGroupBox, QScrollArea, QWidget,
-                                QMessageBox, QFrame, QHeaderView, QDialog,
-                                QTextEdit, QProgressBar)
-from PySide6.QtCore import Qt, QTimer
+                                QWidget, QLabel, QGroupBox, QMessageBox, QFrame,
+                                QDialog, QTextEdit)
+from PySide6.QtCore import Qt
 from api.client import APIClient
-from api.endpoints import get_endpoint
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, MARGIN_CARD,
+                           TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
+                           COLOR_TEXT_MUTED, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+                           COLOR_BG_MAIN, COLOR_FORM_FOOTER_BORDER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import EnterpriseDialog, DialogType
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
 
@@ -33,9 +29,8 @@ from ui.screens.base_screen import BaseScreen
 class _StatusIndicator(QFrame):
     """Lightweight status indicator card — no graphs, no heavy visualization."""
 
-    def __init__(self, label: str, value: str, status: str, parent=None):
-        super().__init__(parent)
-        self.setFixedHeight(80)
+    def update_status(self, value: str, status: str):
+        """Update indicator value and color using governed styles."""
         color_map = {
             'healthy': COLOR_SUCCESS,
             'warning': COLOR_WARNING,
@@ -51,29 +46,30 @@ class _StatusIndicator(QFrame):
             'unlocked': COLOR_SUCCESS,
         }
         color = color_map.get(status, COLOR_INFO)
+        from theme.style_builder import UIStyleBuilder
+        self.setStyleSheet(UIStyleBuilder.get_status_indicator_style(color))
+        self._val_lbl.setText(value)
+        self._val_lbl.setStyleSheet(UIStyleBuilder.get_colored_label_style(color, TEXT_CARD_TITLE, 700))
 
-        self.setStyleSheet(f"""
-            QFrame {{
-                background: {COLOR_BG_ELEVATED};
-                border: 2px solid {color};
-                border-radius: {BORDER_RADIUS_LG}px;
-                padding: {SPACING_MD}px;
-            }}
-        """)
-
+    def __init__(self, label: str, value: str, status: str, parent=None):
+        super().__init__(parent)
+        self.setFixedHeight(80)
+        
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_MD, SPACING_SM)
         layout.setSpacing(SPACING_XS)
 
         lbl = QLabel(label)
-        lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_LABEL}pt;")
+        from theme.style_builder import UIStyleBuilder
+        lbl.setStyleSheet(UIStyleBuilder.get_label_style("muted"))
         lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(lbl)
 
-        val = QLabel(value)
-        val.setStyleSheet(f"color: {color}; font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;")
-        val.setAlignment(Qt.AlignCenter)
-        layout.addWidget(val)
+        self._val_lbl = QLabel(value)
+        self._val_lbl.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self._val_lbl)
+        
+        self.update_status(value, status)
 
 
 class _WarningBanner(QFrame):
@@ -82,26 +78,19 @@ class _WarningBanner(QFrame):
     def __init__(self, message: str, level: str = 'warning', parent=None):
         super().__init__(parent)
         color = COLOR_WARNING if level == 'warning' else COLOR_DANGER
-        bg = '#3D2C00' if level == 'warning' else '#3D0000'
-        self.setStyleSheet(f"""
-            QFrame {{
-                background: {bg};
-                border-left: 4px solid {color};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_MD}px;
-            }}
-        """)
+        from theme.style_builder import UIStyleBuilder
+        self.setStyleSheet(UIStyleBuilder.get_warning_banner_style(level))
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(SPACING_MD, SPACING_MD, SPACING_MD, SPACING_MD)
 
         icon = "⚠" if level == 'warning' else "✗"
         icon_lbl = QLabel(icon)
-        icon_lbl.setStyleSheet(f"color: {color}; font-size: {TEXT_SECTION_TITLE}pt;")
+        icon_lbl.setStyleSheet(UIStyleBuilder.get_colored_label_style(color, TEXT_SECTION_TITLE))
         layout.addWidget(icon_lbl)
 
         msg_lbl = QLabel(message)
-        msg_lbl.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
+        msg_lbl.setStyleSheet(UIStyleBuilder.get_label_style("body"))
         msg_lbl.setWordWrap(True)
         layout.addWidget(msg_lbl)
 
@@ -124,64 +113,47 @@ class _RestoreStateBadge(QFrame):
         }
         color = color_map.get(state, COLOR_TEXT_MUTED)
 
-        self.setStyleSheet(f"""
-            QFrame {{
-                background: {COLOR_BG_ELEVATED};
-                border: 1px solid {color};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px;
-            }}
-        """)
+        from theme.style_builder import UIStyleBuilder
+        self.setStyleSheet(UIStyleBuilder.get_badge_style(color))
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(SPACING_MD, SPACING_XS, SPACING_MD, SPACING_XS)
 
         dot = QLabel("●")
-        dot.setStyleSheet(f"color: {color}; font-size: {TEXT_BODY}pt;")
+        dot.setStyleSheet(UIStyleBuilder.get_colored_label_style(color, TEXT_BODY))
         layout.addWidget(dot)
 
         lbl = QLabel(state.replace('_', ' '))
-        lbl.setStyleSheet(f"color: {color}; font-size: {TEXT_BODY}pt; font-weight: 600;")
+        lbl.setStyleSheet(UIStyleBuilder.get_colored_label_style(color, TEXT_BODY, 600))
         layout.addWidget(lbl)
         layout.addStretch()
 
 
-class RestoreConfirmDialog(QDialog):
+class RestoreConfirmDialog(EnterpriseDialog):
     """Pre-restore confirmation dialog with metadata summary."""
 
     def __init__(self, metadata: dict, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Confirm Restore")
-        self.setMinimumWidth(500)
-        self._build_ui(metadata)
+        super().__init__("Confirm Restore", DialogType.CUSTOM, parent)
+        content = self._build_content(metadata)
+        self.set_content(content)
 
-    def _build_ui(self, metadata: dict):
-        layout = QVBoxLayout(self)
+    def _build_content(self, metadata: dict) -> QWidget:
+        from theme.style_builder import UIStyleBuilder
+
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setSpacing(SPACING_MD)
-
-        title = QLabel("Restore Confirmation")
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
-        layout.addWidget(title)
 
         warning = QLabel(
             "⚠ This will replace the current database with the selected backup. "
             "An emergency backup will be created automatically before restore."
         )
-        warning.setStyleSheet(f"color: {COLOR_WARNING}; font-size: {TEXT_BODY}pt;")
+        warning.setStyleSheet(UIStyleBuilder.get_label_style("warning"))
         warning.setWordWrap(True)
         layout.addWidget(warning)
 
         info_group = QGroupBox("Backup Metadata")
-        info_group.setStyleSheet(f"""
-            QGroupBox {{
-                font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}px;
-                margin-top: 10px; padding-top: 10px;
-            }}
-            QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}
-        """)
+        info_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=False))
         info_layout = QVBoxLayout()
         info_layout.setSpacing(SPACING_XS)
 
@@ -195,26 +167,43 @@ class RestoreConfirmDialog(QDialog):
         for label, value in fields:
             row = QHBoxLayout()
             lbl = QLabel(label)
-            lbl.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}pt; font-weight: 600;")
+            lbl.setStyleSheet(UIStyleBuilder.get_label_style("label"))
             row.addWidget(lbl)
             row.addStretch()
             val = QLabel(str(value))
-            val.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
+            val.setStyleSheet(UIStyleBuilder.get_label_style("body"))
             row.addWidget(val)
             info_layout.addLayout(row)
 
         info_group.setLayout(info_layout)
         layout.addWidget(info_group)
 
-        btn_layout = QHBoxLayout()
+        return widget
+
+    def _create_button_area(self):
+        button_area = QFrame()
+        button_area.setFixedHeight(60)
+
+        layout = QHBoxLayout(button_area)
+        layout.setContentsMargins(MARGIN_CARD, SPACING_SM, MARGIN_CARD, SPACING_SM)
+
         cancel_btn = EnterpriseButton(text="Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         cancel_btn.clicked.connect(self.reject)
-        btn_layout.addWidget(cancel_btn)
+        layout.addWidget(cancel_btn)
+
+        layout.addStretch()
 
         confirm_btn = EnterpriseButton(text="Confirm Restore", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
         confirm_btn.clicked.connect(self.accept)
-        btn_layout.addWidget(confirm_btn)
-        layout.addLayout(btn_layout)
+        layout.addWidget(confirm_btn)
+
+        button_area.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLOR_BG_MAIN};
+                border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};
+            }}
+        """)
+        return button_area
 
 
 class BackupControlScreen(BaseScreen):
@@ -240,8 +229,9 @@ class BackupControlScreen(BaseScreen):
         main_layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         main_layout.setSpacing(SPACING_LG)
 
+        from theme.style_builder import UIStyleBuilder
         header = QLabel("Backup & Recovery Control Center")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header.setStyleSheet(UIStyleBuilder.get_label_style("title"))
         main_layout.addWidget(header)
 
         self._toolbar = QHBoxLayout()
@@ -299,7 +289,8 @@ class BackupControlScreen(BaseScreen):
         left_panel.setSpacing(SPACING_MD)
 
         backup_list_label = QLabel("Backup Records")
-        backup_list_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
+        from theme.style_builder import UIStyleBuilder
+        backup_list_label.setStyleSheet(UIStyleBuilder.get_label_style("section"))
         left_panel.addWidget(backup_list_label)
 
         columns = [
@@ -333,8 +324,9 @@ class BackupControlScreen(BaseScreen):
         right_panel = QVBoxLayout()
         right_panel.setSpacing(SPACING_MD)
 
-        email_label = QLabel("Email Delivery History")
-        email_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
+        email_label = QLabel("Email Notification Logs")
+        from theme.style_builder import UIStyleBuilder
+        email_label.setStyleSheet(UIStyleBuilder.get_label_style("section"))
         right_panel.addWidget(email_label)
 
         email_columns = [
@@ -359,22 +351,13 @@ class BackupControlScreen(BaseScreen):
         right_panel.addLayout(email_actions)
 
         health_label = QLabel("System Health")
-        health_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
+        from theme.style_builder import UIStyleBuilder
+        health_label.setStyleSheet(UIStyleBuilder.get_label_style("section"))
         right_panel.addWidget(health_label)
 
         self._health_text = QTextEdit()
         self._health_text.setReadOnly(True)
-        self._health_text.setStyleSheet(f"""
-            QTextEdit {{
-                background: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_MD}px;
-                font-family: 'Consolas', monospace;
-                font-size: {TEXT_BODY_SMALL}pt;
-            }}
-        """)
+        self._health_text.setStyleSheet(UIStyleBuilder.get_code_editor_style())
         right_panel.addWidget(self._health_text)
 
         tabs_layout.addLayout(right_panel, 1)
@@ -466,10 +449,7 @@ class BackupControlScreen(BaseScreen):
         self._retry_single_btn.setEnabled(False)
 
         for key in self._indicators:
-            self._indicators[key].findChildren(QLabel)[1].setText("UNAVAILABLE")
-            self._indicators[key].findChildren(QLabel)[1].setStyleSheet(
-                f"color: {COLOR_DANGER}; font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;"
-            )
+            self._indicators[key].update_status("UNAVAILABLE", "critical")
 
         while self._warnings_container.count():
             item = self._warnings_container.takeAt(0)
@@ -499,53 +479,32 @@ class BackupControlScreen(BaseScreen):
         sd = self._status_data
 
         backup_status = sd.get('backup_status', 'unknown')
-        self._indicators['backup_status']._value = backup_status.title()
-        self._indicators['backup_status'].findChildren(QLabel)[1].setText(backup_status.title())
-        self._indicators['backup_status'].findChildren(QLabel)[1].setStyleSheet(
-            f"color: {COLOR_SUCCESS if backup_status == 'healthy' else COLOR_WARNING if backup_status == 'warning' else COLOR_DANGER}; "
-            f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;"
-        )
+        self._indicators['backup_status'].update_status(backup_status.title(), backup_status)
 
         last_backup = sd.get('last_backup_time', '—')
         if last_backup and len(last_backup) > 19:
             last_backup = last_backup[:19]
-        self._indicators['last_backup_time'].findChildren(QLabel)[1].setText(last_backup or '—')
+        self._indicators['last_backup_time'].update_status(last_backup or '—', 'unknown')
 
         cert_score = sd.get('certification_score', 0)
-        self._indicators['certification_score'].findChildren(QLabel)[1].setText(str(cert_score))
+        self._indicators['certification_score'].update_status(str(cert_score), 'unknown')
 
         cert_status = sd.get('certification_status', 'UNKNOWN')
-        self._indicators['certification_status'].findChildren(QLabel)[1].setText(cert_status)
-        self._indicators['certification_status'].findChildren(QLabel)[1].setStyleSheet(
-            f"color: {COLOR_SUCCESS if cert_status == 'CERTIFIED' else COLOR_WARNING if cert_status == 'CONDITIONAL' else COLOR_DANGER}; "
-            f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;"
-        )
+        self._indicators['certification_status'].update_status(cert_status, cert_status)
 
         lock_active = sd.get('restore_lock_active', False)
         lock_text = 'LOCKED' if lock_active else 'UNLOCKED'
-        self._indicators['restore_lock'].findChildren(QLabel)[1].setText(lock_text)
-        self._indicators['restore_lock'].findChildren(QLabel)[1].setStyleSheet(
-            f"color: {COLOR_DANGER if lock_active else COLOR_SUCCESS}; "
-            f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;"
-        )
+        self._indicators['restore_lock'].update_status(lock_text, 'locked' if lock_active else 'unlocked')
 
         email_status = sd.get('email_status', 'disabled')
-        self._indicators['email_status'].findChildren(QLabel)[1].setText(email_status.title())
-        self._indicators['email_status'].findChildren(QLabel)[1].setStyleSheet(
-            f"color: {COLOR_SUCCESS if email_status == 'enabled' else COLOR_WARNING if email_status == 'pending' else COLOR_TEXT_MUTED}; "
-            f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;"
-        )
+        self._indicators['email_status'].update_status(email_status.title(), email_status)
 
         email_pending = sd.get('email_pending_count', 0)
-        self._indicators['email_pending'].findChildren(QLabel)[1].setText(str(email_pending))
+        self._indicators['email_pending'].update_status(str(email_pending), 'unknown')
 
         encryption = sd.get('encryption_configured', False)
         enc_text = 'CONFIGURED' if encryption else 'NOT SET'
-        self._indicators['encryption'].findChildren(QLabel)[1].setText(enc_text)
-        self._indicators['encryption'].findChildren(QLabel)[1].setStyleSheet(
-            f"color: {COLOR_SUCCESS if encryption else COLOR_WARNING}; "
-            f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;"
-        )
+        self._indicators['encryption'].update_status(enc_text, 'healthy' if encryption else 'warning')
 
     def _update_warnings(self):
         while self._warnings_container.count():

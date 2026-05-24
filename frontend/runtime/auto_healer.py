@@ -11,9 +11,7 @@ Continuous safe self-healing cycle:
 
 NEVER modifies business logic. NEVER changes backend behavior.
 """
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field
-from datetime import datetime
+from typing import Any, List, Optional
 
 from runtime.models import (
     Action, ActionPlan, ActionType, ActionSeverity,

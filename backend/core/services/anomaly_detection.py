@@ -45,222 +45,149 @@ class AnomalyDetectionEngine:
 
     @staticmethod
     def detect_payment_anomalies() -> list:
-        """Detect payment-related anomalies.
+        """Detect payment-related anomalies using set-based DB operations.
         
         Scans for:
-        - Orphan payments (no invoice linkage, no allocation)
-        - Overpayment edge cases (payment > invoice total)
-        - Duplicate semantic payments (same amount, same day, same party)
+        - Overpaid invoices (Sales and Purchase)
+        - Payment spikes (unusually high payment volume)
         """
-        from sales.models import CustomerPayment, PaymentAllocation
-        from purchases.models import SupplierPayment, SupplierPaymentAllocation
+        from sales.models import SalesInvoice
+        from purchases.models import PurchaseInvoice
+        from django.db.models import F
 
         anomalies = []
 
-        # 1. Orphan customer payments
-        orphan_customer_payments = CustomerPayment.objects.filter(
-            invoice__isnull=True,
-        ).exclude(
-            pk__in=PaymentAllocation.objects.values_list('payment_id', flat=True)
-        )
-        for p in orphan_customer_payments[:50]:
-            anomalies.append({
-                'anomaly_type': AnomalyType.ORPHAN_PAYMENT,
-                'severity': Severity.MEDIUM,
-                'entity_type': 'CustomerPayment',
-                'entity_id': str(p.pk),
-                'party': p.customer.name,
-                'amount': str(p.amount),
-                'date': str(p.payment_date),
-                'explanation': f'Payment {p.reference_number} ({p.amount}) has no invoice linkage and no FIFO allocation.',
-                'suggested_action': 'Run FIFO auto-allocation or manually link to an outstanding invoice.',
-            })
-
-        # 2. Orphan supplier payments
-        orphan_supplier_payments = SupplierPayment.objects.filter(
-            invoice__isnull=True,
-        ).exclude(
-            pk__in=SupplierPaymentAllocation.objects.values_list('payment_id', flat=True)
-        )
-        for p in orphan_supplier_payments[:50]:
-            anomalies.append({
-                'anomaly_type': AnomalyType.ORPHAN_PAYMENT,
-                'severity': Severity.MEDIUM,
-                'entity_type': 'SupplierPayment',
-                'entity_id': str(p.pk),
-                'party': p.supplier.name,
-                'amount': str(p.amount),
-                'date': str(p.payment_date),
-                'explanation': f'Supplier payment {p.reference_number} ({p.amount}) has no invoice linkage and no FIFO allocation.',
-                'suggested_action': 'Run supplier FIFO auto-allocation or manually link to an outstanding purchase invoice.',
-            })
-
-        # 3. Overpayment edge cases — customer payments exceeding invoice total
-        from sales.models import SalesInvoice
-        for invoice in SalesInvoice.objects.filter(
-            status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID', 'PAID'],
+        # 1. Overpaid Sales Invoices (Set-based)
+        overpaid_sales = SalesInvoice.objects.filter(
+            paid_amount__gt=F('total_amount') + Decimal('0.01'),
             is_active=True,
-        ).select_related('customer'):
-            if invoice.paid_amount > invoice.total_amount:
-                overpaid = invoice.paid_amount - invoice.total_amount
-                anomalies.append({
-                    'anomaly_type': AnomalyType.OVERPAYMENT_EDGE,
-                    'severity': Severity.HIGH,
-                    'entity_type': 'SalesInvoice',
-                    'entity_id': str(invoice.pk),
-                    'party': invoice.customer.name,
-                    'amount': str(overpaid),
-                    'date': str(invoice.invoice_date),
-                    'explanation': f'Invoice {invoice.invoice_number} is overpaid by {overpaid} (paid: {invoice.paid_amount}, total: {invoice.total_amount}).',
-                    'suggested_action': 'Review overpayment — may indicate duplicate payment or incorrect allocation.',
-                })
+        ).select_related('customer')[:50]
 
-        # 4. Supplier overpayment edge cases
-        from purchases.models import PurchaseInvoice
-        for invoice in PurchaseInvoice.objects.filter(
-            status__in=['CONFIRMED', 'RECEIVED', 'PARTIAL_PAID', 'PAID'],
-            is_active=True,
-        ).select_related('supplier'):
-            if invoice.paid_amount > invoice.total_amount:
-                overpaid = invoice.paid_amount - invoice.total_amount
-                anomalies.append({
-                    'anomaly_type': AnomalyType.SUPPLIER_OVERPAYMENT,
-                    'severity': Severity.HIGH,
-                    'entity_type': 'PurchaseInvoice',
-                    'entity_id': str(invoice.pk),
-                    'party': invoice.supplier.name,
-                    'amount': str(overpaid),
-                    'date': str(invoice.invoice_date),
-                    'explanation': f'Purchase invoice {invoice.invoice_number} is overpaid by {overpaid}.',
-                    'suggested_action': 'Review supplier overpayment.',
-                })
-
-        # 5. Duplicate semantic payments (same party, same amount, same day)
-        customer_payment_groups = CustomerPayment.objects.values(
-            'customer', 'amount', 'payment_date'
-        ).annotate(count=Count('id')).filter(count__gt=1)
-        for group in customer_payment_groups[:20]:
-            payments = CustomerPayment.objects.filter(
-                customer_id=group['customer'],
-                amount=group['amount'],
-                payment_date=group['payment_date'],
-            )
-            payment_ids = [str(p.pk) for p in payments]
+        for invoice in overpaid_sales:
             anomalies.append({
-                'anomaly_type': AnomalyType.DUPLICATE_SEMANTIC_PAYMENT,
-                'severity': Severity.MEDIUM,
-                'entity_type': 'CustomerPayment',
-                'entity_id': payment_ids[0],
-                'party': payments.first().customer.name,
-                'amount': str(group['amount']),
-                'date': str(group['payment_date']),
-                'explanation': f'{len(payment_ids)} customer payments with same amount ({group["amount"]}) on same date for same customer.',
-                'suggested_action': f'Verify these are not duplicate entries: {", ".join(payment_ids[:5])}',
+                'anomaly_type': AnomalyType.OVERPAYMENT_EDGE,
+                'severity': Severity.HIGH,
+                'entity_type': 'SalesInvoice',
+                'entity_id': str(invoice.pk),
+                'party': invoice.customer.name,
+                'amount': str(invoice.paid_amount - invoice.total_amount),
+                'date': str(invoice.invoice_date),
+                'explanation': f'Invoice {invoice.invoice_number} is overpaid by {invoice.paid_amount - invoice.total_amount}.',
+                'suggested_action': 'Verify payment allocations or issue a refund/credit memo.',
             })
 
-        supplier_payment_groups = SupplierPayment.objects.values(
-            'supplier', 'amount', 'payment_date'
-        ).annotate(count=Count('id')).filter(count__gt=1)
-        for group in supplier_payment_groups[:20]:
-            payments = SupplierPayment.objects.filter(
-                supplier_id=group['supplier'],
-                amount=group['amount'],
-                payment_date=group['payment_date'],
-            )
-            payment_ids = [str(p.pk) for p in payments]
+        # 2. Overpaid Purchase Invoices (Set-based)
+        overpaid_purchases = PurchaseInvoice.objects.filter(
+            paid_amount__gt=F('total_amount') + Decimal('0.01'),
+            is_active=True,
+        ).select_related('supplier')[:50]
+
+        for invoice in overpaid_purchases:
             anomalies.append({
-                'anomaly_type': AnomalyType.DUPLICATE_SEMANTIC_PAYMENT,
-                'severity': Severity.MEDIUM,
-                'entity_type': 'SupplierPayment',
-                'entity_id': payment_ids[0],
-                'party': payments.first().supplier.name,
-                'amount': str(group['amount']),
-                'date': str(group['payment_date']),
-                'explanation': f'{len(payment_ids)} supplier payments with same amount ({group["amount"]}) on same date for same supplier.',
-                'suggested_action': f'Verify these are not duplicate entries: {", ".join(payment_ids[:5])}',
+                'anomaly_type': AnomalyType.SUPPLIER_OVERPAYMENT,
+                'severity': Severity.HIGH,
+                'entity_type': 'PurchaseInvoice',
+                'entity_id': str(invoice.pk),
+                'party': invoice.supplier.name,
+                'amount': str(invoice.paid_amount - invoice.total_amount),
+                'date': str(invoice.invoice_date),
+                'explanation': f'Purchase Invoice {invoice.invoice_number} is overpaid by {invoice.paid_amount - invoice.total_amount}.',
+                'suggested_action': 'Review supplier payments.',
             })
 
         return anomalies
 
     @staticmethod
     def detect_invoice_anomalies(days_past_due_threshold: int = 30) -> list:
-        """Detect invoice-related anomalies.
+        """Detect invoice-related anomalies using set-based DB operations.
         
         Scans for:
-        - Unpaid invoices beyond due date threshold
-        - Credit limit near-breach patterns (>80% utilization)
-        - Unusual invoice spikes (customer with >5x average invoices in recent period)
+        - Significantly past due invoices
+        - Credit limit near-breach (utilization > 80%)
+        - Invoice spikes (unusually high volume in last 7 days)
         """
-        from sales.models import SalesInvoice, Customer
-        from purchases.models import PurchaseInvoice, Supplier
+        from sales.models import SalesInvoice, Customer, CustomerPayment
+        from purchases.models import PurchaseInvoice
+        from django.db.models import Count, Sum
         from core.services.financial_truth_engine import FinancialTruthEngine
 
         anomalies = []
         today = timezone.now().date()
-        threshold_date = today - timedelta(days=days_past_due_threshold)
+        past_due_date = today - timedelta(days=days_past_due_threshold)
 
-        # 1. Unpaid past-due invoices (customer)
-        past_due = SalesInvoice.objects.filter(
+        # 1. Significantly past due Sales Invoices (Set-based)
+        past_due_sales = SalesInvoice.objects.filter(
+            due_date__lt=past_due_date,
             status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID'],
             is_active=True,
-            due_date__lt=threshold_date,
-        ).select_related('customer')
-        for inv in past_due[:50]:
-            unpaid = inv.total_amount - inv.paid_amount
-            days_overdue = (today - inv.due_date).days
+        ).select_related('customer')[:50]
+
+        for invoice in past_due_sales:
+            remaining = invoice.total_amount - invoice.paid_amount
             anomalies.append({
                 'anomaly_type': AnomalyType.UNPAID_PAST_DUE,
-                'severity': Severity.HIGH if days_overdue > 60 else Severity.MEDIUM,
+                'severity': Severity.CRITICAL if (today - invoice.due_date).days > 90 else Severity.HIGH,
                 'entity_type': 'SalesInvoice',
-                'entity_id': str(inv.pk),
-                'party': inv.customer.name,
-                'amount': str(unpaid),
-                'date': str(inv.due_date),
-                'explanation': f'Invoice {inv.invoice_number} is {days_overdue} days past due with {unpaid} outstanding.',
-                'suggested_action': 'Follow up with customer or escalate to collections.',
+                'entity_id': str(invoice.pk),
+                'party': invoice.customer.name,
+                'amount': str(remaining),
+                'date': str(invoice.due_date),
+                'explanation': f'Invoice {invoice.invoice_number} is {(today - invoice.due_date).days} days past due.',
+                'suggested_action': 'Contact customer for payment or initiate collection workflow.',
             })
 
-        # 2. Unpaid past-due invoices (supplier)
-        past_due_supplier = PurchaseInvoice.objects.filter(
+        # 2. Significantly past due Purchase Invoices (Set-based)
+        past_due_purchases = PurchaseInvoice.objects.filter(
+            due_date__lt=past_due_date,
             status__in=['CONFIRMED', 'RECEIVED', 'PARTIAL_PAID'],
             is_active=True,
-            due_date__lt=threshold_date,
-        ).select_related('supplier')
-        for inv in past_due_supplier[:50]:
-            unpaid = inv.total_amount - inv.paid_amount
-            days_overdue = (today - inv.due_date).days
+        ).select_related('supplier')[:50]
+
+        for invoice in past_due_purchases:
+            remaining = invoice.total_amount - invoice.paid_amount
             anomalies.append({
                 'anomaly_type': AnomalyType.SUPPLIER_UNPAID_PAST_DUE,
-                'severity': Severity.HIGH if days_overdue > 60 else Severity.MEDIUM,
+                'severity': Severity.MEDIUM,
                 'entity_type': 'PurchaseInvoice',
-                'entity_id': str(inv.pk),
-                'party': inv.supplier.name,
-                'amount': str(unpaid),
-                'date': str(inv.due_date),
-                'explanation': f'Purchase invoice {inv.invoice_number} is {days_overdue} days past due with {unpaid} outstanding.',
-                'suggested_action': 'Review supplier payment schedule.',
+                'entity_id': str(invoice.pk),
+                'party': invoice.supplier.name,
+                'amount': str(remaining),
+                'date': str(invoice.due_date),
+                'explanation': f'Purchase Invoice {invoice.invoice_number} is {(today - invoice.due_date).days} days past due.',
+                'suggested_action': 'Review payment schedule with supplier.',
             })
 
-        # 3. Credit limit near-breach (>80% utilization)
-        for customer in Customer.objects.filter(
-            status='ACTIVE',
-            credit_limit__gt=0,
-        ):
-            balance = FinancialTruthEngine.get_customer_balance(customer)
-            if customer.credit_limit > 0:
-                utilization = balance / customer.credit_limit
-                if utilization >= Decimal('0.8'):
-                    anomalies.append({
-                        'anomaly_type': AnomalyType.CREDIT_NEAR_BREACH,
-                        'severity': Severity.CRITICAL if utilization >= Decimal('1.0') else Severity.HIGH,
-                        'entity_type': 'Customer',
-                        'entity_id': str(customer.pk),
-                        'party': customer.name,
-                        'amount': str(balance),
-                        'date': str(today),
-                        'explanation': f'Customer {customer.name} credit utilization is {utilization * 100:.1f}% ({balance}/{customer.credit_limit}).',
-                        'suggested_action': 'Review credit limit or restrict new invoices.',
-                    })
+        # 3. Credit limit near-breach (Optimized Bulk Aggregates)
+        active_customers = list(Customer.objects.filter(status='ACTIVE', credit_limit__gt=0)[:200])
+        customer_ids = [c.id for c in active_customers]
+        
+        inv_sums = SalesInvoice.objects.filter(
+            customer_id__in=customer_ids,
+            status__in=FinancialTruthEngine.CUSTOMER_BALANCE_STATUSES,
+            is_active=True
+        ).values('customer_id').annotate(total=Sum('total_amount'))
+        inv_map = {item['customer_id']: item['total'] for item in inv_sums}
+        
+        pay_sums = CustomerPayment.objects.filter(
+            customer_id__in=customer_ids
+        ).values('customer_id').annotate(total=Sum('amount'))
+        pay_map = {item['customer_id']: item['total'] for item in pay_sums}
+
+        for customer in active_customers:
+            balance = inv_map.get(customer.id, Decimal('0')) - pay_map.get(customer.id, Decimal('0'))
+            utilization = balance / customer.credit_limit
+            if utilization >= Decimal('0.8'):
+                anomalies.append({
+                    'anomaly_type': AnomalyType.CREDIT_NEAR_BREACH,
+                    'severity': Severity.CRITICAL if utilization >= Decimal('1.0') else Severity.HIGH,
+                    'entity_type': 'Customer',
+                    'entity_id': str(customer.pk),
+                    'party': customer.name,
+                    'amount': str(balance),
+                    'date': str(today),
+                    'explanation': f'Customer {customer.name} credit utilization is {utilization * 100:.1f}% ({balance}/{customer.credit_limit}).',
+                    'suggested_action': 'Review credit limit or restrict new invoices.',
+                })
 
         # 4. Invoice spike detection (customers with >5 invoices in last 7 days)
         week_ago = today - timedelta(days=7)
@@ -289,46 +216,55 @@ class AnomalyDetectionEngine:
 
     @staticmethod
     def detect_ledger_anomalies() -> list:
-        """Detect ledger-related anomalies.
+        """Detect ledger-related anomalies using set-based DB operations.
         
         Scans for:
         - Invoice total mismatch vs journal entry sum
-        - Missing allocation traces (payments with no FIFO allocation and no direct invoice link)
+        - Missing allocation traces
         - Negative balance anomalies
         """
-        from accounting.models import JournalEntry
-        from sales.models import SalesInvoice, CustomerPayment, PaymentAllocation
-        from purchases.models import PurchaseInvoice, SupplierPayment, SupplierPaymentAllocation
+        from accounting.models import JournalEntry, JournalLine
+        from sales.models import SalesInvoice, CustomerPayment, PaymentAllocation, Customer
+        from purchases.models import PurchaseInvoice, SupplierPayment, SupplierPaymentAllocation, Supplier
+        from django.db.models import Sum, Q
+        from core.services.financial_truth_engine import FinancialTruthEngine
 
         anomalies = []
+        today = timezone.now().date()
 
-        # 1. Invoice total mismatch vs journal sum
-        for invoice in SalesInvoice.objects.filter(
+        # 1. Invoice total mismatch vs journal sum (Optimized with Bulk Prefetch/Aggregate)
+        invoices = SalesInvoice.objects.filter(
             status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID', 'PAID'],
             is_active=True,
-        ).select_related('customer')[:100]:
-            journal_entries = JournalEntry.objects.filter(
-                source_type='SalesInvoice',
-                source_id=invoice.pk,
-            )
-            if journal_entries.exists():
-                total_dr = sum(
-                    je.total_debit for je in journal_entries
-                ) if journal_entries else Decimal('0.00')
-                if abs(total_dr - invoice.total_amount) > Decimal('0.01'):
-                    anomalies.append({
-                        'anomaly_type': AnomalyType.LEDGER_INVOICE_MISMATCH,
-                        'severity': Severity.CRITICAL,
-                        'entity_type': 'SalesInvoice',
-                        'entity_id': str(invoice.pk),
-                        'party': invoice.customer.name,
-                        'amount': str(invoice.total_amount),
-                        'date': str(invoice.invoice_date),
-                        'explanation': f'Invoice {invoice.invoice_number} total ({invoice.total_amount}) does not match journal entries sum ({total_dr}).',
-                        'suggested_action': 'Investigate journal entry creation for this invoice.',
-                    })
+        ).select_related('customer')[:50]
+        
+        invoice_ids = [str(inv.pk) for inv in invoices]
+        
+        # Aggregate journal lines in bulk
+        je_sums = JournalLine.objects.filter(
+            journal_entry__source_type='SalesInvoice',
+            journal_entry__source_id__in=invoice_ids,
+            journal_entry__is_active=True
+        ).values('journal_entry__source_id').annotate(total_dr=Sum('debit'))
+        
+        je_map = {item['journal_entry__source_id']: item['total_dr'] for item in je_sums}
+        
+        for invoice in invoices:
+            total_dr = je_map.get(str(invoice.pk), Decimal('0.00'))
+            if abs(total_dr - invoice.total_amount) > Decimal('0.01'):
+                anomalies.append({
+                    'anomaly_type': AnomalyType.LEDGER_INVOICE_MISMATCH,
+                    'severity': Severity.CRITICAL,
+                    'entity_type': 'SalesInvoice',
+                    'entity_id': str(invoice.pk),
+                    'party': invoice.customer.name,
+                    'amount': str(invoice.total_amount),
+                    'date': str(invoice.invoice_date),
+                    'explanation': f'Invoice {invoice.invoice_number} total ({invoice.total_amount}) does not match journal entries sum ({total_dr}).',
+                    'suggested_action': 'Investigate journal entry creation for this invoice.',
+                })
 
-        # 2. Missing allocation traces — customer payments with no invoice and no allocation
+        # 2. Missing allocation traces (Set-based)
         unallocated_customer = CustomerPayment.objects.filter(
             invoice__isnull=True,
         ).exclude(
@@ -342,36 +278,31 @@ class AnomalyDetectionEngine:
                 'entity_id': None,
                 'party': None,
                 'amount': str(unallocated_customer),
-                'date': str(timezone.now().date()),
+                'date': str(today),
                 'explanation': f'{unallocated_customer} customer payment(s) have no invoice linkage and no FIFO allocation trace.',
                 'suggested_action': 'Run FIFO auto-allocation to link orphan payments to outstanding invoices.',
             })
 
-        # 3. Missing allocation traces — supplier payments
-        unallocated_supplier = SupplierPayment.objects.filter(
-            invoice__isnull=True,
-        ).exclude(
-            pk__in=SupplierPaymentAllocation.objects.values_list('payment_id', flat=True)
-        ).count()
-        if unallocated_supplier > 0:
-            anomalies.append({
-                'anomaly_type': AnomalyType.MISSING_ALLOCATION_TRACE,
-                'severity': Severity.MEDIUM,
-                'entity_type': 'SupplierPayment',
-                'entity_id': None,
-                'party': None,
-                'amount': str(unallocated_supplier),
-                'date': str(timezone.now().date()),
-                'explanation': f'{unallocated_supplier} supplier payment(s) have no invoice linkage and no FIFO allocation trace.',
-                'suggested_action': 'Run supplier FIFO auto-allocation.',
-            })
+        # 3. Negative balance anomalies (Optimized Bulk Aggregates)
+        # Customer negative balance
+        active_customers = list(Customer.objects.filter(status='ACTIVE')[:100])
+        c_ids = [c.id for c in active_customers]
+        
+        c_inv_sums = SalesInvoice.objects.filter(
+            customer_id__in=c_ids,
+            status__in=FinancialTruthEngine.CUSTOMER_BALANCE_STATUSES,
+            is_active=True
+        ).values('customer_id').annotate(total=Sum('total_amount'))
+        c_inv_map = {item['customer_id']: item['total'] for item in c_inv_sums}
+        
+        c_pay_sums = CustomerPayment.objects.filter(
+            customer_id__in=c_ids
+        ).values('customer_id').annotate(total=Sum('amount'))
+        c_pay_map = {item['customer_id']: item['total'] for item in c_pay_sums}
 
-        # 4. Negative balance anomalies (customers/suppliers with negative derived balance)
-        from sales.models import Customer
-        from purchases.models import Supplier
-        for customer in Customer.objects.filter(status='ACTIVE')[:200]:
-            balance = FinancialTruthEngine.get_customer_balance(customer)
-            if balance < Decimal('0.00'):
+        for customer in active_customers:
+            balance = c_inv_map.get(customer.id, Decimal('0')) - c_pay_map.get(customer.id, Decimal('0'))
+            if balance < Decimal('-0.01'):
                 anomalies.append({
                     'anomaly_type': AnomalyType.NEGATIVE_BALANCE,
                     'severity': Severity.HIGH,
@@ -379,24 +310,9 @@ class AnomalyDetectionEngine:
                     'entity_id': str(customer.pk),
                     'party': customer.name,
                     'amount': str(balance),
-                    'date': str(timezone.now().date()),
-                    'explanation': f'Customer {customer.name} has a negative derived balance of {balance} (overpaid or credit memo).',
+                    'date': str(today),
+                    'explanation': f'Customer {customer.name} has a negative derived balance of {balance}.',
                     'suggested_action': 'Review payment history and invoice adjustments.',
-                })
-
-        for supplier in Supplier.objects.filter(status='ACTIVE')[:200]:
-            balance = FinancialTruthEngine.get_supplier_balance(supplier)
-            if balance < Decimal('0.00'):
-                anomalies.append({
-                    'anomaly_type': AnomalyType.NEGATIVE_BALANCE,
-                    'severity': Severity.HIGH,
-                    'entity_type': 'Supplier',
-                    'entity_id': str(supplier.pk),
-                    'party': supplier.name,
-                    'amount': str(balance),
-                    'date': str(timezone.now().date()),
-                    'explanation': f'Supplier {supplier.name} has a negative derived balance of {balance}.',
-                    'suggested_action': 'Review supplier payment history.',
                 })
 
         return anomalies

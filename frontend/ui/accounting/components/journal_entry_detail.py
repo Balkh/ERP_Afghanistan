@@ -1,13 +1,32 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
                                QLabel, QTableWidget, QTableWidgetItem, QHeaderView,
-                               QAbstractItemView, QGroupBox, QFrame, QPushButton)
+                               QGroupBox, QFrame)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY, TEXT_LABEL, TEXT_SECTION_TITLE)
-from ui.constants import (TEXT_LABEL, TEXT_BODY, TEXT_SECTION_TITLE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT)
-from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.constants import (
+    SPACING_XS,
+    SPACING_SM,
+    SPACING_MD,
+    MARGIN_PAGE,
+    BORDER_RADIUS_SM,
+    BORDER_RADIUS_LG,
+    TEXT_BODY,
+    TEXT_LABEL,
+    TEXT_SECTION_TITLE,
+    COLOR_BG_MAIN,
+    COLOR_BG_SURFACE,
+    COLOR_BG_ELEVATED,
+    COLOR_BORDER,
+    COLOR_TEXT_PRIMARY,
+    COLOR_PRIMARY,
+    COLOR_SUCCESS,
+    COLOR_WARNING,
+    COLOR_DANGER,
+    COLOR_TABLE_BORDER_LIGHT,
+    COLOR_TABLE_HEADER_BG_LIGHT,
+)
 
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 class JournalEntryDetailDialog(QDialog):
     """Dialog to view a journal entry detail with its lines."""
@@ -24,7 +43,7 @@ class JournalEntryDetailDialog(QDialog):
     def setup_ui(self):
         self.setMinimumWidth(850)
         self.setMinimumHeight(600)
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QDialog {{ background-color: {COLOR_BG_MAIN}; }}
             QGroupBox {{ 
                 font-weight: bold; 
@@ -93,7 +112,7 @@ class JournalEntryDetailDialog(QDialog):
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         
-        self.lines_table.setStyleSheet(f"""
+        self.lines_table.setStyleSheet("""
             QTableWidget {{
                 gridline-color: {COLOR_TABLE_BORDER_LIGHT};
                 background-color: {COLOR_BG_SURFACE};

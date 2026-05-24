@@ -1,8 +1,7 @@
 """Phase 20: Returns Explainability UI - explains why returns were processed."""
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QComboBox, QDateEdit, QGroupBox, QMessageBox, QApplication,
-    QTextEdit,
+    QLabel, QGroupBox, QTextEdit,
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
@@ -10,28 +9,30 @@ from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE,
-    TEXT_PAGE_TITLE, TEXT_BODY, TEXT_LABEL,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-    COLOR_BG_ELEVATED, COLOR_BG_SURFACE, COLOR_BORDER,
-    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+    SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
+    TEXT_LABEL, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
+    COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    COLOR_BG_SURFACE, COLOR_BORDER, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.screens.base_screen import BaseScreen
 
 
-class ReturnsExplainabilityScreen(QWidget):
+class ReturnsExplainabilityScreen(BaseScreen):
     """Returns explainability screen - shows why returns were processed with context."""
 
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="returns_explainability")
         self.api_client = api_client or APIClient()
         self.returns = []
         self._is_loading = False
         self.setup_ui()
         self.load_returns()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — we load in __init__."""
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -106,7 +107,7 @@ class ReturnsExplainabilityScreen(QWidget):
 
         self.explanation_text = QTextEdit()
         self.explanation_text.setReadOnly(True)
-        self.explanation_text.setStyleSheet(f"""
+        self.explanation_text.setStyleSheet("""
             QTextEdit {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER};

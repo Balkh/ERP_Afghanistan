@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Callable, Optional
 from ui.constants import TEXT_BODY
 
 
@@ -78,6 +78,7 @@ class LazyScreenManager:
         layout.setAlignment(Qt.AlignCenter)
         label = QLabel(text)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet(f"color: #6c7086; font-size: {TEXT_BODY}px;")
+        from ui.constants import COLOR_TEXT_MUTED
+        label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px;")
         layout.addWidget(label)
         return w

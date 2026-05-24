@@ -1,35 +1,35 @@
 """Phase 20: Unified Financial Operations Console - cohesive dashboard for all financial operations."""
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QScrollArea, QFrame, QMessageBox, QApplication,
+    QLabel, QScrollArea, QFrame,
 )
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
 
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-    TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_LABEL,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-    COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_CARD,
-    COLOR_BORDER, COLOR_BORDER_LIGHT,
-    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+    SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY, COLOR_TEXT_PRIMARY,
+    COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
+    COLOR_INFO, COLOR_BG_CARD, COLOR_BORDER,
+    BORDER_RADIUS_LG,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.components.kpi_cards import KPICard, MiniMetricCard, SectionHeader
+from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.screens.base_screen import BaseScreen
 
 
-class FinancialOperationsConsole(QWidget):
+class FinancialOperationsConsole(BaseScreen):
     """Unified financial operations console - single pane of glass for all financial operations."""
 
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="operations_console")
         self.api_client = api_client or APIClient()
         self._is_loading = False
         self.setup_ui()
         self.load_dashboard()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — we load in __init__."""
 
     def setup_ui(self):
         main_layout = QVBoxLayout(self)
@@ -94,7 +94,7 @@ class FinancialOperationsConsole(QWidget):
         """Create a standard card with title and content."""
         card = QFrame()
         card.setObjectName("financeCard")
-        card.setStyleSheet(f"""
+        card.setStyleSheet("""
             QFrame#financeCard {{
                 background-color: {COLOR_BG_CARD};
                 border: 1px solid {COLOR_BORDER};

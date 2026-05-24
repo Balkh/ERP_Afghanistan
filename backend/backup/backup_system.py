@@ -277,7 +277,7 @@ class BackupManager:
             db_name = settings.DATABASES['default']['NAME']
             if db_name and os.path.exists(db_name):
                 self.config['database']['path'] = str(db_name)
-        except Exception:
+        except (ImportError, KeyError, AttributeError, OSError):
             pass
     
     def _setup_logging(self):
@@ -666,8 +666,8 @@ class BackupManager:
                 try:
                     with open(metadata_path, 'r') as f:
                         metadata = json.load(f)
-                    backups.append(metadata)
-                except:
+                        backups.append(metadata)
+                except (json.JSONDecodeError, OSError):
                     pass
             else:
                 # Create basic info from filename
@@ -721,7 +721,7 @@ class BackupManager:
                 if backup_date < cutoff_date:
                     backup_path = self.backup_dir / backup['filename']
                     self.delete_backup(str(backup_path))
-            except:
+            except (ValueError, TypeError):
                 pass
         
         # Check free space

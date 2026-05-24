@@ -1,8 +1,6 @@
 """Validation utilities for ERP forms."""
 import re
 from PySide6.QtGui import QValidator
-from PySide6.QtCore import Qt, QRegularExpression
-from PySide6.QtGui import QRegularExpressionValidator
 
 
 class ValidationRules:

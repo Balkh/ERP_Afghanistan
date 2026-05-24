@@ -4,23 +4,20 @@ Phase 5B.7 — Workflow Execution Screen.
 Step-by-step Decision → Approval → Event → Truth → Observability → Intelligence flow.
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QFrame, QTextEdit, QLineEdit,
-                                 QComboBox, QGroupBox, QSplitter, QTableWidget,
-                                 QTableWidgetItem, QHeaderView, QMessageBox)
-from PySide6.QtCore import Qt
+                                 QPushButton, QTextEdit, QLineEdit, QGroupBox)
 from PySide6.QtGui import QFont
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 
 from api.client import APIClient
 from api.governance_client import GovernanceAPIClient
 from api.truth_client import TruthAPIClient
 from api.observability_client import ObservabilityAPIClient
 from ui.control_tower.workflow_engine import get_router
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XXL,
-    TEXT_BODY, TEXT_DISPLAY, TEXT_SECTION_TITLE,
-                           MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_SUCCESS,
+                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD,
+                           SPACING_SM, SPACING_XXL, TEXT_BODY, TEXT_DISPLAY, TEXT_SECTION_TITLE, MARGIN_PAGE,
+    BORDER_RADIUS_MD, BORDER_RADIUS_SM)
 from ui.constants import TEXT_SECTION_TITLE, TEXT_DISPLAY, TEXT_BODY
 
 
@@ -65,7 +62,7 @@ class WorkflowExecutionScreen(QWidget):
         # Main content
         self.content = QTextEdit()
         self.content.setReadOnly(True)
-        self.content.setStyleSheet(f"""
+        self.content.setStyleSheet("""
             QTextEdit {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
@@ -75,7 +72,7 @@ class WorkflowExecutionScreen(QWidget):
 
         # Action area
         action_group = QGroupBox("Action")
-        action_group.setStyleSheet(f"""
+        action_group.setStyleSheet("""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-weight: bold;
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; margin-top: 8px; padding-top: 16px; }}
         """)
@@ -83,7 +80,7 @@ class WorkflowExecutionScreen(QWidget):
 
         self.action_input = QLineEdit()
         self.action_input.setPlaceholderText("Enter action type (e.g., inventory_dispatch)...")
-        self.action_input.setStyleSheet(f"""
+        self.action_input.setStyleSheet("""
             QLineEdit {{ background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; }}
         """)
@@ -91,27 +88,15 @@ class WorkflowExecutionScreen(QWidget):
 
         btn_layout = QHBoxLayout()
 
-        self.run_btn = QPushButton("▶ Run Step")
-        self.run_btn.setStyleSheet(f"""
-            QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px {SPACING_XXL}px; font-weight: bold; }}
-        """)
+        self.run_btn = EnterpriseButton("▶ Run Step", variant=ButtonVariant.PRIMARY)
         self.run_btn.clicked.connect(self._run_step)
         btn_layout.addWidget(self.run_btn)
 
-        self.next_btn = QPushButton("→ Next Step")
-        self.next_btn.setStyleSheet(f"""
-            QPushButton {{ background: {COLOR_SUCCESS}; color: white; border: none;
-            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px {SPACING_XXL}px; font-weight: bold; }}
-        """)
+        self.next_btn = EnterpriseButton("→ Next Step", variant=ButtonVariant.SUCCESS)
         self.next_btn.clicked.connect(self._next_step)
         btn_layout.addWidget(self.next_btn)
 
-        self.back_btn = QPushButton("← Back")
-        self.back_btn.setStyleSheet(f"""
-            QPushButton {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px {SPACING_XXL}px; }}
-        """)
+        self.back_btn = EnterpriseButton("← Back", variant=ButtonVariant.SECONDARY)
         self.back_btn.clicked.connect(self._prev_step)
         btn_layout.addWidget(self.back_btn)
 

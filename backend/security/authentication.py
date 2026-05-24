@@ -154,6 +154,7 @@ def verify_jwt_token(token, expected_type=None):
 # The database store is the source of truth.
 
 _token_blacklist: set = set()
+_blacklist_check_counter: int = 0
 
 
 def blacklist_token(jti: str, exp: datetime.datetime = None) -> None:
@@ -166,8 +167,35 @@ def blacklist_token(jti: str, exp: datetime.datetime = None) -> None:
         pass  # Graceful degradation — in-memory cache still works
 
 
+def _cleanup_token_blacklist() -> None:
+    """Remove expired entries from the in-memory blacklist cache.
+    
+    Reloads the in-memory set from the DB to drop expired tokens.
+    Called probabilistically from _is_token_blacklisted to avoid
+    unbounded memory growth during long-running sessions.
+    """
+    from django.utils import timezone
+    now = timezone.now()
+    try:
+        from .models import RevokedToken
+        active = set(
+            RevokedToken.objects.filter(
+                expires_at__gt=now
+            ).values_list('jti', flat=True)
+        )
+        _token_blacklist.clear()
+        _token_blacklist.update(active)
+    except Exception:
+        pass
+
+
 def _is_token_blacklisted(jti: str) -> bool:
     """Check if a token's jti is blacklisted (cache first, then DB)."""
+    global _blacklist_check_counter
+    _blacklist_check_counter += 1
+    if _blacklist_check_counter >= 100:
+        _blacklist_check_counter = 0
+        _cleanup_token_blacklist()
     if jti in _token_blacklist:
         return True
     try:

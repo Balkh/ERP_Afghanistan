@@ -3,7 +3,7 @@ Operations API Views.
 Exposes operational metrics and health data.
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from core.operations.health import HealthMonitor
 from core.operations.financial import FinancialIntegrityMonitor
@@ -21,42 +21,42 @@ from core.operations.decision_engine import get_active_decisions, get_decision_s
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def health_check(request):
     """Full health check."""
     return Response(HealthMonitor.get_full_health())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def health_database(request):
     """Database health check."""
     return Response(HealthMonitor.check_database())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def health_system(request):
     """System resources health check."""
     return Response(HealthMonitor.check_system())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def financial_integrity(request):
     """Financial integrity audit."""
     return Response(FinancialIntegrityMonitor.run_full_audit())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def inventory_integrity(request):
     """Inventory integrity audit."""
     return Response(InventoryIntegrityMonitor.run_full_audit())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def alerts_list(request):
     """Get recent alerts."""
     hours = int(request.query_params.get('hours', 24))
@@ -87,7 +87,7 @@ def alerts_list(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def alerts_clear(request):
     """Clear all alerts."""
     AlertManager.clear_alerts()
@@ -95,14 +95,14 @@ def alerts_clear(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def postgres_readiness(request):
     """PostgreSQL migration readiness audit."""
     return Response(PostgresReadinessAudit.run_full_audit())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_summary(request):
     """Complete observability summary."""
     return Response({
@@ -115,7 +115,7 @@ def observability_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_bad_requests(request):
     """Get bad request metrics."""
     hours = int(request.query_params.get('hours', 24))
@@ -130,7 +130,7 @@ def api_bad_requests(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_slow_requests(request):
     """Get slow request metrics."""
     hours = int(request.query_params.get('hours', 24))
@@ -144,7 +144,7 @@ def api_slow_requests(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def api_observability_detail(request):
     """Get detailed API observability summary."""
     hours = int(request.query_params.get('hours', 24))
@@ -152,42 +152,42 @@ def api_observability_detail(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def scalability_audit(request):
     """Database scalability audit."""
     return Response(run_scalability_audit())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def database_record_counts(request):
     """Get record counts for major tables."""
     return Response(DatabaseScaler.get_record_counts())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def concurrency_safety(request):
     """Concurrency safety check."""
     return Response(run_concurrency_safety_check())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def data_integrity_check(request):
     """Run full data integrity check."""
     return Response(DataIntegrityRunner.run_full_integrity_check())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def data_integrity_summary(request):
     """Get data integrity summary."""
     return Response(DataIntegrityRunner.get_integrity_summary())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_dashboard(request):
     """Get complete observability dashboard."""
     hours = int(request.query_params.get('hours', 24))
@@ -195,7 +195,7 @@ def observability_dashboard(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def performance_trends(request):
     """Get performance trend analysis."""
     hours = int(request.query_params.get('hours', 24))
@@ -206,7 +206,7 @@ def performance_trends(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def anomaly_clusters(request):
     """Get anomaly clustering data."""
     hours = int(request.query_params.get('hours', 24))
@@ -218,14 +218,14 @@ def anomaly_clusters(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def guardrail_status(request):
     """Get comprehensive guardrail status."""
     return Response(get_guardrail_status())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def sampling_status(request):
     """Get sampling strategy status."""
     policy = AdaptiveSamplingSystem.get_sampling_policy()
@@ -237,7 +237,7 @@ def sampling_status(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def stability_status(request):
     """Get system stability status."""
     ConfigurationDriftDetector.capture_snapshot()
@@ -245,21 +245,21 @@ def stability_status(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def decisions_list(request):
     """Get all active decisions from the Decision Intelligence Engine."""
     return Response(get_decision_summary())
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def decisions_detail(request):
     """Get all active decisions with full detail."""
     return Response({'decisions': [d.to_dict() for d in get_active_decisions()]})
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def decisions_evaluate_event(request):
     """Evaluate a specific event against decision rules."""
     event_type = request.data.get('event_type', '')

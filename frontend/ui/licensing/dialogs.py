@@ -3,8 +3,7 @@ Licensing dialogs for Pharmacy ERP.
 Contains reusable dialogs for license activation, status, and warnings.
 """
 
-from PySide6.QtWidgets import QMessageBox, QApplication
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QMessageBox
 
 
 def show_activation_success(parent=None):
@@ -99,7 +98,7 @@ def show_license_device_mismatch(expected_device_id, actual_device_id, parent=No
     QMessageBox.warning(
         parent,
         "License Device Mismatch",
-        f"The license is not bound to this device.\n\n"
+        "The license is not bound to this device.\n\n"
         f"Expected Device ID: {expected_device_id}\n"
         f"Actual Device ID: {actual_device_id}\n\n"
         "Please obtain a license for this device.",

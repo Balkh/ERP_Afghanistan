@@ -7,7 +7,7 @@ Thin REST endpoints for:
 - Approval gateway (workflows, signatures, escalation)
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from typing import Any, Dict, List, Optional
 
@@ -33,7 +33,7 @@ def _err(message: str, code: str = "GOV_001", status: int = 400) -> Response:
 # ─── Decision Pipeline ───
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_intercept(request):
     """Intercept an action through the governance pipeline."""
     action_type = request.data.get('action_type', '')
@@ -55,7 +55,7 @@ def governance_intercept(request):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_evaluate(request):
     """Run full governance pipeline: intercept → evaluate → classify → decide."""
     action_type = request.data.get('action_type', '')
@@ -81,7 +81,7 @@ def governance_evaluate(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_action_types(request):
     """List all supported action types."""
     return _ok(get_supported_action_types())
@@ -90,7 +90,7 @@ def governance_action_types(request):
 # ─── Simulation Sandbox ───
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_simulate(request):
     """Run a simulation: plan → model → impact."""
     decision_result = request.data.get('decision_result', {})
@@ -124,7 +124,7 @@ def governance_simulate(request):
 # ─── Approval Gateway ───
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_workflow_create(request):
     """Route a decision result through the approval gateway."""
     decision_result = request.data.get('decision_result', {})
@@ -147,7 +147,7 @@ def governance_workflow_create(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_workflows_list(request):
     """List all active approval workflows."""
     gateway = get_approval_gateway()
@@ -164,7 +164,7 @@ def governance_workflows_list(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_workflow_detail(request, workflow_id: str):
     """Get detailed workflow information."""
     gateway = get_approval_gateway()
@@ -176,7 +176,7 @@ def governance_workflow_detail(request, workflow_id: str):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_workflow_sign(request, workflow_id: str):
     """Submit an approval or rejection signature."""
     approver_id = request.data.get('approver_id', '')
@@ -202,7 +202,7 @@ def governance_workflow_sign(request, workflow_id: str):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_workflow_escalate(request, workflow_id: str):
     """Escalate a workflow to higher authority."""
     escalated_by = request.data.get('escalated_by', '')
@@ -221,7 +221,7 @@ def governance_workflow_escalate(request, workflow_id: str):
 
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_workflow_cancel(request, workflow_id: str):
     """Cancel a pending workflow."""
     cancelled_by = request.data.get('cancelled_by', '')
@@ -234,7 +234,7 @@ def governance_workflow_cancel(request, workflow_id: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def governance_gateway_status(request):
     """Get approval gateway status."""
     gateway = get_approval_gateway()

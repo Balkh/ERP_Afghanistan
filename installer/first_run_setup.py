@@ -167,34 +167,67 @@ class FirstRunSetup:
         except Exception as e:
             return False, f"Error seeding default data: {str(e)}"
     
+    def seed_company(self, company_name, currency='AFN'):
+        """Create the Company model entry (SSOT for business config).
+
+        This replaces the old pattern of writing company_name to config.json.
+        All business config MUST be stored in the Company model.
+        """
+        try:
+            import django
+            os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+            django.setup()
+            
+            from core.models.system import Company
+            
+            if Company.objects.filter(is_active=True).exists():
+                return True, "Company already exists"
+            
+            company = Company.objects.create(
+                name=company_name,
+                code=company_name[:20].upper().replace(' ', '_'),
+                default_currency=currency,
+                is_active=True,
+            )
+            return True, f"Company '{company_name}' created in database"
+            
+        except Exception as e:
+            return False, f"Error creating company: {str(e)}"
+    
     def create_config_file(self, config_data):
-        """Create configuration file with user settings"""
+        """Create configuration file with user settings.
+
+        DEPRECATED: This method no longer writes business config to JSON.
+        Business configuration (company_name, currency, etc.) is stored in the
+        Company model via Django ORM. This method only creates a technical
+        metadata file for installer tracking purposes.
+        """
         import json
         
         config = {
             'version': '1.0.0',
             'setup_date': datetime.now().isoformat(),
             'app_name': config_data.get('app_name', 'Pharmacy ERP'),
-            'company_name': config_data.get('company_name', ''),
             'admin_username': config_data.get('admin_username', 'admin'),
             'admin_email': config_data.get('admin_email', ''),
             'language': config_data.get('language', 'en'),
-            'currency': config_data.get('currency', 'AFN'),
             'timezone': config_data.get('timezone', 'UTC'),
             'database_path': str(self.db_path),
             'log_level': config_data.get('log_level', 'INFO'),
             'backup_enabled': config_data.get('backup_enabled', True),
             'backup_interval': config_data.get('backup_interval', 'daily'),
+            'DEPRECATED': 'company_name and currency are now stored in Company model, not this file',
         }
         
         config_file = self.config_dir / 'config.json'
         with open(config_file, 'w') as f:
             json.dump(config, f, indent=2)
         
-        return True, "Configuration file created"
+        return True, "Configuration file created (business config stored in Company model)"
     
     def run_setup_wizard(self, admin_username='admin', admin_password='admin123', 
-                        admin_email='admin@pharmacyerp.com', company_name='Pharmacy ERP'):
+                        admin_email='admin@pharmacyerp.com', company_name='Pharmacy ERP',
+                        currency='AFN'):
         """Run the complete first-run setup process"""
         results = []
         
@@ -208,7 +241,7 @@ class FirstRunSetup:
             return True, "Setup already completed"
         
         # Step 2: Initialize database
-        print("\n[1/5] Initializing database...")
+        print("\n[1/6] Initializing database...")
         success, message = self.initialize_database()
         results.append(('Database Initialization', success, message))
         if not success:
@@ -216,7 +249,7 @@ class FirstRunSetup:
         print(f"  ✓ {message}")
         
         # Step 3: Create admin user
-        print("\n[2/5] Creating admin user...")
+        print("\n[2/6] Creating admin user...")
         success, message = self.create_admin_user(
             username=admin_username,
             password=admin_password,
@@ -228,7 +261,7 @@ class FirstRunSetup:
         print(f"  ✓ {message}")
         
         # Step 4: Seed default data
-        print("\n[3/5] Seeding default data...")
+        print("\n[3/6] Seeding default data...")
         success, message = self.seed_default_data()
         results.append(('Default Data Seeding', success, message))
         if not success:
@@ -236,8 +269,20 @@ class FirstRunSetup:
         else:
             print(f"  ✓ {message}")
         
-        # Step 5: Create configuration file
-        print("\n[4/5] Creating configuration file...")
+        # Step 5: Create company in database (SSOT)
+        print("\n[4/6] Creating company in database...")
+        success, message = self.seed_company(
+            company_name=company_name,
+            currency=currency
+        )
+        results.append(('Company Creation (SSOT)', success, message))
+        if not success:
+            print(f"  ⚠ Warning: {message}")
+        else:
+            print(f"  ✓ {message}")
+        
+        # Step 6: Create configuration file (technical metadata only)
+        print("\n[5/6] Creating configuration file...")
         config_data = {
             'app_name': 'Pharmacy ERP',
             'company_name': company_name,
@@ -250,8 +295,8 @@ class FirstRunSetup:
             return False, f"Configuration creation failed: {message}"
         print(f"  ✓ {message}")
         
-        # Step 6: Mark setup as complete
-        print("\n[5/5] Completing setup...")
+        # Step 7: Mark setup as complete
+        print("\n[6/6] Completing setup...")
         self.mark_setup_complete()
         results.append(('Setup Completion', True, 'Setup marked as complete'))
         print("  ✓ Setup completed successfully")

@@ -6,12 +6,13 @@ Reuses existing QPrinter, HTML templates, and ReportLab infrastructure.
 from typing import Dict, Any, Optional
 from enum import Enum
 
-from PySide6.QtWidgets import QMessageBox, QFileDialog
-from PySide6.QtGui import QTextDocument, QFont, QPdfWriter, QPageSize
+from PySide6.QtWidgets import QMessageBox
+from PySide6.QtGui import QTextDocument, QPageSize
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewDialog
 
 from utils.invoice_template_engine import InvoiceTemplateEngine
 from utils.template_registry import TemplateRegistry
+from utils.company_config import get_cached_config
 
 
 class PrintTarget(Enum):
@@ -24,21 +25,27 @@ class DocumentRenderer:
     """Renders documents into HTML for printing."""
 
     @staticmethod
-    def render_invoice(invoice_data: Dict[str, Any], template_engine: InvoiceTemplateEngine) -> str:
+    def render_invoice(invoice_data: Dict[str, Any], template_engine: InvoiceTemplateEngine, company_config=None) -> str:
+        if company_config is None:
+            company_config = get_cached_config()
+        cfg = company_config.to_dict() if company_config else {}
         company_info = {
-            "name": invoice_data.get("company_name", "Pharmacy ERP"),
-            "address": invoice_data.get("company_address", ""),
-            "phone": invoice_data.get("company_phone", ""),
+            "name": invoice_data.get("company_name", cfg.get("name", "Pharmacy ERP")),
+            "address": invoice_data.get("company_address", cfg.get("address", "")),
+            "phone": invoice_data.get("company_phone", cfg.get("phone", "")),
             "logo": invoice_data.get("logo", ""),
         }
         return template_engine.render(invoice_data, company_info)
 
     @staticmethod
-    def render_receipt(receipt_data: Dict[str, Any], template_engine: InvoiceTemplateEngine) -> str:
+    def render_receipt(receipt_data: Dict[str, Any], template_engine: InvoiceTemplateEngine, company_config=None) -> str:
+        if company_config is None:
+            company_config = get_cached_config()
+        cfg = company_config.to_dict() if company_config else {}
         company_info = {
-            "name": receipt_data.get("company_name", "Pharmacy ERP"),
-            "address": receipt_data.get("company_address", ""),
-            "phone": receipt_data.get("company_phone", ""),
+            "name": receipt_data.get("company_name", cfg.get("name", "Pharmacy ERP")),
+            "address": receipt_data.get("company_address", cfg.get("address", "")),
+            "phone": receipt_data.get("company_phone", cfg.get("phone", "")),
         }
         return template_engine.render(receipt_data, company_info)
 

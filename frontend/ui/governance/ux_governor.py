@@ -5,7 +5,7 @@ Validates UI consistency rules against screens.
 Read-only — reports violations without blocking.
 """
 from dataclasses import dataclass, field
-from typing import List, Optional, Any
+from typing import List, Any
 import re
 
 

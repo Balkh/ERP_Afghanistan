@@ -1,21 +1,17 @@
 """Login screen for ERP."""
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QLineEdit, QMessageBox, QCheckBox,
-                                 QFrame)
+                                 QLineEdit, QCheckBox, QFrame,
+                                 QGraphicsDropShadowEffect)
 from PySide6.QtCore import Signal, Qt, QTimer
-from PySide6.QtGui import QPixmap, QPainter, QColor, QBrush
+from PySide6.QtGui import QColor
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER, TEXT_DISPLAY,
-                           BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE, TEXT_BODY, TEXT_BODY_SMALL,
+                           TEXT_LABEL, TEXT_HELPER, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_XL, PADDING_DIALOG, INPUT_HEIGHT_XL, BUTTON_HEIGHT_XL,
+                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
+                           COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+                           COLOR_DANGER)
 from api.client import APIClient
-from api.endpoints import get_endpoint
 from security.session_store import save_session as encrypted_save_session, load_session as encrypted_load_session
 from security.auth_manager import AuthManager
 from utils.logger import get_logger
@@ -24,9 +20,8 @@ log = get_logger('auth')
 
 # Design system imports
 from ui.constants import (
-    COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-    COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
-    COLOR_TEXT_MUTED, COLOR_DANGER
+    COLOR_PRIMARY, COLOR_BG_MAIN, COLOR_BG_ELEVATED,
+    COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER
 )
 
 
@@ -40,149 +35,187 @@ class LoginDialog(QDialog):
         self.api_client = api_client or APIClient()
         self.auth_manager = auth_manager or AuthManager(self.api_client)
         self.setWindowTitle("Pharmacy ERP - Login")
-        self.setFixedSize(420, 520)
+        self.setMinimumSize(480, 640)
         self.setModal(True)
         self._loading = False
         self._attempts = 0
         self.setup_ui()
     
     def setup_ui(self):
-        self.setStyleSheet(f"""
+        # Set main dialog layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        
+        # Background container to center the card
+        container = QFrame()
+        container.setObjectName("container")
+        container_layout = QVBoxLayout(container)
+        container_layout.setAlignment(Qt.AlignCenter)
+        
+        # The Login Card
+        card = QFrame()
+        card.setObjectName("loginCard")
+        card.setFixedSize(400, 560)
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(PADDING_DIALOG, PADDING_DIALOG, PADDING_DIALOG, PADDING_DIALOG)
+        card_layout.setSpacing(SPACING_LG)
+        
+        # Add shadow to the card
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20)
+        shadow.setXOffset(0)
+        shadow.setYOffset(4)
+        shadow.setColor(QColor(0, 0, 0, 60))
+        card.setGraphicsEffect(shadow)
+        
+        # Header Section
+        header_layout = QVBoxLayout()
+        header_layout.setSpacing(SPACING_SM)
+        header_layout.setAlignment(Qt.AlignCenter)
+        
+        logo_label = QLabel("💊")
+        logo_label.setStyleSheet(f"font-size: {TEXT_DISPLAY}pt; margin-bottom: {SPACING_XS}px;")
+        logo_label.setAlignment(Qt.AlignCenter)
+        
+        title_label = QLabel("Welcome Back")
+        title_label.setStyleSheet("""
+            font-size: {TEXT_PAGE_TITLE}pt; 
+            font-weight: bold; 
+            color: {COLOR_TEXT_PRIMARY};
+        """)
+        title_label.setAlignment(Qt.AlignCenter)
+        
+        subtitle_label = QLabel("Sign in to your Pharmacy ERP")
+        subtitle_label.setStyleSheet(f"font-size: {TEXT_BODY}pt; color: {COLOR_TEXT_MUTED};")
+        subtitle_label.setAlignment(Qt.AlignCenter)
+        
+        header_layout.addWidget(logo_label)
+        header_layout.addWidget(title_label)
+        header_layout.addWidget(subtitle_label)
+        card_layout.addLayout(header_layout)
+        
+        card_layout.addSpacing(SPACING_XL)
+        
+        # Form Section
+        form_layout = QVBoxLayout()
+        form_layout.setSpacing(SPACING_MD)
+        
+        # Username Input
+        username_layout = QVBoxLayout()
+        username_layout.setSpacing(SPACING_XS)
+        username_label = QLabel("Username")
+        username_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_TEXT_SECONDARY}; font-weight: 500;")
+        self.username = QLineEdit()
+        self.username.setPlaceholderText("e.g. admin")
+        self.username.setFixedHeight(INPUT_HEIGHT_XL)
+        self.username.setObjectName("authInput")
+        username_layout.addWidget(username_label)
+        username_layout.addWidget(self.username)
+        form_layout.addLayout(username_layout)
+        
+        # Password Input
+        password_layout = QVBoxLayout()
+        password_layout.setSpacing(SPACING_XS)
+        password_label = QLabel("Password")
+        password_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_TEXT_SECONDARY}; font-weight: 500;")
+        self.password = QLineEdit()
+        self.password.setEchoMode(QLineEdit.Password)
+        self.password.setPlaceholderText("••••••••")
+        self.password.setFixedHeight(INPUT_HEIGHT_XL)
+        self.password.setObjectName("authInput")
+        password_layout.addWidget(password_label)
+        password_layout.addWidget(self.password)
+        form_layout.addLayout(password_layout)
+        
+        # Options Layout (Show Pass & Remember Me)
+        options_layout = QHBoxLayout()
+        self.show_password = QCheckBox("Show")
+        self.show_password.setStyleSheet(f"font-size: {TEXT_BODY_SMALL}pt; color: {COLOR_TEXT_MUTED};")
+        self.show_password.toggled.connect(self.toggle_password)
+        
+        self.remember = QCheckBox("Remember me")
+        self.remember.setStyleSheet(f"font-size: {TEXT_BODY_SMALL}pt; color: {COLOR_TEXT_MUTED};")
+        
+        options_layout.addWidget(self.show_password)
+        options_layout.addStretch()
+        options_layout.addWidget(self.remember)
+        form_layout.addLayout(options_layout)
+        
+        card_layout.addLayout(form_layout)
+        
+        card_layout.addSpacing(SPACING_MD)
+        
+        # Error Message
+        self.status_label = QLabel()
+        self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY_SMALL}pt; font-weight: 500;")
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setWordWrap(True)
+        self.status_label.setVisible(False)
+        card_layout.addWidget(self.status_label)
+        
+        # Login Button
+        self.login_btn = EnterpriseButton(
+            text="Sign In", 
+            variant=ButtonVariant.PRIMARY, 
+            size=ButtonSize.LARGE
+        )
+        self.login_btn.setFixedHeight(BUTTON_HEIGHT_XL)
+        self.login_btn.clicked.connect(self.do_login)
+        card_layout.addWidget(self.login_btn)
+        
+        card_layout.addStretch()
+        
+        # Footer
+        footer_label = QLabel("Pharmacy ERP v2.0 © 2026")
+        footer_label.setStyleSheet(f"font-size: {TEXT_HELPER}pt; color: {COLOR_TEXT_MUTED};")
+        footer_label.setAlignment(Qt.AlignCenter)
+        card_layout.addWidget(footer_label)
+        
+        container_layout.addWidget(card)
+        main_layout.addWidget(container)
+        
+        # Apply Stylesheet
+        self.setStyleSheet("""
             QDialog {{
                 background-color: {COLOR_BG_MAIN};
             }}
-            QLabel {{
-                color: {COLOR_TEXT_PRIMARY};
+            #loginCard {{
+                background-color: {COLOR_BG_SURFACE};
+                border: 1px solid {COLOR_BORDER_LIGHT};
+                border-radius: {BORDER_RADIUS_XL}px;
             }}
-            QLineEdit {{
-                background-color: {COLOR_BG_ELEVATED};
+            QLineEdit#authInput {{
+                background-color: {COLOR_BG_INPUT};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_LG};
-                padding: {SPACING_MD}px;
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding-left: {SPACING_MD}px;
+                padding-right: {SPACING_MD}px;
                 color: {COLOR_TEXT_PRIMARY};
-                font-size: {TEXT_BODY}px;
+                font-size: {TEXT_BODY}pt;
             }}
-            QLineEdit:focus {{
+            QLineEdit#authInput:focus {{
                 border: 2px solid {COLOR_PRIMARY};
-            }}
-            QPushButton {{
-                background-color: {COLOR_PRIMARY};
-                color: {COLOR_BG_MAIN};
-                border: none;
-                border-radius: {BORDER_RADIUS_LG};
-                padding: {SPACING_LG}px;
-                font-size: {TEXT_BODY}px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_PRIMARY_HOVER};
-            }}
-            QPushButton:pressed {{
-                background-color: {COLOR_PRIMARY_ACTIVE};
-            }}
-            QPushButton:disabled {{
-                background-color: {COLOR_BORDER};
-                color: {COLOR_TEXT_MUTED};
+                background-color: {COLOR_BG_ELEVATED};
             }}
             QCheckBox {{
-                color: {COLOR_TEXT_PRIMARY};
+                spacing: {SPACING_XS}px;
             }}
             QCheckBox::indicator {{
-                width: 18px;
-                height: 18px;
+                width: 16px;
+                height: 16px;
+                border-radius: 4px;
+                border: 1px solid {COLOR_BORDER};
+            }}
+            QCheckBox::indicator:checked {{
+                background-color: {COLOR_PRIMARY};
+                border: 1px solid {COLOR_PRIMARY};
             }}
         """)
         
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_XXL + SPACING_LG,  SPACING_XXL + SPACING_LG,  SPACING_XXL + SPACING_LG,  SPACING_XXL + SPACING_LG)
-        layout.setSpacing(SPACING_NONE)
-        
-        # Header with logo
-        header = QFrame()
-        header.setFixedHeight(80)
-        header_layout = QVBoxLayout(header)
-        
-        logo_label = QLabel("💊")
-        logo_label.setStyleSheet(f"font-size: {TEXT_DISPLAY}pt; font-weight: 700; color: {COLOR_PRIMARY};")
-        logo_label.setAlignment(Qt.AlignCenter)
-        header_layout.addWidget(logo_label)
-        
-        title = QLabel("Pharmacy ERP")
-        title.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
-        title.setAlignment(Qt.AlignCenter)
-        header_layout.addWidget(title)
-
-        subtitle = QLabel("Enterprise Management System")
-        subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt;")
-        subtitle.setAlignment(Qt.AlignCenter)
-        header_layout.addWidget(subtitle)
-        
-        layout.addWidget(header)
-        
-        layout.addSpacing(30)
-        
-        # Login form
-        form = QFrame()
-        form_layout = QVBoxLayout(form)
-        form_layout.setSpacing(SPACING_LG + SPACING_XS)
-        
-        # Username
-        user_label = QLabel("Username")
-        user_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_TEXT_PRIMARY};")
-        form_layout.addWidget(user_label)
-        
-        self.username = QLineEdit()
-        self.username.setPlaceholderText("Enter your username")
-        self.username.setFixedHeight(48)
+        # Connect enter keys
         self.username.returnPressed.connect(self.do_login)
-        form_layout.addWidget(self.username)
-        
-        # Password
-        pass_label = QLabel("Password")
-        pass_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_TEXT_PRIMARY};")
-        form_layout.addWidget(pass_label)
-        
-        self.password = QLineEdit()
-        self.password.setEchoMode(QLineEdit.Password)
-        self.password.setPlaceholderText("Enter your password")
-        self.password.setFixedHeight(48)
         self.password.returnPressed.connect(self.do_login)
-        form_layout.addWidget(self.password)
-        
-        # Show password toggle
-        self.show_password = QCheckBox("Show password")
-        self.show_password.toggled.connect(self.toggle_password)
-        form_layout.addWidget(self.show_password)
-        
-        # Remember me
-        self.remember = QCheckBox("Remember me")
-        form_layout.addWidget(self.remember)
-        
-        layout.addWidget(form)
-        
-        layout.addSpacing(20)
-        
-        # Login button
-        self.login_btn = EnterpriseButton(text="Sign In", variant=ButtonVariant.PRIMARY, size=ButtonSize.LARGE)
-        self.login_btn.clicked.connect(self.do_login)
-        layout.addWidget(self.login_btn)
-        
-        # Status message
-        self.status_label = QLabel()
-        self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt;")
-        self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setStyleSheet(f"color: {COLOR_DANGER};")
-        self.status_label.setVisible(False)
-        layout.addWidget(self.status_label)
-
-        layout.addStretch()
-
-        # Footer
-        footer = QLabel("© 2026 Pharmacy ERP System")
-        footer.setStyleSheet(f"font-size: {TEXT_HELPER}pt; color: {COLOR_TEXT_MUTED};")
-        footer.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
-        footer.setAlignment(Qt.AlignCenter)
-        layout.addWidget(footer)
     
     def toggle_password(self, checked):
         """Toggle password visibility."""

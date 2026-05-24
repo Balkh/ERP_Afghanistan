@@ -19,24 +19,21 @@ Usage:
 
 from typing import Optional, Callable, List, Tuple
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QFrame, QHBoxLayout
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import QVBoxLayout, QLabel, QPushButton, QFrame, QHBoxLayout
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-    COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_PRIMARY_HOVER,
-    COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-    COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
-    BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-    TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_CARD_TITLE,
-    STATE_LOADING, STATE_EMPTY_TITLE, STATE_EMPTY_SUBTITLE,
-    STATE_ERROR_TITLE, STATE_ERROR_RETRY,
-    EMPTY_STATE_ICON_SIZE, EMPTY_STATE_SPACING,
-    BORDER_RADIUS_SM,
+    SPACING_SM, SPACING_MD, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY,
+    COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+    COLOR_PRIMARY_HOVER, COLOR_DANGER, BORDER_RADIUS_MD,
+    BORDER_RADIUS_LG, TEXT_BODY,
+    TEXT_BODY_SMALL, TEXT_LABEL, TEXT_CARD_TITLE,
+    STATE_LOADING, STATE_EMPTY_TITLE,
+    STATE_EMPTY_SUBTITLE, STATE_ERROR_TITLE,
+    STATE_ERROR_RETRY, EMPTY_STATE_ICON_SIZE, EMPTY_STATE_SPACING, BORDER_RADIUS_SM,
 )
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
 class StateHelper:
@@ -148,21 +145,7 @@ class StateHelper:
             action_layout.setAlignment(Qt.AlignCenter)
             action_layout.setSpacing(SPACING_SM)
             for label, callback in actions:
-                btn = QPushButton(label)
-                btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
-                btn.setFixedHeight(36)
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {COLOR_PRIMARY};
-                        color: white;
-                        border: none;
-                        border-radius: {BORDER_RADIUS_MD}px;
-                        padding: {SPACING_SM}px 24px;
-                    }}
-                    QPushButton:hover {{
-                        background-color: {COLOR_PRIMARY_HOVER};
-                    }}
-                """)
+                btn = EnterpriseButton(label, variant=ButtonVariant.PRIMARY, size=ButtonSize.SMALL)
                 btn.clicked.connect(callback)
                 action_layout.addWidget(btn)
             layout.addLayout(action_layout)
@@ -227,21 +210,7 @@ class StateHelper:
             action_layout.setAlignment(Qt.AlignCenter)
             action_layout.setSpacing(SPACING_SM)
             for label, callback in all_actions:
-                btn = QPushButton(label)
-                btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
-                btn.setFixedHeight(36)
-                btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: {COLOR_PRIMARY};
-                        color: white;
-                        border: none;
-                        border-radius: {BORDER_RADIUS_MD}px;
-                        padding: {SPACING_SM}px 24px;
-                    }}
-                    QPushButton:hover {{
-                        background-color: {COLOR_PRIMARY_HOVER};
-                    }}
-                """)
+                btn = EnterpriseButton(label, variant=ButtonVariant.PRIMARY, size=ButtonSize.SMALL)
                 btn.clicked.connect(callback)
                 action_layout.addWidget(btn)
             layout.addLayout(action_layout)

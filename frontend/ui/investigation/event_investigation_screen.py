@@ -4,23 +4,20 @@ Phase 5B.7 — Event Investigation Screen.
 Event → Detail → Trace → Timeline → Causation → Drift
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QFrame, QTextEdit, QLineEdit,
-                                 QTableWidget, QTableWidgetItem, QHeaderView,
-                                 QSplitter, QGroupBox)
+                                 QPushButton, QTextEdit, QLineEdit, QSplitter)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 
 from api.client import APIClient
 from api.truth_client import TruthAPIClient
 from api.observability_client import ObservabilityAPIClient
 from api.intelligence_client import IntelligenceAPIClient
 from ui.control_tower.workflow_engine import get_router
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-    TEXT_SECTION_TITLE,
-                           MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM)
+from ui.constants import (COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_TEXT_PRIMARY,
+                           COLOR_PRIMARY, COLOR_BORDER,
+                           SPACING_LG, SPACING_SM, TEXT_SECTION_TITLE, MARGIN_PAGE,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_SM)
 from ui.constants import TEXT_SECTION_TITLE
 
 
@@ -50,17 +47,13 @@ class EventInvestigationScreen(QWidget):
         search_layout = QHBoxLayout()
         self.event_id_input = QLineEdit()
         self.event_id_input.setPlaceholderText("Event ID...")
-        self.event_id_input.setStyleSheet(f"""
+        self.event_id_input.setStyleSheet("""
             QLineEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; }}
         """)
         search_layout.addWidget(self.event_id_input)
 
-        search_btn = QPushButton("🔍 Investigate")
-        search_btn.setStyleSheet(f"""
-            QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none;
-            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; font-weight: bold; }}
-        """)
+        search_btn = EnterpriseButton("🔍 Investigate", variant=ButtonVariant.PRIMARY)
         search_btn.clicked.connect(self._investigate)
         search_layout.addWidget(search_btn)
 
@@ -75,7 +68,7 @@ class EventInvestigationScreen(QWidget):
         self.event_detail = QTextEdit()
         self.event_detail.setReadOnly(True)
         self.event_detail.setPlaceholderText("Event detail will appear here...")
-        self.event_detail.setStyleSheet(f"""
+        self.event_detail.setStyleSheet("""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
@@ -89,7 +82,7 @@ class EventInvestigationScreen(QWidget):
         self.trace_view = QTextEdit()
         self.trace_view.setReadOnly(True)
         self.trace_view.setPlaceholderText("Trace chain will appear here...")
-        self.trace_view.setStyleSheet(f"""
+        self.trace_view.setStyleSheet("""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
@@ -109,12 +102,7 @@ class EventInvestigationScreen(QWidget):
             ("🔗 Causation", self._load_causation),
             ("📊 Drift Check", self._load_drift),
         ]:
-            btn = QPushButton(label)
-            btn.setStyleSheet(f"""
-                QPushButton {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}
-                QPushButton:hover {{ background: {COLOR_PRIMARY}; color: white; }}
-            """)
+            btn = EnterpriseButton(label, variant=ButtonVariant.SECONDARY)
             btn.clicked.connect(cb)
             actions.addWidget(btn)
 

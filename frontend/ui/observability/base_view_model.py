@@ -2,7 +2,7 @@ import hashlib
 import time
 
 from PySide6.QtCore import QObject, Signal, Property, QTimer
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, Optional
 from enum import Enum, auto
 from runtime.timer_registry import register_timer, unregister_owner, record_load, record_skipped_refresh
 

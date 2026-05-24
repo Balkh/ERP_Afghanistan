@@ -4,45 +4,52 @@ Displays the structured audit trail for all financial events: balance syncs,
 credit overrides, integrity fixes, FIFO allocations, and return voids.
 Uses the existing AuditTrail model filtered by financial action types.
 """
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                QFrame, QScrollArea, QHeaderView, QGroupBox,
-                                QComboBox, QDateEdit, QPushButton)
-from PySide6.QtCore import Qt, QDate
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
+                                QWidget, QFrame, QScrollArea, QGroupBox, QComboBox,
+                                QDateEdit)
+from PySide6.QtCore import QDate
 from PySide6.QtGui import QFont
 from api.client import APIClient
-from datetime import datetime, timedelta
 
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                           MARGIN_PAGE, MARGIN_CARD,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_BODY, TEXT_BODY_SMALL,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, TEXT_SECTION_TITLE,
+                           TEXT_BODY_SMALL, COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, BORDER_RADIUS_MD)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.screens.base_screen import BaseScreen
 
 
 FINANCIAL_ACTIONS = [
-    ('All', ''),
-    ('Balance Sync', 'BALANCE_SYNC'),
-    ('Credit Override', 'CREDIT_OVERRIDE'),
-    ('Credit Block', 'CREDIT_BLOCK'),
-    ('Integrity Fix', 'INTEGRITY_FIX'),
-    ('FIFO Allocate', 'FIFO_ALLOCATE'),
-    ('Payment Adjust', 'PAYMENT_ADJUST'),
-    ('Return Void', 'RETURN_VOID'),
+    ("All Actions", ""),
+    ("Balance Sync", "BALANCE_SYNC"),
+    ("Credit Override", "CREDIT_OVERRIDE"),
+    ("Credit Block", "CREDIT_BLOCK"),
+    ("Integrity Fix", "INTEGRITY_FIX"),
+    ("FIFO Allocate", "FIFO_ALLOCATE"),
+    ("Payment Adjust", "PAYMENT_ADJUST"),
+    ("Return Void", "RETURN_VOID"),
+    ("Refund Process", "REFUND_PROCESS"),
+    ("Reconciliation Mismatch", "RECONCILIATION_MISMATCH"),
+    ("Credit Policy Block", "CREDIT_POLICY_BLOCK"),
+    ("Allocation Auto", "ALLOCATION_AUTO"),
+    ("Balance Derived", "BALANCE_DERIVED"),
+    ("Journal Create", "JOURNAL_CREATE"),
+    ("Journal Post", "JOURNAL_POST"),
+    ("Journal Reverse", "JOURNAL_REVERSE"),
 ]
 
 
-class FinancialAuditLogScreen(QWidget):
+class FinancialAuditLogScreen(BaseScreen):
     """Screen displaying the financial audit trail."""
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="financial_audit")
         self.api_client = APIClient()
         self.setup_ui()
         self.load_logs()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — we load in __init__."""
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -101,7 +108,7 @@ class FinancialAuditLogScreen(QWidget):
 
         # Audit log table
         log_group = QGroupBox("Audit Entries")
-        log_group.setStyleSheet(f"""
+        log_group.setStyleSheet("""
             QGroupBox {{
                 font-size: {TEXT_SECTION_TITLE};
                 font-weight: bold;

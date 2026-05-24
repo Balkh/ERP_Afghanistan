@@ -1,23 +1,14 @@
 """Customers screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QLineEdit,
-                                  QHeaderView, QMessageBox, QFormLayout, QGroupBox,
-                                   QDialog, QTextEdit, QComboBox, QFrame)
+                                  QLabel, QLineEdit, QPushButton,
+                                  QMessageBox, QFormLayout, QGroupBox, QDialog,
+                                   QTextEdit, QComboBox, QFrame)
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen, ScreenState
 from utils.cache import cached
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-    PADDING_INPUT_H,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
+                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD, BORDER_RADIUS_MD, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
@@ -196,7 +187,7 @@ class CustomerDialog(QDialog):
     @staticmethod
     def _submit_style():
         from ui.constants import COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY, TEXT_CARD_TITLE
-        return f"""
+        return """
             QPushButton {{
                 background-color: {COLOR_PRIMARY};
                 color: {COLOR_TEXT_ON_PRIMARY};
@@ -214,7 +205,7 @@ class CustomerDialog(QDialog):
     @staticmethod
     def _input_style():
         from ui.constants import (COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER, COLOR_BORDER_FOCUS, COLOR_DANGER, TEXT_BODY, PADDING_INPUT_H)
-        return f"""
+        return """
             QLineEdit, QTextEdit, QComboBox {{
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};
@@ -264,7 +255,7 @@ class CustomerDialog(QDialog):
         # Scroll area for form
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setStyleSheet(f"QScrollArea {{ border: none; }}")
+        scroll.setStyleSheet("QScrollArea { border: none; }")
         
         # Form container
         form = QFrame()
@@ -397,7 +388,7 @@ class CustomerDialog(QDialog):
         
         self.btn_cancel = EnterpriseButton(text="Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.btn_cancel.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.btn_cancel.setStyleSheet(f"""
+        self.btn_cancel.setStyleSheet("""
             QPushButton {{
                 background-color: {COLOR_TEXT_MUTED};
                 color: white;
@@ -412,9 +403,7 @@ class CustomerDialog(QDialog):
         """)
         self.btn_cancel.clicked.connect(self.reject)
         
-        self.btn_save = QPushButton("Save Customer")
-        self.btn_save.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.btn_save.setStyleSheet(self._submit_style())
+        self.btn_save = EnterpriseButton("Save Customer", variant=ButtonVariant.PRIMARY, size=ButtonSize.LARGE)
         self.btn_save.clicked.connect(self.save)
         
         buttons_layout.addStretch()

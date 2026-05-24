@@ -5,22 +5,20 @@ Visualize system state evolution over time using the deterministic
 replay engine. Read-only time-travel visualization.
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QFrame, QTextEdit, QSlider,
-                                 QSpinBox, QGroupBox, QTableWidget,
-                                 QTableWidgetItem, QHeaderView)
+                                 QPushButton, QSlider, QSpinBox, QGroupBox,
+                                 QTableWidget, QTableWidgetItem)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 
 from api.client import APIClient
 from api.observability_client import ObservabilityAPIClient
 from ui.components.tables import build_table_stylesheet
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-    BORDER_RADIUS_SM,
-    TEXT_BODY, TEXT_PAGE_TITLE,
-                           MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM, SPACING_XS)
+from ui.constants import (COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
+                           COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_BORDER,
+                           SPACING_LG, SPACING_MD, SPACING_SM, BORDER_RADIUS_SM,
+                           TEXT_BODY, TEXT_PAGE_TITLE, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM,
+    SPACING_XS)
 from ui.constants import TEXT_PAGE_TITLE, TEXT_BODY
 
 
@@ -53,7 +51,7 @@ class ReplayTimeTravelScreen(QWidget):
 
         # Controls
         ctrl_group = QGroupBox("Replay Controls")
-        ctrl_group.setStyleSheet(f"""
+        ctrl_group.setStyleSheet("""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
             border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px; padding-top: 20px; }}
         """)
@@ -68,12 +66,7 @@ class ReplayTimeTravelScreen(QWidget):
             ("Step Forward ▶", self._step_forward),
             ("⏭ Latest", self._go_latest),
         ]:
-            btn = QPushButton(label)
-            btn.setStyleSheet(f"""
-                QPushButton {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}
-                QPushButton:hover {{ background: {COLOR_PRIMARY}; color: white; }}
-            """)
+            btn = EnterpriseButton(label, variant=ButtonVariant.SECONDARY)
             btn.clicked.connect(cb)
             step_layout.addWidget(btn)
 
@@ -85,7 +78,7 @@ class ReplayTimeTravelScreen(QWidget):
         self.seq_spin = QSpinBox()
         self.seq_spin.setMinimum(0)
         self.seq_spin.setMaximum(1000)
-        self.seq_spin.setStyleSheet(f"""
+        self.seq_spin.setStyleSheet("""
             QSpinBox {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_XS}px; }}
         """)
@@ -95,7 +88,7 @@ class ReplayTimeTravelScreen(QWidget):
         self.seq_slider = QSlider(Qt.Horizontal)
         self.seq_slider.setMinimum(0)
         self.seq_slider.setMaximum(1000)
-        self.seq_slider.setStyleSheet(f"""
+        self.seq_slider.setStyleSheet("""
             QSlider::groove:horizontal {{ height: 6px; background: {COLOR_BORDER};
             border-radius: {BORDER_RADIUS_SM}px; }}
             QSlider::handle:horizontal {{ background: {COLOR_PRIMARY}; width: 14px;

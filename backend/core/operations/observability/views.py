@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional, Tuple
 
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from simulation.control_center.orchestrator.control_center_engine import ControlCenterEngine
@@ -67,7 +67,7 @@ def _obs_error(message: str, code: str = "OBS_001", status: int = 500) -> Respon
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_health(request):
     try:
         engine = _get_engine()[0]
@@ -81,7 +81,7 @@ def observability_health(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_state(request):
     try:
         engine, router = _get_engine()
@@ -94,7 +94,7 @@ def observability_state(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_timeline(request):
     try:
         engine, router = _get_engine()
@@ -114,7 +114,7 @@ def observability_timeline(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_incidents(request):
     try:
         engine, router = _get_engine()
@@ -137,7 +137,7 @@ def observability_incidents(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_dashboard(request):
     try:
         engine, router = _get_engine()
@@ -159,7 +159,7 @@ def observability_dashboard(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_drift(request):
     try:
         engine_obj, _ = _get_engine()
@@ -173,7 +173,7 @@ def observability_drift(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_replay_sessions(request):
     try:
         replay = _get_replay()
@@ -199,7 +199,7 @@ def observability_replay_sessions(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_replay_session_detail(request, session_id: str):
     try:
         replay = _get_replay()
@@ -223,7 +223,7 @@ def observability_replay_session_detail(request, session_id: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_digital_twin(request):
     try:
         dt = _get_digital_twin()
@@ -237,7 +237,7 @@ def observability_digital_twin(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_frontend_summary(request):
     """Aggregate summary for the frontend dashboard.
 
@@ -290,7 +290,7 @@ def observability_frontend_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_telemetry_aggregate(request):
     """Aggregate telemetry data for the DigitalTwinTelemetryView frontend.
 
@@ -333,7 +333,7 @@ def observability_telemetry_aggregate(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def observability_safety(request):
     try:
         engine_obj, _ = _get_engine()

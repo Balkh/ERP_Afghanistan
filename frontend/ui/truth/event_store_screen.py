@@ -4,19 +4,18 @@ Browse events, verify claims, and view Event Store state.
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                  QPushButton, QTableWidget, QTableWidgetItem,
-                                 QHeaderView, QFrame, QSplitter, QLineEdit,
-                                 QTextEdit, QComboBox)
-from PySide6.QtCore import Qt
+                                 QLineEdit, QComboBox)
 from PySide6.QtGui import QFont
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 
 from api.client import APIClient
 from api.truth_client import TruthAPIClient
 from ui.components.tables import build_table_stylesheet
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY,
-                           COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_SUCCESS,
-                           COLOR_WARNING, COLOR_DANGER, COLOR_BORDER,
-    TEXT_LABEL, TEXT_PAGE_TITLE,
-                           SPACING_LG, SPACING_MD, SPACING_SM, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD)
+from ui.constants import (COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
+                           COLOR_PRIMARY, COLOR_WARNING, COLOR_BORDER,
+                           TEXT_LABEL, TEXT_PAGE_TITLE, SPACING_LG,
+    SPACING_SM, MARGIN_PAGE,
+                           SPACING_6, BORDER_RADIUS_MD)
 from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL
 
 
@@ -53,13 +52,11 @@ class EventStoreScreen(QWidget):
         toolbar.addWidget(QLabel("Aggregate:"))
         toolbar.addWidget(self.agg_input)
 
-        refresh_btn = QPushButton("⟳ Refresh")
-        refresh_btn.setStyleSheet(f"QPushButton {{ background: {COLOR_PRIMARY}; color: white; border: none; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}")
+        refresh_btn = EnterpriseButton("⟳ Refresh", variant=ButtonVariant.PRIMARY)
         refresh_btn.clicked.connect(self._refresh)
         toolbar.addWidget(refresh_btn)
 
-        verify_btn = QPushButton("✓ Verify Claim")
-        verify_btn.setStyleSheet(f"QPushButton {{ background: {COLOR_WARNING}; color: white; border: none; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px 16px; }}")
+        verify_btn = EnterpriseButton("✓ Verify Claim", variant=ButtonVariant.WARNING)
         verify_btn.clicked.connect(self._verify)
         toolbar.addWidget(verify_btn)
 

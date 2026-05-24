@@ -5,7 +5,7 @@ Handles keyboard wedge scanners, USB barcode scanners, and manual entry.
 
 from PySide6.QtWidgets import QLineEdit, QFrame, QVBoxLayout, QListWidget, QListWidgetItem, QLabel
 from PySide6.QtCore import Qt, Signal, QTimer, QEvent
-from PySide6.QtGui import QFont, QKeyEvent
+from PySide6.QtGui import QFont
 from ui.constants import TEXT_BODY, TEXT_HELPER
 
 
@@ -189,7 +189,8 @@ class BarcodeSearchResultsDropdown(QFrame):
 
     def show_status(self, message, error=False):
         self.status_label.setText(message)
-        self.status_label.setStyleSheet(f"color: {'#e74c3c' if error else '#27ae60'};")
+        from ui.constants import COLOR_DANGER, COLOR_SUCCESS
+        self.status_label.setStyleSheet(f"color: {COLOR_DANGER if error else COLOR_SUCCESS};")
         self.status_label.show()
         self.hide()
 

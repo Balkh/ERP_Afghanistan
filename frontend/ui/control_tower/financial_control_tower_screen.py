@@ -12,30 +12,22 @@ Panels:
 """
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
-    QScrollArea, QFrame, QGridLayout, QTableWidget, QTableWidgetItem,
-    QHeaderView, QTextEdit, QSizePolicy
+    QScrollArea, QFrame, QTableWidget, QTableWidgetItem, QHeaderView
 )
-from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt
 
 from api.client import APIClient
-
-
-COLORS = {
-    'bg_main': '#1a1a2e',
-    'bg_surface': '#16213e',
-    'bg_elevated': '#0f3460',
-    'text_primary': '#e0e0e0',
-    'text_secondary': '#a0a0a0',
-    'success': '#4caf50',
-    'warning': '#ff9800',
-    'danger': '#f44336',
-    'info': '#2196f3',
-    'border': '#2a2a4a',
-    'critical': '#d32f2f',
-}
-
-SPACING = {'sm': 8, 'md': 12, 'lg': 16, 'xl': 24}
+from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.constants import (
+    COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
+    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
+    COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+    COLOR_BORDER, COLOR_DANGER_HOVER,
+    SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
+    BORDER_RADIUS_MD, BORDER_RADIUS_LG, TEXT_TABLE, TEXT_HELPER,
+    TEXT_CARD_TITLE, TEXT_SECTION_TITLE,
+)
 
 
 class _Card(QFrame):
@@ -44,17 +36,17 @@ class _Card(QFrame):
         super().__init__(parent)
         self.setFrameShape(QFrame.StyledPanel)
         self.setStyleSheet(
-            f'background: {COLORS["bg_surface"]}; border-radius: 8px; '
-            f'border: 1px solid {COLORS["border"]};'
+            f'background: {COLOR_BG_SURFACE}; border-radius: {BORDER_RADIUS_LG}px; '
+            f'border: 1px solid {COLOR_BORDER};'
         )
         self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(SPACING['lg'], SPACING['md'], SPACING['lg'], SPACING['md'])
-        self._layout.setSpacing(SPACING['sm'])
+        self._layout.setContentsMargins(SPACING_LG, SPACING_MD, SPACING_LG, SPACING_MD)
+        self._layout.setSpacing(SPACING_SM)
         if title:
             lbl = QLabel(title)
             f = QFont('Segoe UI', 11, QFont.Weight.Bold)
             lbl.setFont(f)
-            lbl.setStyleSheet(f'color: {COLORS["text_primary"]};')
+            lbl.setStyleSheet(f'color: {COLOR_TEXT_PRIMARY};')
             self._layout.addWidget(lbl)
 
     def add_widget(self, w):
@@ -68,14 +60,14 @@ class _MetricRow(QWidget):
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         lbl = QLabel(label)
-        lbl.setStyleSheet(f'color: {COLORS["text_secondary"]}; font-size: 12px;')
+        lbl.setStyleSheet(f'color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_HELPER}px;')
         val = QLabel(str(value))
         f = QFont('Segoe UI', 14, QFont.Weight.Bold)
         val.setFont(f)
         if color:
             val.setStyleSheet(f'color: {color};')
         else:
-            val.setStyleSheet(f'color: {COLORS["text_primary"]};')
+            val.setStyleSheet(f'color: {COLOR_TEXT_PRIMARY};')
         layout.addWidget(lbl)
         layout.addStretch()
         layout.addWidget(val)
@@ -92,30 +84,26 @@ class FinancialControlTowerScreen(QWidget):
 
     def _setup_ui(self):
         main = QVBoxLayout(self)
-        main.setContentsMargins(SPACING['xl'], SPACING['xl'], SPACING['xl'], SPACING['xl'])
-        main.setSpacing(SPACING['lg'])
+        main.setContentsMargins(SPACING_XL, SPACING_XL, SPACING_XL, SPACING_XL)
+        main.setSpacing(SPACING_LG)
 
         # Header
         header_layout = QHBoxLayout()
         title = QLabel('Financial Control Tower')
         f = QFont('Segoe UI', 18, QFont.Weight.Bold)
         title.setFont(f)
-        title.setStyleSheet(f'color: {COLORS["text_primary"]};')
+        title.setStyleSheet(f'color: {COLOR_TEXT_PRIMARY};')
         header_layout.addWidget(title)
         header_layout.addStretch()
 
-        self._refresh_btn = QPushButton('Refresh')
-        self._refresh_btn.setStyleSheet(
-            f'background: {COLORS["info"]}; color: white; padding: 8px 16px; '
-            f'border-radius: 4px; font-size: 12px;'
-        )
+        self._refresh_btn = EnterpriseButton('Refresh', variant=ButtonVariant.SECONDARY)
         self._refresh_btn.clicked.connect(self._refresh_all)
         header_layout.addWidget(self._refresh_btn)
         main.addLayout(header_layout)
 
         # Status bar
         self._status_bar = QLabel('Click Refresh to load data')
-        self._status_bar.setStyleSheet(f'color: {COLORS["text_secondary"]}; font-size: 11px;')
+        self._status_bar.setStyleSheet(f'color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_HELPER}px;')
         main.addWidget(self._status_bar)
 
         # Scroll area for content
@@ -125,7 +113,7 @@ class FinancialControlTowerScreen(QWidget):
         content = QWidget()
         content.setStyleSheet('background: transparent;')
         self._content_layout = QVBoxLayout(content)
-        self._content_layout.setSpacing(SPACING['lg'])
+        self._content_layout.setSpacing(SPACING_LG)
         scroll.setWidget(content)
         main.addWidget(scroll)
 
@@ -136,7 +124,7 @@ class FinancialControlTowerScreen(QWidget):
     def _refresh_all(self):
         """Fetch all data on-demand (no caching)."""
         self._status_bar.setText('Loading...')
-        self._status_bar.setStyleSheet(f'color: {COLORS["info"]}; font-size: 11px;')
+        self._status_bar.setStyleSheet(f'color: {COLOR_INFO}; font-size: {TEXT_HELPER}px;')
 
         try:
             summary = self._api.get('/api/financial/control-tower/summary/')
@@ -149,11 +137,11 @@ class FinancialControlTowerScreen(QWidget):
                 'decisions': decisions.get('data', decisions) if decisions else {},
             }
             self._render()
-            self._status_bar.setText(f'Updated: all systems operational')
-            self._status_bar.setStyleSheet(f'color: {COLORS["success"]}; font-size: 11px;')
+            self._status_bar.setText('Updated: all systems operational')
+            self._status_bar.setStyleSheet(f'color: {COLOR_SUCCESS}; font-size: {TEXT_HELPER}px;')
         except Exception as e:
             self._status_bar.setText(f'Error: {str(e)}')
-            self._status_bar.setStyleSheet(f'color: {COLORS["danger"]}; font-size: 11px;')
+            self._status_bar.setStyleSheet(f'color: {COLOR_DANGER}; font-size: {TEXT_HELPER}px;')
 
     def _render(self):
         """Render all panels from cached data."""
@@ -187,14 +175,14 @@ class FinancialControlTowerScreen(QWidget):
         safe_mode = summary.get('safe_mode', False)
         if safe_mode:
             lbl = QLabel('SAFE MODE — SSOT conflict detected')
-            lbl.setStyleSheet(f'color: {COLORS["danger"]}; font-weight: bold;')
+            lbl.setStyleSheet(f'color: {COLOR_DANGER}; font-weight: bold;')
             card.add_widget(lbl)
 
         card.add_widget(_MetricRow('Health Score', f'{summary.get("health_score", 0)}/100',
-                                   color=COLORS['success'] if summary.get('health_score', 0) >= 70 else COLORS['warning']))
+                                   color=COLOR_SUCCESS if summary.get('health_score', 0) >= 70 else COLOR_WARNING))
         card.add_widget(_MetricRow('Health Status', summary.get('health_status', 'N/A')))
         card.add_widget(_MetricRow('Anomaly Index', summary.get('anomaly_index', 0),
-                                   color=COLORS['warning'] if summary.get('anomaly_index', 0) > 5 else COLORS['success']))
+                                   color=COLOR_WARNING if summary.get('anomaly_index', 0) > 5 else COLOR_SUCCESS))
         card.add_widget(_MetricRow('Reconciliation', summary.get('reconciliation_health', 'N/A')))
         card.add_widget(_MetricRow('Net Liquidity', summary.get('cashflow_status', '0.00')))
         card.add_widget(_MetricRow('Cashflow Trend', summary.get('cashflow_trend', 'STABLE')))
@@ -208,11 +196,11 @@ class FinancialControlTowerScreen(QWidget):
         risk = summary.get('risk_distribution', {})
 
         levels = [
-            ('CRITICAL', risk.get('CRITICAL', 0), COLORS['critical']),
-            ('HIGH', risk.get('HIGH', 0), COLORS['danger']),
-            ('MEDIUM', risk.get('MEDIUM', 0), COLORS['warning']),
-            ('LOW', risk.get('LOW', 0), COLORS['info']),
-            ('MINIMAL', risk.get('MINIMAL', 0), COLORS['success']),
+            ('CRITICAL', risk.get('CRITICAL', 0), COLOR_DANGER_HOVER),
+            ('HIGH', risk.get('HIGH', 0), COLOR_DANGER),
+            ('MEDIUM', risk.get('MEDIUM', 0), COLOR_WARNING),
+            ('LOW', risk.get('LOW', 0), COLOR_INFO),
+            ('MINIMAL', risk.get('MINIMAL', 0), COLOR_SUCCESS),
         ]
         for level, count, color in levels:
             card.add_widget(_MetricRow(level, str(count), color=color))
@@ -225,7 +213,7 @@ class FinancialControlTowerScreen(QWidget):
         total = alerts.get('total_alerts', 0)
 
         card.add_widget(_MetricRow('Active Alerts', str(total),
-                                   color=COLORS['danger'] if total > 0 else COLORS['success']))
+                                   color=COLOR_DANGER if total > 0 else COLOR_SUCCESS))
 
         if alert_list:
             table = QTableWidget(len(alert_list), 4)
@@ -233,8 +221,8 @@ class FinancialControlTowerScreen(QWidget):
             table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             table.setAlternatingRowColors(True)
             table.setStyleSheet(
-                f'background: {COLORS["bg_main"]}; color: {COLORS["text_primary"]}; '
-                f'gridline-color: {COLORS["border"]};'
+                f'background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY}; '
+                f'gridline-color: {COLOR_BORDER};'
             )
             for i, a in enumerate(alert_list[:20]):
                 table.setItem(i, 0, QTableWidgetItem(a.get('decision_type', '')))
@@ -245,7 +233,7 @@ class FinancialControlTowerScreen(QWidget):
             card.add_widget(table)
         else:
             lbl = QLabel('No active alerts')
-            lbl.setStyleSheet(f'color: {COLORS["success"]};')
+            lbl.setStyleSheet(f'color: {COLOR_SUCCESS};')
             card.add_widget(lbl)
 
         return card
@@ -263,8 +251,8 @@ class FinancialControlTowerScreen(QWidget):
             table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
             table.setAlternatingRowColors(True)
             table.setStyleSheet(
-                f'background: {COLORS["bg_main"]}; color: {COLORS["text_primary"]}; '
-                f'gridline-color: {COLORS["border"]};'
+                f'background: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY}; '
+                f'gridline-color: {COLOR_BORDER};'
             )
             for i, d in enumerate(decision_list[:50]):
                 table.setItem(i, 0, QTableWidgetItem(d.get('decision_type', '')))
@@ -276,7 +264,7 @@ class FinancialControlTowerScreen(QWidget):
             card.add_widget(table)
         else:
             lbl = QLabel('No decisions recorded')
-            lbl.setStyleSheet(f'color: {COLORS["text_secondary"]};')
+            lbl.setStyleSheet(f'color: {COLOR_TEXT_SECONDARY};')
             card.add_widget(lbl)
 
         return card

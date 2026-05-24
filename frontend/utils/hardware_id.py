@@ -7,7 +7,6 @@ import subprocess
 import re
 import uuid
 import platform
-from typing import Optional
 
 
 def get_cpu_id() -> str:

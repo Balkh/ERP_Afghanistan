@@ -547,6 +547,413 @@ class PaymentOperationsViewSet(viewsets.ViewSet):
             'errors': errors,
         })
 
+    @action(detail=False, methods=['post'], url_path='process-customer-payment')
+    @transaction.atomic
+    def process_customer_payment(self, request):
+        """Process a customer payment with FIFO allocation.
+
+        Request body:
+        - customer_id: UUID
+        - amount: Decimal
+        - payment_method_code: str
+        - payment_account_code: str (optional)
+        - reference_number: str (optional)
+        - allocation_mode: 'fifo' | 'manual' | 'unallocated'
+        - manual_allocations: list of {invoice_id, amount} (for manual mode)
+        - notes: str (optional)
+
+        Returns:
+        - payment_id, allocated_invoices, remaining_balance, unallocated_amount
+        """
+        from sales.models import Customer, SalesInvoice, CustomerPayment, PaymentAllocation
+        from accounting.models import is_period_locked
+        from datetime import date
+
+        data = request.data
+        customer_id = data.get('customer_id')
+        amount = Decimal(str(data.get('amount', 0)))
+        payment_method_code = data.get('payment_method_code')
+        payment_account_code = data.get('payment_account_code')
+        reference_number = data.get('reference_number', '')
+        allocation_mode = data.get('allocation_mode', 'fifo')
+        manual_allocations = data.get('manual_allocations', [])
+        notes = data.get('notes', '')
+        payment_date = data.get('payment_date')
+
+        if amount <= 0:
+            return Response({'error': 'Amount must be positive'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            customer = Customer.objects.get(pk=customer_id)
+        except Customer.DoesNotExist:
+            return Response({'error': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            payment_method = PaymentMethod.objects.get(code=payment_method_code, is_active=True)
+        except PaymentMethod.DoesNotExist:
+            return Response({'error': 'Payment method not found or inactive'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment_account = None
+        if payment_account_code:
+            try:
+                payment_account = PaymentAccount.objects.get(code=payment_account_code, is_active=True)
+            except PaymentAccount.DoesNotExist:
+                return Response({'error': 'Payment account not found or inactive'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment_date_obj = date.fromisoformat(payment_date) if payment_date else timezone.now().date()
+
+        if is_period_locked(payment_date_obj):
+            return Response(
+                {'error': f'Cannot process payment in locked/closed period ({payment_date_obj})'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        payment = CustomerPayment.objects.create(
+            customer=customer,
+            amount=amount,
+            payment_method=payment_method,
+            payment_account=payment_account,
+            payment_date=payment_date_obj,
+            reference_number=reference_number,
+            notes=notes,
+        )
+
+        allocated_invoices = []
+        unallocated_amount = Decimal('0.00')
+
+        if allocation_mode == 'fifo':
+            outstanding = FIFOAllocationService.get_outstanding_invoices(customer)
+            remaining = amount
+            for inv_data in outstanding:
+                if remaining <= 0:
+                    break
+                inv = SalesInvoice.objects.get(pk=inv_data['id'])
+                inv_balance = FIFOAllocationService.get_invoice_balance(inv)
+                alloc_amount = min(remaining, inv_balance)
+                if alloc_amount > 0:
+                    PaymentAllocation.objects.create(
+                        payment=payment,
+                        invoice=inv,
+                        allocated_amount=alloc_amount,
+                    )
+                    allocated_invoices.append({
+                        'invoice_id': str(inv.id),
+                        'invoice_number': inv.invoice_number,
+                        'allocated_amount': str(alloc_amount),
+                    })
+                    remaining -= alloc_amount
+            unallocated_amount = remaining
+
+        elif allocation_mode == 'manual':
+            remaining = amount
+            for alloc_data in manual_allocations:
+                inv = SalesInvoice.objects.get(pk=alloc_data['invoice_id'])
+                alloc_amount = Decimal(str(alloc_data['amount']))
+                if alloc_amount <= 0:
+                    continue
+                if alloc_amount > remaining:
+                    return Response(
+                        {'error': f'Allocation amount ({alloc_amount}) exceeds payment amount ({remaining})'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                PaymentAllocation.objects.create(
+                    payment=payment,
+                    invoice=inv,
+                    allocated_amount=alloc_amount,
+                )
+                allocated_invoices.append({
+                    'invoice_id': str(inv.id),
+                    'invoice_number': inv.invoice_number,
+                    'allocated_amount': str(alloc_amount),
+                })
+                remaining -= alloc_amount
+            unallocated_amount = remaining
+
+        BalanceSyncService.sync_customer_balance(customer)
+
+        return Response({
+            'success': True,
+            'payment_id': str(payment.id),
+            'payment_number': payment.payment_number if hasattr(payment, 'payment_number') else str(payment.id),
+            'amount': str(amount),
+            'allocated_invoices': allocated_invoices,
+            'unallocated_amount': str(unallocated_amount),
+            'customer_balance': str(customer.balance),
+        })
+
+    @action(detail=False, methods=['post'], url_path='process-supplier-payment')
+    @transaction.atomic
+    def process_supplier_payment(self, request):
+        """Process a supplier payment with FIFO allocation.
+
+        Request body:
+        - supplier_id: UUID
+        - amount: Decimal
+        - payment_method_code: str
+        - payment_account_code: str (optional)
+        - reference_number: str (optional)
+        - allocation_mode: 'fifo' | 'manual' | 'unallocated'
+        - manual_allocations: list of {invoice_id, amount} (for manual mode)
+        - notes: str (optional)
+
+        Returns:
+        - payment_id, allocated_invoices, remaining_balance, unallocated_amount
+        """
+        from purchases.models import Supplier, PurchaseInvoice, SupplierPayment, SupplierPaymentAllocation
+        from accounting.models import is_period_locked
+        from datetime import date
+
+        data = request.data
+        supplier_id = data.get('supplier_id')
+        amount = Decimal(str(data.get('amount', 0)))
+        payment_method_code = data.get('payment_method_code')
+        payment_account_code = data.get('payment_account_code')
+        reference_number = data.get('reference_number', '')
+        allocation_mode = data.get('allocation_mode', 'fifo')
+        manual_allocations = data.get('manual_allocations', [])
+        notes = data.get('notes', '')
+        payment_date = data.get('payment_date')
+
+        if amount <= 0:
+            return Response({'error': 'Amount must be positive'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            supplier = Supplier.objects.get(pk=supplier_id)
+        except Supplier.DoesNotExist:
+            return Response({'error': 'Supplier not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            payment_method = PaymentMethod.objects.get(code=payment_method_code, is_active=True)
+        except PaymentMethod.DoesNotExist:
+            return Response({'error': 'Payment method not found or inactive'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment_account = None
+        if payment_account_code:
+            try:
+                payment_account = PaymentAccount.objects.get(code=payment_account_code, is_active=True)
+            except PaymentAccount.DoesNotExist:
+                return Response({'error': 'Payment account not found or inactive'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment_date_obj = date.fromisoformat(payment_date) if payment_date else timezone.now().date()
+
+        if is_period_locked(payment_date_obj):
+            return Response(
+                {'error': f'Cannot process payment in locked/closed period ({payment_date_obj})'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        payment = SupplierPayment.objects.create(
+            supplier=supplier,
+            amount=amount,
+            payment_method=payment_method,
+            payment_account=payment_account,
+            payment_date=payment_date_obj,
+            reference_number=reference_number,
+            notes=notes,
+        )
+
+        allocated_invoices = []
+        unallocated_amount = Decimal('0.00')
+
+        if allocation_mode == 'fifo':
+            outstanding = SupplierFIFOAllocationService.get_outstanding_invoices(supplier)
+            remaining = amount
+            for inv_data in outstanding:
+                if remaining <= 0:
+                    break
+                inv = PurchaseInvoice.objects.get(pk=inv_data['id'])
+                inv_balance = SupplierFIFOAllocationService.get_invoice_balance(inv)
+                alloc_amount = min(remaining, inv_balance)
+                if alloc_amount > 0:
+                    SupplierPaymentAllocation.objects.create(
+                        payment=payment,
+                        invoice=inv,
+                        allocated_amount=alloc_amount,
+                    )
+                    allocated_invoices.append({
+                        'invoice_id': str(inv.id),
+                        'invoice_number': inv.invoice_number,
+                        'allocated_amount': str(alloc_amount),
+                    })
+                    remaining -= alloc_amount
+            unallocated_amount = remaining
+
+        elif allocation_mode == 'manual':
+            remaining = amount
+            for alloc_data in manual_allocations:
+                inv = PurchaseInvoice.objects.get(pk=alloc_data['invoice_id'])
+                alloc_amount = Decimal(str(alloc_data['amount']))
+                if alloc_amount <= 0:
+                    continue
+                if alloc_amount > remaining:
+                    return Response(
+                        {'error': f'Allocation amount ({alloc_amount}) exceeds payment amount ({remaining})'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                SupplierPaymentAllocation.objects.create(
+                    payment=payment,
+                    invoice=inv,
+                    allocated_amount=alloc_amount,
+                )
+                allocated_invoices.append({
+                    'invoice_id': str(inv.id),
+                    'invoice_number': inv.invoice_number,
+                    'allocated_amount': str(alloc_amount),
+                })
+                remaining -= alloc_amount
+            unallocated_amount = remaining
+
+        BalanceSyncService.sync_supplier_balance(supplier)
+
+        return Response({
+            'success': True,
+            'payment_id': str(payment.id),
+            'amount': str(amount),
+            'allocated_invoices': allocated_invoices,
+            'unallocated_amount': str(unallocated_amount),
+            'supplier_balance': str(supplier.balance),
+        })
+
+    @action(detail=False, methods=['post'], url_path='process-mixed-payment')
+    @transaction.atomic
+    def process_mixed_payment(self, request):
+        """Process a mixed payment with multiple payment methods.
+
+        Request body:
+        - customer_id or supplier_id: UUID
+        - party_type: 'customer' | 'supplier'
+        - total_amount: Decimal
+        - splits: list of {payment_method_code, amount, payment_account_code}
+        - allocation_mode: 'fifo' | 'manual' | 'unallocated'
+        - manual_allocations: list of {invoice_id, amount} (for manual mode)
+        - reference_number: str (optional)
+        - notes: str (optional)
+
+        Returns:
+        - payment_id, splits, allocated_invoices, unallocated_amount
+        """
+        from sales.models import Customer, SalesInvoice, CustomerPayment, PaymentAllocation
+        from purchases.models import Supplier, PurchaseInvoice, SupplierPayment, SupplierPaymentAllocation
+        from accounting.models import is_period_locked
+        from datetime import date
+
+        data = request.data
+        party_type = data.get('party_type')
+        total_amount = Decimal(str(data.get('total_amount', 0)))
+        splits = data.get('splits', [])
+        allocation_mode = data.get('allocation_mode', 'fifo')
+        manual_allocations = data.get('manual_allocations', [])
+        reference_number = data.get('reference_number', '')
+        notes = data.get('notes', '')
+        payment_date = data.get('payment_date')
+
+        if total_amount <= 0:
+            return Response({'error': 'Total amount must be positive'}, status=status.HTTP_400_BAD_REQUEST)
+
+        split_total = sum(Decimal(str(s.get('amount', 0))) for s in splits)
+        if split_total != total_amount:
+            return Response(
+                {'error': f'Split total ({split_total}) does not match payment total ({total_amount})'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        payment_date_obj = date.fromisoformat(payment_date) if payment_date else timezone.now().date()
+
+        if is_period_locked(payment_date_obj):
+            return Response(
+                {'error': f'Cannot process payment in locked/closed period ({payment_date_obj})'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        processed_splits = []
+        payment_ids = []
+
+        if party_type == 'customer':
+            customer = Customer.objects.get(pk=data.get('customer_id'))
+            for split in splits:
+                split_amount = Decimal(str(split['amount']))
+                payment = CustomerPayment.objects.create(
+                    customer=customer,
+                    amount=split_amount,
+                    payment_method=PaymentMethod.objects.get(code=split['payment_method_code']),
+                    payment_account=PaymentAccount.objects.get(code=split['payment_account_code']) if split.get('payment_account_code') else None,
+                    payment_date=payment_date_obj,
+                    reference_number=f'{reference_number}-SPLIT{len(processed_splits) + 1}',
+                    notes=notes,
+                )
+                payment_ids.append(str(payment.id))
+                processed_splits.append({
+                    'payment_id': str(payment.id),
+                    'method': split['payment_method_code'],
+                    'amount': str(split_amount),
+                })
+
+            remaining = total_amount
+            if allocation_mode == 'fifo':
+                outstanding = FIFOAllocationService.get_outstanding_invoices(customer)
+                for inv_data in outstanding:
+                    if remaining <= 0:
+                        break
+                    inv = SalesInvoice.objects.get(pk=inv_data['id'])
+                    inv_balance = FIFOAllocationService.get_invoice_balance(inv)
+                    alloc_amount = min(remaining, inv_balance)
+                    if alloc_amount > 0:
+                        PaymentAllocation.objects.create(
+                            payment=payment,
+                            invoice=inv,
+                            allocated_amount=alloc_amount,
+                        )
+                        remaining -= alloc_amount
+
+            BalanceSyncService.sync_customer_balance(customer)
+
+        elif party_type == 'supplier':
+            supplier = Supplier.objects.get(pk=data.get('supplier_id'))
+            for split in splits:
+                split_amount = Decimal(str(split['amount']))
+                payment = SupplierPayment.objects.create(
+                    supplier=supplier,
+                    amount=split_amount,
+                    payment_method=PaymentMethod.objects.get(code=split['payment_method_code']),
+                    payment_account=PaymentAccount.objects.get(code=split['payment_account_code']) if split.get('payment_account_code') else None,
+                    payment_date=payment_date_obj,
+                    reference_number=f'{reference_number}-SPLIT{len(processed_splits) + 1}',
+                    notes=notes,
+                )
+                payment_ids.append(str(payment.id))
+                processed_splits.append({
+                    'payment_id': str(payment.id),
+                    'method': split['payment_method_code'],
+                    'amount': str(split_amount),
+                })
+
+            remaining = total_amount
+            if allocation_mode == 'fifo':
+                outstanding = SupplierFIFOAllocationService.get_outstanding_invoices(supplier)
+                for inv_data in outstanding:
+                    if remaining <= 0:
+                        break
+                    inv = PurchaseInvoice.objects.get(pk=inv_data['id'])
+                    inv_balance = SupplierFIFOAllocationService.get_invoice_balance(inv)
+                    alloc_amount = min(remaining, inv_balance)
+                    if alloc_amount > 0:
+                        SupplierPaymentAllocation.objects.create(
+                            payment=payment,
+                            invoice=inv,
+                            allocated_amount=alloc_amount,
+                        )
+                        remaining -= alloc_amount
+
+            BalanceSyncService.sync_supplier_balance(supplier)
+
+        return Response({
+            'success': True,
+            'payment_ids': payment_ids,
+            'total_amount': str(total_amount),
+            'splits': processed_splits,
+            'unallocated_amount': str(remaining if 'remaining' in locals() else '0.00'),
+        })
+
     # ========================================================================
     # PAYMENT ANOMALY DETECTION
     # ========================================================================
@@ -616,3 +1023,89 @@ class PaymentOperationsViewSet(viewsets.ViewSet):
                 'INFO': len([a for a in anomalies if a['severity'] == 'INFO']),
             },
         })
+
+    @action(detail=False, methods=['get'], url_path='customers/(?P<customer_id>[^/.]+)/statement-pdf')
+    def customer_statement_pdf(self, request, customer_id=None):
+        """Export customer statement as PDF."""
+        from core.pdf_generator import generate_customer_statement_pdf, pdf_response
+        from sales.models import Customer, SalesInvoice, CustomerPayment
+        from sales.services.fifo_allocation import FIFOAllocationService
+
+        try:
+            customer = Customer.objects.get(pk=customer_id)
+        except Customer.DoesNotExist:
+            return Response({'error': 'Customer not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        outstanding = FIFOAllocationService.get_outstanding_invoices(customer)
+        payments = CustomerPayment.objects.filter(customer=customer).order_by('-payment_date')[:50]
+
+        statements_data = {
+            'invoices': [
+                {
+                    'invoice_number': inv.get('invoice_number', ''),
+                    'invoice_date': inv.get('invoice_date', ''),
+                    'due_date': inv.get('due_date', ''),
+                    'total': float(inv.get('total_amount', 0)),
+                    'paid': float(inv.get('paid_amount', 0)),
+                    'balance': float(inv.get('balance', 0)),
+                }
+                for inv in outstanding
+            ],
+            'payments': [
+                {
+                    'reference': p.reference_number,
+                    'date': str(p.payment_date),
+                    'method': str(p.payment_method),
+                    'amount': float(p.amount),
+                }
+                for p in payments
+            ],
+        }
+
+        pdf_bytes = generate_customer_statement_pdf(
+            customer, statements_data, generated_by=str(request.user)
+        )
+        return pdf_response(pdf_bytes, f'statement_{customer.code}.pdf')
+
+    @action(detail=False, methods=['get'], url_path='suppliers/(?P<supplier_id>[^/.]+)/statement-pdf')
+    def supplier_statement_pdf(self, request, supplier_id=None):
+        """Export supplier statement as PDF."""
+        from core.pdf_generator import generate_supplier_statement_pdf, pdf_response
+        from purchases.models import Supplier, PurchaseInvoice, SupplierPayment
+        from purchases.services.fifo_allocation import SupplierFIFOAllocationService
+
+        try:
+            supplier = Supplier.objects.get(pk=supplier_id)
+        except Supplier.DoesNotExist:
+            return Response({'error': 'Supplier not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        outstanding = SupplierFIFOAllocationService.get_outstanding_invoices(supplier)
+        payments = SupplierPayment.objects.filter(supplier=supplier).order_by('-payment_date')[:50]
+
+        statements_data = {
+            'invoices': [
+                {
+                    'invoice_number': inv.get('invoice_number', ''),
+                    'invoice_date': inv.get('invoice_date', ''),
+                    'due_date': inv.get('due_date', ''),
+                    'total': float(inv.get('total_amount', 0)),
+                    'paid': float(inv.get('paid_amount', 0)),
+                    'balance': float(inv.get('balance', 0)),
+                }
+                for inv in outstanding
+            ],
+            'payments': [
+                {
+                    'reference': p.reference_number,
+                    'date': str(p.payment_date),
+                    'method': str(p.payment_method),
+                    'amount': float(p.amount),
+                }
+                for p in payments
+            ],
+        }
+
+        pdf_bytes = generate_supplier_statement_pdf(
+            supplier, statements_data, generated_by=str(request.user)
+        )
+        return pdf_response(pdf_bytes, f'supplier_statement_{supplier.code}.pdf')

@@ -57,41 +57,57 @@ class FinancialPolicyEngine:
     def _get_customer_risk_score(customer) -> int:
         """Get risk score from CreditRiskIntelligence."""
         from core.services.credit_risk_intelligence import CreditRiskIntelligence
+        import logging
+        logger = logging.getLogger('erp.policy_engine')
         try:
             assessment = CreditRiskIntelligence.assess_customer_risk(customer)
             return assessment['risk_score']
-        except Exception:
+        except Exception as e:
+            logger.warning(f"CreditRiskIntelligence unavailable for customer {customer.id}: {e}")
             return 50  # Default medium risk if intelligence unavailable
 
     @staticmethod
     def _get_anomaly_count() -> int:
         """Get current anomaly count from FICL."""
         from core.services.anomaly_detection import AnomalyDetectionEngine
+        import logging
+        logger = logging.getLogger('erp.policy_engine')
         try:
             report = AnomalyDetectionEngine.detect_all()
             return report['total_anomalies']
-        except Exception:
+        except Exception as e:
+            logger.error(f"AnomalyDetectionEngine failure: {e}")
             return 0
 
     @staticmethod
     def _get_cashflow_trend() -> str:
         """Determine cashflow trend direction."""
         from core.services.cashflow_observability import CashflowObservability
+        import logging
+        logger = logging.getLogger('erp.policy_engine')
         try:
             summary = CashflowObservability.get_cashflow_summary(days=90)
             return summary.get('inflow_trend', 'STABLE')
-        except Exception:
+        except Exception as e:
+            logger.warning(f"CashflowObservability failure: {e}")
             return 'STABLE'
 
     @staticmethod
-    def evaluate_customer(customer) -> PolicyDecision:
+    def evaluate_customer(
+        customer,
+        safe_mode: Optional[bool] = None,
+        anomaly_count: Optional[int] = None,
+        cashflow_trend: Optional[str] = None
+    ) -> PolicyDecision:
         """Evaluate policy rules for a customer.
         
         Returns a PolicyDecision with the most restrictive action.
         """
         from core.services.financial_truth_engine import FinancialTruthEngine
 
-        safe_mode = FinancialPolicyEngine._check_ssot_conflict()
+        if safe_mode is None:
+            safe_mode = FinancialPolicyEngine._check_ssot_conflict()
+        
         triggered_rules = []
         explanations = []
         max_decision = 'ALLOW'
@@ -138,8 +154,11 @@ class FinancialPolicyEngine:
                 try:
                     days = (today - inv.due_date).days
                     max_days = max(max_days, days)
-                except (TypeError, ValueError):
-                    pass
+                except (TypeError, ValueError) as e:
+                    import logging
+                    logger = logging.getLogger('erp.policy_engine')
+                    logger.error(f"Date calculation error for invoice {inv.id}: {e}")
+                    # We continue to next invoice instead of failing the whole evaluation
 
             if max_days > FinancialPolicyEngine.OVERDUE_SOFT_BLOCK_DAYS:
                 if max_decision not in ('HARD_BLOCK',):
@@ -158,7 +177,9 @@ class FinancialPolicyEngine:
                 )
 
         # RULE 3 — CASHFLOW STABILITY
-        cashflow_trend = FinancialPolicyEngine._get_cashflow_trend()
+        if cashflow_trend is None:
+            cashflow_trend = FinancialPolicyEngine._get_cashflow_trend()
+            
         if cashflow_trend == 'DECREASING':
             if max_decision == 'ALLOW':
                 max_decision = 'WARN'
@@ -166,7 +187,9 @@ class FinancialPolicyEngine:
             explanations.append('Cashflow trend is decreasing over the last 90 days.')
 
         # RULE 4 — ANOMALY PROTECTION
-        anomaly_count = FinancialPolicyEngine._get_anomaly_count()
+        if anomaly_count is None:
+            anomaly_count = FinancialPolicyEngine._get_anomaly_count()
+            
         if anomaly_count > FinancialPolicyEngine.ANOMALY_WARN_THRESHOLD:
             if max_decision == 'ALLOW':
                 max_decision = 'WARN'

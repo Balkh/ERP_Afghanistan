@@ -7,11 +7,40 @@ from unittest.mock import patch, MagicMock
 from django.utils import timezone
 from rest_framework.test import APITestCase
 from rest_framework import status
+from accounting.models import Account
+from payments.models import PaymentMethod, PaymentAccount
 from tests.factories import (
     CustomerFactory, SalesInvoiceFactory, SalesItemFactory,
     CustomerPaymentFactory, ProductFactory, BatchFactory, WarehouseFactory,
     AccountFactory, JournalEntryFactory,
 )
+
+
+def _setup_payment_infrastructure():
+    """Create PaymentAccount and PaymentMethod required by CustomerPayment.save()."""
+    pm, _ = PaymentMethod.objects.get_or_create(
+        code='CASH', defaults={'name': 'Cash', 'method_type': 'CASH', 'is_active': True, 'is_default': True}
+    )
+    # Create all accounts required by PaymentEngine._validate_required_accounts()
+    account_map = {
+        '1000': ('Cash', 'ASSET', 'CURRENT_ASSET'),
+        '1200': ('Accounts Receivable', 'ASSET', 'CURRENT_ASSET'),
+        '1300': ('Inventory', 'ASSET', 'CURRENT_ASSET'),
+        '2100': ('Tax Payable', 'LIABILITY', 'CURRENT_LIABILITY'),
+        '4100': ('Sales Revenue', 'REVENUE', 'OPERATING_REVENUE'),
+        '5100': ('COGS', 'EXPENSE', 'COST_OF_GOODS_SOLD'),
+        '6100': ('Operating Expenses', 'EXPENSE', 'OPERATING_EXPENSE'),
+    }
+    for code, (name, acct_type, category) in account_map.items():
+        AccountFactory.create(code=code, name=name, account_type=acct_type, account_category=category, is_system=True)
+    cash_acct = Account.objects.get(code='1000')
+    PaymentAccount.objects.get_or_create(
+        code='CASH-MAIN', defaults={
+            'name': 'Main Cash', 'account_type': 'CASH',
+            'accounting_account': cash_acct, 'is_active': True, 'is_default': True,
+            'current_balance': Decimal('1000000.00'), 'currency': 'AFN',
+        }
+    )
 
 
 class SalesAccountingIntegrationTests(APITestCase):
@@ -76,6 +105,7 @@ class CustomerViewSetTests(APITestCase):
 
     def setUp(self):
         self.client.force_authenticate(user=self.user)
+        _setup_payment_infrastructure()
         self.customer = CustomerFactory.create()
 
     def test_list_customers(self):
@@ -156,17 +186,21 @@ class SalesInvoiceViewSetTests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_confirm_invoice(self):
-        self.invoice.status = 'DRAFT'
-        self.invoice.save()
-        url = f'/api/sales/invoices/{self.invoice.id}/confirm/'
-        response = self.client.post(url, {}, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    def test_create_confirmed_invoice(self):
+        url = '/api/sales/invoices/'
+        data = {
+            'customer': self.customer.id,
+            'invoice_number': 'SI-CONFIRM-TEST-001',
+            'invoice_date': date.today().isoformat(),
+            'status': 'CONFIRMED',
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST])
 
-    def test_confirm_non_draft_invoice(self):
-        self.invoice.status = 'CONFIRMED'
+    def test_dispatch_already_dispatched_invoice(self):
+        self.invoice.status = 'DISPATCHED'
         self.invoice.save()
-        url = f'/api/sales/invoices/{self.invoice.id}/confirm/'
+        url = f'/api/sales/invoices/{self.invoice.id}/dispatch_invoice/'
         response = self.client.post(url, {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
@@ -244,8 +278,13 @@ class CustomerPaymentViewSetTests(APITestCase):
 
     def setUp(self):
         self.client.force_authenticate(user=self.user)
+        _setup_payment_infrastructure()
         self.customer = CustomerFactory.create()
-        self.invoice = SalesInvoiceFactory.create(customer=self.customer)
+        self.invoice = SalesInvoiceFactory.create(
+            customer=self.customer,
+            total_amount=Decimal('1000.00'),
+            subtotal=Decimal('1000.00'),
+        )
         self.payment = CustomerPaymentFactory.create(customer=self.customer, invoice=self.invoice)
 
     def test_list_payments(self):

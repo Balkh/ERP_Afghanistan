@@ -135,6 +135,75 @@ class FixedAssetViewSet(viewsets.ModelViewSet):
         report = AssetAccountingIntegrationService.calculate_asset_value_report(report_date)
         return Response(report)
 
+    @action(detail=False, methods=['post'])
+    def bulk_depreciate(self, request):
+        """Run depreciation for all active assets."""
+        period_date = request.data.get('period_date')
+        period_date_obj = date.fromisoformat(period_date) if period_date else date.today()
+
+        active_assets = FixedAsset.objects.filter(status__in=['ACTIVE', 'DRAFT'])
+
+        if not active_assets.exists():
+            return Response({'error': 'No active assets found'}, status=status.HTTP_400_BAD_REQUEST)
+
+        results = []
+        errors = []
+
+        for asset in active_assets:
+            try:
+                depreciation = AssetLifecycleService.depreciate_asset(asset, period_date_obj)
+                results.append({
+                    'asset_code': asset.asset_code,
+                    'asset_name': asset.asset_name,
+                    'depreciation_amount': str(depreciation.depreciation_amount),
+                    'depreciation_id': str(depreciation.id),
+                })
+            except ValidationError as e:
+                errors.append({
+                    'asset_code': asset.asset_code,
+                    'asset_name': asset.asset_name,
+                    'error': str(e),
+                })
+
+        return Response({
+            'success': True,
+            'period_date': str(period_date_obj),
+            'processed': len(results),
+            'failed': len(errors),
+            'results': results,
+            'errors': errors,
+        })
+
+    @action(detail=False, methods=['get'])
+    def register_export(self, request):
+        """Export full asset register as JSON for download."""
+        assets = FixedAsset.objects.filter(status__in=['ACTIVE', 'DRAFT', 'FULLY_DEPRECIATED']).select_related('category')
+
+        register = []
+        for asset in assets:
+            register.append({
+                'asset_code': asset.asset_code,
+                'asset_name': asset.asset_name,
+                'category': asset.category.name if asset.category else '',
+                'status': asset.status,
+                'purchase_cost': str(asset.purchase_cost),
+                'accumulated_depreciation': str(asset.accumulated_depreciation),
+                'current_book_value': str(asset.current_book_value),
+                'purchase_date': str(asset.purchase_date) if asset.purchase_date else '',
+                'depreciation_method': asset.depreciation_method,
+                'useful_life_years': asset.useful_life_years,
+                'salvage_value': str(asset.salvage_value),
+                'location': asset.location,
+            })
+
+        return Response({
+            'total_assets': len(register),
+            'total_cost': str(sum(a['purchase_cost'] for a in register)),
+            'total_accumulated_depreciation': str(sum(a['accumulated_depreciation'] for a in register)),
+            'total_book_value': str(sum(a['current_book_value'] for a in register)),
+            'assets': register,
+        })
+
 
 class AssetDepreciationViewSet(viewsets.ModelViewSet):
     """

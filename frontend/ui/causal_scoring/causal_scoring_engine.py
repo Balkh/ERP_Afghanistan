@@ -11,10 +11,9 @@ Enhances causal graphs with weighted scoring:
 
 Strictly deterministic rule-based scoring. NO ML. NO probability models.
 """
-import math
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Dict, List
 
 from api.client import APIClient
 from api.autonomous_client import AutonomousAPIClient

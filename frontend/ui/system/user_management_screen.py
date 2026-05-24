@@ -1,32 +1,19 @@
 """User Management Screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QHeaderView, QAbstractItemView,
-                                  QComboBox, QLineEdit, QGroupBox, QFormLayout,
-                                   QMessageBox, QDialog, QSpinBox,
-                                  QCheckBox, QDateEdit, QTabWidget, QWidget)
+                                  QLabel, QAbstractItemView, QComboBox,
+                                  QLineEdit, QGroupBox, QFormLayout, QMessageBox,
+                                  QDialog, QCheckBox, QTabWidget,
+                                  QWidget, QPushButton, QTableWidgetItem)
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 from ui.screens.base_screen import BaseScreen
-from ui.components.dialogs import confirm_dialog
-from datetime import date
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_CARD_TITLE,
+                           TEXT_BODY, BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_SUCCESS)
 
-# Design tokens
-from ui.constants import (
-    SPACING_SM, SPACING_MD, SPACING_LG,
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER
-)
+
 
 
 class UserManagementScreen(BaseScreen):
@@ -49,8 +36,9 @@ class UserManagementScreen(BaseScreen):
 
         # Header section
         header_layout = QHBoxLayout()
+        from theme.style_builder import UIStyleBuilder
         header = QLabel("User & Role Management")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header.setStyleSheet(UIStyleBuilder.get_label_style("title"))
         header_layout.addWidget(header)
         
         header_layout.addStretch()
@@ -61,26 +49,7 @@ class UserManagementScreen(BaseScreen):
         layout.addLayout(header_layout)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}; background: {COLOR_BG_MAIN}; }}
-            QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; border: none; padding: {SPACING_MD}px 24px; border-top-left-radius: 6px; border-top-right-radius: 6px; }}
-            QTabBar::tab:selected {{ background: {COLOR_PRIMARY}; color: white; font-weight: bold; }}
-            QTabBar::tab:hover {{ background: {COLOR_BORDER}; }}
-        """)
-        # Replace remaining hex colors
-        ss = self.tabs.styleSheet()
-        ss = ss.replace("#374151", COLOR_BG_ELEVATED)
-        ss = ss.replace("#1f2937", COLOR_BG_MAIN)
-        ss = ss.replace("#4b5563", COLOR_BORDER)
-        ss = ss.replace("#e5e7eb", COLOR_TEXT_PRIMARY)
-        ss = ss.replace("#3b82f6", COLOR_PRIMARY)
-        ss = ss.replace("#10b981", COLOR_SUCCESS)
-        ss = ss.replace("#059669", COLOR_SUCCESS)
-        ss = ss.replace("#ef4444", COLOR_DANGER)
-        ss = ss.replace("#f59e0b", COLOR_WARNING)
-        ss = ss.replace("#6b7280", COLOR_TEXT_MUTED)
-        ss = ss.replace("#9ca3af", COLOR_TEXT_MUTED)
-        self.tabs.setStyleSheet(ss)
+        self.tabs.setStyleSheet(UIStyleBuilder.get_tab_style())
         
         # Users Tab
         self.users_tab = QWidget()
@@ -125,8 +94,9 @@ class UserManagementScreen(BaseScreen):
         layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
+        from theme.style_builder import UIStyleBuilder
         info_label = QLabel("System Roles are predefined based on organizational functions. You can view permissions for each role below.")
-        info_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic;")
+        info_label.setStyleSheet(UIStyleBuilder.get_label_style("muted") + " font-style: italic;")
         layout.addWidget(info_label)
         
         role_selector_layout = QHBoxLayout()
@@ -209,39 +179,24 @@ class UserManagementScreen(BaseScreen):
     
     def populate_table(self):
         """Populate the users table."""
-        self.table.setRowCount(0)
-        
-        search = self.search_input.text().lower()
+        self.user_table.setRowCount(0)
         
         for user in self._users:
-            if search and search not in user.get('username', '').lower() and search not in user.get('email', '').lower():
-                continue
+            row = self.user_table.rowCount()
+            self.user_table.insertRow(row)
             
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            
-            self.table.setItem(row, 0, QTableWidgetItem(str(user.get('id', ''))))
-            self.table.setItem(row, 1, QTableWidgetItem(user.get('username', '')))
-            self.table.setItem(row, 2, QTableWidgetItem(user.get('email', '')))
-            self.table.setItem(row, 3, QTableWidgetItem(user.get('first_name', '')))
-            self.table.setItem(row, 4, QTableWidgetItem(user.get('last_name', '')))
+            self.user_table.setItem(row, 0, QTableWidgetItem(str(user.get('id', ''))))
+            self.user_table.setItem(row, 1, QTableWidgetItem(user.get('username', '')))
+            self.user_table.setItem(row, 2, QTableWidgetItem(user.get('email', '')))
+            self.user_table.setItem(row, 3, QTableWidgetItem(user.get('first_name', '')))
+            self.user_table.setItem(row, 4, QTableWidgetItem(user.get('last_name', '')))
             
             roles = user.get('roles', [])
             role_str = ", ".join(roles) if roles else "General"
-            self.table.setItem(row, 5, QTableWidgetItem(role_str))
+            self.user_table.setItem(row, 5, QTableWidgetItem(role_str))
             
             active = "Yes" if user.get('is_active', True) else "No"
-            self.table.setItem(row, 6, QTableWidgetItem(active))
-    
-    def filter_users(self):
-        """Filter users based on search."""
-        self.populate_table()
-    
-    def on_selection_changed(self):
-        """Handle selection change."""
-        selected = len(self.table.selectionModel().selectedRows()) > 0
-        self.edit_btn.setEnabled(selected)
-        self.delete_btn.setEnabled(selected)
+            self.user_table.setItem(row, 6, QTableWidgetItem(active))
     
     def add_user(self):
         """Show add user dialog."""
@@ -297,7 +252,7 @@ class UserDialog(QDialog):
 
     def _setup_ui(self):
         self.setMinimumWidth(500)
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QDialog {{ 
                 background-color: {COLOR_BG_MAIN}; 
             }}
@@ -389,7 +344,7 @@ class UserDialog(QDialog):
         layout.addWidget(title)
         
         form_group = QGroupBox("")
-        form_group.setStyleSheet(f"""
+        form_group.setStyleSheet("""
             QGroupBox {{
                 border: 1px solid {COLOR_BG_ELEVATED};
                 border-radius: {BORDER_RADIUS_LG};
@@ -447,40 +402,11 @@ class UserDialog(QDialog):
         buttons = QHBoxLayout()
         buttons.setSpacing(SPACING_MD + SPACING_XS)
         
-        cancel_btn = QPushButton("Cancel")
-        cancel_btn.setMinimumHeight(42)
-        cancel_btn.setMinimumWidth(130)
-        cancel_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_BORDER};
-                color: white;
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                font-size: {TEXT_BODY}px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_TEXT_MUTED};
-            }}
-        """)
+        cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.LARGE)
         cancel_btn.clicked.connect(self.reject)
         
-        save_btn = QPushButton("Save User")
-        save_btn.setMinimumHeight(38)
+        save_btn = EnterpriseButton("Save User", variant=ButtonVariant.PRIMARY, size=ButtonSize.LARGE)
         save_btn.setMinimumWidth(130)
-        save_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_SUCCESS};
-                color: white;
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                font-weight: bold;
-                padding: {SPACING_SM} 20px;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_SUCCESS};
-            }}
-        """)
         save_btn.clicked.connect(self.accept)
         
         buttons.addWidget(cancel_btn)

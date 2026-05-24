@@ -8,7 +8,6 @@ from .base_widgets import (
     BaseContainerWidget, 
     BaseFormWidget,
     BaseListWidget,
-    BaseDialogWidget
 )
 
 from .buttons import (
@@ -67,7 +66,6 @@ __all__ = [
     'BaseContainerWidget', 
     'BaseFormWidget',
     'BaseListWidget',
-    'BaseDialogWidget',
     # Buttons
     'EnterpriseButton',
     'ButtonVariant',

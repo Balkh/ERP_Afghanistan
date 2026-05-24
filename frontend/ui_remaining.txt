@@ -1,0 +1,105 @@
+ui/dashboard.py:257:16: undefined name 'self'
+ui/accounting\arap_ageing_screen.py:5:1: redefinition of unused 'COLOR_DANGER' from line 5
+ui/accounting\balance_sheet_screen.py:6:1: redefinition of unused 'COLOR_PRIMARY' from line 6
+ui/accounting\profit_loss_screen.py:7:1: redefinition of unused 'COLOR_SUCCESS' from line 7
+ui/accounting\profit_loss_screen.py:7:1: redefinition of unused 'COLOR_DANGER' from line 7
+ui/accounting\components\journal_entry_detail.py:7:1: redefinition of unused 'TEXT_LABEL' from line 6
+ui/accounting\components\journal_entry_detail.py:7:1: redefinition of unused 'TEXT_BODY' from line 6
+ui/accounting\components\journal_entry_detail.py:7:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 6
+ui/accounting\components\journal_entry_form.py:10:1: redefinition of unused 'COLOR_BG_DIALOG' from line 10
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_PRIMARY' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_BG_MAIN' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_BG_ELEVATED' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_BORDER' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_TEXT_PRIMARY' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_TEXT_MUTED' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_DANGER' from line 8
+ui/autonomous\decision_options_screen.py:14:1: redefinition of unused 'SPACING_SM' from line 14
+ui/autonomous\forecast_dashboard.py:140:9: local variable 'e' is assigned to but never used
+ui/autonomous\master_dashboard.py:18:1: redefinition of unused 'SPACING_SM' from line 18
+ui/causal_scoring\decision_ranking_dashboard.py:24:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 20
+ui/causal_scoring\decision_ranking_dashboard.py:24:1: redefinition of unused 'TEXT_BODY' from line 20
+ui/causal_scoring\decision_ranking_dashboard.py:142:9: local variable 'e' is assigned to but never used
+ui/common\printable_invoice.py:139:9: local variable 'company_email' is assigned to but never used
+ui/common\printable_invoice.py:140:9: local variable 'company_tax' is assigned to but never used
+ui/common\printable_invoice.py:141:9: local variable 'currency' is assigned to but never used
+ui/common\printable_invoice.py:142:9: local variable 'invoice_footer' is assigned to but never used
+ui/components\dialogs.py:2:1: redefinition of unused 'TEXT_BODY' from line 1
+ui/components\dialogs.py:2:1: redefinition of unused 'TEXT_LABEL' from line 1
+ui/components\dialogs.py:2:1: redefinition of unused 'TEXT_CARD_TITLE' from line 1
+ui/components\dialogs.py:3:1: redefinition of unused 'DIALOG_WIDTH_MIN' from line 1
+ui/components\dialogs.py:3:1: redefinition of unused 'DIALOG_WIDTH_PREFERRED' from line 1
+ui/components\dialogs.py:3:1: redefinition of unused 'DIALOG_WIDTH_MAX' from line 1
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'SPACING_LG' from line 1
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_PRIMARY' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_TEXT_PRIMARY' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_BG_SURFACE' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_BG_ELEVATED' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_BORDER_LIGHT' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_TEXT_SECONDARY' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_BG_INPUT' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_TEXT_MUTED' from line 2
+ui/components\kpi_cards.py:16:1: redefinition of unused 'SPACING_SM' from line 16
+ui/components\navigation_header.py:3:1: redefinition of unused 'TEXT_LABEL' from line 1
+ui/components\navigation_header.py:3:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 1
+ui/components\notifications.py:16:1: redefinition of unused 'TEXT_TABLE' from line 8
+ui/components\notifications.py:16:1: redefinition of unused 'TEXT_LABEL' from line 8
+ui/components\notifications.py:16:1: redefinition of unused 'TEXT_CARD_TITLE' from line 8
+ui/components\notifications.py:16:1: redefinition of unused 'TEXT_BODY' from line 8
+ui/control_tower\dashboard.py:108:9: local variable 'ctx' is assigned to but never used
+ui/control_tower\workflow_execution_screen.py:20:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 15
+ui/control_tower\workflow_execution_screen.py:20:1: redefinition of unused 'TEXT_DISPLAY' from line 15
+ui/control_tower\workflow_execution_screen.py:20:1: redefinition of unused 'TEXT_BODY' from line 15
+ui/governance\consistency_audit.py:120:17: local variable 'rel' is assigned to but never used
+ui/governance\consistency_audit.py:158:17: local variable 'rel' is assigned to but never used
+ui/governance\consistency_audit.py:167:17: local variable 'pattern' is assigned to but never used
+ui/governance\consistency_audit.py:189:17: local variable 'rel' is assigned to but never used
+ui/investigation\anomaly_investigation_screen.py:20:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 16
+ui/investigation\event_investigation_screen.py:20:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 16
+ui/licensing\activation_screen.py:221:5: redefinition of unused 'QApplication' from line 6
+ui/navigation\navigation_manager.py:106:9: local variable 'old_screen' is assigned to but never used
+ui/observability\dashboards.py:18:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 10
+ui/observability\dashboards.py:18:1: redefinition of unused 'TEXT_LABEL' from line 10
+ui/observability\dashboards.py:18:1: redefinition of unused 'TEXT_TABLE' from line 10
+ui/observability\observability_screen.py:12:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 6
+ui/observability\observability_screen.py:12:1: redefinition of unused 'TEXT_LABEL' from line 6
+ui/observability\observability_screen.py:12:1: redefinition of unused 'TEXT_TABLE' from line 6
+ui/observability\replay_screen.py:16:1: redefinition of unused 'BORDER_RADIUS_SM' from line 16
+ui/observability\replay_screen.py:21:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 16
+ui/observability\replay_screen.py:21:1: redefinition of unused 'TEXT_BODY' from line 16
+ui/observability\replay_screen.py:158:9: local variable 'e' is assigned to but never used
+ui/observability\widgets.py:283:28: f-string is missing placeholders
+ui/purchases\purchase_invoice_screen.py:626:9: local variable 'data' is assigned to but never used
+ui/sales\sales_invoice_screen.py:528:9: local variable 'row' is assigned to but never used
+ui/sales\sales_invoice_screen.py:678:9: local variable 'data' is assigned to but never used
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 1
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_CARD_TITLE' from line 1
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_BODY' from line 1
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_TABLE' from line 1
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_DISPLAY' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_XS' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_SM' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_MD' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_LG' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_XL' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_PRIMARY' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_SUCCESS' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_WARNING' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_DANGER' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_INFO' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_TEXT_PRIMARY' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_TEXT_SECONDARY' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_TEXT_MUTED' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BG_MAIN' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BG_SURFACE' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BG_ELEVATED' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BG_INPUT' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BORDER' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_STATUS_VALID' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'MARGIN_PAGE' from line 1
+ui/system\drift_intelligence_screen.py:18:1: redefinition of unused 'DriftIntelligenceService' from line 16
+ui/system\drift_intelligence_screen.py:88:13: local variable 'rect' is assigned to but never used
+ui/system\settings_screen.py:281:9: local variable 'currency_ok' is assigned to but never used
+ui/system\workflow_intelligence_screen.py:47:9: local variable 'h' is assigned to but never used
+ui/truth\event_store_screen.py:18:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 13
+ui/truth\event_store_screen.py:18:1: redefinition of unused 'TEXT_LABEL' from line 13

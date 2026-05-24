@@ -5,26 +5,17 @@ Executes cross-module consistency tests and displays results.
 
 import time
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, 
-                               QFrame, QScrollArea, QProgressBar,
-                               QTableWidgetItem, QHeaderView,
-                               QSizePolicy, QGroupBox, QTextEdit)
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
+                               QFrame, QProgressBar, QTableWidgetItem,
+                               QGroupBox, QTextEdit)
+from PySide6.QtCore import QThread, Signal
 from PySide6.QtGui import QColor
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_XL,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE, TEXT_BODY, TEXT_DISPLAY,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_XL, COLOR_BG_MAIN, COLOR_BG_INPUT, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
-from ui.screens.base_screen import BaseScreen
-from ui.constants import (COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO)
 from api.integrity_service import SystemIntegrityService
 
 
@@ -223,7 +214,7 @@ class SystemIntegrityScreen(BaseScreen):
     def _handle_error(self, err):
         self.scan_btn.setEnabled(True)
         self.progress_label.setText(f"Critical scan failure: {err}")
-        self.progress_label.setStyleSheet("color: #f38ba8;")
+        self.progress_label.setStyleSheet(f"color: {COLOR_DANGER};")
 
     def _on_screen_shown(self):
         # Auto-run scan if results are empty

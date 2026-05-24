@@ -178,6 +178,7 @@ logs/
 *.lic
 *.license
 *.rsa
+vendor_keys/
 security_baseline.json
 *.enc
 *.private.pem
@@ -203,5 +204,6 @@ tmp/
 *_backup.*
 session.dat
 *.session
+nul
 
 test_output.txt

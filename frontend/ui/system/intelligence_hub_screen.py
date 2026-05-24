@@ -1,19 +1,15 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
-                                QLabel, QFrame, QScrollArea, QListWidget,
-                                QListWidgetItem, QSizePolicy, QPushButton, QStackedWidget, QGroupBox, QGridLayout)
-from PySide6.QtCore import Qt, QTimer
+                                QLabel, QFrame, QListWidget, QListWidgetItem,
+                                QGroupBox, QGridLayout)
 from PySide6.QtGui import QFont, QColor
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (
     COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-    COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_TEXT_MUTED, COLOR_TEXT_PRIMARY,
-    COLOR_TEXT_SECONDARY, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-    COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_PRIMARY,
-    SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-    SPACING_SM,
-    TEXT_CARD_TITLE, TEXT_LABEL, TEXT_SECTION_TITLE, TEXT_TABLE,
-    MARGIN_PAGE, SPACING_6, BORDER_RADIUS_XL, BORDER_RADIUS_LG, BORDER_RADIUS_PILL, BORDER_RADIUS_MD)
-from ui.constants import TEXT_LABEL, TEXT_CARD_TITLE, TEXT_TABLE, TEXT_SECTION_TITLE
+    COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_TEXT_MUTED, COLOR_TEXT_SECONDARY,
+    COLOR_BG_ELEVATED, SPACING_NONE, SPACING_XS, SPACING_MD,
+    SPACING_LG, TEXT_LABEL, TEXT_SECTION_TITLE,
+    TEXT_TABLE, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_PILL)
+from theme.style_builder import UIStyleBuilder
 from ui.system.control_center_screen import ControlCenterScreen
 from ui.system.workflow_intelligence_screen import WorkflowIntelligenceScreen
 from ui.system.integrity_screen import SystemIntegrityScreen
@@ -23,11 +19,8 @@ from utils.logger import (
     generate_operational_dashboard_data,
     get_event_summary,
     evaluate_decisions,
-    generate_correlation_id,
-    emit_event,
 )
-from ui.rendering.card_renderer import CardRenderer, CardElevation
-from ui.rendering.badge_renderer import BadgeRenderer, BadgeSeverity
+from ui.components.kpi_cards import KPICard
 
 
 class IntelligenceHubScreen(BaseScreen):
@@ -48,11 +41,9 @@ class IntelligenceHubScreen(BaseScreen):
         content_layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         content_layout.setSpacing(SPACING_MD)
 
+        from theme.style_builder import UIStyleBuilder
         self.title_label = QLabel("ERP Intelligence Hub")
-        title_font = QFont("Segoe UI", TEXT_CARD_TITLE)
-        title_font.setWeight(QFont.Weight.Bold)
-        self.title_label.setFont(title_font)
-        self.title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        self.title_label.setStyleSheet(UIStyleBuilder.get_label_style("title"))
 
         self.health_indicator = QLabel("ERP HEALTH: 100%")
         self.health_indicator.setStyleSheet(
@@ -69,23 +60,16 @@ class IntelligenceHubScreen(BaseScreen):
 
         self.alert_banner = QFrame()
         self.alert_banner.setFixedHeight(40)
-        self.alert_banner.setStyleSheet(
-            f"background: {COLOR_BG_MAIN}; border: 1px solid {COLOR_DANGER}; border-radius: {BORDER_RADIUS_LG};"
-        )
+        self.alert_banner.setStyleSheet(UIStyleBuilder.get_warning_banner_style('critical'))
         ab_layout = QHBoxLayout(self.alert_banner)
         self.alert_text = QLabel("NO CRITICAL INCIDENTS DETECTED")
-        self.alert_text.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; font-size: {TEXT_LABEL}px;")
+        self.alert_text.setStyleSheet(UIStyleBuilder.get_colored_label_style(COLOR_DANGER, TEXT_LABEL, 700))
         ab_layout.addWidget(self.alert_text)
         content_layout.addWidget(self.alert_banner)
 
         self.tabs = QTabWidget()
         self.tabs.currentChanged.connect(self._on_tab_changed)
-        self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_XL}px; background: {COLOR_BG_MAIN}; top: -1px; }}
-            QTabBar::tab {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_SECONDARY}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; margin-right: {SPACING_XS}px; font-weight: bold; }}
-            QTabBar::tab:selected {{ background: {COLOR_BG_MAIN}; color: {COLOR_PRIMARY}; border-bottom: 2px solid {COLOR_PRIMARY}; }}
-            QTabBar::tab:hover {{ background: {COLOR_BG_ELEVATED}; }}
-        """)
+        self.tabs.setStyleSheet(UIStyleBuilder.get_tab_style())
 
         self.overview_tab = QWidget()
         self._setup_overview_tab()
@@ -120,14 +104,14 @@ class IntelligenceHubScreen(BaseScreen):
         kpi_layout = QHBoxLayout()
         self._kpi_value_labels = {}
         kpi_specs = [
-            ("health", "ERP Health", "100%", COLOR_STATUS_VALID),
-            ("workflows", "Active Workflows", "0", COLOR_WARNING),
-            ("drift", "Drift Score", "0%", COLOR_INFO),
-            ("revenue", "Revenue (Today)", "0 AFN", COLOR_SUCCESS),
+            ("health", "ERP Health", "100%", "success"),
+            ("workflows", "Active Workflows", "0", "warning"),
+            ("drift", "Drift Score", "0%", "info"),
+            ("revenue", "Revenue (Today)", "0 AFN", "success"),
         ]
-        for key, title, val, color in kpi_specs:
-            card, _, v = CardRenderer.create_kpi(title, val, color)
-            self._kpi_value_labels[key] = v
+        for key, title, val, severity in kpi_specs:
+            card = KPICard(title, val, severity=severity)
+            self._kpi_value_labels[key] = card.value_label
             kpi_layout.addWidget(card)
         layout.addLayout(kpi_layout)
 
@@ -135,9 +119,7 @@ class IntelligenceHubScreen(BaseScreen):
         grid.setSpacing(SPACING_MD + SPACING_XS)
 
         status_box = QGroupBox("Operational Status")
-        status_box.setStyleSheet(
-            f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_XL}; margin-top: 10px; }}"
-        )
+        status_box.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         self.status_label = QLabel("Loading system status...")
         QVBoxLayout(status_box).addWidget(self.status_label)
         grid.addWidget(status_box, 0, 0)
@@ -181,29 +163,25 @@ class IntelligenceHubScreen(BaseScreen):
         layout.setSpacing(SPACING_LG)
 
         header = QLabel("Decision Intelligence Engine")
-        header_font = QFont("Segoe UI", TEXT_LABEL)
-        header_font.setWeight(QFont.Weight.Bold)
-        header.setFont(header_font)
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header.setStyleSheet(UIStyleBuilder.get_label_style("section"))
         layout.addWidget(header)
 
         risk_layout = QHBoxLayout()
         self._risk_value_labels = {}
-        for level, severity, color in [
-            ("low", BadgeSeverity.SUCCESS, COLOR_SUCCESS),
-            ("medium", BadgeSeverity.WARNING, COLOR_WARNING),
-            ("high", BadgeSeverity.HIGH, COLOR_DANGER),
-            ("critical", BadgeSeverity.CRITICAL, COLOR_DANGER),
-        ]:
-            card, _, v = CardRenderer.create_kpi(f"{level.upper()} Risk", "0", color)
-            self._risk_value_labels[level] = v
+        risk_configs = [
+            ("low", "success"),
+            ("medium", "warning"),
+            ("high", "danger"),
+            ("critical", "danger"),
+        ]
+        for level, severity in risk_configs:
+            card = KPICard(f"{level.upper()} Risk", "0", severity=severity)
+            self._risk_value_labels[level] = card.value_label
             risk_layout.addWidget(card)
         layout.addLayout(risk_layout)
 
         decisions_group = QGroupBox("System Decisions")
-        decisions_group.setStyleSheet(
-            f"QGroupBox {{ color: {COLOR_PRIMARY}; font-weight: bold; border: 1px solid {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_XL}; margin-top: 10px; }}"
-        )
+        decisions_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         self.decisions_list_detail = QListWidget()
         self.decisions_list_detail.setStyleSheet("background: transparent; border: none;")
         self.decisions_list_detail.addItem("Pulling live decisions...")
@@ -310,28 +288,22 @@ class IntelligenceHubScreen(BaseScreen):
         )
         if "health" in self._kpi_value_labels:
             self._kpi_value_labels["health"].setText(f"{stability}%")
-            self._kpi_value_labels["health"].setStyleSheet(f"color: {color}; font-size: {TEXT_SECTION_TITLE}px; font-weight: bold;")
+            from theme.style_builder import UIStyleBuilder
+            self._kpi_value_labels["health"].setStyleSheet(UIStyleBuilder.get_colored_label_style(color, TEXT_SECTION_TITLE, 700))
 
         self.health_indicator.setText(f"ERP HEALTH: {stability}%")
-        self.health_indicator.setStyleSheet(
-            f"background: {COLOR_BG_ELEVATED}; color: {color}; padding: {SPACING_6}px {SPACING_MD}px; "
-            f"border-radius: {BORDER_RADIUS_PILL}px; font-weight: bold; font-size: {TEXT_LABEL}px; border: 1px solid {color};"
-        )
+        self.health_indicator.setStyleSheet(UIStyleBuilder.get_badge_style(color))
 
         anomalies = health.get("anomalies", [])
         if anomalies:
             anomaly_types = ", ".join(a.get("type", "unknown") for a in anomalies[:3])
             self.alert_text.setText(f"ANOMALIES DETECTED: {anomaly_types}")
-            self.alert_text.setStyleSheet(f"color: {COLOR_STATUS_WARNING}; font-weight: bold; font-size: {TEXT_LABEL}px;")
-            self.alert_banner.setStyleSheet(
-                f"background: {COLOR_BG_MAIN}; border: 1px solid {COLOR_STATUS_WARNING}; border-radius: {BORDER_RADIUS_LG};"
-            )
+            self.alert_text.setStyleSheet(UIStyleBuilder.get_colored_label_style(COLOR_STATUS_WARNING, TEXT_LABEL, 700))
+            self.alert_banner.setStyleSheet(UIStyleBuilder.get_warning_banner_style('warning'))
         else:
             self.alert_text.setText("NO CRITICAL INCIDENTS DETECTED")
-            self.alert_text.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; font-size: {TEXT_LABEL}px;")
-            self.alert_banner.setStyleSheet(
-                f"background: {COLOR_BG_MAIN}; border: 1px solid {COLOR_DANGER}; border-radius: {BORDER_RADIUS_LG};"
-            )
+            self.alert_text.setStyleSheet(UIStyleBuilder.get_colored_label_style(COLOR_DANGER, TEXT_LABEL, 700))
+            self.alert_banner.setStyleSheet(UIStyleBuilder.get_warning_banner_style('critical'))
 
         error_overview = dashboard.get("error_overview", {})
         top_errors = error_overview.get("top_errors", [])

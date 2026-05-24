@@ -10,7 +10,7 @@ Thin REST endpoints for:
 - Dashboard (read-only views)
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from typing import Any, Dict, List, Optional
 
@@ -28,7 +28,7 @@ def _err(message: str, code: str = "OBS_001", status: int = 400) -> Response:
 # ─── Trace ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_trace_aggregate(request, domain: str, aggregate_id: str):
     """Full event chain reconstruction for an aggregate."""
     gw = get_obs_gateway()
@@ -57,7 +57,7 @@ def obs_trace_aggregate(request, domain: str, aggregate_id: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_trace_by_event(request, event_id: str):
     """Trace starting from a specific event ID."""
     gw = get_obs_gateway()
@@ -79,7 +79,7 @@ def obs_trace_by_event(request, event_id: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_causation_graph(request, event_id: str):
     """Build causation graph for an event."""
     gw = get_obs_gateway()
@@ -93,7 +93,7 @@ def obs_causation_graph(request, event_id: str):
 # ─── Timeline ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_timeline(request):
     """Get deterministic event timeline."""
     gw = get_obs_gateway()
@@ -118,7 +118,7 @@ def obs_timeline(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_timeline_aggregate(request, domain: str, aggregate_id: str):
     """Get timeline for a single aggregate."""
     gw = get_obs_gateway()
@@ -140,7 +140,7 @@ def obs_timeline_aggregate(request, domain: str, aggregate_id: str):
 # ─── Correlation ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_correlation_event(request, event_id: str):
     """Cross-domain correlation from event ID."""
     gw = get_obs_gateway()
@@ -160,7 +160,7 @@ def obs_correlation_event(request, event_id: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_correlation_domains(request, domain_a: str, domain_b: str):
     """Correlation between two domains."""
     gw = get_obs_gateway()
@@ -176,7 +176,7 @@ def obs_correlation_domains(request, domain_a: str, domain_b: str):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_domain_dependencies(request):
     """Get domain dependency map."""
     gw = get_obs_gateway()
@@ -186,7 +186,7 @@ def obs_domain_dependencies(request):
 # ─── Integrity ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_integrity_check(request):
     """Run full system integrity check."""
     gw = get_obs_gateway()
@@ -205,7 +205,7 @@ def obs_integrity_check(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_domain_integrity(request, domain: str):
     """Get integrity status for a domain."""
     gw = get_obs_gateway()
@@ -219,7 +219,7 @@ def obs_domain_integrity(request, domain: str):
 # ─── Replay ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_replay_state(request):
     """Get replay state for a sequence range."""
     gw = get_obs_gateway()
@@ -241,7 +241,7 @@ def obs_replay_state(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_replay_render(request, sequence: int):
     """Render system state at a specific sequence (time-travel)."""
     gw = get_obs_gateway()
@@ -257,7 +257,7 @@ def obs_replay_render(request, sequence: int):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_replay_hash(request):
     """Compute deterministic replay hash for a range."""
     gw = get_obs_gateway()
@@ -273,7 +273,7 @@ def obs_replay_hash(request):
 # ─── Dashboard ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_dashboard(request, dashboard_type: str = "overview"):
     """Get read-only dashboard view."""
     gw = get_obs_gateway()
@@ -294,7 +294,7 @@ def obs_dashboard(request, dashboard_type: str = "overview"):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_snapshot(request):
     """Get point-in-time observability snapshot."""
     gw = get_obs_gateway()
@@ -312,7 +312,7 @@ def obs_snapshot(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_status(request):
     """Get comprehensive observability status."""
     gw = get_obs_gateway()
@@ -323,7 +323,7 @@ def obs_status(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def obs_stream_metrics(request):
     """Get read-only stream metrics."""
     gw = get_obs_gateway()

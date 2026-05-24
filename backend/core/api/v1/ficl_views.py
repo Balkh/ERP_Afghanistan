@@ -11,7 +11,7 @@ Thin REST endpoints for all 6 FICL modules:
 All endpoints are GET-only (read-only intelligence).
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 
@@ -49,7 +49,7 @@ def _get_model(model_name, pk):
 # ─── 1. Anomaly Detection ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_anomalies(request):
     """Run all anomaly detectors and return structured report."""
     from core.services.anomaly_detection import AnomalyDetectionEngine
@@ -62,7 +62,7 @@ def ficl_anomalies(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_anomalies_payments(request):
     """Detect payment-specific anomalies."""
     from core.services.anomaly_detection import AnomalyDetectionEngine
@@ -74,7 +74,7 @@ def ficl_anomalies_payments(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_anomalies_invoices(request):
     """Detect invoice-specific anomalies."""
     from core.services.anomaly_detection import AnomalyDetectionEngine
@@ -87,7 +87,7 @@ def ficl_anomalies_invoices(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_anomalies_ledger(request):
     """Detect ledger-specific anomalies."""
     from core.services.anomaly_detection import AnomalyDetectionEngine
@@ -101,7 +101,7 @@ def ficl_anomalies_ledger(request):
 # ─── 2. Reconciliation Assistance V2 ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_reconciliation_suggest_customer(request, customer_id):
     """Suggest payment-invoice matches for a customer."""
     from core.services.reconciliation_v2 import ReconciliationAssistanceV2
@@ -121,7 +121,7 @@ def ficl_reconciliation_suggest_customer(request, customer_id):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_reconciliation_suggest_supplier(request, supplier_id):
     """Suggest supplier payment-invoice matches."""
     from core.services.reconciliation_v2 import ReconciliationAssistanceV2
@@ -141,7 +141,7 @@ def ficl_reconciliation_suggest_supplier(request, supplier_id):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_reconciliation_unresolved(request):
     """Get all unresolved reconciliation items."""
     from core.services.reconciliation_v2 import ReconciliationAssistanceV2
@@ -155,7 +155,7 @@ def ficl_reconciliation_unresolved(request):
 # ─── 3. Credit Risk Intelligence ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_credit_risk_assess(request, customer_id):
     """Full credit risk assessment for a customer."""
     from core.services.credit_risk_intelligence import CreditRiskIntelligence
@@ -170,7 +170,7 @@ def ficl_credit_risk_assess(request, customer_id):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_credit_risk_high_risk(request):
     """Get all high-risk customers."""
     from core.services.credit_risk_intelligence import CreditRiskIntelligence
@@ -187,7 +187,7 @@ def ficl_credit_risk_high_risk(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_credit_risk_predict(request, customer_id):
     """Predict credit breach for a customer."""
     from core.services.credit_risk_intelligence import CreditRiskIntelligence
@@ -205,7 +205,7 @@ def ficl_credit_risk_predict(request, customer_id):
 # ─── 4. Cashflow Observability ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_cashflow_summary(request):
     """Get cashflow summary for last N days."""
     from core.services.cashflow_observability import CashflowObservability
@@ -218,7 +218,7 @@ def ficl_cashflow_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_liquidity_snapshot(request):
     """Get point-in-time liquidity snapshot."""
     from core.services.cashflow_observability import CashflowObservability
@@ -230,7 +230,7 @@ def ficl_liquidity_snapshot(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_outstanding_exposure(request):
     """Get outstanding exposure with aging buckets."""
     from core.services.cashflow_observability import CashflowObservability
@@ -244,7 +244,7 @@ def ficl_outstanding_exposure(request):
 # ─── 5. Financial Explainability ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_explain_customer(request, customer_id):
     """Explain customer balance with full trace."""
     from core.services.financial_explainability import FinancialExplainability
@@ -259,7 +259,7 @@ def ficl_explain_customer(request, customer_id):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_explain_supplier(request, supplier_id):
     """Explain supplier balance with full trace."""
     from core.services.financial_explainability import FinancialExplainability
@@ -274,7 +274,7 @@ def ficl_explain_supplier(request, supplier_id):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_trace_invoice(request, model_name, invoice_id):
     """Full trace chain for a specific invoice."""
     from core.services.financial_explainability import FinancialExplainability
@@ -289,7 +289,7 @@ def ficl_trace_invoice(request, model_name, invoice_id):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_trace_payment(request, model_name, payment_id):
     """Full trace chain for a specific payment."""
     from core.services.financial_explainability import FinancialExplainability
@@ -306,7 +306,7 @@ def ficl_trace_payment(request, model_name, payment_id):
 # ─── 6. Financial Diagnostics ───
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_health(request):
     """Run full financial health check."""
     from core.services.financial_diagnostics import FinancialDiagnostics
@@ -318,7 +318,7 @@ def ficl_health(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_health_ssot(request):
     """Check SSOT consistency."""
     from core.services.financial_diagnostics import FinancialDiagnostics
@@ -330,7 +330,7 @@ def ficl_health_ssot(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_health_ledger(request):
     """Check ledger integrity."""
     from core.services.financial_diagnostics import FinancialDiagnostics
@@ -342,7 +342,7 @@ def ficl_health_ledger(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_health_fifo(request):
     """Check FIFO allocation integrity."""
     from core.services.financial_diagnostics import FinancialDiagnostics
@@ -354,7 +354,7 @@ def ficl_health_fifo(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_health_credit(request):
     """Check credit enforcement coverage."""
     from core.services.financial_diagnostics import FinancialDiagnostics
@@ -366,7 +366,7 @@ def ficl_health_credit(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def ficl_health_reconciliation(request):
     """Check reconciliation lag."""
     from core.services.financial_diagnostics import FinancialDiagnostics

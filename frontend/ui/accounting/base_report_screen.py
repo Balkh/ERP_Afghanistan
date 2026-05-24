@@ -1,14 +1,13 @@
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel, QTableWidget,
-                                QTableWidgetItem, QHeaderView, QAbstractItemView,
-                                QPushButton, QComboBox, QDateEdit, QGroupBox,
-                                QScrollArea, QMessageBox, QFileDialog, QMenu,
-                                QApplication)
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QFont, QColor
+                                QTableWidgetItem, QDateEdit, QGroupBox,
+                                QMessageBox, QFileDialog, QApplication)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFont
 from api.client import APIClient
 from datetime import date
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, BUTTON_HEIGHT_MD)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from utils.company_config import get_cached_config
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XL, TEXT_BODY, TEXT_LABEL, TEXT_SECTION_TITLE)
+from ui.constants import COLOR_TEXT_MUTED
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
@@ -146,7 +145,7 @@ class BaseReportScreen(QFrame):
         if not self.report_data:
             QMessageBox.warning(self, "Warning", "Run the report first.")
             return
-        self._do_export("pdf", "PDF Files (*.pdf)")
+        self._do_export("pd", "PDF Files (*.pdf)")
 
     def export_json(self):
         if not self.report_data:
@@ -155,7 +154,7 @@ class BaseReportScreen(QFrame):
         self._do_export("json", "JSON Files (*.json)")
 
     def _do_export(self, fmt: str, file_filter: str):
-        ext_map = {"csv": "csv", "excel": "xlsx", "pdf": "pdf", "json": "json"}
+        ext_map = {"csv": "csv", "excel": "xlsx", "pd": "pd", "json": "json"}
         ext = ext_map.get(fmt, fmt)
         file_path, _ = QFileDialog.getSaveFileName(
             self, f"Export as {fmt.upper()}",
@@ -166,7 +165,7 @@ class BaseReportScreen(QFrame):
                 params = self._get_report_params()
                 params["format"] = fmt
                 resp = self.api_client.get(self.report_api_endpoint, params=params)
-                if fmt in ("excel", "pdf"):
+                if fmt in ("excel", "pd"):
                     if hasattr(resp, 'content'):
                         with open(file_path, "wb") as f:
                             f.write(resp.content)
@@ -198,10 +197,12 @@ class BaseReportScreen(QFrame):
             if hasattr(self, 'date_from') and hasattr(self, 'date_to'):
                 if self.date_from.date() != QDate() and self.date_to.date() != QDate():
                     period_str = f"{self.date_from.date().toString('yyyy-MM-dd')} to {self.date_to.date().toString('yyyy-MM-dd')}"
+            config = get_cached_config()
+            company_name = config.name if config else "Pharmacy ERP"
             report_meta = {
                 "report_name": self.report_title,
                 "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "company": "Pharmacy ERP",
+                "company": company_name,
                 "period": period_str,
             }
             dialog = ReportPreviewDialog(self, self.report_title, text_data, report_meta)

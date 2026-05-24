@@ -4,7 +4,6 @@ Hosts: Integrity, Workflow Intel, Drift, Correlation, Event Store, Investigation
 """
 
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QLabel
-from PySide6.QtCore import Qt
 from ui.constants import (MARGIN_PAGE, SPACING_MD,
                            TEXT_PAGE_TITLE, COLOR_TEXT_PRIMARY)
 from ui.system.integrity_screen import SystemIntegrityScreen

@@ -1,9 +1,9 @@
 import json
 import requests
 import time
-from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
-from typing import Dict, Any, Optional, Callable
+from typing import Dict, Any, Optional
 from utils.logger import get_logger, record_api_time, record_error, emit_event, generate_correlation_id
 
 log = get_logger('api')
@@ -125,7 +125,7 @@ class APIClient(QObject):
                 try:
                     error_data = response.json()
                     error_msg = error_data.get("error", {}).get("message", response.text)
-                except:
+                except (json.JSONDecodeError, AttributeError, TypeError):
                     error_msg = response.text
                 log.warning(f"{method} {endpoint} -> {response.status_code}: {error_msg}",
                              extra={'extra_fields': {'tags': ['api', 'error'], 'status': response.status_code}})
@@ -203,7 +203,7 @@ class APIClient(QObject):
     
     def get(self, endpoint: str, params: Optional[Dict] = None, 
             headers: Optional[Dict] = None, retries: int = 3, raw_response: bool = False) -> Any:
-        """Make a GET request with automatic retries for network issues."""
+        """Make a GET request with automatic retries for network issues (non-blocking)."""
         last_error = None
         for attempt in range(retries):
             try:
@@ -215,10 +215,22 @@ class APIClient(QObject):
                         return None
                     return {"success": False, "data": [], "error": str(e)}
                 last_error = e
-                time.sleep(1 * (attempt + 1))
+                # Non-blocking retry: process pending UI events before retrying
+                try:
+                    from PySide6.QtWidgets import QApplication
+                    if QApplication.instance():
+                        QApplication.processEvents()
+                except Exception:
+                    pass
             except Exception as e:
                 last_error = e
-                time.sleep(1 * (attempt + 1))
+                # Non-blocking retry: process pending UI events before retrying
+                try:
+                    from PySide6.QtWidgets import QApplication
+                    if QApplication.instance():
+                        QApplication.processEvents()
+                except Exception:
+                    pass
         
         log.error(f"GET {endpoint} failed after {retries} attempts: {last_error}",
                    extra={'extra_fields': {'tags': ['api', 'error'], 'retries': retries}})
@@ -502,6 +514,22 @@ class APIClient(QObject):
     def get_roles(self):
         """Get list of roles."""
         return self.get("/api/auth/roles/")
+    
+    def get_role(self, role_id):
+        """Get role detail."""
+        return self.get(f"/api/auth/roles/{role_id}/")
+    
+    def create_role(self, data):
+        """Create new role."""
+        return self.post("/api/auth/roles/", data)
+    
+    def update_role(self, role_id, data):
+        """Update role."""
+        return self.put(f"/api/auth/roles/{role_id}/", data)
+    
+    def delete_role(self, role_id):
+        """Delete role."""
+        return self.delete(f"/api/auth/roles/{role_id}/")
     
     def get_permissions(self, modules=None):
         """Get list of permissions."""

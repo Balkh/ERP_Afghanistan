@@ -4,14 +4,12 @@ Inspects runtime consistency of typography, spacing, section hierarchy, button h
 table density, hover/focus patterns, empty state usage, and validation UX patterns.
 This is a STATIC analysis of source code patterns (not a live runtime inspector).
 """
-import ast
 import os
 import re
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List
 
-from .registry import REGISTRY, ComponentCategory
-from .audit_scanner import Severity, Violation, ScanReport
+from .audit_scanner import Violation
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -119,7 +117,7 @@ class SectionHierarchyInspector(BaseConsistencyInspector):
                 if not f.endswith(".py"):
                     continue
                 fp = os.path.join(root, f)
-                rel = os.path.relpath(fp, os.path.join(self.base_path, ".."))
+                __rel = os.path.relpath(fp, os.path.join(self.base_path, ".."))
                 try:
                     with open(fp, "r", encoding="utf-8") as fh:
                         content = fh.read()
@@ -157,7 +155,7 @@ class ButtonHierarchyInspector(BaseConsistencyInspector):
                 if not f.endswith(".py"):
                     continue
                 fp = os.path.join(root, f)
-                rel = os.path.relpath(fp, os.path.join(self.base_path, ".."))
+                __rel = os.path.relpath(fp, os.path.join(self.base_path, ".."))
                 try:
                     with open(fp, "r", encoding="utf-8") as fh:
                         content = fh.read()
@@ -166,7 +164,7 @@ class ButtonHierarchyInspector(BaseConsistencyInspector):
 
                 # Find consecutive EnterpriseButton usages for action pairs
                 # Secondary (Cancel) should come first, then Primary (Save)
-                pattern = re.findall(
+                __pattern = re.findall(
                     r'EnterpriseButton\([^)]+SECONDARY[^)]+\).*?EnterpriseButton\([^)]+PRIMARY[^)]+\)',
                     content, re.DOTALL
                 )
@@ -188,7 +186,7 @@ class EmptyStateInspector(BaseConsistencyInspector):
                 if not f.endswith(".py"):
                     continue
                 fp = os.path.join(root, f)
-                rel = os.path.relpath(fp, os.path.join(self.base_path, ".."))
+                __rel = os.path.relpath(fp, os.path.join(self.base_path, ".."))
                 try:
                     with open(fp, "r", encoding="utf-8") as fh:
                         content = fh.read()

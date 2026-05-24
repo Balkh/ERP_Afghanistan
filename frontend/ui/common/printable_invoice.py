@@ -1,17 +1,15 @@
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QPushButton, QTextEdit,
-                               QScrollArea, QWidget, QHBoxLayout, QLabel,
-                               QMessageBox, QFileDialog)
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QTextDocument, QTextCursor, QPageSize, QPdfWriter
+                               QHBoxLayout, QLabel, QMessageBox, QFileDialog)
+from PySide6.QtGui import QFont
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewDialog
-import os
 from api.document_action_service import DocumentActionService
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 from utils.invoice_template_engine import InvoiceTemplateEngine
 from utils.qr_generator import QRCodeGenerator
 from api.client import APIClient
-from ui.constants import (COLOR_WHATSAPP, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER,
-    SPACING_MD, SPACING_SM, SPACING_XL, SPACING_XS,
-                           TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
+from ui.constants import (COLOR_WHATSAPP, SPACING_MD, SPACING_SM, SPACING_LG, SPACING_XL,
+    SPACING_XS, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE,
+                           TEXT_SECTION_TITLE, TEXT_TABLE)
 
 
 class PrintableInvoiceDialog(QDialog):
@@ -23,16 +21,46 @@ class PrintableInvoiceDialog(QDialog):
         self.invoice_type = invoice_type
         self._api_client = api_client or APIClient()
         self.template_engine = InvoiceTemplateEngine()
+        self.company_info = self._load_company_info()
         
         self.setWindowTitle("Print Invoice")
         self.setModal(True)
         self.resize(900, 700)
         self.setup_ui()
         self.render_invoice()
+    
+    def _load_company_info(self):
+        """Load company info from backend API (SSOT)."""
+        try:
+            resp = self._api_client.get("/api/companies/config/")
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("success"):
+                    data = data.get("data", data)
+                return {
+                    "name": data.get("company_name", "Pharmacy ERP"),
+                    "address": data.get("address", ""),
+                    "phone": data.get("phone", ""),
+                    "email": data.get("email", ""),
+                    "tax_number": data.get("tax_number", ""),
+                    "default_currency": data.get("default_currency", "AFN"),
+                    "invoice_footer": data.get("invoice_footer", ""),
+                }
+        except Exception:
+            pass
+        return {
+            "name": "Pharmacy ERP",
+            "address": "",
+            "phone": "",
+            "email": "",
+            "tax_number": "",
+            "default_currency": "AFN",
+            "invoice_footer": "",
+        }
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(15, 15, 15, 15)
+        layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
 
         # Title
         title_layout = QHBoxLayout()
@@ -60,11 +88,10 @@ class PrintableInvoiceDialog(QDialog):
         self.save_pdf_btn = QPushButton("Save as PDF")
         self.save_pdf_btn.clicked.connect(self.save_as_pdf)
 
-        self.share_wa_btn = QPushButton("Share to WhatsApp")
-        self.share_wa_btn.setStyleSheet(f"background-color: {COLOR_WHATSAPP}; color: white; font-weight: bold;")
+        self.share_wa_btn = EnterpriseButton("Share to WhatsApp", variant=ButtonVariant.SUCCESS)
         self.share_wa_btn.clicked.connect(self.share_invoice)
 
-        close_btn = QPushButton("Close")
+        close_btn = EnterpriseButton("Close", variant=ButtonVariant.SECONDARY)
         close_btn.clicked.connect(self.reject)
 
         button_layout.addWidget(self.print_btn)
@@ -104,46 +131,56 @@ class PrintableInvoiceDialog(QDialog):
 
     def generate_invoice_html(self):
         inv = self.invoice_data
-        is_sale = self.invoice_type == "sale"
+        __is_sale = self.invoice_type == "sale"
 
-        company_name = "Pharmacy ERP"
-        company_address = "Kabul, Afghanistan"
-        company_phone = "+93 70 123 4567"
+        __company_name = self.company_info["name"]
+        __company_address = self.company_info["address"]
+        __company_phone = self.company_info["phone"]
+        __company_email = self.company_info["email"]
+        __company_tax = self.company_info["tax_number"]
+        __currency = self.company_info["default_currency"]
+        __invoice_footer = self.company_info["invoice_footer"]
 
-        header_color = "#2c3e50"
-        accent_color = "#3498db"
-        table_border_color = "#ddd"
-        even_row_bg = "#f9f9f9"
-        footer_text_color = "#666"
-        footer_border_color = "#ddd"
-        status_paid_bg = "#27ae60"
-        status_unpaid_bg = "#e74c3c"
-        status_partial_bg = "#f39c12"
+        from ui.constants import (
+            COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_PRIMARY, COLOR_BORDER,
+            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+            COLOR_SUCCESS, COLOR_DANGER, COLOR_WARNING
+        )
 
-        html = f"""
+        __header_color = COLOR_PRIMARY
+        __accent_color = COLOR_PRIMARY
+        __table_border_color = COLOR_BORDER
+        __even_row_bg = COLOR_BG_MAIN
+        __footer_text_color = COLOR_TEXT_MUTED
+        __footer_border_color = COLOR_BORDER
+        __status_paid_bg = COLOR_SUCCESS
+        __status_unpaid_bg = COLOR_DANGER
+        __status_partial_bg = COLOR_WARNING
+
+        html = """
         <html>
         <head>
             <style>
-                body {{ font-family: Arial, sans-serif; margin: 0; padding: {SPACING_XL}px; font-size: {TEXT_BODY}px; }}
-                .header {{ background-color: {header_color}; color: white; padding: {SPACING_XL}px; border-radius: 5px; }}
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: {SPACING_XL}px; font-size: {TEXT_BODY}px; color: {COLOR_TEXT_PRIMARY}; background-color: {COLOR_BG_SURFACE}; }}
+                .header {{ background-color: {header_color}; color: white; padding: {SPACING_XL}px; border-radius: 8px; }}
                 .header h1 {{ margin: 0; font-size: {TEXT_SECTION_TITLE}px; }}
-                .header p {{ margin: {SPACING_XS}px 0; }}
+                .header p {{ margin: {SPACING_XS}px 0; opacity: 0.9; }}
                 .invoice-info {{ display: flex; justify-content: space-between; margin: {SPACING_XL}px 0; }}
                 .invoice-info div {{ width: 48%; }}
                 table {{ width: 100%; border-collapse: collapse; margin: {SPACING_XL}px 0; }}
-                th {{ background-color: {accent_color}; color: white; padding: {SPACING_MD}px; text-align: left; }}
-                td {{ padding: {SPACING_SM}px 10px; border-bottom: 1px solid #ddd; }}
-                tr:nth-child(even) {{ background-color: #f9f9f9; }}
+                th {{ background-color: {accent_color}; color: white; padding: {SPACING_MD}px; text-align: left; font-weight: 600; }}
+                td {{ padding: {SPACING_SM}px 10px; border-bottom: 1px solid {table_border_color}; color: {COLOR_TEXT_PRIMARY}; }}
+                tr:nth-child(even) {{ background-color: {even_row_bg}; }}
                 .totals {{ text-align: right; margin: {SPACING_XL}px 0; }}
                 .totals table {{ width: 300px; margin-left: auto; }}
-                .totals th {{ text-align: right; }}
-                .totals td {{ text-align: right; }}
-                .grand-total {{ font-size: {TEXT_CARD_TITLE}px; font-weight: bold; background-color: {header_color}; color: white; }}
-                .footer {{ text-align: center; margin-top: 40px; color: #666; font-size: {TEXT_TABLE}px; border-top: 1px solid #ddd; padding-top: 10px; }}
-                .status {{ display: inline-block; padding: {SPACING_XS}px 10px; border-radius: 3px; font-weight: bold; }}
-                .status-paid {{ background-color: #27ae60; color: white; }}
-                .status-unpaid {{ background-color: #e74c3c; color: white; }}
-                .status-partial {{ background-color: #f39c12; color: white; }}
+                .totals th {{ text-align: right; background-color: transparent; color: {COLOR_TEXT_SECONDARY}; }}
+                .totals td {{ text-align: right; font-weight: 500; }}
+                .grand-total {{ font-size: {TEXT_CARD_TITLE}px; font-weight: bold; background-color: {header_color} !important; color: white !important; }}
+                .footer {{ text-align: center; margin-top: 40px; color: {footer_text_color}; font-size: {TEXT_TABLE}px; border-top: 1px solid {footer_border_color}; padding-top: 10px; }}
+                .status {{ display: inline-block; padding: {SPACING_XS}px 10px; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: 10px; }}
+                .status-paid {{ background-color: {status_paid_bg}; color: white; }}
+                .status-unpaid {{ background-color: {status_unpaid_bg}; color: white; }}
+                .status-partial {{ background-color: {status_partial_bg}; color: white; }}
             </style>
         </head>
         <body>
@@ -189,7 +226,7 @@ class PrintableInvoiceDialog(QDialog):
 
         items = inv.get("items", [])
         for i, item in enumerate(items, 1):
-            html += f"""
+            html += """
                     <tr>
                         <td>{i}</td>
                         <td>{item.get("product_name", "N/A")}</td>
@@ -202,7 +239,7 @@ class PrintableInvoiceDialog(QDialog):
                     </tr>
             """
 
-        html += f"""
+        html += """
                 </tbody>
             </table>
 
@@ -252,7 +289,7 @@ class PrintableInvoiceDialog(QDialog):
             qr_data = QRCodeGenerator.generate_invoice_qr_data(inv)
             qr_uri = QRCodeGenerator.generate_data_uri(qr_data, size=80)
             if qr_uri:
-                return f'''
+                return '''
                 <div style="text-align: center; margin-top: 15px;">
                     <img src="{qr_uri}" alt="QR Code" width="80" height="80">
                     <p style="font-size: {TEXT_BODY_SMALL}px; color: #666; margin-top: 4px;">Scan to Verify Invoice</p>
@@ -278,7 +315,7 @@ class PrintableInvoiceDialog(QDialog):
         file_path, _ = QFileDialog.getSaveFileName(
             self,
             "Save Invoice as PDF",
-            f"Invoice_{self.invoice_data.get('invoice_number', 'draft')}.pdf",
+            f"Invoice_{self.invoice_data.get('invoice_number', 'draft')}.pd",
             "PDF Files (*.pdf)"
         )
 

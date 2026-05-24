@@ -9,7 +9,7 @@ from datetime import date
 from typing import Optional, Dict, Any, Tuple
 
 import sys
-import os
+
 # Add the parent directory to sys.path to allow importing from utils
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from utils.device_fingerprint import generate_device_id, is_device_id_valid
@@ -17,8 +17,7 @@ from rsa_utils import (
     load_private_key, 
     load_public_key, 
     create_signed_license, 
-    is_license_valid,
-    generate_license_files
+    is_license_valid
 )
 
 

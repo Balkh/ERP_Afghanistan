@@ -7,7 +7,7 @@ Usage:
     renderer.apply_scopes()  # Call after login or ui_scopes_changed signal
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Dict, List
 
 from PySide6.QtCore import QObject
 from PySide6.QtWidgets import QWidget

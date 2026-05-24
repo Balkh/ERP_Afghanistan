@@ -1,32 +1,30 @@
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
-                               QHeaderView, QComboBox, QDateEdit,
-                               QMessageBox, QGroupBox, QApplication)
+                               QComboBox, QDateEdit, QMessageBox,
+                               QGroupBox, QApplication)
 from PySide6.QtCore import Qt, QDate
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BORDER_RADIUS_SM, BORDER_RADIUS_MD,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from utils.company_config import get_cached_config
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE, TEXT_BODY, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_MUTED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.screens.base_screen import BaseScreen
 
 
-class AccountLedgerScreen(QFrame):
+class AccountLedgerScreen(BaseScreen):
     """Account Ledger screen with date range and running balance."""
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="account_ledger")
         self.api_client = APIClient()
         self.accounts = []
         self._is_loading = False
         self.setup_ui()
         self.load_accounts()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — we load in __init__."""
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -298,10 +296,12 @@ class AccountLedgerScreen(QFrame):
 
             from ui.accounting.components.report_preview_dialog import ReportPreviewDialog
             from datetime import datetime
+            config = get_cached_config()
+            company_name = config.name if config else "Pharmacy ERP"
             report_meta = {
                 "report_name": f"Ledger - {self.ledger_data.get('account_name', 'N/A')}",
                 "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "company": "Pharmacy ERP",
+                "company": company_name,
                 "period": f"{self.date_from.date().toString('yyyy-MM-dd')} to {self.date_to.date().toString('yyyy-MM-dd')}" if self.date_from.date() != QDate() else "All time",
             }
             dialog = ReportPreviewDialog(self, f"Ledger - {self.ledger_data.get('account_name')}", text_data, report_meta)

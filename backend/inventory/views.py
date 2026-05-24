@@ -1,7 +1,6 @@
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
 from django_filters.rest_framework import DjangoFilterBackend
 from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 from .models import Category, Unit, Product, Batch, Warehouse, StockMovement
@@ -401,7 +400,7 @@ class BatchViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
         """
         fifo_batches = self.get_queryset().filter(
             remaining_quantity__gt=0
-        ).order_by('manufacturing_date')
+        ).order_by('manufacturing_date', 'id')
         
         page = self.paginate_queryset(fifo_batches)
         if page is not None:
@@ -418,7 +417,7 @@ class BatchViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
         """
         fefo_batches = self.get_queryset().filter(
             remaining_quantity__gt=0
-        ).order_by('expiry_date')
+        ).order_by('expiry_date', 'id')
         
         page = self.paginate_queryset(fefo_batches)
         if page is not None:

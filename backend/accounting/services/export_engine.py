@@ -28,7 +28,7 @@ class BaseExporter(ABC):
             return f'{amount:,.2f}'
         try:
             return f'{float(amount):,.2f}'
-        except:
+        except (ValueError, TypeError):
             return '0.00'
 
 
@@ -45,12 +45,14 @@ class ExcelExporter(BaseExporter):
         try:
             from openpyxl import Workbook
             from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-            from openpyxl.utils import get_column_letter
-            
+            from openpyxl.utils import get_column_letter as _get_column_letter
+            self.get_column_letter = _get_column_letter
+
             self.workbook = Workbook()
             self.workbook.remove(self.workbook.active)
             
             # Add styles
+            self.Alignment = Alignment
             self.header_font = Font(bold=True, size=12)
             self.title_font = Font(bold=True, size=14)
             self.bold_font = Font(bold=True)
@@ -82,6 +84,10 @@ class ExcelExporter(BaseExporter):
             # Fallback to CSV
             return self._fallback_csv(data, report_type, company_name)
     
+    def _set_alignment(self, cell, horizontal='center', vertical=None):
+        """Set cell alignment."""
+        cell.alignment = self.Alignment(horizontal=horizontal)
+
     def _add_title(self, title: str, subtitle: str = ''):
         """Add title row."""
         ws = self.worksheet
@@ -89,14 +95,14 @@ class ExcelExporter(BaseExporter):
         cell = ws[f'A{self.current_row}']
         cell.value = title
         cell.font = self.title_font
-        cell.alignment = Alignment(horizontal='center')
+        self._set_alignment(cell)
         self.current_row += 1
         
         if subtitle:
             ws.merge_cells(f'A{self.current_row}:H{self.current_row}')
             cell = ws[f'A{self.current_row}']
             cell.value = subtitle
-            cell.alignment = Alignment(horizontal='center')
+            self._set_alignment(cell)
             self.current_row += 1
         self.current_row += 1
     
@@ -108,7 +114,7 @@ class ExcelExporter(BaseExporter):
             cell.value = header
             cell.font = self.header_font
             cell.fill = self.header_fill
-            cell.alignment = Alignment(horizontal='center')
+            self._set_alignment(cell)
         self.current_row += 1
     
     def _add_row(self, values: list, bold: bool = False):
@@ -371,9 +377,13 @@ class ExcelExporter(BaseExporter):
     
     def _auto_size_columns(self, num_cols: int):
         """Auto-size columns."""
-        from openpyxl.utils import get_column_letter
+        try:
+            col_letter = self.get_column_letter
+        except AttributeError:
+            from openpyxl.utils import get_column_letter
+            col_letter = get_column_letter
         for col in range(1, num_cols + 1):
-            self.worksheet.column_dimensions[get_column_letter(col)].width = 15
+            self.worksheet.column_dimensions[col_letter(col)].width = 15
     
     def _fallback_csv(self, data: dict, report_type: str, company_name: str) -> bytes:
         """Fallback to CSV if openpyxl not available."""

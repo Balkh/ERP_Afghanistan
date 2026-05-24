@@ -43,8 +43,8 @@ class FIFOAllocationService:
         remaining = payment.amount
         allocations = []
 
-        # Get oldest outstanding invoices for this customer
-        outstanding = list(SalesInvoice.objects.filter(
+        # Get oldest outstanding invoices for this customer with row-level locking
+        outstanding = list(SalesInvoice.objects.select_for_update().filter(
             customer=payment.customer,
             status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID'],
             is_active=True,

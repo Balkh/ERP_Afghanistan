@@ -4,7 +4,7 @@ from django.db import transaction
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 from core.balance_sync import BalanceSyncService
@@ -19,7 +19,6 @@ from inventory.service import StockIntegrationService
 from inventory.models import Warehouse
 from core.view_logging import log_business_event
 from accounting.models import Account
-from accounting.services.journal_engine import JournalEngine
 from security.permissions import RoleBasedPermission
 
 
@@ -65,18 +64,20 @@ class PurchaseAccountingService:
             'description': f'Payable for invoice {invoice.invoice_number}'
         })
         
-        result = JournalEngine.create_entry(
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.create_entry(
+            module='purchases',
+            operation='create_entry',
             entry_type='PURCHASE',
             description=f'Purchase invoice {invoice.invoice_number} - {invoice.supplier.name}',
             lines=lines,
             entry_date=invoice.invoice_date,
             reference=invoice.invoice_number,
             auto_post=True,
-            source_module='purchases',
-            source_document=str(invoice.id),
-            change_reason=f'Purchase invoice {invoice.invoice_number}'
+            entity_type='PurchaseInvoice',
+            entity_id=str(invoice.id),
         )
-        
+
         if result.get('success'):
             invoice.journal_entry_id = result.get('entry_id')
             invoice.save(update_fields=['journal_entry_id', 'updated_at'])
@@ -107,14 +108,21 @@ class PurchaseAccountingService:
             },
         ]
         
-        return JournalEngine.create_entry(
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.create_entry(
+            module='purchases',
+            operation='create_entry',
             entry_type='PAYMENT',
             description=f'Payment to {payment.supplier.name}',
             lines=lines,
             entry_date=payment.payment_date,
             reference=payment.reference_number or '',
-            auto_post=True
+            auto_post=True,
+            entity_type='SupplierPayment',
+            entity_id=str(payment.id),
         )
+
+        return result
 
     @classmethod
     def reverse_purchase_journal_entry(cls, invoice: PurchaseInvoice, reason: str = '') -> dict:
@@ -122,11 +130,16 @@ class PurchaseAccountingService:
         if not invoice.journal_entry_id:
             return {'success': False, 'errors': ['No journal entry to reverse']}
         
-        result = JournalEngine.reverse_entry(
-            entry_id=invoice.journal_entry_id,
-            reason=reason or f'Invoice {invoice.invoice_number} cancelled'
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.reverse_entry(
+            module='purchases',
+            operation='reverse_entry',
+            entry_id=str(invoice.journal_entry_id),
+            reason=reason or f'Invoice {invoice.invoice_number} cancelled',
+            entity_type='PurchaseInvoice',
+            entity_id=str(invoice.id),
         )
-        
+
         if result.get('success'):
             invoice.journal_entry_id = None
             invoice.save(update_fields=['journal_entry_id', 'updated_at'])
@@ -151,7 +164,7 @@ class SupplierViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """
     queryset = Supplier.objects.filter(is_active=True)
     serializer_class = SupplierSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['is_active', 'city', 'country']
     search_fields = ['name', 'code', 'contact_person', 'email', 'phone']
@@ -365,32 +378,36 @@ class PurchaseInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSe
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        with transaction.atomic():
-            # Reverse stock movements first
-            stock_result = StockIntegrationService.reverse_purchase_stock(invoice.id)
-            if not stock_result.success:
-                return Response(
-                    {'error': 'Failed to reverse stock', 'details': stock_result.errors},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Reverse accounting journal entry if exists
-            if invoice.journal_entry_id:
-                reversal_result = PurchaseAccountingService.reverse_purchase_journal_entry(
-                    invoice,
-                    reason=f'Invoice {invoice.invoice_number} cancelled'
-                )
-                if not reversal_result.get('success'):
-                    return Response(
-                        {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')},
-                        status=status.HTTP_400_BAD_REQUEST
+        try:
+            with transaction.atomic():
+                # Reverse stock movements first
+                stock_result = StockIntegrationService.reverse_purchase_stock(invoice.id)
+                if not stock_result.success:
+                    raise ValidationError(
+                        {'error': 'Failed to reverse stock', 'details': stock_result.errors}
                     )
 
-            invoice.status = 'CANCELLED'
-            invoice.save(update_fields=['status', 'updated_at'])
+                # Reverse accounting journal entry if exists
+                if invoice.journal_entry_id:
+                    reversal_result = PurchaseAccountingService.reverse_purchase_journal_entry(
+                        invoice,
+                        reason=f'Invoice {invoice.invoice_number} cancelled'
+                    )
+                    if not reversal_result.get('success'):
+                        raise ValidationError(
+                            {'error': 'Failed to reverse accounting entry', 'details': reversal_result.get('errors')}
+                        )
 
-        serializer = self.get_serializer(invoice)
-        return Response(serializer.data)
+                invoice.status = 'CANCELLED'
+                invoice.save(update_fields=['status', 'updated_at'])
+
+            serializer = self.get_serializer(invoice)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response(
+                e.message_dict if hasattr(e, 'message_dict') else {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class PurchaseItemViewSet(viewsets.ModelViewSet):

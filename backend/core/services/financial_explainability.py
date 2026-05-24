@@ -399,3 +399,219 @@ class FinancialExplainability:
             })
 
         return result
+
+    @staticmethod
+    def explain_journal_entry(entry) -> dict:
+        """Explain why a journal entry exists and its impact."""
+        from accounting.models import JournalEntryLine, JournalEventLog
+
+        lines = JournalEntryLine.objects.filter(entry=entry).select_related('account')
+        line_details = []
+        for line in lines:
+            line_details.append({
+                'account_code': line.account.code,
+                'account_name': line.account.name,
+                'account_type': line.account.account_type,
+                'debit': str(line.debit),
+                'credit': str(line.credit),
+                'description': line.description,
+            })
+
+        reversal_chain = []
+        if entry.original_entry:
+            reversal_chain.append({
+                'entry_id': str(entry.original_entry.id),
+                'entry_number': entry.original_entry.entry_number,
+                'relationship': 'reverses',
+            })
+        if hasattr(entry, 'reversed_by_entry') and entry.reversed_by_entry:
+            reversal_chain.append({
+                'entry_id': str(entry.reversed_by_entry.id),
+                'entry_number': entry.reversed_by_entry.entry_number,
+                'relationship': 'reversed_by',
+            })
+
+        event_history = JournalEventLog.objects.filter(entry=entry).order_by('-timestamp')[:20]
+        events = []
+        for event in event_history:
+            events.append({
+                'event_type': event.event_type,
+                'timestamp': str(event.timestamp),
+                'user': str(event.user) if event.user else 'System',
+                'notes': event.notes,
+            })
+
+        return {
+            'entry_id': str(entry.id),
+            'entry_number': entry.entry_number,
+            'entry_type': entry.entry_type,
+            'entry_date': str(entry.entry_date),
+            'description': entry.description,
+            'reference': entry.reference,
+            'is_posted': entry.is_posted,
+            'posted_at': str(entry.posted_at) if entry.posted_at else None,
+            'posted_by': entry.posted_by,
+            'created_by': entry.created_by,
+            'source_module': entry.source_module or '',
+            'source_document': entry.source_document or '',
+            'total_debit': str(entry.total_debit),
+            'total_credit': str(entry.total_credit),
+            'is_balanced': abs(entry.total_debit - entry.total_credit) <= Decimal('0.01'),
+            'line_count': len(line_details),
+            'lines': line_details,
+            'reversal_chain': reversal_chain,
+            'event_history': events,
+            'explanation': (
+                f'Journal entry {entry.entry_number} ({entry.entry_type}) was created on '
+                f'{entry.entry_date} for {entry.description}. '
+                f'{"Posted" if entry.is_posted else "Not posted"} '
+                f'with {len(line_details)} line(s) totaling {entry.total_debit}.'
+            ),
+        }
+
+    @staticmethod
+    def explain_return(return_order) -> dict:
+        """Explain a return order's full impact."""
+        from accounting.models import JournalEntry
+
+        result = {
+            'return_id': str(return_order.id),
+            'return_number': return_order.return_number if hasattr(return_order, 'return_number') else str(return_order.id),
+            'status': return_order.status,
+            'return_date': str(return_order.return_date) if hasattr(return_order, 'return_date') else None,
+            'total_amount': str(return_order.total_amount) if hasattr(return_order, 'total_amount') else '0.00',
+            'original_invoice': None,
+            'inventory_impact': [],
+            'accounting_impact': [],
+            'refund_impact': [],
+            'reversal_linkage': [],
+            'explanation': '',
+        }
+
+        if hasattr(return_order, 'invoice') and return_order.invoice:
+            result['original_invoice'] = {
+                'invoice_id': str(return_order.invoice.id),
+                'invoice_number': return_order.invoice.invoice_number,
+                'total_amount': str(return_order.invoice.total_amount),
+            }
+
+        if hasattr(return_order, 'items'):
+            for item in return_order.items.all():
+                result['inventory_impact'].append({
+                    'product': item.product.name if hasattr(item, 'product') and item.product else '',
+                    'quantity': str(item.quantity),
+                    'reason': item.reason if hasattr(item, 'reason') else '',
+                })
+
+        if hasattr(return_order, 'reversal_journal_entry') and return_order.reversal_journal_entry:
+            je = return_order.reversal_journal_entry
+            result['accounting_impact'].append({
+                'entry_id': str(je.id),
+                'entry_number': je.entry_number,
+                'entry_type': je.entry_type,
+                'total_debit': str(je.total_debit),
+                'total_credit': str(je.total_credit),
+                'is_posted': je.is_posted,
+            })
+
+        jes = JournalEntry.objects.filter(
+            reference=return_order.return_number if hasattr(return_order, 'return_number') else str(return_order.id)
+        )
+        for je in jes:
+            result['accounting_impact'].append({
+                'entry_id': str(je.id),
+                'entry_number': je.entry_number,
+                'entry_type': je.entry_type,
+                'total_debit': str(je.total_debit),
+                'total_credit': str(je.total_credit),
+                'is_posted': je.is_posted,
+            })
+
+        if hasattr(return_order, 'refund_payment') and return_order.refund_payment:
+            result['refund_impact'].append({
+                'payment_id': str(return_order.refund_payment.id),
+                'amount': str(return_order.refund_payment.amount),
+                'method': str(return_order.refund_payment.payment_method),
+                'date': str(return_order.refund_payment.payment_date),
+            })
+
+        if hasattr(return_order, 'voided_at') and return_order.voided_at:
+            result['reversal_linkage'].append({
+                'action': 'VOIDED',
+                'voided_at': str(return_order.voided_at),
+                'voided_by': str(return_order.voided_by) if hasattr(return_order, 'voided_by') and return_order.voided_by else 'Unknown',
+                'reason': return_order.void_reason if hasattr(return_order, 'void_reason') else '',
+            })
+
+        result['explanation'] = (
+            f'Return {result["return_number"]} was created on {result["return_date"]} '
+            f'for {result["total_amount"]}. '
+            f'Status: {result["status"]}. '
+            f'{"Voided" if hasattr(return_order, "voided_at") and return_order.voided_at else "Active"}.'
+        )
+
+        return result
+
+    @staticmethod
+    def explain_asset(asset) -> dict:
+        """Explain a fixed asset's lifecycle and accounting impact."""
+        from accounting.models import JournalEntry
+
+        result = {
+            'asset_id': str(asset.id),
+            'asset_code': asset.code if hasattr(asset, 'code') else '',
+            'asset_name': asset.name if hasattr(asset, 'name') else str(asset),
+            'category': asset.category.name if hasattr(asset, 'category') and asset.category else '',
+            'acquisition_date': str(asset.acquisition_date) if hasattr(asset, 'acquisition_date') else None,
+            'acquisition_cost': str(asset.acquisition_cost) if hasattr(asset, 'acquisition_cost') else '0.00',
+            'salvage_value': str(asset.salvage_value) if hasattr(asset, 'salvage_value') else '0.00',
+            'useful_life_years': asset.useful_life_years if hasattr(asset, 'useful_life_years') else 0,
+            'depreciation_method': asset.depreciation_method if hasattr(asset, 'depreciation_method') else '',
+            'current_book_value': str(asset.current_book_value) if hasattr(asset, 'current_book_value') else '0.00',
+            'accumulated_depreciation': str(asset.accumulated_depreciation) if hasattr(asset, 'accumulated_depreciation') else '0.00',
+            'status': asset.status if hasattr(asset, 'status') else '',
+            'depreciation_schedule': [],
+            'journal_entries': [],
+            'disposal_info': None,
+            'explanation': '',
+        }
+
+        if hasattr(asset, 'depreciations'):
+            for dep in asset.depreciations.all().order_by('depreciation_date'):
+                result['depreciation_schedule'].append({
+                    'date': str(dep.depreciation_date),
+                    'amount': str(dep.amount),
+                    'accumulated': str(dep.accumulated_depreciation) if hasattr(dep, 'accumulated_depreciation') else '',
+                    'journal_entry': dep.journal_entry.entry_number if hasattr(dep, 'journal_entry') and dep.journal_entry else None,
+                })
+
+        if hasattr(asset, 'disposal') and asset.disposal:
+            result['disposal_info'] = {
+                'disposal_date': str(asset.disposal.disposal_date),
+                'sale_price': str(asset.disposal.sale_price) if hasattr(asset.disposal, 'sale_price') else '0.00',
+                'gain_loss': str(asset.disposal.gain_loss) if hasattr(asset.disposal, 'gain_loss') else '0.00',
+            }
+
+        jes = JournalEntry.objects.filter(
+            source_document=f'FixedAsset:{asset.id}'
+        ).order_by('entry_date')
+        for je in jes:
+            result['journal_entries'].append({
+                'entry_id': str(je.id),
+                'entry_number': je.entry_number,
+                'entry_type': je.entry_type,
+                'date': str(je.entry_date),
+                'description': je.description,
+                'total_debit': str(je.total_debit),
+                'total_credit': str(je.total_credit),
+            })
+
+        result['explanation'] = (
+            f'Asset {result["asset_name"]} was acquired on {result["acquisition_date"]} '
+            f'for {result["acquisition_cost"]}. '
+            f'Current book value: {result["current_book_value"]}. '
+            f'Accumulated depreciation: {result["accumulated_depreciation"]}. '
+            f'Status: {result["status"]}.'
+        )
+
+        return result

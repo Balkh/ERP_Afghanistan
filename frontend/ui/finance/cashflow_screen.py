@@ -1,24 +1,15 @@
 """Cashflow management screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QLineEdit,
-                                  QMessageBox, QComboBox, QGroupBox,
-                                   QFormLayout, QDialog, QTabWidget,
-                                  QDateEdit, QProgressBar, QApplication, QFrame)
-from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QColor
+                                  QLabel, QComboBox,
+                                  QGroupBox, QTabWidget, QProgressBar,
+                                  QApplication, QFrame, QWidget)
+from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
 from api.client import APIClient
-from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.screens.base_screen import BaseScreen
+from ui.constants import (SPACING_XS, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY_SMALL,
+                           BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TABLE_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+                           COLOR_SUCCESS, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
@@ -81,7 +72,7 @@ class CashflowScreen(BaseScreen):
         layout.addWidget(self.empty_label)
 
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(f"""
+        self.tabs.setStyleSheet("""
             QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
             QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
@@ -106,7 +97,7 @@ class CashflowScreen(BaseScreen):
 
     def _create_summary_card(self, title, value, color):
         card = QFrame()
-        card.setStyleSheet(f"""
+        card.setStyleSheet("""
             QFrame {{
                 background-color: white;
                 border-left: 5px solid {color};
@@ -254,7 +245,7 @@ class CashflowScreen(BaseScreen):
         columns = [
             TableColumn("date", "Date", width=90, align="center"),
             TableColumn("desc", "Description", width=200),
-            TableColumn("ref", "Reference", width=100),
+            TableColumn("re", "Reference", width=100),
             TableColumn("type", "Type", width=80),
             TableColumn("amount", "Amount", width=100, align="right"),
             TableColumn("balance", "Balance", width=100, align="right"),
@@ -286,7 +277,7 @@ class CashflowScreen(BaseScreen):
     def _load_position(self):
         self.position_table.setRowCount(0)
         mock_data = [
-            {"date": "2026-05-05", "desc": "Sales Invoice Payment", "ref": "INV-001", "type": "Inflow", "amount": "50000", "balance": "600000", "status": "Cleared"},
+            {"date": "2026-05-05", "desc": "Sales Invoice Payment", "re": "INV-001", "type": "Inflow", "amount": "50000", "balance": "600000", "status": "Cleared"},
         ]
         self.position_table.set_data(mock_data)
 

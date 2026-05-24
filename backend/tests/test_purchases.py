@@ -309,6 +309,11 @@ class PurchaseItemModelTests(BaseTestCase):
 class SupplierPaymentModelTests(BaseTestCase):
     """Tests for SupplierPayment model and workflow."""
 
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls._setup_payment_infrastructure(include_extra_codes=True)
+
     def test_create_supplier_payment(self):
         """Test basic payment creation."""
         payment = SupplierPaymentFactory.create()

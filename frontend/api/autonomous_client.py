@@ -4,7 +4,6 @@ Phase 5B.9 — Autonomous Intelligence API Client.
 Typed client for Phase 5B.8 autonomous intelligence endpoints.
 All responses are read-only intelligence data.
 """
-from typing import Any, Dict, List, Optional
 from api.client import APIClient
 
 

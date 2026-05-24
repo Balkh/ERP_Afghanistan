@@ -3,7 +3,6 @@ Document Template Registry — stores and retrieves print templates by document 
 Templates are fetched from the backend InvoiceTemplate model with local fallback.
 """
 
-import json
 from typing import Dict, Any, Optional
 from api.client import APIClient
 

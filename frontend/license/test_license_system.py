@@ -6,7 +6,7 @@ Tests license generation, signing, verification, and validation.
 import os
 import sys
 import tempfile
-from datetime import date, timedelta
+from datetime import date
 
 # Add the frontend directory to the Python path for utils import
 frontend_dir = os.path.dirname(os.path.dirname(__file__))

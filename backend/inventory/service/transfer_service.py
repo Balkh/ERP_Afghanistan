@@ -65,7 +65,7 @@ def process_transfer(
                         remaining_quantity__gt=0,
                         location=str(transfer.source_warehouse.id),
                         is_active=True
-                    ).order_by('expiry_date')
+                    ).order_by('expiry_date', 'id')
                     batch = batches.first()
                 
                 if not batch:

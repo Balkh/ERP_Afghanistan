@@ -59,10 +59,12 @@ class StockIntegrationService:
         # Sort by selection mode
         if selection_mode == StockSelectionMode.FEFO:
             # First Expiry, First Out - sort by expiry date ascending
-            batches = batches.order_by('expiry_date', 'manufacturing_date')
+            # Tie-breaker: manufacturing_date, then batch_number (alphabetical) for determinism
+            batches = batches.order_by('expiry_date', 'manufacturing_date', 'batch_number', 'id')
         else:
             # First In, First Out - sort by manufacturing date ascending
-            batches = batches.order_by('manufacturing_date', 'expiry_date')
+            # Tie-breaker: expiry_date, then batch_number (alphabetical)
+            batches = batches.order_by('manufacturing_date', 'expiry_date', 'batch_number', 'id')
         
         return batches
 
@@ -200,7 +202,7 @@ class StockIntegrationService:
             if quantity <= 0:
                 result.errors.append(f'Invalid quantity for product {product}')
                 result.success = False
-                continue
+                break
             
             # Check stock availability
             available = StockIntegrationService.get_total_available_stock(product, warehouse)
@@ -209,7 +211,7 @@ class StockIntegrationService:
                     f'Insufficient stock for {product}. Available: {available}, Requested: {quantity}'
                 )
                 result.success = False
-                continue
+                break
             
             # Allocate stock
             allocation_result = StockIntegrationService.allocate_stock(
@@ -220,7 +222,7 @@ class StockIntegrationService:
                 result.success = False
                 result.errors.extend(allocation_result.errors)
                 result.stock_shortages.extend(allocation_result.stock_shortages)
-                continue
+                break
             
             all_allocations.extend(allocation_result.allocations)
             
@@ -703,7 +705,7 @@ class StockIntegrationService:
                         remaining_quantity__gt=0,
                         location=str(transfer.source_warehouse.id),
                         is_active=True
-                    ).order_by('expiry_date')
+                    ).order_by('expiry_date', 'id')
                     batch = batches.first()
 
                 if not batch:
@@ -774,8 +776,10 @@ class StockIntegrationService:
                 result.message = 'Transfer completed successfully'
 
         except Exception as e:
+            logger.exception("Transfer processing failed — rolling back transaction")
             result.errors.append(str(e))
             result.success = False
+            raise
 
         result.movements = all_movements
         return result

@@ -8,7 +8,6 @@ All screens use WorkflowContext to share selected entities
 (event_id, decision_id, approval_id, aggregate_id, etc.)
 """
 from typing import Any, Dict, List, Optional, Callable
-from collections import deque
 from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import uuid4

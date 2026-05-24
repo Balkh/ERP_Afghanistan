@@ -4,7 +4,6 @@ Combines multiple hardware identifiers to create a stable, unique device ID.
 """
 
 import hashlib
-from typing import Optional
 from .hardware_id import get_cpu_id, get_mac_address, get_disk_serial
 
 

@@ -5,8 +5,6 @@ Tests runtime validation, anti-tamper checks, and validation workflows.
 
 import sys
 import os
-import time
-import json
 import tempfile
 from datetime import date, datetime, timedelta
 
@@ -156,7 +154,7 @@ def test_anti_tamper_system_rollback_detection():
     
     # Simulate system clock rollback by setting system time to earlier than known good time
     # We'll test this by directly calling the rollback detection method
-    rollback_detected = validator._check_system_rollback()
+    _rollback_detected = validator._check_system_rollback()
     
     # Since we haven't actually changed system time, it should not detect rollback yet
     # But we can test the mechanism by manipulating the known good time
@@ -166,7 +164,7 @@ def test_anti_tamper_system_rollback_detection():
     validator.known_good_system_time = future_time
     
     # Now check for rollback (should detect because current time < known good time)
-    rollback_detected = validator._check_system_rollback()
+    _rollback_detected = validator._check_system_rollback()
     
     # Actually, let's test it properly by simulating what happens in real usage
     # Reset to proper state
@@ -245,7 +243,7 @@ def test_integration_with_license_service():
     
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create license service
-        license_service = LicenseService(keys_dir=temp_dir)
+        _license_service = LicenseService(keys_dir=temp_dir)
         
         # Create validator (will create its own service, but we can test coordination)
         validator = LicenseValidator(validation_interval_minutes=30)

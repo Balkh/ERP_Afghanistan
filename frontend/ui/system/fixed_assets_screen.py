@@ -1,22 +1,15 @@
 """Fixed Assets management screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
-                                  QHeaderView, QMessageBox, QComboBox, QGroupBox,
-                                   QFormLayout, QDialog, QTabWidget,
-                                  QDoubleSpinBox, QDateEdit)
-from PySide6.QtCore import Qt
+                                  QMessageBox, QComboBox, QGroupBox, QFormLayout,
+                                  QDialog, QTabWidget, QDoubleSpinBox,
+                                  QDateEdit, QWidget, QFrame, QPushButton,
+                                  QTableWidget, QTableWidgetItem)
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE,
+                           BUTTON_HEIGHT_MD, TABLE_ROW_HEIGHT_MD, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_SUCCESS,
+                           COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
@@ -48,7 +41,7 @@ class FixedAssetsScreen(BaseScreen):
         layout.addLayout(header_layout)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(f"""
+        self.tabs.setStyleSheet("""
             QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
             QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
@@ -96,14 +89,10 @@ class FixedAssetsScreen(BaseScreen):
         layout.addWidget(filter_bar)
         
         action_layout = QHBoxLayout()
-        add_btn = QPushButton("+ Add Asset")
-        add_btn.setMinimumHeight(38)
-        add_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; border-radius: {BORDER_RADIUS_MD}px; font-weight: bold; padding: 0 {SPACING_MD}px;")
+        add_btn = EnterpriseButton("+ Add Asset", variant=ButtonVariant.SUCCESS)
         add_btn.clicked.connect(self._add_asset)
         
-        dispose_btn = QPushButton("Dispose")
-        dispose_btn.setMinimumHeight(38)
-        dispose_btn.setStyleSheet(f"background-color: {COLOR_DANGER}; color: white; border-radius: {BORDER_RADIUS_MD}px; padding: 0 {SPACING_MD}px;")
+        dispose_btn = EnterpriseButton("Dispose", variant=ButtonVariant.DANGER)
         
         action_layout.addWidget(add_btn)
         action_layout.addWidget(dispose_btn)
@@ -131,11 +120,9 @@ class FixedAssetsScreen(BaseScreen):
         
         button_layout = QHBoxLayout()
         
-        add_btn = QPushButton("Add Category")
-        add_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        add_btn = EnterpriseButton("Add Category", variant=ButtonVariant.PRIMARY)
         
-        refresh_btn = QPushButton("Refresh")
-        refresh_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        refresh_btn = EnterpriseButton("Refresh", variant=ButtonVariant.SECONDARY)
         
         button_layout.addWidget(add_btn)
         button_layout.addWidget(refresh_btn)
@@ -171,11 +158,9 @@ class FixedAssetsScreen(BaseScreen):
         
         button_layout = QHBoxLayout()
         
-        calculate_btn = QPushButton("Calculate Depreciation")
-        calculate_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        calculate_btn = EnterpriseButton("Calculate Depreciation", variant=ButtonVariant.PRIMARY)
         
-        report_btn = QPushButton("Depreciation Report")
-        report_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
+        report_btn = EnterpriseButton("Depreciation Report", variant=ButtonVariant.SECONDARY)
         
         button_layout.addWidget(calculate_btn)
         button_layout.addWidget(report_btn)
@@ -221,7 +206,7 @@ class FixedAssetsScreen(BaseScreen):
             self.assets_table.setItem(row, 6, QTableWidgetItem(str(item.get("book_value", "0"))))
             self.assets_table.setItem(row, 7, QTableWidgetItem(item.get("status", "")))
             
-            btn = QPushButton("View")
+            btn = EnterpriseButton("View", variant=ButtonVariant.SECONDARY)
             self.assets_table.setCellWidget(row, 8, btn)
             self.assets_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
     
@@ -250,7 +235,7 @@ class FixedAssetsScreen(BaseScreen):
             self.categories_table.setItem(row, 2, QTableWidgetItem(item["method"]))
             self.categories_table.setItem(row, 3, QTableWidgetItem(str(item["life"])))
             
-            btn = QPushButton("Edit")
+            btn = EnterpriseButton("Edit", variant=ButtonVariant.SECONDARY)
             self.categories_table.setCellWidget(row, 4, btn)
             self.categories_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
     

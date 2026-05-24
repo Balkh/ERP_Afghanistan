@@ -5,7 +5,7 @@ Uses the qrcode library to generate QR codes as base64 PNG or QPixmap.
 
 import base64
 import io
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 try:
     import qrcode
@@ -17,7 +17,7 @@ except ImportError:
     HAS_QRCODE = False
 
 if TYPE_CHECKING:
-    from PySide6.QtGui import QPixmap
+    pass
 
 try:
     from PySide6.QtGui import QPixmap as _QPixmap

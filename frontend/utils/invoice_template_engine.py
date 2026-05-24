@@ -1,5 +1,3 @@
-import os
-import json
 from typing import Dict, Any, Optional
 from ui.constants import SPACING_XL, SPACING_SM, FONT_SIZE_LG, FONT_SIZE_24, FONT_SIZE_16, FONT_SIZE_SM, FONT_SIZE_8, FONT_SIZE_MD, FONT_SIZE_XXL, FONT_SIZE_XL
 from utils.qr_generator import QRCodeGenerator

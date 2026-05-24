@@ -1,118 +1,141 @@
-from PySide6.QtWidgets import (QVBoxLayout, QLabel, QLineEdit, QGroupBox, QFormLayout, QMessageBox)
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QGroupBox,
+                               QFormLayout, QFileDialog, QMessageBox, QPushButton)
+from PySide6.QtCore import Qt, QTimer
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, BORDER_RADIUS_MD,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_LG, SPACING_MD, TEXT_PAGE_TITLE, TEXT_CARD_TITLE,
+                           TEXT_BODY, TEXT_LABEL, COLOR_TEXT_PRIMARY, COLOR_SUCCESS,
+                           COLOR_DANGER, COLOR_WARNING, COLOR_INFO, BORDER_RADIUS_MD,
+                           COLOR_BG_ELEVATED, COLOR_BORDER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from api.client import APIClient
 
+
+MODE_STYLES = {
+    "dev": (COLOR_INFO, "DEV MODE"),
+    "trial": (COLOR_WARNING, "TRIAL"),
+    "limited": (COLOR_DANGER, "EXPIRED"),
+    "licensed": (COLOR_SUCCESS, "LICENSED"),
+}
+
+
 class LicensingScreen(BaseScreen):
-    """Screen for managing ERP license and device registration."""
-    
+    """License management screen — shows mode, days left, import + fingerprint."""
+
     def __init__(self, parent=None, screen_id="licensing", config=None, api_client=None):
         super().__init__(parent, screen_id, config)
-        self._api_client = api_client or APIClient()
-        self._setup_ui()
-        self.load_license_info()
+        self._api = api_client or APIClient()
+        self._state = {"mode": "unknown"}
+        self._build_ui()
+        self._refresh()
 
-    def _setup_ui(self):
+    def _build_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_LG)
 
-        # Header
-        title_label = QLabel("License Management")
-        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        layout.addWidget(title_label)
+        title = QLabel("License Management")
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        layout.addWidget(title)
 
-        # Device Info Group
-        device_group = QGroupBox("Device Information")
-        device_layout = QFormLayout(device_group)
-        
-        self.device_id_label = QLabel("Loading...")
-        self.device_id_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        device_layout.addRow("Unique Device ID:", self.device_id_label)
-        
-        self.os_label = QLabel("Loading...")
-        device_layout.addRow("Operating System:", self.os_label)
-        
-        layout.addWidget(device_group)
-
-        # License Status Group
-        status_group = QGroupBox("Current License Status")
+        # ── Status Group ──────────────────────────────────────
+        status_group = QGroupBox("License Status")
         status_layout = QFormLayout(status_group)
-        
-        self.status_label = QLabel("Unknown")
-        self.status_label.setStyleSheet(f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY};")
-        status_layout.addRow("Status:", self.status_label)
-        
-        self.expiry_label = QLabel("N/A")
-        status_layout.addRow("Expiry Date:", self.expiry_label)
-        
-        self.version_label = QLabel("Enterprise Edition")
-        status_layout.addRow("Version:", self.version_label)
-        
+
+        self.mode_label = QLabel("—")
+        self.mode_label.setStyleSheet(f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;")
+        status_layout.addRow("Mode:", self.mode_label)
+
+        self.days_label = QLabel("—")
+        status_layout.addRow("Days Remaining:", self.days_label)
+
+        self.message_label = QLabel("")
+        self.message_label.setWordWrap(True)
+        self.message_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
+        status_layout.addRow("Message:", self.message_label)
+
         layout.addWidget(status_group)
 
-        # Activate New License
-        activate_group = QGroupBox("Activate License")
-        activate_layout = QVBoxLayout(activate_group)
-        
-        activate_layout.addWidget(QLabel("Enter your license key below to activate the system:"))
-        
-        self.license_key_input = QLineEdit()
-        self.license_key_input.setPlaceholderText("Enter license key...")
-        self.license_key_input.setMinimumHeight(INPUT_HEIGHT_MD)
-        activate_layout.addWidget(QLabel("License Key:"))
-        activate_layout.addWidget(self.license_key_input)
-        
-        self.activate_btn = EnterpriseButton(text="Activate System", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
-        self.activate_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
-        self.activate_btn.clicked.connect(self.activate_license)
-        activate_layout.addWidget(self.activate_btn)
-        
-        layout.addWidget(activate_group)
+        # ── Device Group ──────────────────────────────────────
+        device_group = QGroupBox("Device Information")
+        device_layout = QFormLayout(device_group)
+
+        self.fingerprint_label = QLabel("—")
+        self.fingerprint_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.fingerprint_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt;")
+        device_layout.addRow("Device ID:", self.fingerprint_label)
+
+        self.os_label = QLabel("—")
+        device_layout.addRow("OS:", self.os_label)
+
+        layout.addWidget(device_group)
+
+        # ── Actions ───────────────────────────────────────────
+        actions_group = QGroupBox("Actions")
+        actions_layout = QVBoxLayout(actions_group)
+
+        self.import_btn = EnterpriseButton(
+            "Import License File", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM
+        )
+        self.import_btn.clicked.connect(self._import_license)
+        actions_layout.addWidget(self.import_btn)
+
+        self.fingerprint_btn = EnterpriseButton(
+            "View Device Fingerprint", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM
+        )
+        self.fingerprint_btn.clicked.connect(self._show_fingerprint)
+        actions_layout.addWidget(self.fingerprint_btn)
+
+        layout.addWidget(actions_group)
         layout.addStretch()
 
-    def load_license_info(self):
-        try:
-            response = self._api_client.get("/api/licensing/info/")
-            if response and response.get('success'):
-                data = response.get('data', {})
-                self.device_id_label.setText(data.get('device_id', 'N/A'))
-                self.os_label.setText(data.get('os_info', 'N/A'))
-                
-                status = data.get('license_status', 'Invalid')
-                self.status_label.setText(status)
-                if status == 'Active':
-                    self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
-                else:
-                    self.status_label.setStyleSheet(f"color: {COLOR_DANGER};")
-                    
-                self.expiry_label.setText(data.get('expiry_date', 'Lifetime'))
-        except Exception as e:
-            print(f"Failed to load license info: {e}")
+        # Refresh timer
+        self._timer = QTimer(self)
+        self._timer.timeout.connect(self._refresh)
+        self._timer.start(60000)
 
-    def activate_license(self):
-        key = self.license_key_input.text().strip()
-        if not key:
-            QMessageBox.warning(self, "Validation", "Please enter a license key.")
-            return
-            
+    def _refresh(self):
         try:
-            response = self._api_client.post("/api/licensing/validate/", {"license_key": key})
-            if response and response.get('success'):
-                QMessageBox.information(self, "Success", "License activated successfully! Please restart the application.")
-                self.load_license_info()
+            resp = self._api.get("/api/licensing/info/")
+            if resp and resp.get("success"):
+                self._state = resp.get("data", {})
+            self._update_display()
+        except Exception:
+            self.mode_label.setText("OFFLINE")
+            self.mode_label.setStyleSheet(f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_DANGER};")
+
+    def _update_display(self):
+        mode = self._state.get("mode", "unknown")
+        color, label = MODE_STYLES.get(mode, (COLOR_DANGER, mode.upper()))
+
+        self.mode_label.setText(label)
+        self.mode_label.setStyleSheet(f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {color};")
+
+        days = self._state.get("days_remaining")
+        self.days_label.setText(str(days) if days is not None else "—")
+        self.days_label.setStyleSheet(f"color: {COLOR_WARNING if days is not None and days <= 3 else COLOR_TEXT_PRIMARY};")
+
+        self.message_label.setText(self._state.get("message", ""))
+        self.fingerprint_label.setText(self._state.get("device_id", self._state.get("device_fingerprint", "—")))
+
+    def _import_license(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "Select License File", "", "License files (*.lic);;All files (*.*)"
+        )
+        if not path:
+            return
+        try:
+            resp = self._api.post("/api/licensing/import-license/", data={"file_path": path})
+            if resp and resp.get("success"):
+                QMessageBox.information(self, "Success", resp.get("message", "License activated"))
+                self._refresh()
             else:
-                error_msg = response.get('error', 'Activation failed.')
-                if isinstance(error_msg, dict):
-                    error_msg = error_msg.get('message', 'Activation failed.')
-                QMessageBox.critical(self, "Error", error_msg)
+                msg = (resp or {}).get("error", "Import failed")
+                QMessageBox.warning(self, "Error", msg)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"API Error: {e}")
+            QMessageBox.warning(self, "Error", str(e))
+
+    def _show_fingerprint(self):
+        fp = self._state.get("device_id", self.fingerprint_label.text())
+        QMessageBox.information(self, "Device Fingerprint",
+                                f"Device ID:\n{fp}\n\n"
+                                "This identifies your device for license binding.")

@@ -204,8 +204,8 @@ class QueryGuard:
             try:
                 with connection.cursor() as cursor:
                     cursor.execute(f"SET statement_timeout = '{timeout}s'")
-            except:
-                pass
+            except Exception as e:
+                logger.warning("Failed to set statement timeout: %s", e)
         
         return queryset
     
@@ -218,7 +218,8 @@ class QueryGuard:
             with connection.cursor() as cursor:
                 cursor.execute(f"EXPLAIN {queryset.query}")
                 return True
-        except:
+        except Exception as e:
+            logger.warning("Query cost estimation failed: %s", e)
             return True
 
 
@@ -261,8 +262,8 @@ class ExportGuard:
         key = f'export_quota_{user_id}'
         try:
             cache.set(key, cache.get(key, 0) + 1, 3600)
-        except:
-            pass
+        except (ConnectionError, ValueError) as e:
+            logger.warning("Failed to increment export quota: %s", e)
 
 
 class ReportCache:
@@ -288,7 +289,8 @@ class ReportCache:
         key = ReportCache.get_cache_key(report_type, params, company_id)
         try:
             return cache.get(key)
-        except:
+        except (ConnectionError, ValueError) as e:
+            logger.warning("Cache get failed: %s", e)
             return None
     
     @staticmethod
@@ -298,8 +300,8 @@ class ReportCache:
         key = ReportCache.get_cache_key(report_type, params, company_id)
         try:
             cache.set(key, data, ttl)
-        except:
-            pass
+        except (ConnectionError, ValueError) as e:
+            logger.warning("Cache set failed: %s", e)
     
     @staticmethod
     def invalidate_company(company_id: str):
@@ -334,8 +336,8 @@ class PerformanceMonitor:
                 row_count=record_count,
                 status=status
             )
-        except:
-            pass  # Don't fail report if audit fails
+        except Exception as e:
+            logger.warning("Failed to create audit log: %s", e)  # Don't fail report if audit fails
     
     @staticmethod
     def get_slow_reports(limit: int = 10) -> list:
@@ -350,7 +352,8 @@ class PerformanceMonitor:
                     count=models.Count('id')
                 ).order_by('-avg_time')[:limit]
             )
-        except:
+        except Exception as e:
+            logger.warning("Failed to get slow reports: %s", e)
             return []
 
 
@@ -374,8 +377,8 @@ def rate_limit(requests_per_minute: int = None):
                         'error': f'Rate limit exceeded. Max {requests_per_minute} requests per minute.'
                     }
                 cache.set(key, count + 1, 60)
-            except:
-                pass
+            except (ConnectionError, ValueError) as e:
+                logger.warning("Rate limit check failed: %s", e)
             
             return func(request, *args, **kwargs)
         return wrapper
@@ -413,8 +416,8 @@ class ReportGovernance:
                 
                 if days > 365:
                     return {'valid': False, 'error': 'Date range cannot exceed 1 year.'}
-            except:
-                pass
+            except (ValueError, KeyError) as e:
+                logger.warning("Invalid date params: %s", e)
         
         # Check limit parameter
         limit = params.get('limit', ReportLimits.DEFAULT_LIMIT)
@@ -449,8 +452,8 @@ class ReportGovernance:
                 status=status,
                 error_message=error or ''
             )
-        except:
-            pass
+        except Exception as e:
+            logger.warning("Failed to create audit log entry: %s", e)
     
     @staticmethod
     def validate_company_isolation(company_id: str, report_type: str) -> bool:

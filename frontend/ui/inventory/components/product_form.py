@@ -1,38 +1,30 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFrame,
-                               QLineEdit, QComboBox, QTextEdit, QLabel)
-from PySide6.QtCore import Qt
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD,
-                           TEXT_PAGE_TITLE, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_BG_DIALOG, COLOR_FORM_DESCRIPTION_BG, COLOR_FORM_FOOTER_BORDER,
-                           COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER,
-    BORDER_RADIUS_SM,
-    BORDER_RADIUS_MD,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFrame, QWidget,
+                                QLineEdit, QComboBox, QTextEdit, QLabel)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_BODY_SMALL, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_MUTED, COLOR_BG_DIALOG, COLOR_FORM_DESCRIPTION_BG, COLOR_FORM_FOOTER_BORDER,
+                           COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, BORDER_RADIUS_MD,
                            INPUT_HEIGHT_MD, DIALOG_WIDTH_FORM_MIN, DIALOG_WIDTH_FORM_PREFERRED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.forms import FormSection
+from ui.components.dialogs import EnterpriseDialog, DialogType
 
 
-class ProductFormDialog(QDialog):
+class ProductFormDialog(EnterpriseDialog):
     """Enterprise product form with enhanced visual hierarchy and progressive grouping."""
 
     def __init__(self, parent=None, product_id=None, api_client=None):
-        super().__init__(parent)
+        title = "Add Product" if product_id is None else "Edit Product"
+        super().__init__(title, DialogType.CUSTOM, parent)
         self.product_id = product_id
         self.api_client = api_client
-        self.setWindowTitle("Add Product" if product_id is None else "Edit Product")
-        self.setModal(True)
-        self.setMinimumWidth(DIALOG_WIDTH_FORM_MIN)
-        self.resize(DIALOG_WIDTH_FORM_PREFERRED, 600)
-        self.setup_ui()
+        content = self._build_content()
+        self.set_content(content)
         if product_id:
             self.load_product_data()
 
-    def setup_ui(self):
-        self.setStyleSheet(f"""
-            QDialog {{
-                background-color: {COLOR_BG_DIALOG};
-            }}
+    def _build_content(self):
+        content = QWidget()
+        content.setStyleSheet("""
             QLineEdit, QComboBox {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
@@ -58,14 +50,9 @@ class ProductFormDialog(QDialog):
             }}
         """)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(SPACING_XXL, SPACING_XL, SPACING_XXL, SPACING_XL)
+        layout = QVBoxLayout(content)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING_MD)
-
-        # ── Header ──
-        title = QLabel(self.windowTitle())
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 600; border: none; background: transparent;")
-        layout.addWidget(title)
 
         subtitle = QLabel("Fill in the required product information")
         subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; border: none; background: transparent; margin-bottom: {SPACING_SM}px;")
@@ -123,125 +110,27 @@ class ProductFormDialog(QDialog):
         self.description_input.setMinimumHeight(INPUT_HEIGHT_MD)
         layout.addWidget(self.description_input)
 
-        # ── Footer with separation ──
-        footer_line = QFrame()
-        footer_line.setFrameShape(QFrame.HLine)
-        footer_line.setStyleSheet(f"background-color: {COLOR_FORM_FOOTER_BORDER}; border: none; max-height: 1px; margin-top: {SPACING_SM}px;")
-        layout.addWidget(footer_line)
+        return content
 
-        footer = QHBoxLayout()
-        footer.setSpacing(SPACING_SM)
-        footer.setContentsMargins(0, SPACING_SM, 0, 0)
-        footer.addStretch()
+    def _create_button_area(self):
+        button_area = QFrame()
+        button_area.setFixedHeight(60)
+
+        layout = QHBoxLayout(button_area)
+        layout.setContentsMargins(SPACING_XXL, SPACING_SM, SPACING_XXL, SPACING_SM)
+
+        layout.addStretch()
         cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         cancel_btn.clicked.connect(self.reject)
         save_btn = EnterpriseButton("Save", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         save_btn.clicked.connect(self.accept)
-        footer.addWidget(cancel_btn)
-        footer.addWidget(save_btn)
-        layout.addLayout(footer)
+        layout.addWidget(cancel_btn)
+        layout.addWidget(save_btn)
 
-    def populate_categories(self):
-        self.category_combo.addItem("Select Category", None)
-        try:
-            response = self.api_client.get("/api/inventory/categories/")
-            categories = []
-            if isinstance(response, list):
-                categories = response
-            elif isinstance(response, dict):
-                categories = response.get('results', []) or response.get('data', [])
-            for cat in categories:
-                if isinstance(cat, dict):
-                    self.category_combo.addItem(cat.get('name'), cat.get('id'))
-        except Exception as e:
-            print(f"Error fetching categories: {e}")
-
-    def populate_units(self):
-        self.unit_combo.addItem("Select Unit", None)
-        units = [
-            {"id": "piece", "name": "Piece"},
-            {"id": "box", "name": "Box"},
-            {"id": "bottle", "name": "Bottle"},
-            {"id": "vial", "name": "Vial"},
-            {"id": "tube", "name": "Tube"},
-            {"id": "tablet", "name": "Tablet"},
-            {"id": "capsule", "name": "Capsule"},
-        ]
-        for unit in units:
-            self.unit_combo.addItem(unit['name'], unit['id'])
-
-    def load_product_data(self):
-        try:
-            response = self.api_client.get(f"/api/inventory/products/{self.product_id}/")
-            product = {}
-            if response.get('success'):
-                product = response.get('data', {})
-            else:
-                product = response
-            if product:
-                self.name_input.setText(product.get("name") or "")
-                self.generic_name_input.setText(product.get("generic_name") or "")
-                self.brand_name_input.setText(product.get("brand_name") or "")
-                self.barcode_input.setText(product.get("barcode") or "")
-                self.sku_input.setText(product.get("sku") or "")
-                self.description_input.setPlainText(product.get("description") or "")
-                self.prescription_check.setCurrentIndex(1 if product.get("requires_prescription") else 0)
-                self.controlled_check.setCurrentIndex(1 if product.get("is_controlled_substance") else 0)
-                self.active_check.setCurrentIndex(1 if product.get("is_active") else 0)
-                cat_id = product.get("category")
-                idx = self.category_combo.findData(cat_id)
-                if idx >= 0:
-                    self.category_combo.setCurrentIndex(idx)
-                unit_id = product.get("unit")
-                idx = self.unit_combo.findData(unit_id)
-                if idx >= 0:
-                    self.unit_combo.setCurrentIndex(idx)
-        except Exception as e:
-            print(f"Error loading product data: {e}")
-
-    def get_form_data(self):
-        return {
-            "name": self.name_input.text().strip(),
-            "generic_name": self.generic_name_input.text().strip(),
-            "brand_name": self.brand_name_input.text().strip(),
-            "category_id": self.category_combo.currentData(),
-            "unit_id": self.unit_combo.currentData(),
-            "barcode": self.barcode_input.text().strip(),
-            "sku": self.sku_input.text().strip(),
-            "description": self.description_input.toPlainText().strip(),
-            "requires_prescription": self.prescription_check.currentText() == "Yes",
-            "is_controlled_substance": self.controlled_check.currentText() == "Yes",
-            "is_active": self.active_check.currentText() == "Yes",
-        }
-
-    def accept(self):
-        name = self.name_input.text().strip()
-        if not name:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "Validation Error", "Product name is required.")
-            return
-        category_id = self.category_combo.currentData()
-        if category_id is None:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "Validation Error", "Please select a category.")
-            return
-        unit_id = self.unit_combo.currentData()
-        if unit_id is None:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "Validation Error", "Please select a unit.")
-            return
-        data = self.get_form_data()
-        try:
-            if self.product_id:
-                response = self.api_client.put(f"/api/inventory/products/{self.product_id}/", data=data)
-            else:
-                response = self.api_client.post("/api/inventory/products/", data=data)
-            if response.get('success') or 'id' in response:
-                super().accept()
-            else:
-                from PySide6.QtWidgets import QMessageBox
-                error_msg = response.get('error', {}).get('message', "Unknown error occurred.")
-                QMessageBox.critical(self, "Error", f"Failed to save product: {error_msg}")
-        except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Server communication error: {e}")
+        button_area.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLOR_BG_DIALOG};
+                border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};
+            }}
+        """)
+        return button_area

@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 'permissions': list(created_perms.keys())
             },
             'Manager': {
-                'description': 'Manage operations',
+                'description': 'Manage day-to-day operations',
                 'permissions': [
                     'inv_view_product', 'inv_add_product', 'inv_change_product',
                     'inv_view_category', 'inv_view_warehouse', 'inv_view_batch',
@@ -79,6 +79,19 @@ class Command(BaseCommand):
                     'acc_view_account', 'acc_view_journal', 'acc_add_journal',
                     'pay_view_payment', 'pay_add_payment',
                     'hr_view_employee', 'payroll_view_salary'
+                ]
+            },
+            'Supervisor': {
+                'description': 'Supervise cross-department operations',
+                'permissions': [
+                    'inv_view_product', 'inv_add_product',
+                    'inv_view_category', 'inv_view_warehouse', 'inv_view_batch',
+                    'sales_view_invoice', 'sales_add_invoice', 'sales_change_invoice',
+                    'pur_view_invoice', 'pur_add_invoice', 'pur_change_invoice',
+                    'acc_view_account', 'acc_view_journal', 'acc_add_journal',
+                    'pay_view_payment',
+                    'hr_view_employee',
+                    'sec_view_role',
                 ]
             },
             'Pharmacist': {
@@ -102,7 +115,29 @@ class Command(BaseCommand):
                     'pur_view_invoice', 'pur_add_invoice',
                     'pay_view_payment', 'pay_add_payment'
                 ]
-            }
+            },
+            'Warehouse': {
+                'description': 'Inventory and warehouse operations',
+                'permissions': [
+                    'inv_view_product', 'inv_add_product', 'inv_change_product',
+                    'inv_view_category', 'inv_view_warehouse', 'inv_view_batch',
+                ]
+            },
+            'HR': {
+                'description': 'Human resources management',
+                'permissions': [
+                    'hr_view_employee', 'hr_add_employee',
+                    'payroll_view_salary',
+                ]
+            },
+            'General': {
+                'description': 'Basic read-only access',
+                'permissions': [
+                    'inv_view_product', 'inv_view_category',
+                    'sales_view_invoice',
+                    'pur_view_invoice',
+                ]
+            },
         }
 
         for role_name, role_config in roles_config.items():

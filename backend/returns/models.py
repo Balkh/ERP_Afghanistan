@@ -272,6 +272,21 @@ class ReturnOrder(TimeStampedUUIDModel):
         return True
 
     @transaction.atomic
+    def complete(self, employee):
+        """
+        Mark return as completed — final state after approval and physical/financial closure.
+        """
+        locked = ReturnOrder.objects.select_for_update().get(pk=self.pk)
+        if locked.status != 'APPROVED':
+            raise ValidationError(_('Only approved returns can be completed.'))
+        
+        # In a real scenario, this might check if credit notes are sent or items are in warehouse.
+        # For now, we allow manual completion.
+        self.status = 'COMPLETED'
+        self.save()
+        return True
+
+    @transaction.atomic
     def void(self, employee, reason=''):
         """
         Void an approved return — reverses inventory and accounting entries.
@@ -313,26 +328,29 @@ class ReturnOrder(TimeStampedUUIDModel):
             try:
                 original_je = JournalEntry.objects.get(id=self.journal_entry_id)
                 # Create reversal entry with swapped debits/credits
-                from accounting.services.journal_engine import JournalEngine
-                reversal_lines = []
+                from core.drift_prevention.migration_router import MigrationRouter
+                gateway_lines = []
                 for line in original_je.lines.all():
-                    reversal_lines.append({
-                        'account_id': str(line.account.id),
+                    gateway_lines.append({
+                        'account_code': line.account.code,
                         'debit': line.credit,
                         'credit': line.debit,
+                        'description': line.description,
                     })
-                
-                result = JournalEngine.create_entry(
+
+                result = MigrationRouter.create_entry(
+                    module='returns',
+                    operation='reverse_entry',
                     entry_type='REVERSAL',
                     description=f"Void of return {self.return_number}: {reason}",
-                    lines=reversal_lines,
+                    lines=gateway_lines,
                     entry_date=timezone.now().date(),
+                    reference=f'return_void_{self.return_number}',
                     auto_post=True,
-                    source_module='returns',
-                    source_document=f'return_void_{self.return_number}',
-                    change_reason=reason,
+                    entity_type='ReturnOrder',
+                    entity_id=str(self.id),
                 )
-                
+
                 if not result.get('success', True):
                     raise ValidationError(f"Failed to create reversal entry: {result.get('errors')}")
                 
@@ -381,49 +399,44 @@ class ReturnOrder(TimeStampedUUIDModel):
     
     def _create_accounting_entries(self, employee):
         """Create accounting journal entries for the return with tax and discount reversal."""
-        from accounting.services.journal_engine import JournalEngine
+        from core.drift_prevention.migration_router import MigrationRouter
         from accounting.models import Account
         
-        # Get accounts based on return type
         if self.return_type == 'SALE_RETURN':
-            # Customer returns - reverse Revenue, Tax, and AR
             try:
-                ar_account = Account.objects.get(code='1200')  # Accounts Receivable
-                sales_return_account = Account.objects.get(code='4200')  # Sales Returns
-                tax_account = Account.objects.get(code='2100')  # Sales Tax Payable
-                inventory_account = Account.objects.get(code='1300')  # Inventory
-                cogs_account = Account.objects.get(code='5100')  # Cost of Goods Sold
+                ar_account = Account.objects.get(code='1200')
+                sales_return_account = Account.objects.get(code='4200')
+                tax_account = Account.objects.get(code='2100')
+                inventory_account = Account.objects.get(code='1300')
+                cogs_account = Account.objects.get(code='5100')
             except Account.DoesNotExist:
                 raise ValidationError(_('Required accounting accounts not found.'))
             
-            # Calculate totals for reversal
             total_tax = sum(item.tax_amount for item in self.items.all())
             total_subtotal_net = sum((item.return_quantity * item.unit_price) - item.discount_amount for item in self.items.all())
             
             description = f"Return {self.return_number} - Credit Note"
             
-            # 1. Main Return Entry: 
-            # Dr Sales Returns (Net Subtotal)
-            # Dr Tax Payable (Total Tax)
-            # Cr Accounts Receivable (Grand Total)
-            lines = [
-                {'account_id': str(sales_return_account.id), 'debit': total_subtotal_net, 'credit': 0},
+            gateway_lines = [
+                {'account_code': sales_return_account.code, 'debit': total_subtotal_net, 'credit': 0},
             ]
-            
             if total_tax > 0:
-                lines.append({'account_id': str(tax_account.id), 'debit': total_tax, 'credit': 0})
-            
-            lines.append({'account_id': str(ar_account.id), 'debit': 0, 'credit': self.total_amount})
-            
-            result = JournalEngine.create_entry(
+                gateway_lines.append({'account_code': tax_account.code, 'debit': total_tax, 'credit': 0})
+            gateway_lines.append({'account_code': ar_account.code, 'debit': 0, 'credit': self.total_amount})
+
+            result = MigrationRouter.create_entry(
+                module='returns',
+                operation='create_entry',
                 entry_type='SALE_RETURN',
                 description=description,
-                lines=lines,
+                lines=gateway_lines,
                 entry_date=self.created_at.date(),
+                reference=self.return_number,
                 auto_post=True,
-                source_module='returns',
+                entity_type='ReturnOrder',
+                entity_id=str(self.id),
             )
-            
+
             if not result.get('success', True):
                 raise ValidationError(f"Failed to create journal entry: {result.get('errors')}")
             
@@ -451,23 +464,26 @@ class ReturnOrder(TimeStampedUUIDModel):
             # Dr Accounts Payable (Grand Total)
             # Cr Inventory (Net Subtotal)
             # Cr Tax Receivable (Total Tax)
-            lines = [
-                {'account_id': str(ap_account.id), 'debit': self.total_amount, 'credit': 0},
-                {'account_id': str(inventory_account.id), 'debit': 0, 'credit': total_subtotal_net},
+            gateway_lines = [
+                {'account_code': ap_account.code, 'debit': self.total_amount, 'credit': 0},
+                {'account_code': inventory_account.code, 'debit': 0, 'credit': total_subtotal_net},
             ]
-            
             if total_tax > 0:
-                lines.append({'account_id': str(tax_account.id), 'debit': 0, 'credit': total_tax})
-            
-            result = JournalEngine.create_entry(
+                gateway_lines.append({'account_code': tax_account.code, 'debit': 0, 'credit': total_tax})
+
+            result = MigrationRouter.create_entry(
+                module='returns',
+                operation='create_entry',
                 entry_type='PURCHASE_RETURN',
                 description=description,
-                lines=lines,
+                lines=gateway_lines,
                 entry_date=self.created_at.date(),
+                reference=self.return_number,
                 auto_post=True,
-                source_module='returns',
+                entity_type='ReturnOrder',
+                entity_id=str(self.id),
             )
-            
+
             if not result.get('success', True):
                 raise ValidationError(f"Failed to create journal entry: {result.get('errors')}")
             
@@ -481,6 +497,23 @@ class ReturnOrder(TimeStampedUUIDModel):
         self.credit_note_number = f"CN-{self.return_number}"
         self.save()
     
+    @transaction.atomic
+    def complete(self, completed_by=None):
+        """
+        Mark a return order as COMPLETED.
+        Only APPROVED returns can be completed.
+        This is the terminal status — all inventory, accounting, refund, and reconciliation
+        processing must have already succeeded via approve().
+        """
+        if self.status != 'APPROVED':
+            raise ValidationError(_('Only approved returns can be completed.'))
+        
+        self.status = 'COMPLETED'
+        if completed_by and hasattr(completed_by, 'user'):
+            self.notes = f"{self.notes}\n\nCompleted by: {str(completed_by)}".strip()
+        self.save(update_fields=['status', 'notes'])
+        return True
+
     def get_total_invoice_amount(self):
         """Get the original invoice total."""
         if self.invoice:

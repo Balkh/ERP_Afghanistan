@@ -3,15 +3,9 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QFormLayout, QCheckBox, QColorDialog, 
                                   QFileDialog, QMessageBox, QScrollArea, QFrame, QWidget)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, BORDER_RADIUS_MD,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_MD, SPACING_LG, TEXT_PAGE_TITLE, BUTTON_HEIGHT_MD, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY,
+                           COLOR_SUCCESS)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from utils.invoice_template_engine import InvoiceTemplateEngine
 from api.client import APIClient

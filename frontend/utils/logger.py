@@ -4,7 +4,6 @@ import re
 import time
 import threading
 import logging
-import traceback
 from collections import defaultdict, deque
 from logging.handlers import RotatingFileHandler
 from datetime import datetime
@@ -574,9 +573,12 @@ class _PerformanceTelemetry:
         self._api_times = deque(maxlen=_MAX_API_TIMES)
         self._screen_loads = deque(maxlen=_MAX_SCREEN_TIMES)
 
+    def _get_current_time(self):
+        return time.time()
+
     def record_api_time(self, endpoint: str, duration_ms: float):
         with self._lock:
-            self._api_times.append((endpoint, duration_ms, time.time()))
+            self._api_times.append((endpoint, duration_ms, self._get_current_time()))
             if duration_ms > _SLOW_API_THRESHOLD_MS:
                 log_warning_once(
                     get_logger('perf'),
@@ -587,7 +589,7 @@ class _PerformanceTelemetry:
 
     def record_screen_load(self, screen: str, duration_ms: float):
         with self._lock:
-            self._screen_loads.append((screen, duration_ms, time.time()))
+            self._screen_loads.append((screen, duration_ms, self._get_current_time()))
             if duration_ms > _SLOW_UI_THRESHOLD_MS:
                 log_warning_once(
                     get_logger('perf'),
@@ -757,7 +759,7 @@ class CorrelationEngine:
     def detect_anomalies(self) -> list:
         """Detect anomalies based on event frequency within a time window."""
         try:
-            now = time.time()
+            _now = time.time()
             events = _get_event_store().query(since_seconds=_ANOMALY_WINDOW, limit=MAX_EVENTS)
             type_counts: dict = defaultdict(int)
             for e in events:
@@ -984,10 +986,10 @@ def evaluate_decisions() -> dict:
         stats = _get_event_store().get_stats()
         anomalies = detect_anomalies()
         slow_ops = _get_perf_telemetry().get_slow_operations()
-        insight = generate_operational_insight_report()
+        _insight = generate_operational_insight_report()
 
         by_type = stats.get('by_type', {})
-        by_module = stats.get('by_module', {})
+        _by_module = stats.get('by_module', {})
         total_events = stats.get('total_events', 0)
 
         decisions = []

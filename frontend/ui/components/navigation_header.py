@@ -1,16 +1,27 @@
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_SM, TEXT_BODY, TEXT_LABEL, TEXT_SECTION_TITLE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
-from ui.constants import TEXT_LABEL, TEXT_BODY, TEXT_SECTION_TITLE
+from ui.constants import (
+    SPACING_XS,
+    SPACING_SM,
+    SPACING_6,
+    BORDER_RADIUS_SM,
+    TEXT_LABEL,
+    TEXT_SECTION_TITLE,
+    COLOR_BG_ELEVATED,
+    COLOR_BORDER,
+    COLOR_BORDER_LIGHT,
+    COLOR_TEXT_PRIMARY,
+    COLOR_TEXT_SECONDARY,
+    COLOR_PRIMARY,
+)
+from ui.components.buttons import IconButton, ButtonSize
+
 """
 Navigation Header Component.
 Reusable header with back, home, close buttons, title, and breadcrumb.
 """
 
-from PySide6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QFrame, QLabel, 
-                              QPushButton, QSizePolicy)
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton)
+from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
-
 
 class NavigationHeader(QWidget):
     """
@@ -64,17 +75,11 @@ class NavigationHeader(QWidget):
         left_layout = QHBoxLayout()
         left_layout.setSpacing(SPACING_SM)
         
-        self.back_btn = QPushButton("←")
-        self.back_btn.setToolTip("Back (Alt+Left)")
-        self.back_btn.setFixedWidth(36)
-        self.back_btn.setFont(QFont("Segoe UI", TEXT_LABEL))
+        self.back_btn = IconButton(icon="←", tooltip="Back (Alt+Left)", size=ButtonSize.SMALL)
         self.back_btn.clicked.connect(self.back_clicked.emit)
         left_layout.addWidget(self.back_btn)
-        
-        self.home_btn = QPushButton("⌂")
-        self.home_btn.setToolTip("Home (Ctrl+Home)")
-        self.home_btn.setFixedWidth(36)
-        self.home_btn.setFont(QFont("Segoe UI", TEXT_LABEL))
+
+        self.home_btn = IconButton(icon="⌂", tooltip="Home (Ctrl+Home)", size=ButtonSize.SMALL)
         self.home_btn.clicked.connect(self.home_clicked.emit)
         left_layout.addWidget(self.home_btn)
         
@@ -98,10 +103,7 @@ class NavigationHeader(QWidget):
         main_layout.addLayout(center_layout, 1)  # Stretch to fill center
         
         # --- RIGHT: Close button ---
-        self.close_btn = QPushButton("✕")
-        self.close_btn.setToolTip("Close (Esc)")
-        self.close_btn.setFixedWidth(36)
-        self.close_btn.setFont(QFont("Segoe UI", TEXT_LABEL))
+        self.close_btn = IconButton(icon="✕", tooltip="Close (Esc)", size=ButtonSize.SMALL)
         self.close_btn.clicked.connect(self.close_clicked.emit)
         main_layout.addWidget(self.close_btn)
     

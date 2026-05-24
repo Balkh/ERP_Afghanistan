@@ -4,7 +4,7 @@ Phase 5B.13 — Timer Registry.
 Global QTimer tracking to prevent timer leaks on navigation/shutdown.
 All timers must be registered here for centralized lifecycle management.
 """
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List
 from PySide6.QtCore import QTimer
 
 

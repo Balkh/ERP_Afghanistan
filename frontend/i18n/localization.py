@@ -3,12 +3,11 @@ Localization System for Enterprise UI.
 Supports Persian (RTL), English, Shamsi dates, Gregorian dates, AFN/USD currency.
 """
 
-from PySide6.QtCore import QObject, Signal, QStringListModel, QLocale
-from PySide6.QtGui import QFont
-from typing import Dict, Optional, Callable, Any
+from PySide6.QtCore import QObject, Signal
+from typing import Dict, Optional
 from enum import Enum
 import logging
-from datetime import datetime, date
+from datetime import date
 import re
 
 logger = logging.getLogger(__name__)
@@ -377,7 +376,6 @@ class CurrencyFormatter:
     def format(amount: float, currency: str = 'AFN', show_symbol: bool = True) -> str:
         """Format amount with currency."""
         symbol = CurrencyFormatter.CURRENCY_SYMBOLS.get(currency, currency)
-        name = CurrencyFormatter.CURRENCY_NAMES.get(currency, currency)
         
         # Format number with thousand separators
         formatted = f"{amount:,.2f}"

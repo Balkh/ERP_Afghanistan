@@ -1,12 +1,11 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem,
-                                 QLabel, QFrame, QPushButton, QSizePolicy, QToolButton, QScrollArea)
-from PySide6.QtCore import Qt, Signal, QSize, QTimer, QPropertyAnimation, QEasingCurve
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
+                                 QPushButton, QSizePolicy, QScrollArea)
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QFont
 from theme.theme_engine import ThemeEngine
+from ui.components.buttons import EnterpriseButton, ButtonVariant
 from ui.role_manager import UserRole, get_visible_navigation_items, is_navigation_item_visible
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_LABEL)
-from ui.constants import (TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY_SMALL)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BG_HOVER, COLOR_BG_FOCUS, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_DANGER_HOVER, COLOR_DANGER_ACTIVE, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_HOVER, COLOR_BG_FOCUS, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_DANGER, COLOR_DANGER_HOVER, COLOR_DANGER_ACTIVE)
 
 
 class Sidebar(QWidget):
@@ -48,6 +47,13 @@ class Sidebar(QWidget):
         
         # Connect theme changes (unified ThemeEngine — single source of truth)
         ThemeEngine.instance().theme_changed.connect(self.update_theme)
+
+    def cleanup(self):
+        """Disconnect from ThemeEngine signals to prevent leaks on widget destruction."""
+        try:
+            ThemeEngine.instance().theme_changed.disconnect(self.update_theme)
+        except (RuntimeError, TypeError):
+            pass
     
     def set_role(self, role: UserRole):
         """Set the role and update navigation visibility."""
@@ -79,15 +85,15 @@ class Sidebar(QWidget):
                 "inventory": {"products", "categories", "warehouses", "batches"},
                 "sales": {"sales_invoice", "pos", "customers"},
                 "purchases": {"purchase_invoice", "suppliers"},
-                "returns": {"returns"},
+                "returns": {"returns", "reconciliation"},
                 "accounting": {"chart_of_accounts", "journal_entries", "account_ledger", "financial_integrity", "financial_audit"},
                 "reports": {"trial_balance", "profit_loss", "balance_sheet", "ar_ageing", "ap_ageing"},
-                "finance": {"payments", "expenses", "budgeting", "tax", "cost_centers", "cashflow"},
+                "finance": {"payments", "expenses", "budgeting", "tax", "cost_centers", "cashflow", "customer_payments", "supplier_payments", "allocation_explorer", "returns_explainability", "journal_reversals", "operations_console"},
                 "hr": {"employees", "attendance", "leave", "payroll"},
                 "hr_reports": {"employee_summary", "attendance_report", "leave_report", "overtime_report"},
                 "payroll_reports": {"payroll_summary", "payroll_trend", "payroll_dept_cost", "payroll_emp_history"},
                 "cash_flow": {"cash_flow"},
-                "system": {"analytics", "operations", "observability", "decision_workspace", "invoice_templates", "entities", "licensing", "production", "fixed_assets", "backup", "audit", "user_management"}
+                "system": {"control_center", "observability", "decision_workspace", "intelligence_hub", "invoice_templates", "entities", "licensing", "fixed_assets", "backup", "audit", "user_management", "role_management", "company_profile"}
             }
             group_items = group_items_map.get(group_name, set())
             any_visible = any(item in visible_items for item in group_items)
@@ -106,7 +112,7 @@ class Sidebar(QWidget):
         # Use scroll area for scrolling support
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
-        self._scroll_area.setStyleSheet(f"""
+        self._scroll_area.setStyleSheet("""
             QScrollArea {{ 
                 border: none; 
                 background-color: {COLOR_BG_MAIN}; 
@@ -170,7 +176,7 @@ class Sidebar(QWidget):
         
         self._create_group(nav_layout, "Sales", "sales", [
             ("Sales Invoice", "sales_invoice", 5),
-            ("POS Terminal", "pos", 10),
+            ("POS Terminal", "pos", 37),
             ("Customers", "customers", 7),
         ])
         
@@ -189,14 +195,13 @@ class Sidebar(QWidget):
             ("Journal Entries", "journal_entries", 11),
             ("Account Ledger", "account_ledger", 12),
             ("Financial Integrity", "financial_integrity", 58),
-            ("Audit Log", "financial_audit", 59),
+            ("Financial Audit Log", "financial_audit", 59),
         ])
         
         self._create_group(nav_layout, "Reports", "reports", [
             ("Trial Balance", "trial_balance", 13),
             ("Profit & Loss", "profit_loss", 14),
             ("Balance Sheet", "balance_sheet", 15),
-            ("Cash Flow", "cash_flow", 48),
             ("AR Ageing", "ar_ageing", 16),
             ("AP Ageing", "ap_ageing", 17),
         ])
@@ -243,13 +248,14 @@ class Sidebar(QWidget):
             ("Observability Console", "observability", 39),
             ("Decision Support", "decision_workspace", 47),
             ("Invoice Templates", "invoice_templates", 33),
+            ("Company Profile", "company_profile", 66),
             ("Business Entities", "entities", 35),
             ("Licensing", "licensing", 36),
-            ("Production", "production", 37),
             ("Fixed Assets", "fixed_assets", 29),
             ("Backup & Restore", "backup", 27),
             ("Audit Log", "audit", 30),
             ("User Management", "user_management", 31),
+            ("Role Management", "role_management", 48),
         ])
         
         nav_layout.addWidget(self._create_nav_button("Settings", "settings", 28))
@@ -266,28 +272,7 @@ class Sidebar(QWidget):
         bottom_layout = QVBoxLayout(self._bottom_frame)
         bottom_layout.setContentsMargins(MARGIN_PAGE,  SPACING_SM,  MARGIN_PAGE,  SPACING_SM)
         
-        self.logout_btn = QPushButton("Logout")
-        self.logout_btn.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
-        self.logout_btn.setFixedHeight(40)
-        self.logout_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {COLOR_DANGER};
-                color: {COLOR_TEXT_ON_PRIMARY};
-                border: none;
-                border-radius: {BORDER_RADIUS_LG};
-                padding: {SPACING_MD}px;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_DANGER_HOVER};
-            }}
-            QPushButton:pressed {{
-                background-color: {COLOR_DANGER_ACTIVE};
-            }}
-            QPushButton:focus {{
-                outline: 2px solid {COLOR_DANGER_HOVER};
-                outline-offset: 2px;
-            }}
-        """)
+        self.logout_btn = EnterpriseButton("Logout", variant=ButtonVariant.DANGER)
         bottom_layout.addWidget(self.logout_btn)
         
         layout.addWidget(self._bottom_frame)
@@ -314,7 +299,7 @@ class Sidebar(QWidget):
                 border: none;
                 border-radius: {BORDER_RADIUS_MD};
                 text-align: left;
-                padding-left: 15px;
+                padding-left: {SPACING_LG}px;
                 font-weight: 400;
             }}
             QPushButton:hover {{
@@ -354,7 +339,7 @@ class Sidebar(QWidget):
                 background-color: transparent;
                 border: none;
                 text-align: left;
-                padding-left: 10px;
+                padding-left: {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
                 font-weight: bold;
                 font-size: {TEXT_CARD_TITLE}px;
@@ -422,7 +407,7 @@ class Sidebar(QWidget):
                         background-color: transparent;
                         border: none;
                         text-align: left;
-                        padding-left: 10px;
+                        padding-left: {SPACING_SM}px;
                         color: {COLOR_TEXT_PRIMARY};
                         font-weight: bold;
                         font-size: {TEXT_CARD_TITLE}px;
@@ -431,7 +416,7 @@ class Sidebar(QWidget):
                         background-color: {COLOR_BG_HOVER};
                     }}
                 """)
-            group_widget.setMaximumHeight(50)
+            group_widget.setMaximumHeight(40)
         else:
             arrow_label.setText("▼")
             items_widget.setVisible(True)
@@ -472,7 +457,7 @@ class Sidebar(QWidget):
                 items_widget.setMaximumHeight(0)
             if header_btn and hasattr(header_btn, '_arrow'):
                 header_btn._arrow.setText("▶")
-            group_widget.setMaximumHeight(50)
+            group_widget.setMaximumHeight(40)
 
         group_widget.layout().invalidate()
         group_widget.update()
@@ -504,7 +489,7 @@ class Sidebar(QWidget):
                     border: none;
                     border-radius: {BORDER_RADIUS_MD};
                     text-align: left;
-                    padding-left: 15px;
+                    padding-left: {SPACING_LG}px;
                     font-weight: 600;
                 }}
                 QPushButton:hover {{
@@ -520,7 +505,7 @@ class Sidebar(QWidget):
                     border: none;
                     border-radius: {BORDER_RADIUS_MD};
                     text-align: left;
-                    padding-left: 15px;
+                    padding-left: {SPACING_LG}px;
                     font-weight: 400;
                 }}
                 QPushButton:hover {{
@@ -552,11 +537,49 @@ class Sidebar(QWidget):
         """Update sidebar styling based on theme."""
         self._refresh_all_styles()
 
+    def _apply_theme_style(self):
+        """Apply theme-specific sidebar styling."""
+        from ui.constants import (
+            COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
+            COLOR_PRIMARY, BORDER_RADIUS_MD, COLOR_TEXT_SECONDARY
+        )
+        # Handle cases where COLOR_BG_HOVER might be missing in some theme contexts
+        hover_bg = locals().get('COLOR_BG_HOVER', '#f1f5f9')
+        
+        self.setStyleSheet("""
+            Sidebar {{
+                background-color: {COLOR_BG_ELEVATED};
+                border-right: 1px solid {COLOR_BORDER};
+            }}
+            QLabel#sidebar_header {{
+                color: {COLOR_TEXT_PRIMARY};
+                font-weight: bold;
+                padding: 10px;
+            }}
+            QPushButton {{
+                text-align: left;
+                padding: 10px 15px;
+                border: none;
+                border-radius: {BORDER_RADIUS_MD}px;
+                color: {COLOR_TEXT_SECONDARY};
+                background: transparent;
+            }}
+            QPushButton:hover {{
+                background-color: {hover_bg};
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QPushButton#active {{
+                background-color: {COLOR_PRIMARY};
+                color: white;
+            }}
+        """)
+
     def _refresh_all_styles(self):
         """Re-apply all sidebar stylesheets with current theme colors."""
+        self._apply_theme_style()
         # Scroll area (cached ref — no findChildren)
         if hasattr(self, '_scroll_area'):
-            self._scroll_area.setStyleSheet(f"""
+            self._scroll_area.setStyleSheet("""
                 QScrollArea {{ 
                     border: none; 
                     background-color: {COLOR_BG_MAIN}; 
@@ -596,7 +619,7 @@ class Sidebar(QWidget):
                     border: none;
                     border-radius: {BORDER_RADIUS_MD};
                     text-align: left;
-                    padding-left: 15px;
+                    padding-left: {SPACING_LG}px;
                     font-weight: 400;
                 }}
                 QPushButton:hover {{
@@ -618,7 +641,7 @@ class Sidebar(QWidget):
                         background-color: transparent;
                         border: none;
                         text-align: left;
-                        padding-left: 10px;
+                        padding-left: {SPACING_SM}px;
                         color: {COLOR_TEXT_PRIMARY};
                         font-weight: bold;
                         font-size: {TEXT_CARD_TITLE}px;
@@ -636,7 +659,7 @@ class Sidebar(QWidget):
 
         # Bottom frame with logout (cached ref)
         if hasattr(self, '_bottom_frame') and hasattr(self, 'logout_btn'):
-            self.logout_btn.setStyleSheet(f"""
+            self.logout_btn.setStyleSheet("""
                 QPushButton {{
                     background-color: {COLOR_DANGER};
                     color: {COLOR_TEXT_ON_PRIMARY};

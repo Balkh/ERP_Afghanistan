@@ -1,17 +1,14 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QTabWidget,
-                                QLabel, QFrame, QSizePolicy)
+                                QLabel, QFrame)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-                          MARGIN_PAGE,
-                          COLOR_PRIMARY, COLOR_PRIMARY_HOVER,
-                          COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                          COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, COLOR_PRIMARY,
+                          COLOR_TEXT_PRIMARY,
+                          COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                          COLOR_BORDER, COLOR_BORDER_LIGHT,
-    TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_TABLE,
-                          BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_SM)
+                          COLOR_BORDER, TEXT_LABEL, TEXT_PAGE_TITLE,
+                          TEXT_TABLE, BORDER_RADIUS_SM)
 from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_TABLE
 from ui.observability.widgets import LoadingOverlay
 from ui.observability.dashboards import (ObservabilityMainScreen,
@@ -48,7 +45,7 @@ class ObservabilityScreen(QWidget):
         header_layout.addStretch()
 
         self.status_label = QLabel("READ-ONLY MODE")
-        self.status_label.setStyleSheet(f"""
+        self.status_label.setStyleSheet("""
             background-color: {COLOR_BG_ELEVATED};
             color: {COLOR_TEXT_MUTED};
             padding: {SPACING_XS}px {SPACING_MD}px;
@@ -61,7 +58,7 @@ class ObservabilityScreen(QWidget):
         layout.addWidget(header_bar)
 
         self.tab_widget = QTabWidget()
-        self.tab_widget.setStyleSheet(f"""
+        self.tab_widget.setStyleSheet("""
             QTabWidget::pane {{
                 background-color: {COLOR_BG_MAIN};
                 border: none;

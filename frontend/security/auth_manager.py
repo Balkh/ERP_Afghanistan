@@ -1,10 +1,10 @@
 """
 Authentication Manager — handles login, logout, token storage, and session lifecycle.
 Centralizes auth state for the frontend, integrates with APIClient and RoleRenderer.
+SINGLE SOURCE OF TRUTH for session management (Rule 4 compliance).
 """
 
 import json
-import os
 from pathlib import Path
 from typing import Optional, Dict, Any
 
@@ -15,7 +15,7 @@ from utils.logger import get_logger
 
 log = get_logger('auth')
 
-# Token storage path (encrypted in production, plaintext for dev)
+# Token storage path (managed exclusively by AuthManager)
 _TOKEN_DIR = Path(__file__).parent.parent / "runtime" / "auth"
 _TOKEN_FILE = _TOKEN_DIR / "session.json"
 
@@ -26,7 +26,7 @@ class AuthManager(QObject):
     # Signals
     login_success = Signal(dict)    # user data
     login_failed = Signal(str)      # error message
-    logout = Signal()
+    logout_signal = Signal()
     session_expired = Signal()
     ui_scopes_changed = Signal(dict)  # ui_scopes payload
 
@@ -44,8 +44,13 @@ class AuthManager(QObject):
 
     # ── Public API ──
 
-    async def login(self, username: str, password: str) -> bool:
-        """Authenticate user and store session. Returns True on success."""
+    def login(self, username: str, password: str) -> bool:
+        """Authenticate user and store session. Returns True on success.
+        
+        NOTE: This is a synchronous call to the API. 
+        The caller is responsible for executing this in a non-blocking way 
+        (e.g., via QTimer.singleShot or a Worker Thread).
+        """
         try:
             result = self.api_client.post("/api/auth/login/", {
                 "username": username,
@@ -78,19 +83,19 @@ class AuthManager(QObject):
             self.login_failed.emit(str(e))
             return False
 
-    async def logout(self) -> None:
+    def logout(self) -> None:
         """Logout user, clear session, and revoke tokens."""
         try:
             self.api_client.post("/api/auth/logout/", {})
         except Exception:
-            pass  # Best-effort logout
+            pass  # Best-effort: clear local state even if server logout fails
 
         self._clear_session()
         self._is_authenticated = False
         self._user_data = None
         self._roles = []
         self._ui_scopes = {"sidebar": [], "screens": [], "actions": {}, "hidden": []}
-        self.logout.emit()
+        self.logout_signal.emit()
         log.info("User logged out", extra={'extra_fields': {'tags': ['auth']}})
 
     def has_access(self, module: str) -> bool:
@@ -156,7 +161,7 @@ class AuthManager(QObject):
     def is_authenticated(self) -> bool:
         return self._is_authenticated
 
-    # ── Session Persistence ──
+    # ── Session Persistence (Single Source of Truth) ──
 
     def _store_session(self, data: Dict[str, Any]) -> None:
         """Persist session tokens and metadata to disk."""
@@ -199,10 +204,17 @@ class AuthManager(QObject):
             self._clear_session()
 
     def _clear_session(self) -> None:
-        """Remove session data from disk and memory."""
+        """Remove ALL session data from disk and memory (single source of truth)."""
         self.api_client.clear_auth_token()
+        # Clear plaintext session store
         if _TOKEN_FILE.exists():
             try:
                 _TOKEN_FILE.unlink()
             except Exception:
                 pass
+        # Clear encrypted session store (delegated to session_store)
+        try:
+            from security.session_store import clear_session as _clear_encrypted
+            _clear_encrypted()
+        except Exception:
+            pass

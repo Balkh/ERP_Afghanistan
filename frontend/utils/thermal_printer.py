@@ -10,11 +10,11 @@ Architecture:
     └── QPrinter fallback (generic driver)
 """
 
-import os
 import socket
-import time
 from typing import Optional, Dict, Any
 from enum import Enum
+
+from utils.company_config import get_cached_config
 
 
 class PrinterWidth(Enum):
@@ -194,13 +194,15 @@ class ThermalPrinter:
     # ── Receipt Builders ──
 
     def build_receipt(self, receipt_data: Dict[str, Any]) -> bytes:
+        config = get_cached_config()
+        cfg = config.to_dict() if config else {}
         self.init().align_center()
-        name = receipt_data.get("company_name", "Pharmacy ERP")
+        name = receipt_data.get("company_name", cfg.get("name", "Pharmacy ERP"))
         self.set_size(2, 2).text_line(name).set_size(1, 1)
-        addr = receipt_data.get("address", "")
+        addr = receipt_data.get("address", cfg.get("address", ""))
         if addr:
             self.text_line(addr)
-        phone = receipt_data.get("phone", "")
+        phone = receipt_data.get("phone", cfg.get("phone", ""))
         if phone:
             self.text_line(f"Tel: {phone}")
         self.separator()

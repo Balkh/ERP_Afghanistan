@@ -36,6 +36,7 @@ class BaseTestCase(TestCase):
         cls._setup_warehouse()
         cls._setup_units()
         cls._setup_categories()
+        cls._setup_payment_infrastructure()
 
     @classmethod
     def _setup_currency(cls):
@@ -92,6 +93,19 @@ class BaseTestCase(TestCase):
             account_category='CURRENT_LIABILITY',
             is_system=True
         )
+        cls.account_tax_payable = AccountFactory.create(
+            code='2100',
+            name='Tax Payable',
+            account_type='LIABILITY',
+            account_category='CURRENT_LIABILITY',
+            is_system=True
+        )
+        cls.account_unearned_revenue = AccountFactory.create(
+            code='2200',
+            name='Unearned Revenue',
+            account_type='LIABILITY',
+            account_category='CURRENT_LIABILITY'
+        )
 
         # Equity accounts
         cls.account_equity = AccountFactory.create(
@@ -124,9 +138,21 @@ class BaseTestCase(TestCase):
             account_category='COST_OF_GOODS_SOLD',
             is_system=True
         )
+        cls.account_cogs_5100 = AccountFactory.create(
+            code='5100',
+            name='Cost of Goods Sold (5100)',
+            account_type='EXPENSE',
+            account_category='COST_OF_GOODS_SOLD'
+        )
         cls.account_expense = AccountFactory.create(
             code='6000',
             name='Operating Expense',
+            account_type='EXPENSE',
+            account_category='OPERATING_EXPENSE'
+        )
+        cls.account_expense_6100 = AccountFactory.create(
+            code='6100',
+            name='Operating Expenses (6100)',
             account_type='EXPENSE',
             account_category='OPERATING_EXPENSE'
         )
@@ -168,6 +194,95 @@ class BaseTestCase(TestCase):
         cls.category_injections = CategoryFactory.create(
             name='Injections'
         )
+
+    @classmethod
+    def _setup_payment_infrastructure(cls, include_extra_codes=False):
+        """
+        Create payment infrastructure (methods + accounts) required by PaymentEngine.
+        
+        Uses get_or_create to safely coexist with test classes that create their own
+        PaymentMethod/PaymentAccount records.
+        """
+        from payments.models import PaymentMethod, PaymentAccount
+
+        # Always create INS and OTHER when requested, regardless of whether
+        # CASH already exists from a prior test class
+        if include_extra_codes:
+            pm_ins, _ = PaymentMethod.objects.get_or_create(
+                code='INS',
+                defaults={
+                    'name': 'Insurance',
+                    'method_type': 'MIXED',
+                    'is_active': True,
+                }
+            )
+            cls.pm_ins = pm_ins
+            pm_other, _ = PaymentMethod.objects.get_or_create(
+                code='OTHER',
+                defaults={
+                    'name': 'Other',
+                    'method_type': 'MIXED',
+                    'is_active': True,
+                }
+            )
+            cls.pm_other = pm_other
+
+        # Create standard payment methods (get_or_create to avoid duplicate key errors)
+        pm_cash, _ = PaymentMethod.objects.get_or_create(
+            code='CASH',
+            defaults={
+                'name': 'Cash',
+                'method_type': 'CASH',
+                'is_active': True,
+                'is_default': True,
+            }
+        )
+        cls.pm_cash = pm_cash
+
+        pm_bank, _ = PaymentMethod.objects.get_or_create(
+            code='BANK',
+            defaults={
+                'name': 'Bank Transfer',
+                'method_type': 'BANK_TRANSFER',
+                'is_active': True,
+            }
+        )
+        cls.pm_bank = pm_bank
+
+        pm_cheque, _ = PaymentMethod.objects.get_or_create(
+            code='CHEQUE',
+            defaults={
+                'name': 'Cheque',
+                'method_type': 'CHEQUE',
+                'is_active': True,
+            }
+        )
+        cls.pm_cheque = pm_cheque
+
+        pm_cc, _ = PaymentMethod.objects.get_or_create(
+            code='CC',
+            defaults={
+                'name': 'Credit Card',
+                'method_type': 'CREDIT_CARD',
+                'is_active': True,
+            }
+        )
+        cls.pm_cc = pm_cc
+
+        # Create default payment account linked to cash account
+        payment_account, created = PaymentAccount.objects.get_or_create(
+            code='CASH-MAIN',
+            defaults={
+                'name': 'Main Cash Account',
+                'account_type': 'CASH',
+                'accounting_account': cls.account_cash,
+                'is_active': True,
+                'is_default': True,
+                'current_balance': Decimal('1000000.00'),
+                'currency': 'AFN',
+            }
+        )
+        cls.payment_account = payment_account
 
 
 class TransactionBaseTestCase(TransactionTestCase):
@@ -224,6 +339,19 @@ class TransactionBaseTestCase(TransactionTestCase):
             account_category='CURRENT_LIABILITY',
             is_system=True
         )
+        self.account_tax_payable = AccountFactory.create(
+            code='2100',
+            name='Tax Payable',
+            account_type='LIABILITY',
+            account_category='CURRENT_LIABILITY',
+            is_system=True
+        )
+        self.account_unearned_revenue = AccountFactory.create(
+            code='2200',
+            name='Unearned Revenue',
+            account_type='LIABILITY',
+            account_category='CURRENT_LIABILITY'
+        )
         self.account_revenue = AccountFactory.create(
             code='4000',
             name='Sales Revenue',
@@ -231,12 +359,30 @@ class TransactionBaseTestCase(TransactionTestCase):
             account_category='OPERATING_REVENUE',
             is_system=True
         )
+        self.account_revenue_4100 = AccountFactory.create(
+            code='4100',
+            name='Sales Revenue (4100)',
+            account_type='REVENUE',
+            account_category='OPERATING_REVENUE'
+        )
         self.account_cogs = AccountFactory.create(
             code='5000',
             name='Cost of Goods Sold',
             account_type='EXPENSE',
             account_category='COST_OF_GOODS_SOLD',
             is_system=True
+        )
+        self.account_cogs_5100 = AccountFactory.create(
+            code='5100',
+            name='Cost of Goods Sold (5100)',
+            account_type='EXPENSE',
+            account_category='COST_OF_GOODS_SOLD'
+        )
+        self.account_expense_6100 = AccountFactory.create(
+            code='6100',
+            name='Operating Expenses (6100)',
+            account_type='EXPENSE',
+            account_category='OPERATING_EXPENSE'
         )
 
     def _setup_warehouse(self):
@@ -256,3 +402,56 @@ class TransactionBaseTestCase(TransactionTestCase):
         """Create common categories."""
         self.category_tablets = CategoryFactory.create(name='Tablets')
         self.category_syrups = CategoryFactory.create(name='Syrups')
+
+    def _setup_payment_infrastructure(self):
+        """Create payment infrastructure (methods + accounts) required by PaymentEngine."""
+        from payments.models import PaymentMethod, PaymentAccount
+
+        # Create standard payment methods
+        self.pm_cash, _ = PaymentMethod.objects.get_or_create(
+            code='CASH',
+            defaults={
+                'name': 'Cash',
+                'method_type': 'CASH',
+                'is_active': True,
+                'is_default': True,
+            }
+        )
+        self.pm_bank, _ = PaymentMethod.objects.get_or_create(
+            code='BANK',
+            defaults={
+                'name': 'Bank Transfer',
+                'method_type': 'BANK_TRANSFER',
+                'is_active': True,
+            }
+        )
+        self.pm_cheque, _ = PaymentMethod.objects.get_or_create(
+            code='CHEQUE',
+            defaults={
+                'name': 'Cheque',
+                'method_type': 'CHEQUE',
+                'is_active': True,
+            }
+        )
+        self.pm_cc, _ = PaymentMethod.objects.get_or_create(
+            code='CC',
+            defaults={
+                'name': 'Credit Card',
+                'method_type': 'CREDIT_CARD',
+                'is_active': True,
+            }
+        )
+
+        # Create default payment account linked to cash account
+        self.payment_account, _ = PaymentAccount.objects.get_or_create(
+            code='CASH-MAIN',
+            defaults={
+                'name': 'Main Cash Account',
+                'account_type': 'CASH',
+                'accounting_account': self.account_cash,
+                'is_active': True,
+                'is_default': True,
+                'current_balance': Decimal('1000000.00'),
+                'currency': 'AFN',
+            }
+        )

@@ -1,22 +1,13 @@
 """Payments screen for ERP."""
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                                QTableWidgetItem, QLabel, QLineEdit,
-                                QHeaderView, QAbstractItemView, QComboBox, QGroupBox,
-                                QDateEdit, QMessageBox, QApplication)
-from PySide6.QtCore import Qt, QDate
+                                QLabel, QLineEdit, QHeaderView,
+                                QAbstractItemView, QComboBox, QGroupBox, QApplication)
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
-                           BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
+                           TEXT_LABEL, BORDER_RADIUS_SM, BORDER_RADIUS_LG, COLOR_BORDER, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
@@ -112,7 +103,7 @@ class PaymentScreen(QWidget):
         self.search_input.setPlaceholderText("Ref # or description...")
         self.search_input.setMinimumWidth(200)
         self.search_input.setMinimumHeight(30)
-        self.search_input.setStyleSheet(f"""
+        self.search_input.setStyleSheet("""
             QLineEdit {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
@@ -140,7 +131,7 @@ class PaymentScreen(QWidget):
         layout.addLayout(btn_layout)
 
         # Apply dark theme to combo boxes
-        combo_style = f"""
+        combo_style = """
             QComboBox {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};

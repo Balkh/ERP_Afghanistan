@@ -5,12 +5,15 @@ from accounting.views_account import (
     AccountViewSet, JournalEntryViewSet, JournalEventLogViewSet,
     export_report, advanced_report, report_options
 )
+from accounting.views_fiscal_period import FiscalPeriodViewSet, FiscalPeriodCloseLogViewSet
 
 # Router for account views
 router = DefaultRouter()
 router.register(r'accounts', AccountViewSet, basename='account')
 router.register(r'journal-entries', JournalEntryViewSet, basename='journalentry')
 router.register(r'journal-events', JournalEventLogViewSet, basename='journalevent')
+router.register(r'fiscal-periods', FiscalPeriodViewSet, basename='fiscalperiod')
+router.register(r'fiscal-period-logs', FiscalPeriodCloseLogViewSet, basename='fiscalperiodlog')
 
 urlpatterns = [
     # Calculation endpoints

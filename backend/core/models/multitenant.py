@@ -107,7 +107,7 @@ class CompanyPermissionService:
     def auto_assign_default_company(user):
         """Assign user to the first company if no mappings exist."""
         if not UserCompanyMapping.objects.filter(user=user).exists():
-            first_company = Company.objects.filter(is_active=True).first()
+            first_company = Company.objects.active()
             if first_company:
                 UserCompanyMapping.objects.create(
                     user=user,

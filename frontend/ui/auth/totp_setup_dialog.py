@@ -1,21 +1,19 @@
 """TOTP 2FA Setup Dialog — scan QR code and verify first code."""
 
 import base64
-from io import BytesIO
 
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QLineEdit, QPushButton, QMessageBox, QFrame)
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit,
+                                 QMessageBox)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPixmap
 
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.constants import (
-    SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-    TEXT_SECTION_TITLE, TEXT_BODY, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_HELPER,
-    BORDER_RADIUS_LG,
-    COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BG_SURFACE, COLOR_BORDER,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_DANGER, COLOR_SUCCESS,
+    SPACING_MD, SPACING_LG, SPACING_XXL, TEXT_SECTION_TITLE, TEXT_BODY,
+    TEXT_CARD_TITLE, TEXT_LABEL, TEXT_HELPER, BORDER_RADIUS_LG, COLOR_BG_MAIN,
+    COLOR_BG_ELEVATED,
+    COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
+    COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_DANGER,
 )
 from api.client import APIClient
 from utils.logger import get_logger
@@ -38,7 +36,7 @@ class TOTPSetupDialog(QDialog):
         self._load_qr_code()
 
     def setup_ui(self):
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QDialog {{
                 background-color: {COLOR_BG_MAIN};
             }}

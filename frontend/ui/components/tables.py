@@ -3,27 +3,24 @@ Enterprise Table Component.
 Professional data table with sorting, filtering, and pagination.
 """
 
-import math
 from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
-    QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QComboBox,
-    QStyleOptionViewItem, QStyledItemDelegate, QApplication
+    QWidget, QHBoxLayout, QLabel, QComboBox
 )
-from PySide6.QtCore import Signal, Qt, QModelIndex, QSortFilterProxyModel, QTimer, QRect
-from PySide6.QtGui import QColor, QFont, QBrush, QPalette, QPainter
+from PySide6.QtCore import Signal, Qt
 from typing import List, Dict, Any, Callable, Optional, Tuple
 from enum import Enum
 from ui.constants import (
-    SPACING_XS, SPACING_SM, SPACING_MD,
-    BORDER_RADIUS_SM, BORDER_RADIUS_MD,
-    TABLE_ROW_HEIGHT_COMPACT, TABLE_ROW_HEIGHT_MD, TABLE_ROW_HEIGHT_RELAXED,
-    INPUT_HEIGHT_MD, BUTTON_HEIGHT_MD,
-    TABLE_BG_PRIMARY, TABLE_BG_SECONDARY, TABLE_BG_HOVER, TABLE_BG_SELECTED,
-    TABLE_GRID_COLOR, TABLE_TEXT_PRIMARY, TABLE_TEXT_MUTED, TABLE_TEXT_SELECTED,
-    TABLE_HEADER_BG, TABLE_HEADER_TEXT,
-    TABLE_SCROLLBAR_BG, TABLE_SCROLLBAR_HANDLE,
-    BORDER_RADIUS_SM, TEXT_HELPER,
+    SPACING_XS, BORDER_RADIUS_SM, TABLE_ROW_HEIGHT_COMPACT,
+    TABLE_ROW_HEIGHT_MD, TABLE_ROW_HEIGHT_RELAXED,
+    TABLE_BG_PRIMARY, TABLE_BG_SECONDARY, TABLE_BG_HOVER,
+    TABLE_BG_SELECTED, TABLE_GRID_COLOR,
+    TABLE_TEXT_PRIMARY, TABLE_TEXT_MUTED, TABLE_TEXT_SELECTED, TABLE_HEADER_BG,
+    TABLE_HEADER_TEXT, TABLE_SCROLLBAR_BG, TABLE_SCROLLBAR_HANDLE, TEXT_TABLE,
+    TEXT_TABLE_HEADER, COLOR_BORDER,
+    COLOR_BORDER_INPUT_HOVER,
 )
+from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 
 class TableSelectionMode(Enum):
@@ -73,95 +70,11 @@ def build_table_stylesheet(
     focus_color: str = "",
 ) -> str:
     """
-    Centralized table stylesheet builder.
-    Single source of truth for ALL EnterpriseTable and DataEntryGrid styling.
-    Phase 15.8: Enhanced focus visible state, smoother hover, better selection contrast.
+    Deprecated: use UIStyleBuilder.get_table_style() instead.
+    Delegates to UIStyleBuilder.get_table_style().
     """
-    if not focus_color:
-        from ui.constants import COLOR_BORDER_FOCUS
-        focus_color = COLOR_BORDER_FOCUS
-    return f"""
-        QTableWidget {{
-            background-color: {bg_primary};
-            alternate-background-color: {bg_secondary};
-            color: {text_primary};
-            gridline-color: {grid_color};
-            border: 1px solid {grid_color};
-            border-radius: {border_radius}px;
-            selection-background-color: {bg_selected};
-            selection-color: {text_selected};
-            outline: none;
-        }}
-        QTableWidget::item {{
-            padding: {SPACING_SM}px;
-            color: {text_primary};
-            border: none;
-        }}
-        QTableWidget::item:selected {{
-            background-color: {bg_selected};
-            color: {text_selected};
-        }}
-        QTableWidget::item:hover {{
-            background-color: {bg_hover};
-        }}
-        QTableWidget::item:selected:hover {{
-            background-color: {bg_selected};
-            color: {text_selected};
-        }}
-        QHeaderView::section {{
-            background-color: {header_bg};
-            color: {header_text};
-            padding: {SPACING_SM}px;
-            border: none;
-            border-bottom: 1px solid {grid_color};
-            border-right: 1px solid {grid_color};
-            font-weight: bold;
-            font-size: {TEXT_HELPER}pt;
-        }}
-        QHeaderView::section:hover {{
-            background-color: {bg_hover};
-        }}
-        QHeaderView::section:selected {{
-            background-color: {header_bg};
-            color: {header_text};
-        }}
-        QScrollBar:vertical {{
-            background: {scrollbar_bg};
-            width: 10px;
-            margin: 0;
-            border: none;
-        }}
-        QScrollBar::handle:vertical {{
-            background: {scrollbar_handle};
-            min-height: 30px;
-            border-radius: {BORDER_RADIUS_SM}px;
-        }}
-        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-            height: 0;
-        }}
-        QScrollBar:horizontal {{
-            background: {scrollbar_bg};
-            height: 10px;
-            margin: 0;
-            border: none;
-        }}
-        QScrollBar::handle:horizontal {{
-            background: {scrollbar_handle};
-            min-width: 30px;
-            border-radius: {BORDER_RADIUS_SM}px;
-        }}
-        QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
-            width: 0;
-        }}
-        QTableWidget:focus {{
-            border: 1px solid {focus_color};
-            outline: none;
-        }}
-        QTableWidget::item:disabled {{
-            color: {text_muted};
-            background-color: {bg_primary};
-        }}
-    """
+    from theme.style_builder import UIStyleBuilder
+    return UIStyleBuilder.get_table_style()
 
 
 def ensure_contrast(fg: str, bg: str, threshold: float = 4.5) -> Tuple[str, bool]:
@@ -234,6 +147,12 @@ class EnterpriseTable(QTableWidget):
         "relaxed": TABLE_ROW_HEIGHT_RELAXED,
     }
 
+    HEADER_HEIGHTS = {
+        "compact": 28,
+        "medium": 32,
+        "relaxed": 38,
+    }
+
     def __init__(
         self,
         columns: List[TableColumn],
@@ -261,22 +180,9 @@ class EnterpriseTable(QTableWidget):
         self._setup_table()
 
     def _build_stylesheet(self) -> str:
-        """Build canonical stylesheet from centralized tokens."""
-        return build_table_stylesheet(
-            bg_primary=TABLE_BG_PRIMARY,
-            bg_secondary=TABLE_BG_SECONDARY,
-            bg_hover=TABLE_BG_HOVER,
-            bg_selected=TABLE_BG_SELECTED,
-            grid_color=TABLE_GRID_COLOR,
-            text_primary=TABLE_TEXT_PRIMARY,
-            text_muted=TABLE_TEXT_MUTED,
-            text_selected=TABLE_TEXT_SELECTED,
-            header_bg=TABLE_HEADER_BG,
-            header_text=TABLE_HEADER_TEXT,
-            scrollbar_bg=TABLE_SCROLLBAR_BG,
-            scrollbar_handle=TABLE_SCROLLBAR_HANDLE,
-            border_radius=BORDER_RADIUS_SM,
-        )
+        """Build canonical stylesheet from centralized UIStyleBuilder."""
+        from theme.style_builder import UIStyleBuilder
+        return UIStyleBuilder.get_table_style()
 
     def _setup_table(self):
         """Setup table properties and apply canonical stylesheet."""
@@ -328,6 +234,8 @@ class EnterpriseTable(QTableWidget):
     def _apply_density(self):
         height = self.DENSITY_HEIGHTS.get(self._density, TABLE_ROW_HEIGHT_MD)
         self.verticalHeader().setDefaultSectionSize(height)
+        header_height = self.HEADER_HEIGHTS.get(self._density, 32)
+        self.horizontalHeader().setFixedHeight(header_height)
 
     def set_density(self, density: str):
         if density in self.DENSITY_HEIGHTS:
@@ -339,6 +247,8 @@ class EnterpriseTable(QTableWidget):
         return self._density
 
     def set_data(self, data: List[Dict], total_count: Optional[int] = None):
+        import time as _time
+        _st = _time.time()
         self._data = data
         self._filtered_data = data
         if total_count is not None:
@@ -346,6 +256,57 @@ class EnterpriseTable(QTableWidget):
         else:
             self._total_count = len(data)
         self._refresh_display()
+        _dur = (_time.time() - _st) * 1000
+        from runtime.ux_telemetry import record_table_render
+        record_table_render(len(data), _dur)
+
+    def set_data_deferred(self, data: List[Dict], total_count: Optional[int] = None):
+        """Load data on next event-loop cycle — keeps UI responsive."""
+        from runtime.deferred_renderer import defer
+        defer(self.set_data, data, total_count)
+
+    def set_data_chunked(self, data: List[Dict], chunk_size: int = 50):
+        """Load large datasets in chunks to avoid UI freeze."""
+        if len(data) <= chunk_size:
+            self.set_data(data)
+            return
+        self.blockSignals(True)
+        self.setRowCount(0)
+        self._data = data
+        self._filtered_data = data
+        self._total_count = len(data)
+        self._chunk_index = 0
+        self._chunk_size = chunk_size
+        from PySide6.QtCore import QTimer
+        self._chunk_timer = QTimer(self)
+        self._chunk_timer.timeout.connect(self._render_next_chunk)
+        self._chunk_timer.start(5)
+
+    def _render_next_chunk(self):
+        end = min(self._chunk_index + self._chunk_size, len(self._filtered_data))
+        for row_idx in range(self._chunk_index, end):
+            row_data = self._filtered_data[row_idx]
+            self.insertRow(row_idx)
+            for col_idx, col in enumerate(self._columns):
+                value = row_data.get(col.key, "")
+                if col.format_func:
+                    display_value = col.format_func(value)
+                else:
+                    display_value = str(value) if value is not None else ""
+                item = QTableWidgetItem(display_value)
+                if col.align == "right" or _looks_numeric(display_value):
+                    align = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                elif col.align == "center":
+                    align = Qt.AlignmentFlag.AlignCenter
+                else:
+                    align = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+                item.setTextAlignment(align)
+                item.setData(Qt.ItemDataRole.UserRole, row_data)
+                self.setItem(row_idx, col_idx, item)
+        self._chunk_index = end
+        if self._chunk_index >= len(self._filtered_data):
+            self._chunk_timer.stop()
+            self.blockSignals(False)
 
     def _refresh_display(self):
         self.blockSignals(True)
@@ -521,10 +482,10 @@ class PaginationWidget(QWidget):
         layout.addWidget(QLabel("Per page:"))
         layout.addWidget(self.page_size_combo)
 
-        self.first_btn = QPushButton("<<")
-        self.prev_btn = QPushButton("<")
-        self.next_btn = QPushButton(">")
-        self.last_btn = QPushButton(">>")
+        self.first_btn = EnterpriseButton("<<", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
+        self.prev_btn = EnterpriseButton("<", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
+        self.next_btn = EnterpriseButton(">", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
+        self.last_btn = EnterpriseButton(">>", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
 
         self.first_btn.clicked.connect(lambda: self.page_changed.emit(1))
         self.prev_btn.clicked.connect(self._on_prev_page)
@@ -597,21 +558,8 @@ class DataEntryGrid(QTableWidget):
         self.setStyleSheet(self._build_stylesheet())
 
     def _build_stylesheet(self) -> str:
-        return build_table_stylesheet(
-            bg_primary=TABLE_BG_PRIMARY,
-            bg_secondary=TABLE_BG_SECONDARY,
-            bg_hover=TABLE_BG_HOVER,
-            bg_selected=TABLE_BG_SELECTED,
-            grid_color=TABLE_GRID_COLOR,
-            text_primary=TABLE_TEXT_PRIMARY,
-            text_muted=TABLE_TEXT_MUTED,
-            text_selected=TABLE_TEXT_SELECTED,
-            header_bg=TABLE_HEADER_BG,
-            header_text=TABLE_HEADER_TEXT,
-            scrollbar_bg=TABLE_SCROLLBAR_BG,
-            scrollbar_handle=TABLE_SCROLLBAR_HANDLE,
-            border_radius=BORDER_RADIUS_SM,
-        )
+        from theme.style_builder import UIStyleBuilder
+        return UIStyleBuilder.get_table_style()
 
     def add_remove_column(self, header: str = "") -> int:
         col = self.columnCount()

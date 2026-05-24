@@ -1,19 +1,16 @@
 from PySide6.QtWidgets import (QFrame, QLabel, QProgressBar, QWidget,
-                                QVBoxLayout, QHBoxLayout, QScrollArea, QSizePolicy)
-from PySide6.QtCore import Qt, QTimer, Signal, QRect, QPoint
-from PySide6.QtGui import QFont, QPainter, QColor, QPen, QBrush
-from typing import List, Dict, Any, Optional, Callable
+                                QVBoxLayout, QHBoxLayout, QScrollArea)
+from PySide6.QtCore import Qt, Signal, QRect
+from PySide6.QtGui import QFont, QPainter, QColor
+from typing import List, Dict, Any
 
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL,
-                          COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                          COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                          COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                          COLOR_BORDER, COLOR_BORDER_LIGHT,
-    SPACING_NONE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_SECTION_TITLE, TEXT_TABLE,
-                          BORDER_RADIUS_MD, BORDER_RADIUS_LG, BORDER_RADIUS_PILL, BORDER_RADIUS_SM)
-from ui.constants import COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_STATUS_PENDING
-from ui.constants import TEXT_TABLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL, TEXT_SECTION_TITLE
-from ui.components.kpi_cards import KPICard as MetricCard
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, COLOR_SUCCESS, COLOR_DANGER, COLOR_INFO,
+                          COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_BG_MAIN, COLOR_BG_SURFACE,
+                          COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT,
+                          SPACING_NONE, TEXT_BODY, TEXT_LABEL, TEXT_TABLE,
+                          BORDER_RADIUS_MD, BORDER_RADIUS_PILL,
+    BORDER_RADIUS_SM)
+from ui.constants import COLOR_STATUS_VALID, COLOR_STATUS_WARNING
 
 
 class StatusIndicator(QFrame):
@@ -21,7 +18,7 @@ class StatusIndicator(QFrame):
         super().__init__(parent)
         self.setObjectName("statusIndicator")
         self.setFixedSize(120, 28)
-        self.setStyleSheet(f"background-color: transparent;")
+        self.setStyleSheet("background-color: transparent;")
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -85,7 +82,7 @@ class SeverityBadge(QLabel):
             self._severity, (COLOR_TEXT_MUTED, COLOR_BG_MAIN)
         )
         self.setStyleSheet(
-            f"""
+            """
             background-color: {bg};
             color: {COLOR_BG_MAIN};
             padding: {SPACING_XS}px {SPACING_SM}px;
@@ -132,11 +129,11 @@ class HealthBar(QProgressBar):
         if v >= 80:
             color = COLOR_STATUS_VALID
         elif v >= 50:
-            color = COLOR_STATUS_WARNING
+            _color = COLOR_STATUS_WARNING
         else:
-            color = COLOR_DANGER
+            __color = COLOR_DANGER
 
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QProgressBar {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -154,11 +151,58 @@ class HealthBar(QProgressBar):
         """)
 
 
+class MetricCard(QFrame):
+    def __init__(self, title="", value="", description="", color=None, parent=None):
+        super().__init__(parent)
+        self.setObjectName("metricCard")
+        self.setStyleSheet(f"""
+            QFrame#metricCard {{
+                background-color: {COLOR_BG_SURFACE};
+                border: 1px solid {COLOR_BORDER_LIGHT};
+                border-radius: {BORDER_RADIUS_MD}px;
+                border-top: 3px solid {color or COLOR_INFO};
+            }}
+        """)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_MD, SPACING_SM)
+        layout.setSpacing(SPACING_XS)
+
+        self._title_label = QLabel(title)
+        self._title_label.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))
+        self._title_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; border: none;")
+        layout.addWidget(self._title_label)
+
+        self._value_label = QLabel(str(value))
+        self._value_label.setFont(QFont("Segoe UI", 24, QFont.Weight.Bold))
+        self._value_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none;")
+        layout.addWidget(self._value_label)
+
+        self._desc_label = QLabel(description)
+        self._desc_label.setFont(QFont("Segoe UI", TEXT_TABLE))
+        self._desc_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; border: none;")
+        self._desc_label.setWordWrap(True)
+        layout.addWidget(self._desc_label)
+
+    def update_value(self, value, subtitle=None, color=None):
+        self._value_label.setText(str(value))
+        if subtitle:
+            self._desc_label.setText(subtitle)
+        if color:
+            self.setStyleSheet(f"""
+                QFrame#metricCard {{
+                    background-color: {COLOR_BG_SURFACE};
+                    border: 1px solid {COLOR_BORDER_LIGHT};
+                    border-radius: {BORDER_RADIUS_MD}px;
+                    border-top: 3px solid {color};
+                }}
+            """)
+
+
 class TimelineEventWidget(QFrame):
     def __init__(self, timestamp="", severity="info", description="", parent=None):
         super().__init__(parent)
         self.setObjectName("timelineEvent")
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QFrame#timelineEvent {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER_LIGHT};
@@ -194,10 +238,10 @@ class IncidentCard(QFrame):
         super().__init__(parent)
         self.setObjectName("incidentCard")
         self._severity = severity
-        severity_color = SeverityBadge.SEVERITY_COLORS.get(
+        __severity_color = SeverityBadge.SEVERITY_COLORS.get(
             severity.lower(), (COLOR_TEXT_MUTED, COLOR_BG_MAIN)
         )[0]
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QFrame#incidentCard {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER_LIGHT};
@@ -243,37 +287,22 @@ class IncidentCard(QFrame):
 
 
 class LoadingOverlay(QWidget):
+    """
+    Deprecated: use ui.components.loading_spinner.LoadingOverlay instead.
+    """
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
-        self.setVisible(False)
+        from ui.components.loading_spinner import LoadingOverlay as _LoadingOverlay
+        self._impl = _LoadingOverlay(parent)
 
     def show_overlay(self):
-        if self.parent():
-            self.setGeometry(self.parent().rect())
-        self.setVisible(True)
-        self.raise_()
+        self._impl.show_overlay("Loading...")
 
     def hide_overlay(self):
-        self.setVisible(False)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor(0, 0, 0, 120))
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(COLOR_BG_SURFACE))
-        rect = self.rect()
-        box_w, box_h = 160, 60
-        x = (rect.width() - box_w) // 2
-        y = (rect.height() - box_h) // 2
-        painter.drawRoundedRect(x, y, box_w, box_h, 8, 8)
-        painter.setPen(QColor(COLOR_TEXT_PRIMARY))
-        painter.setFont(QFont("Segoe UI", TEXT_BODY))
-        painter.drawText(QRect(x, y, box_w, box_h), Qt.AlignCenter, "Loading...")
+        self._impl.hide_overlay()
 
     def resizeEvent(self, event):
-        if self.isVisible():
-            self.setGeometry(self.parent().rect())
+        self._impl.setGeometry(self.parent().rect())
         super().resizeEvent(event)
 
 
@@ -283,7 +312,7 @@ class SectionHeader(QFrame):
     def __init__(self, title="Section", action_text=None, parent=None):
         super().__init__(parent)
         self.setObjectName("sectionHeader")
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QFrame#sectionHeader {{
                 background-color: transparent;
                 border: none;
@@ -301,7 +330,7 @@ class SectionHeader(QFrame):
         if action_text:
             self.action_btn = QLabel(action_text)
             self.action_btn.setFont(QFont("Segoe UI", TEXT_TABLE))
-            self.action_btn.setStyleSheet(f"""
+            self.action_btn.setStyleSheet("""
                 color: {COLOR_INFO};
                 border: none;
             padding: {SPACING_XS}px {SPACING_SM}px;
@@ -317,10 +346,10 @@ class VirtualTimelineWidget(QScrollArea):
         super().__init__(parent)
         self.setWidgetResizable(True)
         self.setFrameShape(QFrame.NoFrame)
-        self.setStyleSheet(f"background-color: transparent;")
+        self.setStyleSheet("background-color: transparent;")
 
         self._container = QWidget()
-        self._container.setStyleSheet(f"background-color: transparent;")
+        self._container.setStyleSheet("background-color: transparent;")
         self._layout = QVBoxLayout(self._container)
         self._layout.setContentsMargins(0, 0, 0, 0)
         self._layout.setSpacing(SPACING_XS)

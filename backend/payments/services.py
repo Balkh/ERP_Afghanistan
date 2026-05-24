@@ -2,6 +2,7 @@ import logging
 from decimal import Decimal
 from datetime import date
 from typing import Optional
+from django.core.exceptions import ValidationError
 from django.db import transaction as db_transaction, models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -13,7 +14,6 @@ from payments.models import (
     TransactionSettlement,
     SettlementTransaction,
 )
-from accounting.services.journal_engine import JournalEngine
 from accounting.models import Account
 
 logger = logging.getLogger('erp.payments')
@@ -128,9 +128,12 @@ class PaymentEngine:
 
         # Create journal entry
         journal_result = PaymentEngine._create_receipt_journal_entry(txn)
-        if journal_result.get('success'):
-            txn.journal_entry_id = journal_result.get('entry_id')
-            txn.save(update_fields=['journal_entry_id', 'updated_at'])
+        if not journal_result.get('success'):
+            raise ValidationError(
+                f"Journal entry creation failed for receipt: {journal_result.get('errors')}"
+            )
+        txn.journal_entry_id = journal_result.get('entry_id')
+        txn.save(update_fields=['journal_entry_id', 'updated_at'])
 
         return {
             'success': True,
@@ -229,9 +232,12 @@ class PaymentEngine:
 
         # Create journal entry
         journal_result = PaymentEngine._create_payment_journal_entry(txn)
-        if journal_result.get('success'):
-            txn.journal_entry_id = journal_result.get('entry_id')
-            txn.save(update_fields=['journal_entry_id', 'updated_at'])
+        if not journal_result.get('success'):
+            raise ValidationError(
+                f"Journal entry creation failed for payment: {journal_result.get('errors')}"
+            )
+        txn.journal_entry_id = journal_result.get('entry_id')
+        txn.save(update_fields=['journal_entry_id', 'updated_at'])
 
         return {
             'success': True,
@@ -316,9 +322,12 @@ class PaymentEngine:
 
         # Create journal entry
         journal_result = PaymentEngine._create_transfer_journal_entry(txn)
-        if journal_result.get('success'):
-            txn.journal_entry_id = journal_result.get('entry_id')
-            txn.save(update_fields=['journal_entry_id', 'updated_at'])
+        if not journal_result.get('success'):
+            raise ValidationError(
+                f"Journal entry creation failed for transfer: {journal_result.get('errors')}"
+            )
+        txn.journal_entry_id = journal_result.get('entry_id')
+        txn.save(update_fields=['journal_entry_id', 'updated_at'])
 
         return {
             'success': True,
@@ -564,17 +573,21 @@ class PaymentEngine:
         if len(lines) < 2:
             return {'success': False, 'errors': ['Cannot create balanced journal entry']}
 
-        return JournalEngine.create_entry(
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.create_entry(
+            module='payments',
+            operation='create_entry',
             entry_type='RECEIPT',
             description=f"Receipt {txn.transaction_number}: {txn.description}",
             lines=lines,
             entry_date=txn.transaction_date,
             reference=txn.reference_number or txn.transaction_number,
             auto_post=True,
-            source_module='payments',
-            source_document=str(txn.id),
-            change_reason=f"Receipt {txn.transaction_number}"
+            entity_type='FinancialTransaction',
+            entity_id=str(txn.id),
         )
+
+        return result
 
     @staticmethod
     def _create_payment_journal_entry(txn: FinancialTransaction) -> dict:
@@ -651,17 +664,21 @@ class PaymentEngine:
         if len(lines) < 2:
             return {'success': False, 'errors': ['Cannot create balanced journal entry']}
 
-        return JournalEngine.create_entry(
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.create_entry(
+            module='payments',
+            operation='create_entry',
             entry_type='PAYMENT',
             description=f"Payment {txn.transaction_number}: {txn.description}",
             lines=lines,
             entry_date=txn.transaction_date,
             reference=txn.reference_number or txn.transaction_number,
             auto_post=True,
-            source_module='payments',
-            source_document=str(txn.id),
-            change_reason=f"Payment {txn.transaction_number}"
+            entity_type='FinancialTransaction',
+            entity_id=str(txn.id),
         )
+
+        return result
 
     @staticmethod
     def _create_transfer_journal_entry(txn: FinancialTransaction) -> dict:
@@ -703,17 +720,21 @@ class PaymentEngine:
             except Exception as e:
                 logger.error(f"[PAYMENTS] Fee account lookup failed for transfer {txn.transaction_number}: {e}")
 
-        return JournalEngine.create_entry(
+        from core.drift_prevention.migration_router import MigrationRouter
+        result = MigrationRouter.create_entry(
+            module='payments',
+            operation='create_entry',
             entry_type='TRANSFER',
             description=f"Transfer {txn.transaction_number}: {txn.description}",
             lines=lines,
             entry_date=txn.transaction_date,
             reference=txn.transaction_number,
             auto_post=True,
-            source_module='payments',
-            source_document=str(txn.id),
-            change_reason=f"Transfer {txn.transaction_number}"
+            entity_type='FinancialTransaction',
+            entity_id=str(txn.id),
         )
+
+        return result
 
     @staticmethod
     def get_account_transactions(

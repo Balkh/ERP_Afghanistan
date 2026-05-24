@@ -11,7 +11,7 @@ Read-only endpoints:
 - /recommendations — non-executable recommendations
 """
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from typing import Any
 
@@ -37,7 +37,7 @@ def _err(msg: str, code: str = "AUTO_001", status: int = 400) -> Response:
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def auto_insights(request):
     """Get domain-specific or all insights."""
     domain = request.query_params.get('domain', '')
@@ -60,7 +60,7 @@ def auto_insights(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def auto_risk_summary(request):
     """Get cross-domain risk summary."""
     gw = _get_gw()
@@ -71,7 +71,7 @@ def auto_risk_summary(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def auto_decision_options(request):
     """Get structured decision options (non-executable)."""
     gw = _get_gw()
@@ -98,7 +98,7 @@ def auto_decision_options(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def auto_forecast(request):
     """Get deterministic forecasts."""
     gw = _get_gw()
@@ -122,7 +122,7 @@ def auto_forecast(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def auto_anomaly_warnings(request):
     """Get predicted anomaly warnings."""
     gw = _get_gw()
@@ -146,7 +146,7 @@ def auto_anomaly_warnings(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def auto_full_report(request):
     """Get complete enterprise intelligence report."""
     gw = _get_gw()
@@ -170,7 +170,7 @@ def auto_full_report(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def auto_recommendations(request):
     """Get non-executable recommendations."""
     gw = _get_gw()
@@ -193,7 +193,7 @@ def auto_recommendations(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def auto_status(request):
     """Get autonomous intelligence gateway status."""
     gw = _get_gw()

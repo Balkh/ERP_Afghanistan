@@ -4,33 +4,34 @@ Displays results from the backend financial integrity validation service.
 Shows balance mismatches, orphaned payments, overpaid invoices, and
 provides one-click auto-fix functionality.
 """
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                                QLabel, QFrame, QScrollArea, QPushButton,
-                                QHeaderView, QGroupBox)
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
+                                QLabel, QWidget, QFrame, QScrollArea, QGroupBox)
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont
 from api.client import APIClient
 from datetime import datetime
 
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                           MARGIN_PAGE, MARGIN_CARD,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE,
+                           TEXT_SECTION_TITLE, TEXT_BODY_SMALL,
+                           TEXT_LABEL, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+                           BORDER_RADIUS_MD)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.screens.base_screen import BaseScreen
 
 
-class FinancialIntegrityScreen(QWidget):
+class FinancialIntegrityScreen(BaseScreen):
     """Screen displaying financial integrity validation results."""
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="financial_integrity")
         self.api_client = APIClient()
         self.setup_ui()
         self._start_refresh_timer()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show."""
 
     def _start_refresh_timer(self):
         self._timer = QTimer(self)
@@ -91,7 +92,7 @@ class FinancialIntegrityScreen(QWidget):
 
         # Issues table
         issues_group = QGroupBox("Issues Found")
-        issues_group.setStyleSheet(f"""
+        issues_group.setStyleSheet("""
             QGroupBox {{
                 font-size: {TEXT_SECTION_TITLE};
                 font-weight: bold;
@@ -140,7 +141,7 @@ class FinancialIntegrityScreen(QWidget):
 
     def _create_card(self, title, value, color):
         card = QFrame()
-        card.setStyleSheet(f"""
+        card.setStyleSheet("""
             QFrame {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -210,7 +211,6 @@ class FinancialIntegrityScreen(QWidget):
         """Update UI with validation results."""
         checks = data.get("checks", {})
         total_issues = data.get("total_issues", 0)
-        all_ok = data.get("ok", False)
 
         passed = sum(1 for c in checks.values() if c.get("ok", False))
         failed = len(checks) - passed

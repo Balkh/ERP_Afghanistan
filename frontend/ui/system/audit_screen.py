@@ -1,22 +1,12 @@
 """Audit log screen."""
-from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QLineEdit,
-                                  QHeaderView, QMessageBox, QComboBox, QGroupBox,
-                                  QTextEdit, QDateEdit)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
+                                  QLabel, QLineEdit, QPushButton,
+                                  QMessageBox, QComboBox, QGroupBox, QDateEdit)
 from PySide6.QtCore import Qt
 from datetime import datetime
-from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TABLE_BORDER_LIGHT, COLOR_TABLE_HEADER_BG_LIGHT,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (SPACING_XS, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+                           COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 
@@ -86,17 +76,14 @@ class AuditScreen(BaseScreen):
         filter_layout.addWidget(QLabel("To:"), 1, 2)
         filter_layout.addWidget(self.date_to, 1, 3)
         
-        self.clear_btn = QPushButton("Clear Filters")
-        self.clear_btn.setStyleSheet(f"background-color: {COLOR_TEXT_SECONDARY}; color: white; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_MD}px;")
+        self.clear_btn = EnterpriseButton("Clear Filters", variant=ButtonVariant.SECONDARY)
         self.clear_btn.clicked.connect(self._clear_filters)
         filter_layout.addWidget(self.clear_btn, 1, 5)
         
         layout.addWidget(filter_bar)
         
         action_layout = QHBoxLayout()
-        self.export_btn = QPushButton("Export CSV")
-        self.export_btn.setMinimumHeight(38)
-        self.export_btn.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; border-radius: {BORDER_RADIUS_MD}px; padding: 0 {SPACING_MD}px;")
+        self.export_btn = EnterpriseButton("Export CSV", variant=ButtonVariant.PRIMARY)
         action_layout.addWidget(self.export_btn)
         action_layout.addStretch()
         layout.addLayout(action_layout)
@@ -167,7 +154,7 @@ class AuditScreen(BaseScreen):
                     if item.get('is_error'):
                         action_cell = self.table.item(row, 3)
                         if action_cell:
-                            action_cell.setForeground(QColor(COLOR_DANGER))
+                            from PySide6.QtGui import QColor; action_cell.setForeground(QColor(COLOR_DANGER))
                 
                 self.status_label.setText(f"Loaded {len(logs)} logs")
             else:
@@ -190,7 +177,7 @@ class AuditScreen(BaseScreen):
         entity_id = self.table.item(row, 5).text()
         details = self.table.item(row, 7).text()
         
-        msg = f"<b>Audit Event Details</b><br><br>"
+        msg = "<b>Audit Event Details</b><br><br>"
         msg += f"<b>Time:</b> {timestamp}<br>"
         msg += f"<b>User:</b> {user}<br>"
         msg += f"<b>Module:</b> {module}<br>"

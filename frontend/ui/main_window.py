@@ -3,14 +3,12 @@ import os
 import time
 from PySide6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                                  QFrame, QLabel, QStackedWidget, QStatusBar, QApplication, QMessageBox,
-                                 QMenuBar, QMenu, QSizePolicy)
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QFont, QAction, QPixmap
+                                 QSizePolicy)
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QFont, QAction
 from ui.licensing.license_manager_dialog import LicenseManagerDialog
 from ui.sidebar import Sidebar
 from ui.dashboard import Dashboard
-from api.client import APIClient
-from security.session_store import clear_session as encrypted_clear_session
 from security.auth_manager import AuthManager
 from ui.role_renderer import RoleRenderer
 from ui.components.notifications import show_warning
@@ -18,12 +16,10 @@ from ui.components.loading_spinner import LoadingOverlay
 from ui.components.navigation_header import NavigationHeader
 from theme.theme_engine import ThemeEngine
 from ui.utils.lazy_loader import LazyScreenManager
-from utils.logger import get_logger, set_active_screen, get_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, DiagnosticContext, generate_correlation_id, record_screen_load, record_error, detect_error_bursts, generate_operational_insight_report, emit_event
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY, TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_TABLE)
-from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_TABLE
-
+from utils.logger import get_logger, set_active_screen, get_active_screen, safe_execute, SafeBoundary, capture_health_snapshot, generate_correlation_id, record_screen_load, record_error, emit_event
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY, TEXT_LABEL, TEXT_PAGE_TITLE, TEXT_TABLE)
 log = get_logger('ui')
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_FOCUS, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_INFO)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_FOCUS, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
 import ui.constants as _constants
 
 from runtime.timer_registry import shutdown_all_timers
@@ -82,7 +78,10 @@ class MainWindow(QMainWindow):
         # Build the UI
         self._build_ui()
         self._setup_status_bar()
-        self._load_company_settings()
+        
+        # Load company settings in a singleShot to avoid blocking the constructor
+        QTimer.singleShot(100, self._load_company_settings)
+        
         try:
             hs = capture_health_snapshot()
             log.debug(f"MainWindow health snapshot: {hs}",
@@ -97,16 +96,16 @@ class MainWindow(QMainWindow):
         
         # Connection status
         self.conn_label = QLabel("● Connected")
-        self.conn_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: 15px; font-weight: bold;")
+        self.conn_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: {SPACING_LG}px; font-weight: bold;")
         
         # User info
         user_name = self.user_data.get('full_name', self.user_data.get('username', 'User'))
         self.user_label = QLabel(f"👤 User: {user_name} ({self.user_role.name})")
-        self.user_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: 15px;")
+        self.user_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: {SPACING_LG}px;")
         
         # System time
         self.time_label = QLabel()
-        self.time_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: 15px;")
+        self.time_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; margin-right: {SPACING_LG}px;")
         
         # Timer to update time
         self.status_timer = QTimer(self)
@@ -115,7 +114,7 @@ class MainWindow(QMainWindow):
         self._update_status_bar_time()
         
         self.health_label = QLabel("● Checking...")
-        self.health_label.setStyleSheet(f"color: {COLOR_WARNING}; margin-right: 15px; font-weight: bold;")
+        self.health_label.setStyleSheet(f"color: {COLOR_WARNING}; margin-right: {SPACING_LG}px; font-weight: bold;")
         self.health_label.setToolTip("Backend health status")
 
         self.status_bar.addPermanentWidget(self.user_label)
@@ -137,29 +136,29 @@ class MainWindow(QMainWindow):
                     db_status = db.get('status', 'unknown')
                     if db_status == 'healthy':
                         self.health_label.setText("● DB OK")
-                        self.health_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: 15px; font-weight: bold;")
+                        self.health_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: {SPACING_LG}px; font-weight: bold;")
                         self.status_bar.showMessage("Startup: all systems healthy", 3000)
                         log.info("Startup health: all systems healthy",
                                  extra={'extra_fields': {'tags': ['system', 'startup']}})
                     else:
                         self.health_label.setText(f"● DB {db_status.upper()}")
-                        self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: 15px; font-weight: bold;")
+                        self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: {SPACING_LG}px; font-weight: bold;")
                         self.status_bar.showMessage(f"Startup: DB status {db_status}", 5000)
                         log.warning(f"Startup health: DB status {db_status}",
                                      extra={'extra_fields': {'tags': ['system', 'startup', 'warning']}})
                 else:
                     self.health_label.setText("● Online")
-                    self.health_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: 15px; font-weight: bold;")
+                    self.health_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: {SPACING_LG}px; font-weight: bold;")
                     log.info("Startup health: backend online",
                              extra={'extra_fields': {'tags': ['system', 'startup']}})
             else:
                 self.health_label.setText("● Offline")
-                self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: 15px; font-weight: bold;")
+                self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: {SPACING_LG}px; font-weight: bold;")
                 log.warning("Startup health: backend unreachable",
                              extra={'extra_fields': {'tags': ['system', 'startup', 'warning']}})
         except Exception as e:
             self.health_label.setText("● Error")
-            self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: 15px; font-weight: bold;")
+            self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: {SPACING_LG}px; font-weight: bold;")
             _cid = generate_correlation_id("health")
             record_error(exc_type=type(e).__name__, module='startup_health', category='api')
             emit_event('system_event', module='main_window', action='health_check_error',
@@ -173,23 +172,24 @@ class MainWindow(QMainWindow):
         self.time_label.setText(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     def _load_company_settings(self):
-        """Load company name to window title."""
-        from ui.system.settings_screen import SETTINGS_FILE
-        import json
-        if os.path.exists(SETTINGS_FILE):
-            try:
-                with open(SETTINGS_FILE, 'r') as f:
-                    settings = json.load(f)
-                    company = settings.get("company_name")
-                    if company:
-                        self.setWindowTitle(f"{company} - Pharmacy ERP")
-            except Exception as e:
-                log.debug(f"Could not load company settings: {e}",
-                           extra={'extra_fields': {'tags': ['ui', 'startup']}})
+        """Load company name from backend API (SSOT) and set window title."""
+        if not self.api_client:
+            return
+        try:
+            resp = self.api_client.get("/api/companies/config/")
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("success"):
+                    data = data.get("data", data)
+                company_name = data.get("company_name", "Pharmacy ERP")
+                self.setWindowTitle(f"{company_name} - Pharmacy ERP")
+        except Exception as e:
+            log.debug(f"Could not load company settings from API: {e}",
+                       extra={'extra_fields': {'tags': ['ui', 'startup']}})
     
     def _determine_role(self):
         """Determine user role from user_data."""
-        from ui.role_manager import get_role_from_user_data, UserRole
+        from ui.role_manager import get_role_from_user_data
         role = get_role_from_user_data(self.user_data)
         return role
 
@@ -204,8 +204,6 @@ class MainWindow(QMainWindow):
     def _apply_sidebar_scopes(self, ui_scopes: dict) -> None:
         """Hide sidebar items the user cannot access based on ui_scopes."""
         visible_modules = set(ui_scopes.get("sidebar", []))
-        hidden_modules = set(ui_scopes.get("hidden", []))
-
         group_items_map = {
             "inventory": {"inventory"},
             "sales": {"sales"},
@@ -217,6 +215,7 @@ class MainWindow(QMainWindow):
             "hr": {"hr"},
             "hr_reports": {"hr"},
             "payroll_reports": {"hr"},
+            "cash_flow": {"finance"},
             "system": {"system"},
         }
 
@@ -252,18 +251,7 @@ class MainWindow(QMainWindow):
         self._outer_layout.setContentsMargins(0, 0, 0, 0)
         self._outer_layout.setSpacing(SPACING_NONE)
 
-        # Global Intelligence Bar
-        from ui.cognitive.global_bar import GlobalIntelligenceBar
-        self.cognitive_bar = GlobalIntelligenceBar(api_client=self.api_client)
-        self.cognitive_bar.anomaly_clicked.connect(
-            lambda: self.anomaly_warning_center.show() if hasattr(self, 'anomaly_warning_center') else None
-        )
-        self.cognitive_bar.anomaly_clicked.connect(
-            lambda: self.navigate_to("anomaly_warning_center")
-        )
-        self._outer_layout.addWidget(self.cognitive_bar)
-
-        # Inner horizontal layout: sidebar + content
+# Inner horizontal layout: sidebar + content
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(SPACING_NONE)
@@ -279,21 +267,21 @@ class MainWindow(QMainWindow):
 
         # Add device ID label to status bar
         self.device_id_label = QLabel()
-        self.device_id_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_TEXT_MUTED};")
+        self.device_id_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_TEXT_SECONDARY};")
         self.status_bar.addPermanentWidget(self.device_id_label)
 
         # Add license status label to status bar
         self.license_status_label = QLabel()
-        self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;")
+        self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_TEXT_SECONDARY}; margin-left: {SPACING_MD}px;")
         self.status_bar.addPermanentWidget(self.license_status_label)
         
         # Add connection status label to status bar
         self.connection_status_label = QLabel()
-        self.connection_status_label.setStyleSheet(f"font-size: {TEXT_TABLE}px; color: {COLOR_TEXT_MUTED}; margin-left: 10px;")
+        self.connection_status_label.setStyleSheet(f"font-size: {TEXT_TABLE}px; color: {COLOR_TEXT_SECONDARY}; margin-left: {SPACING_MD}px;")
         self.status_bar.addPermanentWidget(self.connection_status_label)
         
         # Connection check timer (throttled to reduce UI thread pressure)
-        self.connection_timer = QTimer()
+        self.connection_timer = QTimer(self)
         self.connection_timer.timeout.connect(self.check_connection)
         self.connection_timer.start(30000)
 
@@ -314,7 +302,7 @@ class MainWindow(QMainWindow):
 
         content_frame = QFrame()
         content_frame.setFrameStyle(QFrame.NoFrame)
-        content_frame.setStyleSheet(f"""
+        content_frame.setStyleSheet("""
             QFrame {{
                 background-color: {COLOR_BG_MAIN};
             }}
@@ -372,7 +360,7 @@ class MainWindow(QMainWindow):
         self.header.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
         self.header.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         self.header.setFixedHeight(60)
-        self.header.setStyleSheet(f"""
+        self.header.setStyleSheet("""
             QLabel {{
                 color: {COLOR_TEXT_PRIMARY};
                 padding-left: 10px;
@@ -428,7 +416,7 @@ class MainWindow(QMainWindow):
         _register(7, _b(CustomerScreen))
         _register(8, _b(SupplierScreen))
         _register(9, _b(ReturnsScreen))
-        _register(10, lambda api_client=None: POSScreen(api_client=api_client, auth_manager=self.auth_manager))
+        _register(37, lambda api_client=None: POSScreen(api_client=api_client, auth_manager=self.auth_manager))
 
         # Indices 10-17: Accounting
         from ui.accounting.chart_of_accounts_screen import ChartOfAccountsScreen
@@ -469,46 +457,40 @@ class MainWindow(QMainWindow):
         _register(26, _b(PayrollScreen))
 
         # Indices 27-39: System (consolidated)
-        from ui.system.backup_screen import BackupScreen
+        from ui.system.backup_screen import BackupControlScreen
         from ui.system.settings_screen import SettingsScreen
+        from ui.system.company_profile_screen import CompanyProfileScreen
         from ui.system.fixed_assets_screen import FixedAssetsScreen
         from ui.system.audit_screen import AuditScreen
         from ui.system.user_management_screen import UserManagementScreen
+        from ui.system.role_management_screen import RoleManagementScreen
         from ui.system.invoice_template_manager import InvoiceTemplateManager
         from ui.system.entity_management_screen import EntityManagementScreen
         from ui.system.licensing_screen import LicensingScreen
-        from ui.system.production_screen import ProductionScreen
         from ui.system.analytics_workspace import AnalyticsWorkspace
         from ui.system.intelligence_hub_screen import IntelligenceHubScreen
         from ui.control_tower.operations_dashboard import OperationsDashboard
         from ui.observability.observability_console import ObservabilityConsole
         from ui.causal_scoring.decision_workspace import DecisionWorkspace
-        _register(27, _b(BackupScreen))
+        _register(27, _b(BackupControlScreen))
         _register(28, _b(SettingsScreen))
         _register(29, _b(FixedAssetsScreen))
         _register(30, _b(AuditScreen))
         _register(31, _b(UserManagementScreen))
+        _register(48, _b(RoleManagementScreen))
         _register(32, _b(IntelligenceHubScreen))
         _register(33, _b(InvoiceTemplateManager))
+        _register(66, _b(CompanyProfileScreen))
         _register(35, _b(EntityManagementScreen))
         _register(36, _b(LicensingScreen))
-        _register(37, _b(ProductionScreen))
         _register(38, lambda api_client=None: OperationsDashboard(api_client=api_client))
         _register(39, lambda api_client=None: ObservabilityConsole(api_client=api_client))
 
         # Indices 40-47: Intelligence / Autonomous (consolidated into workspaces)
         _register(40, lambda api_client=None: AnalyticsWorkspace(api_client=api_client))
-        _register(41, lambda api_client=None: AnalyticsWorkspace(api_client=api_client))
-        _register(42, lambda api_client=None: AnalyticsWorkspace(api_client=api_client))
-        _register(43, lambda api_client=None: OperationsDashboard(api_client=api_client))
-        _register(44, lambda api_client=None: ObservabilityConsole(api_client=api_client))
-        _register(45, lambda api_client=None: OperationsDashboard(api_client=api_client))
-        _register(46, lambda api_client=None: DecisionWorkspace(api_client=api_client))
         _register(47, lambda api_client=None: DecisionWorkspace(api_client=api_client))
 
         # Indices 48-56: Reports (consolidated)
-        from ui.accounting.report_browser import ReportBrowser
-        _register(48, lambda api_client=None: ReportBrowser(report_type="cash_flow"))
         _register(49, lambda api_client=None: ReportBrowser(report_type="employee_summary"))
         _register(50, lambda api_client=None: ReportBrowser(report_type="attendance_report"))
         _register(51, lambda api_client=None: ReportBrowser(report_type="leave_report"))
@@ -572,14 +554,14 @@ class MainWindow(QMainWindow):
             10: "accounting", 11: "accounting", 12: "accounting", 58: "accounting", 59: "accounting",
             13: "reports", 14: "reports", 15: "reports", 16: "reports", 17: "reports",
             18: "finance", 19: "finance", 20: "finance", 21: "finance", 22: "finance", 34: "finance",
+            37: "sales",
             60: "finance", 61: "finance", 62: "finance", 63: "finance", 64: "finance", 65: "finance",
             23: "hr", 24: "hr", 25: "hr", 26: "hr",
             49: "hr", 50: "hr", 51: "hr", 52: "hr",
             53: "hr", 54: "hr", 55: "hr", 56: "hr",
             27: "system", 28: "system", 29: "system", 30: "system", 31: "system",
-            32: "system", 33: "system", 35: "system", 36: "system", 37: "system",
-            38: "system", 39: "system", 47: "system",
-            48: "reports",
+            32: "system", 33: "system", 35: "system", 36: "system",
+            38: "system", 39: "system", 47: "system", 48: "system", 66: "system",
         }
         module = page_to_module.get(index, "dashboard")
         if not self.auth_manager.has_access(module):
@@ -611,6 +593,7 @@ class MainWindow(QMainWindow):
         self.header.setText(page_title.strip())
         self.header.setVisible(False)
         self.pages.setCurrentIndex(index)
+        self.sidebar.set_active_item(index)
         self._update_nav_header(index, page_title)
 
         corr_id = generate_correlation_id("nav")
@@ -636,6 +619,10 @@ class MainWindow(QMainWindow):
 
         _duration = (time.time() - _start) * 1000
         record_screen_load(page_title.strip(), _duration)
+        from runtime.ux_telemetry import record_navigation as _record_nav_telemetry
+        _record_nav_telemetry(page_title.strip(), _duration)
+        from runtime.workflow_intelligence import record_navigation as _record_wf
+        _record_wf(page_title.strip())
 
     # --- Navigation Methods (Phase 5-6) ---
     def _update_nav_header(self, index: int, page_title: str):
@@ -668,28 +655,36 @@ class MainWindow(QMainWindow):
             23: "Employees", 24: "Attendance", 25: "Leave", 26: "Payroll",
             27: "Backup", 28: "Settings", 29: "Fixed Assets", 30: "Audit",
             31: "User Management", 32: "Intelligence Hub", 33: "Invoice Templates",
-            34: "Expenses", 35: "Entities", 36: "Licensing", 37: "Production",
-            38: "Control Center",
-            39: "Observability",
+            34: "Expenses", 35: "Entities", 36: "Licensing", 37: "POS Terminal",
+            38: "Control Center", 39: "Observability", 40: "Analytics",
+            47: "Decision Workspace", 48: "Role Management",
+            49: "Employee Summary", 50: "Attendance Report", 51: "Leave Report",
+            52: "Overtime Report", 53: "Payroll Summary", 54: "Payroll Trend",
+            55: "Payroll Dept Cost", 56: "Payroll Employee History",
             57: "Reconciliation",
+            58: "Financial Integrity", 59: "Financial Audit",
+            60: "Customer Payments", 61: "Supplier Payments",
+            62: "Allocation Explorer", 63: "Returns Explainability",
+            64: "Journal Reversals", 65: "Operations Console",
+            66: "Company Profile",
         }
         
         # Build breadcrumb based on current page category
         if index in [1, 2, 3, 4]:
             return ["Home", "Inventory", page_map.get(index, page_title)]
-        elif index in [5, 7]:
+        elif index in [5, 7, 37]:
             return ["Home", "Sales", page_map.get(index, page_title)]
         elif index in [6, 8]:
             return ["Home", "Purchases", page_map.get(index, page_title)]
-        elif index in [10, 11, 12]:
+        elif index in [10, 11, 12, 58, 59]:
             return ["Home", "Accounting", page_map.get(index, page_title)]
         elif index in [13, 14, 15, 16, 17]:
             return ["Home", "Reports", page_map.get(index, page_title)]
-        elif index in [18, 19, 20, 21, 22, 34]:
+        elif index in [18, 19, 20, 21, 22, 34, 60, 61, 62, 63, 64, 65]:
             return ["Home", "Finance", page_map.get(index, page_title)]
-        elif index in [23, 24, 25, 26]:
+        elif index in [23, 24, 25, 26, 49, 50, 51, 52, 53, 54, 55, 56]:
             return ["Home", "HR", page_map.get(index, page_title)]
-        elif index in [27, 28, 29, 30, 31, 32, 33, 35, 36, 37, 38, 39]:
+        elif index in [27, 28, 29, 30, 31, 32, 33, 35, 36, 38, 39, 40, 47, 48, 66]:
             return ["Home", "System", page_map.get(index, page_title)]
         elif index in [9, 57]:
             return ["Home", "Returns", page_map.get(index, page_title)]
@@ -708,6 +703,7 @@ class MainWindow(QMainWindow):
             self._disable_history = True
             self.pages.setCurrentIndex(prev_index)
             self.header.setText(prev_title)
+            self.sidebar.set_active_item(prev_index)
             self._disable_history = False
             current_idx = self.pages.currentIndex()
             self._update_nav_header(current_idx, prev_title)
@@ -722,8 +718,11 @@ class MainWindow(QMainWindow):
         self._disable_history = True
         self.pages.setCurrentIndex(0)
         self.header.setText("Pharmacy ERP Dashboard")
+        self.sidebar.set_active_item(0)
         self._disable_history = False
         self._update_nav_header(0, "Pharmacy ERP Dashboard")
+    
+
     
     def _close_screen(self):
         """Close current screen and return to previous or home."""
@@ -748,35 +747,48 @@ class MainWindow(QMainWindow):
             status = self.license_validator.get_license_status()
             if status["is_valid"]:
                 self.license_status_label.setText(f"License: Valid ({status['message']})")
-                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: 10px;")  # Green
+                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Green
             else:
                 self.license_status_label.setText(f"License: Invalid ({status['message']})")
-                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: 10px;")  # Red
+                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Red
 
     def check_connection(self):
         """Check the connection to the backend and update the status bar."""
+        # Safety check: ensure widget is not being deleted (PySide6 C++ guard)
+        if not self.isVisible() or not hasattr(self, 'connection_status_label'):
+            return
+            
         try:
-            if not self.connection_status_label or not self.connection_status_label.isVisible():
+            # libshiboken guard: check if the underlying C++ object still exists
+            from shiboken6 import isValid
+            if not isValid(self.connection_status_label):
                 return
+                
             is_reachable = self.api_client.health_check()
             if is_reachable:
                 self.connection_status_label.setText("Connected")
-                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: 10px;")
+                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")
             else:
                 self.connection_status_label.setText("Disconnected")
-                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: 10px;")
+                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")
         except (RuntimeError, AttributeError) as e:
-            log.debug(f"Connection check failed (expected during shutdown): {e}",
+            # Catch PySide6 deletion errors silently during shutdown
+            if "deleted" in str(e).lower():
+                return
+            log.debug(f"Connection check failed: {e}",
                        extra={'extra_fields': {'tags': ['ui', 'connection']}})
 
     def on_license_validation_changed(self, is_valid: bool, message: str):
         """Handle license validation change signals."""
+        if not hasattr(self, 'license_status_label'):
+            return
+            
         if is_valid:
             self.license_status_label.setText(f"License: Valid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: 10px;")  # Green
+            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Green
         else:
             self.license_status_label.setText(f"License: Invalid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: 10px;")  # Red
+            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Red
             
             # Show critical error message if validation fails
             if not is_valid and "too many times" in message:
@@ -829,14 +841,14 @@ class MainWindow(QMainWindow):
         """Inner implementation of stylesheet refresh with safe boundary."""
         if not hasattr(self, 'pages'):
             return
-        C = _constants
+        __C = _constants
         content_frame = self.sidebar.parent() if hasattr(self, 'sidebar') else None
         for child in self.findChildren(QFrame):
             if child.parent() is self.centralWidget():
                 content_frame = child
                 break
         if content_frame:
-            content_frame.setStyleSheet(f"""
+            content_frame.setStyleSheet("""
                 QFrame {{
                     background-color: {C.COLOR_BG_MAIN};
                 }}
@@ -891,12 +903,12 @@ class MainWindow(QMainWindow):
         """Re-apply status bar label colors on theme change."""
         C = _constants
         for attr, ss in [
-            ('user_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: 15px;"),
-            ('conn_label', f"color: {C.COLOR_STATUS_VALID}; margin-right: 15px; font-weight: bold;"),
-            ('time_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: 15px;"),
+            ('user_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: {C.SPACING_LG}px;"),
+            ('conn_label', f"color: {C.COLOR_STATUS_VALID}; margin-right: {C.SPACING_LG}px; font-weight: bold;"),
+            ('time_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: {C.SPACING_LG}px;"),
             ('device_id_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED};"),
-            ('license_status_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED}; margin-left: 10px;"),
-            ('connection_status_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED}; margin-left: 10px;"),
+            ('license_status_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED}; margin-left: {C.SPACING_MD}px;"),
+            ('connection_status_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED}; margin-left: {C.SPACING_MD}px;"),
         ]:
             widget = getattr(self, attr, None)
             if widget is not None:
@@ -904,13 +916,13 @@ class MainWindow(QMainWindow):
                     widget.setStyleSheet(ss)
                 except RuntimeError:
                     pass
-        self.header.setStyleSheet(f"""
+        self.header.setStyleSheet("""
             QLabel {{
                 color: {COLOR_TEXT_PRIMARY};
                 padding-left: 10px;
             }}
         """)
-        self.nav_header.setStyleSheet(f"""
+        self.nav_header.setStyleSheet("""
             QWidget {{ background-color: transparent; }}
             QPushButton {{
                 background-color: transparent;
@@ -1143,19 +1155,18 @@ class MainWindow(QMainWindow):
             "customers": 7,
             "suppliers": 8,
             "returns": 9,
-            "pos": 10,
-            "chart_of_accounts": 11,
-            "journal_entries": 12,
-            "account_ledger": 13,
-            "trial_balance": 14,
-            "profit_loss": 15,
-            "balance_sheet": 16,
-            "ar_ageing": 17,
-            "ap_ageing": 18,
-            "payments": 19,
-            "budgeting": 20,
-            "tax": 21,
-            "cost_centers": 22,
+            "chart_of_accounts": 10,
+            "journal_entries": 11,
+            "account_ledger": 12,
+            "trial_balance": 13,
+            "profit_loss": 14,
+            "balance_sheet": 15,
+            "ar_ageing": 16,
+            "ap_ageing": 17,
+            "payments": 18,
+            "budgeting": 19,
+            "tax": 20,
+            "cost_centers": 21,
             "cashflow": 22,
             "employees": 23,
             "attendance": 24,
@@ -1171,20 +1182,30 @@ class MainWindow(QMainWindow):
             "expenses": 34,
             "entities": 35,
             "licensing": 36,
-            "production": 37,
+            "pos": 37,
             "control_center": 38,
-            "operations": 38,
             "observability": 39,
-            "decision_workspace": 48,
-            "cash_flow": 49,
-            "employee_summary": 50,
-            "attendance_report": 51,
-            "leave_report": 52,
-            "overtime_report": 53,
-            "payroll_summary": 54,
-            "payroll_trend": 55,
-            "payroll_dept_cost": 56,
-            "payroll_emp_history": 57,
+            "analytics": 40,
+            "decision_workspace": 47,
+            "role_management": 48,
+            "employee_summary": 49,
+            "attendance_report": 50,
+            "leave_report": 51,
+            "overtime_report": 52,
+            "payroll_summary": 53,
+            "payroll_trend": 54,
+            "payroll_dept_cost": 55,
+            "payroll_emp_history": 56,
+            "reconciliation": 57,
+            "financial_integrity": 58,
+            "financial_audit": 59,
+            "customer_payments": 60,
+            "supplier_payments": 61,
+            "allocation_explorer": 62,
+            "returns_explainability": 63,
+            "journal_reversals": 64,
+            "operations_console": 65,
+            "company_profile": 66,
         }
         if page_id in page_map:
             index = page_map[page_id]
@@ -1208,7 +1229,7 @@ class MainWindow(QMainWindow):
         import subprocess
         try:
             subprocess.Popen('calc.exe')
-        except:
+        except Exception:
             QMessageBox.warning(self, "Error", "Could not open calculator.")
     
     def open_calendar(self):
@@ -1216,11 +1237,13 @@ class MainWindow(QMainWindow):
         import subprocess
         try:
             subprocess.Popen('outlook.exe')
-        except:
+        except Exception:
             QMessageBox.information(self, "Calendar", "Calendar integration not available.")
     
     def logout(self):
         """Logout and return to login screen."""
+        from runtime.ux_telemetry import record_exit_point
+        record_exit_point("logout")
         reply = QMessageBox.question(
             self, "Logout",
             "Are you sure you want to logout?",
@@ -1241,12 +1264,9 @@ class MainWindow(QMainWindow):
                        metadata={'username': username, 'screen': get_active_screen()},
                        correlation_id=_cid)
             
-            # Logout via AuthManager
+            # Logout via AuthManager — single source of truth for session cleanup
             self.auth_manager._clear_session()
-            self.auth_manager._is_authenticated = False
-            encrypted_clear_session()
-            self.api_client.clear_auth_token()
-            
+
             # Close main window and show login
             self.close()
             # Re-run main to show login
@@ -1259,13 +1279,12 @@ class MainWindow(QMainWindow):
             self._do_refresh_current_view()
 
     def _do_refresh_current_view(self):
+        """Refresh current screen via lazy loader (if supported)."""
         index = self.pages.currentIndex()
-        if hasattr(self, 'product_screen') and index == 2:
-            self.product_screen.load_products()
-        elif hasattr(self, 'customer_screen') and index == 8:
-            self.customer_screen.load_customers()
-        elif hasattr(self, 'supplier_screen') and index == 9:
-            self.supplier_screen.load_suppliers()
+        if index != 0 and hasattr(self, '_lazy_screens'):
+            screen = self._lazy_screens.get(index)
+            if screen and hasattr(screen, 'refresh_data'):
+                screen.refresh_data()
         self.status_bar.showMessage("Refreshed", 2000)
         
     def resizeEvent(self, event):
@@ -1277,13 +1296,14 @@ class MainWindow(QMainWindow):
     
     def closeEvent(self, event):
         """Ensure all timers are stopped on application exit."""
+        from runtime.ux_telemetry import record_exit_point, shutdown_telemetry
+        record_exit_point("close")
+        shutdown_telemetry()
         shutdown_all_timers()
         super().closeEvent(event)
 
     def keyPressEvent(self, event):
         """Handle keyboard shortcuts (Phase 12)."""
-        from PySide6.QtGui import QKeySequence
-        from PySide6.QtWidgets import QShortcut
         
         # Alt+Left: Go back
         if event.modifiers() == Qt.AltModifier and event.key() == Qt.Key_Left:

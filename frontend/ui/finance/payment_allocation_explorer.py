@@ -1,37 +1,39 @@
 """Phase 20: Payment Allocation Explorer screen."""
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QComboBox, QGroupBox, QMessageBox, QApplication,
+    QLabel, QComboBox,
 )
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtCore import Qt
 
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (
     SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE,
-    TEXT_PAGE_TITLE, TEXT_BODY, TEXT_LABEL,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_DANGER,
-    COLOR_BG_ELEVATED, COLOR_BORDER,
-    BORDER_RADIUS_SM, BORDER_RADIUS_LG,
+    TEXT_PAGE_TITLE, TEXT_BODY, COLOR_TEXT_PRIMARY,
+    COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_SUCCESS,
+    COLOR_DANGER, COLOR_BG_ELEVATED, COLOR_BORDER,
+    BORDER_RADIUS_SM,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.screens.base_screen import BaseScreen
 
 
-class PaymentAllocationExplorer(QWidget):
+class PaymentAllocationExplorer(BaseScreen):
     """Payment allocation explorer - trace payment allocations across invoices."""
 
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="allocation_explorer")
         self.api_client = api_client or APIClient()
         self.entity_type = "customer"
         self.entity_id = None
         self._is_loading = False
         self.setup_ui()
         self._load_entities()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — we load in __init__."""
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -113,7 +115,7 @@ class PaymentAllocationExplorer(QWidget):
         self.content_widget.setVisible(False)
 
     def _combo_style(self):
-        return f"""
+        return """
             QComboBox {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};

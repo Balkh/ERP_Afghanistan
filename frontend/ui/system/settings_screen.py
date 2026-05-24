@@ -2,22 +2,19 @@
 import json
 import os
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QLineEdit, QComboBox, QGroupBox,
-                                  QFormLayout, QCheckBox, QSpinBox, QMessageBox)
-from PySide6.QtCore import Qt
+                                   QLabel, QComboBox, QGroupBox, QFormLayout,
+                                   QCheckBox, QSpinBox, QMessageBox)
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD,
-                           BORDER_RADIUS_MD,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING)
+from ui.constants import (SPACING_MD, TEXT_PAGE_TITLE, INPUT_HEIGHT_MD, COLOR_TEXT_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from theme.theme_engine import ThemeEngine
 
 
 SETTINGS_FILE = os.path.expanduser("~/.pharmacy_erp_settings.json")
+
+THEME_KEYS = ["theme", "language", "timezone", "low_stock_threshold",
+              "auto_backup", "backup_frequency", "email_notifications",
+              "low_stock_alerts", "expiry_alerts"]
 
 
 class SettingsScreen(BaseScreen):
@@ -26,15 +23,25 @@ class SettingsScreen(BaseScreen):
     def __init__(self, parent=None, screen_id="settings", config=None, api_client=None):
         super().__init__(parent, screen_id, config)
         self._api_client = api_client
+        self._company_id = None  # Cached to avoid redundant API calls
         self._load_settings()
     
     def _load_settings(self):
-        """Load settings from local file."""
-        self._settings = {
-            "company_name": "",
-            "currency": "AFN - Afghani",
+        """Load settings — SystemConfig API is primary SSOT, local JSON is cache, defaults are final fallback."""
+        # Try API first (SSOT). If it fails, try local cache. Defaults fill remaining gaps.
+        self._settings = {}
+        api_ok = self._load_from_api()
+        if not api_ok:
+            self._load_from_local_cache()
+        self._apply_defaults()
+
+    def _get_default_settings(self):
+        """Return default settings dict (used as fallback when no API or cache available)."""
+        return {
+            "theme": "dark",
             "language": "English",
             "timezone": "Asia/Kabul (GMT+4:30)",
+            "currency": "AFN",
             "low_stock_threshold": 10,
             "auto_backup": True,
             "backup_frequency": "Daily",
@@ -42,17 +49,95 @@ class SettingsScreen(BaseScreen):
             "low_stock_alerts": True,
             "expiry_alerts": True
         }
-        
+
+    def _apply_defaults(self):
+        """Apply default values for any settings not already populated."""
+        defaults = self._get_default_settings()
+        for key, val in defaults.items():
+            if self._settings.get(key) is None:
+                self._settings[key] = val
+
+    def _load_from_api(self):
+        """Load settings from SystemConfig API as primary SSOT. Returns True on success."""
+        if not self._api_client:
+            return False
+        try:
+            resp = self._api_client.get("/api/system-config/by_keys/", params={"keys": THEME_KEYS})
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("success"):
+                    data = data["data"]
+                self._merge_api_data(data)
+
+            # Also load company default currency from Company API (SSOT)
+            self._load_company_currency()
+            return True
+        except Exception as e:
+            print(f"Failed to load settings from API: {e}")
+        return False
+
+    def _load_company_currency(self):
+        """Load company default_currency from Company API."""
+        if not self._api_client:
+            return
+        try:
+            # Use /active/ endpoint which returns full company data including id
+            resp = self._api_client.get("/api/core/companies/active/")
+            if resp.status_code == 200:
+                data = resp.json()
+                if data.get("success"):
+                    data = data.get("data", data)
+                self._company_id = data.get("id")
+                currency = data.get("default_currency", "AFN")
+                self._settings["currency"] = currency
+            else:
+                # Fallback to config endpoint (id not returned, but has currency)
+                resp2 = self._api_client.get("/api/core/companies/config/")
+                if resp2.status_code == 200:
+                    data = resp2.json()
+                    if data.get("success"):
+                        data = data.get("data", data)
+                    currency = data.get("default_currency", "AFN")
+                    self._settings["currency"] = currency
+        except Exception as e:
+            print(f"Failed to load company currency: {e}")
+
+    def _load_from_local_cache(self):
+        """Load settings from local JSON cache file (fallback when API is unavailable)."""
         if os.path.exists(SETTINGS_FILE):
             try:
                 with open(SETTINGS_FILE, 'r') as f:
                     loaded = json.load(f)
-                    self._settings.update(loaded)
-            except:
+                for key, val in loaded.items():
+                    if key == "low_stock_threshold":
+                        try:
+                            self._settings[key] = int(val)
+                        except (ValueError, TypeError):
+                            pass
+                    elif key in ("auto_backup", "email_notifications", "low_stock_alerts", "expiry_alerts"):
+                        self._settings[key] = str(val).lower() in ("true", "1", "yes")
+                    else:
+                        self._settings[key] = val
+            except Exception:
                 pass
+
+    def _merge_api_data(self, data):
+        """Merge API response data into settings dict."""
+        for key in THEME_KEYS:
+            val = data.get(key)
+            if val is not None:
+                if key == "low_stock_threshold":
+                    try:
+                        self._settings[key] = int(val)
+                    except (ValueError, TypeError):
+                        pass
+                elif key in ("auto_backup", "email_notifications", "low_stock_alerts", "expiry_alerts"):
+                    self._settings[key] = str(val).lower() in ("true", "1", "yes")
+                else:
+                    self._settings[key] = val
     
     def _save_settings(self):
-        """Save settings to local file."""
+        """Save settings to local cache file (secondary). SystemConfig API is SSOT."""
         try:
             with open(SETTINGS_FILE, 'w') as f:
                 json.dump(self._settings, f, indent=2)
@@ -60,6 +145,30 @@ class SettingsScreen(BaseScreen):
         except Exception as e:
             print(f"Failed to save settings: {e}")
             return False
+    
+    def _load_theme_from_api(self):
+        """Load theme preference from backend SystemConfig. Called from on_show() to refresh."""
+        self._load_from_api()
+    
+    def _save_theme_to_api(self):
+        """Save settings to backend SystemConfig."""
+        if not self._api_client:
+            return False
+        try:
+            payload = {}
+            for key in THEME_KEYS:
+                payload[key] = self._settings.get(key, "")
+            resp = self._api_client.post("/api/system-config/bulk_update/", json=payload)
+            return resp.status_code in (200, 201)
+        except Exception as e:
+            print(f"Failed to save settings to API: {e}")
+            return False
+    
+    def _apply_theme(self):
+        """Apply the current theme from settings."""
+        theme = self._settings.get("theme", "dark")
+        engine = ThemeEngine.instance()
+        engine.apply_theme(theme)
     
     def _setup_ui(self):
         """Setup the UI components."""
@@ -73,14 +182,10 @@ class SettingsScreen(BaseScreen):
         general_group = QGroupBox("General Settings")
         general_layout = QFormLayout()
         
-        self.company_name = QLineEdit()
-        self.company_name.setPlaceholderText("Enter company name")
-        self.company_name.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.company_name.setText(self._settings.get("company_name", ""))
-        
-        self.currency = QComboBox()
-        self.currency.addItems(["AFN - Afghani", "USD - US Dollar", "EUR - Euro", "PKR - Pakistani Rupee"])
-        self.currency.setCurrentText(self._settings.get("currency", "AFN - Afghani"))
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItems(["Dark", "Light"])
+        current_theme = self._settings.get("theme", "dark")
+        self.theme_combo.setCurrentText(current_theme.capitalize())
         
         self.language = QComboBox()
         self.language.addItems(["English", "Dari", "Pashto"])
@@ -89,11 +194,15 @@ class SettingsScreen(BaseScreen):
         self.timezone = QComboBox()
         self.timezone.addItems(["Asia/Kabul (GMT+4:30)", "UTC (GMT+0:00)", "Asia/Dubai (GMT+4)"])
         self.timezone.setCurrentText(self._settings.get("timezone", "Asia/Kabul (GMT+4:30)"))
+
+        self.currency_combo = QComboBox()
+        self.currency_combo.addItems(["AFN", "USD", "EUR", "PKR", "IRR"])
+        self.currency_combo.setMinimumHeight(INPUT_HEIGHT_MD)
         
-        general_layout.addRow("Company Name:", self.company_name)
-        general_layout.addRow("Currency:", self.currency)
+        general_layout.addRow("Theme:", self.theme_combo)
         general_layout.addRow("Language:", self.language)
         general_layout.addRow("Timezone:", self.timezone)
+        general_layout.addRow("Currency:", self.currency_combo)
         
         general_group.setLayout(general_layout)
         layout.addWidget(general_group)
@@ -155,11 +264,11 @@ class SettingsScreen(BaseScreen):
         layout.addLayout(button_layout)
     
     def save_settings(self):
-        """Save settings to local file."""
-        self._settings["company_name"] = self.company_name.text()
-        self._settings["currency"] = self.currency.currentText()
+        """Save settings to local file and backend API."""
+        self._settings["theme"] = self.theme_combo.currentText().lower()
         self._settings["language"] = self.language.currentText()
         self._settings["timezone"] = self.timezone.currentText()
+        self._settings["currency"] = self.currency_combo.currentText()
         self._settings["low_stock_threshold"] = self.low_stock_threshold.value()
         self._settings["auto_backup"] = self.auto_backup.isChecked()
         self._settings["backup_frequency"] = self.backup_frequency.currentText()
@@ -167,10 +276,35 @@ class SettingsScreen(BaseScreen):
         self._settings["low_stock_alerts"] = self.low_stock_alerts.isChecked()
         self._settings["expiry_alerts"] = self.expiry_alerts.isChecked()
         
-        if self._save_settings():
+        local_ok = self._save_settings()
+        api_ok = self._save_theme_to_api()
+        __currency_ok = self._save_company_currency()
+        
+        self._apply_theme()
+        
+        if local_ok or api_ok:
             QMessageBox.information(self, "Settings", "Settings saved successfully!")
         else:
             QMessageBox.warning(self, "Settings", "Failed to save settings. Please check permissions.")
+
+    def _save_company_currency(self):
+        """Save default_currency to Company API (SSOT)."""
+        if not self._api_client:
+            return False
+        try:
+            # Use cached company_id or fetch it
+            company_id = self._company_id
+            if not company_id:
+                self._load_company_currency()
+                company_id = self._company_id
+            if company_id:
+                payload = {"default_currency": self.currency_combo.currentText()}
+                resp = self._api_client.put(f"/api/core/companies/{company_id}/", payload)
+                return resp.status_code in (200, 201)
+            return False
+        except Exception as e:
+            print(f"Failed to save company currency: {e}")
+            return False
     
     def reset_settings(self):
         """Reset settings to defaults."""
@@ -181,10 +315,10 @@ class SettingsScreen(BaseScreen):
         )
         
         if reply == QMessageBox.Yes:
-            self.company_name.clear()
-            self.currency.setCurrentIndex(0)
+            self.theme_combo.setCurrentIndex(0)
             self.language.setCurrentIndex(0)
             self.timezone.setCurrentIndex(0)
+            self.currency_combo.setCurrentIndex(0)
             self.low_stock_threshold.setValue(10)
             self.auto_backup.setChecked(True)
             self.backup_frequency.setCurrentIndex(0)
@@ -192,10 +326,10 @@ class SettingsScreen(BaseScreen):
             self.low_stock_alerts.setChecked(True)
             self.expiry_alerts.setChecked(True)
             self._settings = {
-                "company_name": "",
-                "currency": "AFN - Afghani",
+                "theme": "dark",
                 "language": "English",
                 "timezone": "Asia/Kabul (GMT+4:30)",
+                "currency": "AFN",
                 "low_stock_threshold": 10,
                 "auto_backup": True,
                 "backup_frequency": "Daily",
@@ -204,8 +338,27 @@ class SettingsScreen(BaseScreen):
                 "expiry_alerts": True
             }
             self._save_settings()
+            # Also reset company currency
+            if self._api_client:
+                try:
+                    company_id = self._company_id
+                    if not company_id:
+                        self._load_company_currency()
+                        company_id = self._company_id
+                    if company_id:
+                        self._api_client.put(f"/api/core/companies/{company_id}/", {"default_currency": "AFN"})
+                except Exception:
+                    pass
+            self._apply_theme()
             QMessageBox.information(self, "Settings", "Settings reset to defaults.")
     
     def on_show(self):
         """Called when screen is shown."""
-        pass
+        self._load_theme_from_api()  # Also loads company currency via _load_company_currency()
+        current_theme = self._settings.get("theme", "dark")
+        self.theme_combo.setCurrentText(current_theme.capitalize())
+        currency = self._settings.get("currency", "AFN")
+        idx = self.currency_combo.findText(currency)
+        if idx >= 0:
+            self.currency_combo.setCurrentIndex(idx)
+        self._apply_theme()

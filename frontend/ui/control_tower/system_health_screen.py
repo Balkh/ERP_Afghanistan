@@ -3,26 +3,26 @@ Phase 5B.7 — System Health Overview Screen.
 
 Real-time health monitoring across all system layers.
 """
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QTextEdit, QGridLayout, QFrame)
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QTextEdit,
+                                 QGridLayout, QFrame)
+from PySide6.QtCore import QTimer
 
 from api.client import APIClient
 from api.observability_client import ObservabilityAPIClient
 from api.intelligence_client import IntelligenceAPIClient
 from api.truth_client import TruthAPIClient
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_INFO, COLOR_BORDER, SPACING_LG, SPACING_MD, SPACING_SM,
-                           MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_HELPER, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+from ui.constants import (COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+                           COLOR_SUCCESS, COLOR_DANGER, COLOR_INFO, COLOR_BORDER,
+                           SPACING_LG, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
+                           TEXT_BODY_SMALL, BORDER_RADIUS_MD, BORDER_RADIUS_LG)
 from runtime.timer_registry import register_timer, unregister_owner
 
 
 class _HealthCard(QFrame):
     def __init__(self, title: str, status: str, detail: str, color: str):
         super().__init__()
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QFrame {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {color};
             border-radius: {BORDER_RADIUS_LG}; padding: {SPACING_MD}px; }}
         """)
@@ -69,7 +69,7 @@ class SystemHealthOverviewScreen(QWidget):
 
         self.detail_text = QTextEdit()
         self.detail_text.setReadOnly(True)
-        self.detail_text.setStyleSheet(f"""
+        self.detail_text.setStyleSheet("""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; }}
@@ -116,12 +116,12 @@ class SystemHealthOverviewScreen(QWidget):
 
             # Show health
             self.detail_text.setPlainText(
-                f"Observability Status:\n"
+                "Observability Status:\n"
                 f"  Version: {st.get('gateway_version', 'N/A')}\n"
                 f"  Total Events: {st.get('total_events', 'N/A')}\n"
                 f"  Integrity: {s.get('integrity_status', 'N/A')}\n"
                 f"  Anomalies: {s.get('anomaly_count', 'N/A') if 'anomaly_count' in s else 'N/A'}\n"
-                f"\nDomain Distribution:\n"
+                "\nDomain Distribution:\n"
                 + "\n".join(f"  {k}: {v}" for k, v in s.get("domain_event_counts", {}).items())
             )
         except Exception as e:

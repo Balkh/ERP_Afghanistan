@@ -9,7 +9,7 @@ Three-tier hierarchy for operational metrics:
 All cards use semantic COLOR_* tokens for automatic dark/light parity.
 """
 
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QHBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
@@ -17,12 +17,10 @@ from ui.constants import (
     SPACING_XS, SPACING_SM, SPACING_MD,
     COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER,
     COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-    COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-    COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
+    COLOR_PRIMARY, COLOR_DANGER, COLOR_INFO, COLOR_STATUS_VALID, COLOR_STATUS_WARNING,
     BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-    TEXT_TABLE, TEXT_CARD_TITLE, TEXT_SECTION_TITLE, TEXT_LABEL,
-    TABLE_ROW_HEIGHT_MD,
-    SPACING_SM,
+    TEXT_TABLE, TEXT_CARD_TITLE,
+    TEXT_SECTION_TITLE, TEXT_LABEL, SPACING_SM,
 )
 
 
@@ -211,16 +209,17 @@ class StatusBadge(QLabel):
         self._apply_style()
 
     def _apply_style(self):
-        color = _severity_color(self._severity)
+        __color = _severity_color(self._severity)
+        __clr = _severity_color(self._severity)
         self.setStyleSheet(f"""
             QLabel {{
                 background-color: {COLOR_BG_ELEVATED};
-                color: {color};
+                color: {__clr};
                 padding: {SPACING_XS}px {SPACING_SM}px;
                 border-radius: {BORDER_RADIUS_MD}px;
                 font-size: {TEXT_TABLE}px;
                 font-weight: bold;
-                border: 1px solid {color};
+                border: 1px solid {__clr};
             }}
         """)
         self.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))

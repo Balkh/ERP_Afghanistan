@@ -2,22 +2,17 @@ from decimal import Decimal
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QFrame,
                                QLineEdit, QComboBox, QTextEdit, QPushButton,
                                QLabel, QMessageBox, QDateEdit, QTableWidget,
-                               QTableWidgetItem, QHeaderView, QAbstractItemView,
-                               QGroupBox, QDoubleSpinBox, QCheckBox)
+                               QHeaderView, QAbstractItemView, QGroupBox,
+                               QDoubleSpinBox, QCheckBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.client import APIClient
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_CARD,
-    COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_WARNING,
-    COLOR_DANGER, COLOR_INFO, COLOR_BG_MAIN, COLOR_BG_DIALOG, COLOR_BG_SURFACE, COLOR_BG_DIALOG, COLOR_BG_INPUT,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY,
-    COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER,
-    COLOR_SUCCESS_BG, COLOR_DANGER_BG, COLOR_FORM_FOOTER_BORDER,
-    COLOR_FORM_SECTION_TITLE, COLOR_FORM_SECTION_DIVIDER,
-    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
-    TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_LABEL,
-    INPUT_HEIGHT_MD, DIALOG_WIDTH_WIDE,
-    SECTION_TITLE_SPACING, SECTION_DIVIDER_HEIGHT)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, COLOR_SUCCESS, COLOR_DANGER, COLOR_BG_DIALOG,
+    COLOR_BG_SURFACE, COLOR_BG_DIALOG, COLOR_BG_INPUT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
+    COLOR_BORDER, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, COLOR_SUCCESS_BG, COLOR_DANGER_BG, COLOR_FORM_SECTION_TITLE, COLOR_FORM_SECTION_DIVIDER,
+    BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, TEXT_SECTION_TITLE,
+    TEXT_CARD_TITLE, TEXT_LABEL, INPUT_HEIGHT_MD, DIALOG_WIDTH_WIDE,
+    SECTION_TITLE_SPACING)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import build_table_stylesheet
 
@@ -37,7 +32,7 @@ class JournalEntryFormDialog(QDialog):
     def setup_ui(self):
         self.setMinimumWidth(DIALOG_WIDTH_WIDE)
         self.setMinimumHeight(700)
-        self.setStyleSheet(f"""
+        self.setStyleSheet("""
             QDialog {{ background-color: {COLOR_BG_DIALOG}; }}
             QGroupBox {{
                 font-weight: 700;
@@ -255,8 +250,8 @@ class JournalEntryFormDialog(QDialog):
         credit_spin.valueChanged.connect(self._update_totals)
         self.lines_table.setCellWidget(row, 3, credit_spin)
 
-        remove_btn = QPushButton("✕")
-        remove_btn.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; border: none; background: transparent;")
+        remove_btn = EnterpriseButton("✕", variant=ButtonVariant.GHOST)
+        remove_btn.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold;")
         remove_btn.setCursor(Qt.PointingHandCursor)
         remove_btn.clicked.connect(lambda checked, r=row: self._remove_line_at(r))
         self.lines_table.setCellWidget(row, 4, remove_btn)
@@ -303,6 +298,31 @@ class JournalEntryFormDialog(QDialog):
             diff = abs(total_debit - total_credit)
             self.balance_label.setText(f"UNBALANCED ({diff:,.2f})")
             self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_DANGER_BG};")
+
+    def get_entry_data(self):
+        data = {
+            "entry_type": self.entry_type.currentData(),
+            "entry_date": self.entry_date.date().toString("yyyy-MM-dd"),
+            "description": self.description.toPlainText().strip(),
+            "reference": self.reference.text().strip(),
+            "auto_post": self.auto_post.isChecked(),
+            "lines": [],
+        }
+        for row in range(self.lines_table.rowCount()):
+            account_combo = self.lines_table.cellWidget(row, 0)
+            desc_input = self.lines_table.cellWidget(row, 1)
+            debit_spin = self.lines_table.cellWidget(row, 2)
+            credit_spin = self.lines_table.cellWidget(row, 3)
+            account_id = account_combo.currentData() if account_combo else None
+            if account_id is None:
+                continue
+            data["lines"].append({
+                "account_id": account_id,
+                "description": desc_input.text().strip() if desc_input else "",
+                "debit": debit_spin.value() if debit_spin else 0.0,
+                "credit": credit_spin.value() if credit_spin else 0.0,
+            })
+        return data
 
     def save(self):
         data = self.get_entry_data()

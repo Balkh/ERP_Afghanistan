@@ -1,19 +1,17 @@
 """Reconciliation management screen for returns."""
-from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-                                QHeaderView, QMessageBox, QComboBox, QGroupBox,
-                                QTextEdit, QInputDialog, QFileDialog)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QMessageBox,
+                                QComboBox, QGroupBox, QInputDialog, QFileDialog)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
-                          MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_LABEL,
-                          TEXT_BODY, TEXT_BODY_SMALL, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
-                          COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
-                          COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_PRIMARY,
-                          BORDER_RADIUS_LG, BORDER_RADIUS_MD, COLOR_TEXT_TITLE)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE,
+                          TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL,
+                          COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
+                          COLOR_TEXT_MUTED, COLOR_PRIMARY, BORDER_RADIUS_LG, BORDER_RADIUS_MD,
+                          COLOR_TEXT_TITLE)
 
 
 class ReconciliationScreen(BaseScreen):
@@ -118,7 +116,7 @@ class ReconciliationScreen(BaseScreen):
         status_layout = QVBoxLayout()
         status_layout.addWidget(QLabel("Status:"))
         self.status_filter = QComboBox()
-        self.status_filter.setStyleSheet(f"""
+        self.status_filter.setStyleSheet("""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
@@ -135,7 +133,7 @@ class ReconciliationScreen(BaseScreen):
         type_layout = QVBoxLayout()
         type_layout.addWidget(QLabel("Transaction Type:"))
         self.type_filter = QComboBox()
-        self.type_filter.setStyleSheet(f"""
+        self.type_filter.setStyleSheet("""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};

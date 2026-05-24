@@ -14,7 +14,6 @@ import hashlib
 import json
 import os
 import hmac
-from datetime import datetime
 from typing import Any, Dict, Optional
 
 from utils.device_fingerprint import generate_device_id

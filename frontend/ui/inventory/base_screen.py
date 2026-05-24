@@ -1,12 +1,9 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
-                              QLineEdit, QLabel, QFrame, QSizePolicy,
-                              QComboBox, QMessageBox)
-from PySide6.QtCore import Qt, Signal
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_TOOLBAR,
-                           TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_BODY_SMALL,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_BG_DIALOG, COLOR_BG_ELEVATED,
-   BORDER_RADIUS_SM, BORDER_RADIUS_MD,
-                           COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, COLOR_BORDER, COLOR_PRIMARY)
+                              QLineEdit, QLabel, QFrame, QComboBox)
+from PySide6.QtCore import Signal
+from ui.constants import (SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, COLOR_TEXT_PRIMARY, COLOR_BG_DIALOG, COLOR_BG_ELEVATED, BORDER_RADIUS_MD,
+                           COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, COLOR_BORDER,
+                           COLOR_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
 class BaseInventoryScreen(QWidget):
@@ -42,7 +39,7 @@ class BaseInventoryScreen(QWidget):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search items...")
         self.search_input.setMinimumWidth(180)
-        self.search_input.setStyleSheet(f"""
+        self.search_input.setStyleSheet("""
             QLineEdit {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
@@ -58,7 +55,7 @@ class BaseInventoryScreen(QWidget):
         
         # Filter bar
         self.filter_combo = QComboBox()
-        self.filter_combo.setStyleSheet(f"""
+        self.filter_combo.setStyleSheet("""
             QComboBox {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
@@ -123,7 +120,6 @@ class BaseInventoryScreen(QWidget):
     
     def populate_filter_options(self):
         """Subclasses should override to populate filter options."""
-        pass
     
     def _on_edit_clicked(self):
         """Handle edit button click."""

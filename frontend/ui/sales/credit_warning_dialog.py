@@ -4,43 +4,40 @@ Displays when a customer approaches or exceeds their credit limit.
 Shows current balance, credit limit, utilization percentage, and
 whether the transaction is blocked or allowed with warning.
 """
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                                QPushButton, QFrame, QGroupBox)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QWidget,
+                                QFrame)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG,
-                           MARGIN_PAGE, MARGIN_CARD,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           BORDER_RADIUS_MD, BORDER_RADIUS_LG)
+from ui.constants import (SPACING_SM, SPACING_MD, MARGIN_CARD, TEXT_BODY,
+                           TEXT_BODY_SMALL, COLOR_BG_ELEVATED,
+                           COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_SUCCESS, COLOR_WARNING,
+                           COLOR_DANGER, BORDER_RADIUS_MD)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import EnterpriseDialog, DialogType
 
 
-class CreditWarningDialog(QDialog):
+class CreditWarningDialog(EnterpriseDialog):
     """Dialog warning about customer credit limit status."""
 
     def __init__(self, customer_name, current_balance, credit_limit,
                  invoice_amount=None, is_blocked=False, parent=None):
-        super().__init__(parent)
+        title = "Credit Limit Exceeded" if is_blocked else "Credit Limit Warning"
+        super().__init__(title, DialogType.CUSTOM, parent)
         self.customer_name = customer_name
         self.current_balance = current_balance
         self.credit_limit = credit_limit
         self.invoice_amount = invoice_amount or 0
         self.is_blocked = is_blocked
         self.proceed = False
-        self.setup_ui()
+        content = self._build_content()
+        self.set_content(content)
 
-    def setup_ui(self):
-        self.setWindowTitle("Credit Limit Warning" if not self.is_blocked else "Credit Limit Exceeded")
-        self.setMinimumWidth(450)
-        self.setModal(True)
-
-        layout = QVBoxLayout(self)
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setSpacing(SPACING_MD)
-        layout.setContentsMargins(MARGIN_CARD, MARGIN_CARD, MARGIN_CARD, MARGIN_CARD)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # Warning icon + title
         if self.is_blocked:
@@ -64,7 +61,7 @@ class CreditWarningDialog(QDialog):
 
         # Credit details card
         details_card = QFrame()
-        details_card.setStyleSheet(f"""
+        details_card.setStyleSheet("""
             QFrame {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -124,8 +121,17 @@ class CreditWarningDialog(QDialog):
 
         layout.addStretch()
 
-        # Buttons
-        btn_layout = QHBoxLayout()
+        return widget
+
+    def _create_button_area(self):
+        button_area = QFrame()
+        button_area.setFixedHeight(60)
+
+        layout = QHBoxLayout(button_area)
+        layout.setContentsMargins(MARGIN_CARD, SPACING_SM, MARGIN_CARD, SPACING_SM)
+
+        layout.addStretch()
+
         if not self.is_blocked:
             self.cancel_btn = EnterpriseButton(
                 text="Cancel",
@@ -133,7 +139,7 @@ class CreditWarningDialog(QDialog):
                 size=ButtonSize.SMALL,
             )
             self.cancel_btn.clicked.connect(self.reject)
-            btn_layout.addWidget(self.cancel_btn)
+            layout.addWidget(self.cancel_btn)
 
             self.proceed_btn = EnterpriseButton(
                 text="Proceed Anyway",
@@ -141,7 +147,7 @@ class CreditWarningDialog(QDialog):
                 size=ButtonSize.SMALL,
             )
             self.proceed_btn.clicked.connect(self.on_proceed)
-            btn_layout.addWidget(self.proceed_btn)
+            layout.addWidget(self.proceed_btn)
         else:
             self.ok_btn = EnterpriseButton(
                 text="OK",
@@ -149,10 +155,15 @@ class CreditWarningDialog(QDialog):
                 size=ButtonSize.SMALL,
             )
             self.ok_btn.clicked.connect(self.reject)
-            btn_layout.addWidget(self.ok_btn)
+            layout.addWidget(self.ok_btn)
 
-        btn_layout.addStretch()
-        layout.addLayout(btn_layout)
+        button_area.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLOR_BG_ELEVATED};
+                border-top: 1px solid {COLOR_BORDER};
+            }}
+        """)
+        return button_area
 
     def on_proceed(self):
         self.proceed = True

@@ -6,7 +6,7 @@ All models are deterministic, read-only governance artifacts.
 """
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import List
 from enum import Enum
 
 

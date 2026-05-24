@@ -1,0 +1,318 @@
+ui/dashboard.py:7:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 6
+ui/dashboard.py:7:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 6
+ui/dashboard.py:7:1: redefinition of unused 'TEXT_CARD_TITLE' from line 6
+ui/dashboard.py:7:1: redefinition of unused 'TEXT_BODY_SMALL' from line 6
+ui/dashboard.py:7:1: redefinition of unused 'TEXT_TABLE' from line 6
+ui/dashboard.py:7:1: redefinition of unused 'TEXT_HELPER' from line 6
+ui/dashboard.py:234:9: local variable 'hr' is assigned to but never used
+ui/main_window.py:207:9: local variable 'hidden_modules' is assigned to but never used
+ui/main_window.py:495:9: redefinition of unused 'ReportBrowser' from line 429
+ui/sidebar.py:8:1: redefinition of unused 'TEXT_CARD_TITLE' from line 7
+ui/sidebar.py:8:1: redefinition of unused 'TEXT_LABEL' from line 7
+ui/sidebar.py:677:79: undefined name 'TEXT_BODY'
+ui/accounting\accounting_dashboard.py:148:17: local variable 'accounting_balance' is assigned to but never used
+ui/accounting\arap_ageing_screen.py:5:1: redefinition of unused 'COLOR_DANGER' from line 5
+ui/accounting\balance_sheet_screen.py:6:1: redefinition of unused 'COLOR_PRIMARY' from line 6
+ui/accounting\financial_integrity_screen.py:210:9: local variable 'all_ok' is assigned to but never used
+ui/accounting\profit_loss_screen.py:7:1: redefinition of unused 'COLOR_SUCCESS' from line 7
+ui/accounting\profit_loss_screen.py:7:1: redefinition of unused 'COLOR_DANGER' from line 7
+ui/accounting\components\journal_entry_detail.py:7:1: redefinition of unused 'TEXT_LABEL' from line 6
+ui/accounting\components\journal_entry_detail.py:7:1: redefinition of unused 'TEXT_BODY' from line 6
+ui/accounting\components\journal_entry_detail.py:7:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 6
+ui/accounting\components\journal_entry_form.py:10:1: redefinition of unused 'COLOR_BG_DIALOG' from line 10
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_PRIMARY' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_BG_MAIN' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_BG_ELEVATED' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_BORDER' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_TEXT_PRIMARY' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_TEXT_MUTED' from line 8
+ui/auth\login_screen.py:22:1: redefinition of unused 'COLOR_DANGER' from line 8
+ui/autonomous\anomaly_warning_center.py:106:9: local variable 'e' is assigned to but never used
+ui/autonomous\decision_options_screen.py:14:1: redefinition of unused 'SPACING_SM' from line 14
+ui/autonomous\forecast_dashboard.py:140:9: local variable 'e' is assigned to but never used
+ui/autonomous\master_dashboard.py:18:1: redefinition of unused 'SPACING_SM' from line 18
+ui/causal_scoring\decision_ranking_dashboard.py:24:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 20
+ui/causal_scoring\decision_ranking_dashboard.py:24:1: redefinition of unused 'TEXT_BODY' from line 20
+ui/causal_scoring\decision_ranking_dashboard.py:142:9: local variable 'e' is assigned to but never used
+ui/common\printable_invoice.py:139:9: local variable 'company_email' is assigned to but never used
+ui/common\printable_invoice.py:140:9: local variable 'company_tax' is assigned to but never used
+ui/common\printable_invoice.py:141:9: local variable 'currency' is assigned to but never used
+ui/common\printable_invoice.py:142:9: local variable 'invoice_footer' is assigned to but never used
+ui/components\dialogs.py:2:1: redefinition of unused 'TEXT_BODY' from line 1
+ui/components\dialogs.py:2:1: redefinition of unused 'TEXT_LABEL' from line 1
+ui/components\dialogs.py:2:1: redefinition of unused 'TEXT_CARD_TITLE' from line 1
+ui/components\dialogs.py:3:1: redefinition of unused 'DIALOG_WIDTH_MIN' from line 1
+ui/components\dialogs.py:3:1: redefinition of unused 'DIALOG_WIDTH_PREFERRED' from line 1
+ui/components\dialogs.py:3:1: redefinition of unused 'DIALOG_WIDTH_MAX' from line 1
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'SPACING_LG' from line 1
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_PRIMARY' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_TEXT_PRIMARY' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_BG_SURFACE' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_BG_ELEVATED' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_BORDER_LIGHT' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_TEXT_SECONDARY' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_BG_INPUT' from line 2
+ui/components\document_action_dialog.py:12:1: redefinition of unused 'COLOR_TEXT_MUTED' from line 2
+ui/components\kpi_cards.py:16:1: redefinition of unused 'SPACING_SM' from line 16
+ui/components\navigation_header.py:3:1: redefinition of unused 'TEXT_LABEL' from line 1
+ui/components\navigation_header.py:3:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 1
+ui/components\notifications.py:16:1: redefinition of unused 'TEXT_TABLE' from line 8
+ui/components\notifications.py:16:1: redefinition of unused 'TEXT_LABEL' from line 8
+ui/components\notifications.py:16:1: redefinition of unused 'TEXT_CARD_TITLE' from line 8
+ui/components\notifications.py:16:1: redefinition of unused 'TEXT_BODY' from line 8
+ui/control_tower\dashboard.py:108:9: local variable 'ctx' is assigned to but never used
+ui/control_tower\financial_control_tower_screen.py:150:38: f-string is missing placeholders
+ui/control_tower\workflow_execution_screen.py:20:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 15
+ui/control_tower\workflow_execution_screen.py:20:1: redefinition of unused 'TEXT_DISPLAY' from line 15
+ui/control_tower\workflow_execution_screen.py:20:1: redefinition of unused 'TEXT_BODY' from line 15
+ui/finance\budgeting_screen.py:17:1: redefinition of unused 'APIClient' from line 8
+ui/finance\budgeting_screen.py:18:1: redefinition of unused 'BaseScreen' from line 9
+ui/finance\budgeting_screen.py:151:24: undefined name 'QPushButton'
+ui/finance\budgeting_screen.py:154:23: undefined name 'QPushButton'
+ui/finance\budgeting_screen.py:163:34: undefined name 'QTableWidget'
+ui/finance\budgeting_screen.py:168:48: undefined name 'QTableWidget'
+ui/finance\budgeting_screen.py:192:31: undefined name 'QTableWidget'
+ui/finance\budgeting_screen.py:197:45: undefined name 'QTableWidget'
+ui/finance\budgeting_screen.py:268:48: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:269:48: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:270:48: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:271:48: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:272:48: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:273:48: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:274:48: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:289:52: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:290:52: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:291:52: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:292:52: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:293:52: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:294:52: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:309:49: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:310:49: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:311:49: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:312:49: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:313:49: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:314:49: undefined name 'QTableWidgetItem'
+ui/finance\budgeting_screen.py:315:49: undefined name 'QTableWidgetItem'
+ui/finance\cashflow_screen.py:82:30: undefined name 'QWidget'
+ui/finance\cashflow_screen.py:87:29: undefined name 'QWidget'
+ui/finance\cashflow_screen.py:92:29: undefined name 'QWidget'
+ui/finance\cost_centers_screen.py:16:1: redefinition of unused 'BaseScreen' from line 8
+ui/finance\cost_centers_screen.py:66:23: undefined name 'QFont'
+ui/finance\cost_centers_screen.py:67:31: undefined name 'QFont'
+ui/finance\tax_screen.py:70:27: undefined name 'QWidget'
+ui/finance\tax_screen.py:75:28: undefined name 'QWidget'
+ui/finance\tax_screen.py:80:32: undefined name 'QWidget'
+ui/governance\audit_scanner.py:263:35: f-string is missing placeholders
+ui/governance\consistency_audit.py:120:17: local variable 'rel' is assigned to but never used
+ui/governance\consistency_audit.py:158:17: local variable 'rel' is assigned to but never used
+ui/governance\consistency_audit.py:167:17: local variable 'pattern' is assigned to but never used
+ui/governance\consistency_audit.py:189:17: local variable 'rel' is assigned to but never used
+ui/governance\__init__.py:10:1: '.registry.REGISTRY' imported but unused
+ui/governance\__init__.py:10:1: '.registry.Primitive' imported but unused
+ui/governance\__init__.py:10:1: '.registry.ComponentCategory' imported but unused
+ui/governance\__init__.py:10:1: '.registry.is_approved' imported but unused
+ui/governance\__init__.py:10:1: '.registry.get_primitive' imported but unused
+ui/governance\__init__.py:11:1: '.audit_scanner.GovernanceScanner' imported but unused
+ui/governance\__init__.py:11:1: '.audit_scanner.ScanReport' imported but unused
+ui/governance\__init__.py:11:1: '.audit_scanner.Violation' imported but unused
+ui/governance\__init__.py:11:1: '.audit_scanner.Severity' imported but unused
+ui/governance\__init__.py:12:1: '.consistency_audit.ConsistencyEngine' imported but unused
+ui/governance\__init__.py:12:1: '.consistency_audit.ConsistencyReport' imported but unused
+ui/investigation\anomaly_investigation_screen.py:20:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 16
+ui/investigation\event_investigation_screen.py:20:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 16
+ui/licensing\activation_screen.py:221:5: redefinition of unused 'QApplication' from line 6
+ui/licensing\license_status_screen.py:3:1: redefinition of unused 'TEXT_TABLE' from line 1
+ui/licensing\license_status_screen.py:3:1: redefinition of unused 'TEXT_LABEL' from line 1
+ui/licensing\license_status_screen.py:3:1: redefinition of unused 'TEXT_BODY' from line 1
+ui/licensing\license_status_screen.py:3:1: redefinition of unused 'TEXT_DISPLAY' from line 1
+ui/licensing\license_status_screen.py:3:1: redefinition of unused 'TEXT_CARD_TITLE' from line 1
+ui/licensing\license_status_screen.py:279:28: f-string is missing placeholders
+ui/licensing\license_status_screen.py:309:13: undefined name 'QMessageBox'
+ui/navigation\navigation_manager.py:106:9: local variable 'old_screen' is assigned to but never used
+ui/observability\dashboards.py:18:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 10
+ui/observability\dashboards.py:18:1: redefinition of unused 'TEXT_LABEL' from line 10
+ui/observability\dashboards.py:18:1: redefinition of unused 'TEXT_TABLE' from line 10
+ui/observability\dashboards.py:224:48: f-string is missing placeholders
+ui/observability\observability_screen.py:12:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 6
+ui/observability\observability_screen.py:12:1: redefinition of unused 'TEXT_LABEL' from line 6
+ui/observability\observability_screen.py:12:1: redefinition of unused 'TEXT_TABLE' from line 6
+ui/observability\replay_screen.py:16:1: redefinition of unused 'BORDER_RADIUS_SM' from line 16
+ui/observability\replay_screen.py:21:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 16
+ui/observability\replay_screen.py:21:1: redefinition of unused 'TEXT_BODY' from line 16
+ui/observability\replay_screen.py:158:9: local variable 'e' is assigned to but never used
+ui/observability\widgets.py:14:1: redefinition of unused 'TEXT_TABLE' from line 7
+ui/observability\widgets.py:14:1: redefinition of unused 'TEXT_LABEL' from line 7
+ui/observability\widgets.py:14:1: redefinition of unused 'TEXT_BODY' from line 7
+ui/observability\widgets.py:22:28: f-string is missing placeholders
+ui/observability\widgets.py:284:28: f-string is missing placeholders
+ui/observability\widgets.py:318:28: f-string is missing placeholders
+ui/observability\widgets.py:321:39: f-string is missing placeholders
+ui/pos\pos_screen.py:115:9: undefined name 'layout'
+ui/purchases\purchase_invoice_screen.py:626:9: local variable 'data' is assigned to but never used
+ui/purchases\supplier_screen.py:252:30: f-string is missing placeholders
+ui/purchases\supplier_screen.py:352:31: undefined name 'QSpinBox'
+ui/purchases\supplier_screen.py:428:27: undefined name 'QPushButton'
+ui/purchases\supplier_screen.py:445:25: undefined name 'QPushButton'
+ui/returns\returns_screen.py:206:9: undefined name 'table'
+ui/returns\returns_screen.py:206:31: undefined name 'QAbstractItemView'
+ui/returns\returns_screen.py:207:16: undefined name 'table'
+ui/returns\returns_screen.py:531:5: redefinition of unused '_view_return' from line 209
+ui/returns\returns_screen.py:639:39: undefined name 'COLOR_TEXT_TITLE'
+ui/returns\returns_screen.py:644:66: undefined name 'COLOR_BORDER_DIALOG'
+ui/returns\returns_screen.py:661:34: undefined name 'COLOR_BORDER_INPUT'
+ui/returns\returns_screen.py:689:66: undefined name 'COLOR_BORDER_DIALOG'
+ui/returns\returns_screen.py:694:28: undefined name 'QTableWidget'
+ui/returns\returns_screen.py:707:47: undefined name 'QAbstractItemView'
+ui/returns\returns_screen.py:709:42: undefined name 'QAbstractItemView'
+ui/returns\returns_screen.py:789:44: undefined name 'QTableWidgetItem'
+ui/returns\returns_screen.py:790:44: undefined name 'QTableWidgetItem'
+ui/returns\returns_screen.py:791:44: undefined name 'QTableWidgetItem'
+ui/returns\returns_screen.py:792:44: undefined name 'QTableWidgetItem'
+ui/returns\returns_screen.py:793:44: undefined name 'QTableWidgetItem'
+ui/returns\returns_screen.py:794:44: undefined name 'QTableWidgetItem'
+ui/returns\returns_screen.py:795:44: undefined name 'QTableWidgetItem'
+ui/returns\__init__.py:1:1: '.returns_screen.ReturnsScreen' imported but unused
+ui/returns\__init__.py:1:1: '.returns_screen.ReturnOrderDialog' imported but unused
+ui/sales\customer_screen.py:258:30: f-string is missing placeholders
+ui/sales\customer_screen.py:406:25: undefined name 'QPushButton'
+ui/sales\sales_invoice_screen.py:528:9: local variable 'row' is assigned to but never used
+ui/sales\sales_invoice_screen.py:678:9: local variable 'data' is assigned to but never used
+ui/system\audit_screen.py:42:25: undefined name 'QGridLayout'
+ui/system\audit_screen.py:79:26: undefined name 'QPushButton'
+ui/system\audit_screen.py:87:27: undefined name 'QPushButton'
+ui/system\audit_screen.py:160:55: undefined name 'QColor'
+ui/system\audit_screen.py:183:15: f-string is missing placeholders
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 1
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_CARD_TITLE' from line 1
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_BODY' from line 1
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_TABLE' from line 1
+ui/system\control_center_screen.py:2:1: redefinition of unused 'TEXT_DISPLAY' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_XS' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_SM' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_MD' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_LG' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'SPACING_XL' from line 1
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_PRIMARY' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_SUCCESS' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_WARNING' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_DANGER' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_INFO' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_TEXT_PRIMARY' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_TEXT_SECONDARY' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_TEXT_MUTED' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BG_MAIN' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BG_SURFACE' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BG_ELEVATED' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BG_INPUT' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_BORDER' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'COLOR_STATUS_VALID' from line 3
+ui/system\control_center_screen.py:19:1: redefinition of unused 'MARGIN_PAGE' from line 1
+ui/system\control_center_screen.py:194:30: f-string is missing placeholders
+ui/system\correlation_screen.py:20:1: redefinition of unused 'BaseScreen' from line 11
+ui/system\correlation_screen.py:21:1: redefinition of unused 'COLOR_SUCCESS' from line 12
+ui/system\correlation_screen.py:21:1: redefinition of unused 'COLOR_WARNING' from line 12
+ui/system\correlation_screen.py:21:1: redefinition of unused 'COLOR_DANGER' from line 12
+ui/system\correlation_screen.py:21:1: redefinition of unused 'COLOR_INFO' from line 12
+ui/system\correlation_screen.py:102:29: undefined name 'QFont'
+ui/system\correlation_screen.py:104:29: undefined name 'QFont'
+ui/system\correlation_screen.py:104:59: undefined name 'QFont'
+ui/system\correlation_screen.py:128:106: undefined name 'BORDER_RADIUS_PILL'
+ui/system\correlation_screen.py:207:45: undefined name 'QTableWidgetItem'
+ui/system\correlation_screen.py:208:45: undefined name 'QTableWidgetItem'
+ui/system\correlation_screen.py:210:27: undefined name 'QTableWidgetItem'
+ui/system\correlation_screen.py:215:45: undefined name 'QTableWidgetItem'
+ui/system\drift_intelligence_screen.py:18:1: redefinition of unused 'BaseScreen' from line 10
+ui/system\drift_intelligence_screen.py:19:1: redefinition of unused 'COLOR_SUCCESS' from line 11
+ui/system\drift_intelligence_screen.py:19:1: redefinition of unused 'COLOR_WARNING' from line 11
+ui/system\drift_intelligence_screen.py:19:1: redefinition of unused 'COLOR_DANGER' from line 11
+ui/system\drift_intelligence_screen.py:19:1: redefinition of unused 'COLOR_INFO' from line 11
+ui/system\drift_intelligence_screen.py:20:1: redefinition of unused 'DriftIntelligenceService' from line 16
+ui/system\drift_intelligence_screen.py:56:25: undefined name 'QFont'
+ui/system\drift_intelligence_screen.py:56:63: undefined name 'QFont'
+ui/system\drift_intelligence_screen.py:59:25: undefined name 'QFont'
+ui/system\drift_intelligence_screen.py:90:13: local variable 'rect' is assigned to but never used
+ui/system\drift_intelligence_screen.py:97:29: undefined name 'QFont'
+ui/system\drift_intelligence_screen.py:97:59: undefined name 'QFont'
+ui/system\drift_intelligence_screen.py:117:22: undefined name 'QFont'
+ui/system\drift_intelligence_screen.py:118:30: undefined name 'QFont'
+ui/system\fixed_assets_screen.py:50:27: undefined name 'QWidget'
+ui/system\fixed_assets_screen.py:55:31: undefined name 'QWidget'
+ui/system\fixed_assets_screen.py:60:33: undefined name 'QWidget'
+ui/system\fixed_assets_screen.py:71:22: undefined name 'QFrame'
+ui/system\fixed_assets_screen.py:91:19: undefined name 'QPushButton'
+ui/system\fixed_assets_screen.py:96:23: undefined name 'QPushButton'
+ui/system\fixed_assets_screen.py:126:19: undefined name 'QPushButton'
+ui/system\fixed_assets_screen.py:129:23: undefined name 'QPushButton'
+ui/system\fixed_assets_screen.py:138:33: undefined name 'QTableWidget'
+ui/system\fixed_assets_screen.py:143:47: undefined name 'QTableWidget'
+ui/system\fixed_assets_screen.py:166:25: undefined name 'QPushButton'
+ui/system\fixed_assets_screen.py:169:22: undefined name 'QPushButton'
+ui/system\fixed_assets_screen.py:178:35: undefined name 'QTableWidget'
+ui/system\fixed_assets_screen.py:183:49: undefined name 'QTableWidget'
+ui/system\fixed_assets_screen.py:207:47: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:208:47: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:209:47: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:210:47: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:211:47: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:212:47: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:213:47: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:214:47: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:216:19: undefined name 'QPushButton'
+ui/system\fixed_assets_screen.py:240:51: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:241:51: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:242:51: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:243:51: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:245:19: undefined name 'QPushButton'
+ui/system\fixed_assets_screen.py:261:53: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:262:53: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:263:53: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:264:53: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:265:53: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:266:53: undefined name 'QTableWidgetItem'
+ui/system\fixed_assets_screen.py:267:53: undefined name 'QTableWidgetItem'
+ui/system\integrity_screen.py:19:1: redefinition of unused 'BaseScreen' from line 12
+ui/system\integrity_screen.py:20:1: redefinition of unused 'COLOR_SUCCESS' from line 13
+ui/system\integrity_screen.py:20:1: redefinition of unused 'COLOR_WARNING' from line 13
+ui/system\integrity_screen.py:20:1: redefinition of unused 'COLOR_DANGER' from line 13
+ui/system\integrity_screen.py:149:61: undefined name 'TEXT_DISPLAY'
+ui/system\intelligence_hub_screen.py:12:1: redefinition of unused 'TEXT_LABEL' from line 6
+ui/system\intelligence_hub_screen.py:12:1: redefinition of unused 'TEXT_TABLE' from line 6
+ui/system\intelligence_hub_screen.py:12:1: redefinition of unused 'TEXT_SECTION_TITLE' from line 6
+ui/system\intelligence_hub_screen.py:122:34: undefined name 'UIStyleBuilder'
+ui/system\intelligence_hub_screen.py:166:30: undefined name 'UIStyleBuilder'
+ui/system\intelligence_hub_screen.py:184:39: undefined name 'UIStyleBuilder'
+ui/system\settings_screen.py:281:9: local variable 'currency_ok' is assigned to but never used
+ui/system\user_management_screen.py:16:1: redefinition of unused 'SPACING_SM' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'SPACING_MD' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'SPACING_LG' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'COLOR_PRIMARY' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'COLOR_SUCCESS' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'COLOR_TEXT_PRIMARY' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'COLOR_TEXT_MUTED' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'COLOR_BG_MAIN' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'COLOR_BG_ELEVATED' from line 11
+ui/system\user_management_screen.py:16:1: redefinition of unused 'COLOR_BORDER' from line 11
+ui/system\user_management_screen.py:156:50: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:157:50: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:158:50: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:197:40: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:198:40: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:199:40: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:200:40: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:201:40: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:205:40: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:208:40: undefined name 'QTableWidgetItem'
+ui/system\user_management_screen.py:358:22: undefined name 'QFont'
+ui/system\user_management_screen.py:359:30: undefined name 'QFont'
+ui/system\user_management_screen.py:424:22: undefined name 'QPushButton'
+ui/system\user_management_screen.py:442:20: undefined name 'QPushButton'
+ui/system\workflow_intelligence_screen.py:47:9: local variable 'h' is assigned to but never used
+ui/system\workflow_intelligence_screen.py:71:29: undefined name 'QFont'
+ui/system\workflow_intelligence_screen.py:71:59: undefined name 'QFont'
+ui/system\workflow_intelligence_screen.py:74:29: undefined name 'QFont'
+ui/system\workflow_intelligence_screen.py:74:67: undefined name 'QFont'
+ui/system\workflow_intelligence_screen.py:120:29: undefined name 'QFont'
+ui/system\workflow_intelligence_screen.py:124:29: undefined name 'QFont'
+ui/system\workflow_intelligence_screen.py:124:66: undefined name 'QFont'
+ui/truth\event_store_screen.py:18:1: redefinition of unused 'TEXT_PAGE_TITLE' from line 13
+ui/truth\event_store_screen.py:18:1: redefinition of unused 'TEXT_LABEL' from line 13

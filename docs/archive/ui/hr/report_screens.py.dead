@@ -1,0 +1,132 @@
+"""
+Phase 5B.16 — HR Reporting UI Screens.
+
+Professional HR report screens using existing HR APIs.
+"""
+
+
+from ui.accounting.base_report_screen import BaseReportScreen
+
+
+class _BaseHRReportScreen(BaseReportScreen):
+    """Shared base for HR reports with common toolbar."""
+
+    def __init__(self, title: str, api_endpoint: str, parent=None):
+        super().__init__(title, parent)
+        self.report_api_endpoint = api_endpoint
+
+    def export_csv(self): self._do_export("csv", "CSV Files (*.csv)")
+    def export_excel(self): pass
+    export_pdf = export_excel
+    export_json = export_csv
+
+
+class EmployeeSummaryScreen(_BaseHRReportScreen):
+    def __init__(self, parent=None):
+        super().__init__("Employee Summary", "/api/hr/reports/employee-summary/")
+
+    def run_report(self):
+        self._show_loading(True)
+        try:
+            resp = self.api_client.get(self.report_api_endpoint)
+            self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
+            self._populate_table()
+            self._show_loading(False)
+        except Exception as e:
+            self._show_error(f"Error: {e}")
+
+    def _populate_table(self):
+        d = self.report_data if isinstance(self.report_data, dict) else {}
+        self.table.setColumnCount(2)
+        self.table.setHorizontalHeaderLabels(["Status", "Count"])
+        rows = [("Active", d.get("active", 0)), ("Inactive", d.get("inactive", 0)),
+                ("On Leave", d.get("on_leave", 0)), ("Terminated", d.get("terminated", 0)),
+                ("Total", sum(d.get(k, 0) for k in ("active", "inactive", "on_leave", "terminated")))]
+        self.table.setRowCount(len(rows))
+        for i, (label, count) in enumerate(rows):
+            self.table.setItem(i, 0, self._item(label))
+            self.table.setItem(i, 1, self._item(str(count)))
+        self.summary_label.setText(f"Total Employees: {rows[-1][1]}")
+
+
+class AttendanceReportScreen(_BaseHRReportScreen):
+    def __init__(self, parent=None):
+        super().__init__("Attendance Report", "/api/hr/reports/attendance-summary/")
+
+    def run_report(self):
+        self._show_loading(True)
+        try:
+            params = self._get_report_params()
+            resp = self.api_client.get(self.report_api_endpoint, params=params)
+            self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
+            self._populate_table()
+            self._show_loading(False)
+        except Exception as e:
+            self._show_error(f"Error: {e}")
+
+    def _populate_table(self):
+        d = self.report_data if isinstance(self.report_data, dict) else {}
+        records = d.get("records", d.get("attendance", []))
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Date", "Present", "Absent"])
+        self.table.setRowCount(len(records) if isinstance(records, list) else 0)
+        for i, r in enumerate(records if isinstance(records, list) else []):
+            self.table.setItem(i, 0, self._item(r.get("date", "")))
+            self.table.setItem(i, 1, self._item(str(r.get("present", 0))))
+            self.table.setItem(i, 2, self._item(str(r.get("absent", 0))))
+
+
+class LeaveReportScreen(_BaseHRReportScreen):
+    def __init__(self, parent=None):
+        super().__init__("Leave Report", "/api/hr/reports/leave-summary/")
+
+    def run_report(self):
+        self._show_loading(True)
+        try:
+            resp = self.api_client.get(self.report_api_endpoint)
+            self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
+            self._populate_table()
+            self._show_loading(False)
+        except Exception as e:
+            self._show_error(f"Error: {e}")
+
+    def _populate_table(self):
+        d = self.report_data if isinstance(self.report_data, dict) else {}
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Leave Type", "Count", "Days"])
+        by_type = d.get("by_type", d.get("leave_by_type", []))
+        self.table.setRowCount(len(by_type) if isinstance(by_type, list) else 0)
+        for i, r in enumerate(by_type if isinstance(by_type, list) else []):
+            self.table.setItem(i, 0, self._item(r.get("type", r.get("name", ""))))
+            self.table.setItem(i, 1, self._item(str(r.get("count", 0))))
+            self.table.setItem(i, 2, self._item(str(r.get("days", 0))))
+        self.summary_label.setText(f"Total Leave Requests: {d.get('total', d.get('total_requests', 0))}")
+
+
+class OvertimeReportScreen(_BaseHRReportScreen):
+    def __init__(self, parent=None):
+        super().__init__("Overtime Report", "/api/hr/reports/overtime-summary/")
+
+    def run_report(self):
+        self._show_loading(True)
+        try:
+            resp = self.api_client.get(self.report_api_endpoint)
+            self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
+            self._populate_table()
+            self._show_loading(False)
+        except Exception as e:
+            self._show_error(f"Error: {e}")
+
+    def _populate_table(self):
+        d = self.report_data if isinstance(self.report_data, dict) else {}
+        records = d.get("records", d.get("overtime", []))
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Employee", "Hours", "Period"])
+        self.table.setRowCount(len(records) if isinstance(records, list) else 0)
+        for i, r in enumerate(records if isinstance(records, list) else []):
+            name = r.get("employee", r.get("name", r.get("employee_id", "")))
+            self.table.setItem(i, 0, self._item(str(name)))
+            self.table.setItem(i, 1, self._item(str(r.get("hours", r.get("total_hours", 0)))))
+            self.table.setItem(i, 2, self._item(r.get("period", "")))
+        total = d.get("total_hours", sum(r.get("hours", 0) for r in (records if isinstance(records, list) else [])))
+        self.summary_label.setText(f"Total Overtime Hours: {total}")

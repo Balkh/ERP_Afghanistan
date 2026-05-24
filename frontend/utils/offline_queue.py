@@ -14,7 +14,6 @@ import json
 import os
 import time
 import uuid
-from datetime import datetime
 from typing import Dict, Any, List, Optional, Callable
 from enum import Enum
 from collections import deque
@@ -88,7 +87,7 @@ class QueuedTransaction:
         tx.retry_count = d.get("retry_count", 0)
         tx.max_retries = d.get("max_retries", 5)
         tx.error = d.get("error")
-        version_token = d.get("version_token")
+        tx.version_token = d.get("version_token")
         return tx
 
 

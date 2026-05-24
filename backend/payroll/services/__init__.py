@@ -12,6 +12,9 @@ from django.utils import timezone
 from datetime import date, timedelta
 from calendar import monthrange
 import uuid
+import logging
+
+logger = logging.getLogger('erp.payroll')
 
 User = get_user_model()
 
@@ -83,9 +86,10 @@ class PayrollService:
             try:
                 record = PayrollService._generate_employee_payroll(employee, cycle)
                 records.append(record)
+            except ValidationError as e:
+                logger.warning("Payroll generation skipped for %s: %s", employee, e)
             except Exception as e:
-                # Log error but continue
-                pass
+                logger.error("Payroll generation failed for %s: %s", employee, e)
         
         # Calculate totals
         total_gross = sum(r.gross_salary for r in records)
@@ -130,7 +134,8 @@ class PayrollService:
             )
             overtime_hours = sum(o.hours for o in overtime)
             overtime_amount = overtime_hours * basic_salary / Decimal('240')  # Daily rate
-        except:
+        except Exception as e:
+            logger.warning("Overtime calculation failed for %s: %s", employee, e)
             overtime_hours = Decimal('0')
         
         # Calculate deductions

@@ -1,39 +1,38 @@
 """Email Configuration Dialog for Offsite Replication."""
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                                QLineEdit, QCheckBox, QPushButton, QGroupBox,
-                                QFormLayout, QMessageBox)
-from PySide6.QtCore import Qt
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE,
-                           TEXT_SECTION_TITLE, TEXT_BODY, TEXT_LABEL,
-                           BORDER_RADIUS_MD,
-                           COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
-                           COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
-                           COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_SUCCESS, COLOR_WARNING)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QWidget, QFrame,
+                                QLineEdit, QCheckBox, QGroupBox, QFormLayout,
+                                QMessageBox)
+from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XXL, TEXT_SECTION_TITLE,
+                           TEXT_BODY, BORDER_RADIUS_MD, COLOR_BG_INPUT,
+                           COLOR_BORDER,
+                           COLOR_TEXT_PRIMARY, COLOR_PRIMARY, COLOR_FORM_FOOTER_BORDER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import EnterpriseDialog, DialogType
 
 
-class EmailConfigDialog(QDialog):
+class EmailConfigDialog(EnterpriseDialog):
     """Dialog for configuring SMTP offsite replication."""
 
     def __init__(self, api_client, parent=None):
-        super().__init__(parent)
+        super().__init__("Email Configuration", DialogType.CUSTOM, parent)
         self.api_client = api_client
-        self.setWindowTitle("Email Configuration")
-        self.setMinimumWidth(450)
         self._config = {}
-        self._build_ui()
+        content = self._build_content()
+        self.set_content(content)
         self._load_config()
 
-    def _build_ui(self):
-        layout = QVBoxLayout(self)
+    def _build_content(self):
+        content = QWidget()
+        layout = QVBoxLayout(content)
         layout.setSpacing(SPACING_LG)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         title = QLabel("SMTP Email Configuration")
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
         layout.addWidget(title)
 
         form_group = QGroupBox("SMTP Settings")
-        form_group.setStyleSheet(f"""
+        form_group.setStyleSheet("""
             QGroupBox {{
                 font-size: {TEXT_BODY}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px;
@@ -87,26 +86,39 @@ class EmailConfigDialog(QDialog):
         form_group.setLayout(form_layout)
         layout.addWidget(form_group)
 
-        btn_layout = QHBoxLayout()
+        return content
+
+    def _create_button_area(self):
+        button_area = QFrame()
+        button_area.setFixedHeight(60)
+
+        layout = QHBoxLayout(button_area)
+        layout.setContentsMargins(SPACING_XXL, SPACING_SM, SPACING_XXL, SPACING_SM)
 
         self.test_btn = EnterpriseButton(text="Send Test Email", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.test_btn.clicked.connect(self._test_email)
-        btn_layout.addWidget(self.test_btn)
+        layout.addWidget(self.test_btn)
 
-        btn_layout.addStretch()
+        layout.addStretch()
 
         cancel_btn = EnterpriseButton(text="Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         cancel_btn.clicked.connect(self.reject)
-        btn_layout.addWidget(cancel_btn)
+        layout.addWidget(cancel_btn)
 
         save_btn = EnterpriseButton(text="Save", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         save_btn.clicked.connect(self._save_config)
-        btn_layout.addWidget(save_btn)
+        layout.addWidget(save_btn)
 
-        layout.addLayout(btn_layout)
+        button_area.setStyleSheet(f"""
+            QFrame {{
+                background-color: trnasparent;
+                border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};
+            }}
+        """)
+        return button_area
 
     def _style_input(self, widget):
-        widget.setStyleSheet(f"""
+        widget.setStyleSheet("""
             QLineEdit {{
                 background: {COLOR_BG_INPUT};
                 color: {COLOR_TEXT_PRIMARY};

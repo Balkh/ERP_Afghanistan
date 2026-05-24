@@ -1,31 +1,30 @@
 from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QMessageBox, QHeaderView,
                                QHBoxLayout, QFrame, QAbstractItemView, QVBoxLayout,
-                               QComboBox, QLineEdit, QLabel, QApplication)
+                               QComboBox, QLineEdit, QLabel)
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, MARGIN_TOOLBAR,
-                           TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, TEXT_LABEL, TEXT_HELPER,
-                           BORDER_RADIUS_MD,
-                           COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER,
-                           COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
-                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, COLOR_BG_ELEVATED)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_TOOLBAR, TEXT_PAGE_TITLE, TEXT_BODY,
+                           TEXT_BODY_SMALL, BORDER_RADIUS_MD, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+                           COLOR_BG_ELEVATED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.screens.base_screen import BaseScreen
 
 
-class ChartOfAccountsScreen(QFrame):
+class ChartOfAccountsScreen(BaseScreen):
     """Chart of Accounts with tree view and CRUD operations."""
 
     account_selected = Signal(str)
 
     def __init__(self, parent=None):
-        super().__init__(parent)
+        super().__init__(parent, screen_id="chart_of_accounts")
         self.api_client = APIClient()
         self.accounts = []
         self.setup_ui()
         self.load_accounts()
+
+    def _on_screen_shown(self):
+        """Prevent BaseScreen from auto-loading on show — we load in __init__."""
 
     def setup_ui(self):
         layout = self._setup_layout()
@@ -71,7 +70,7 @@ class ChartOfAccountsScreen(QFrame):
         self.type_filter.addItem("All Types", "")
         for acc_type in ["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"]:
             self.type_filter.addItem(acc_type, acc_type)
-        self.type_filter.setStyleSheet(f"""
+        self.type_filter.setStyleSheet("""
             QComboBox {{
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};
@@ -128,7 +127,7 @@ class ChartOfAccountsScreen(QFrame):
         tree.setSortingEnabled(True)
         tree.setAlternatingRowColors(True)
         tree.setIndentation(24)
-        tree.setStyleSheet(f"""
+        tree.setStyleSheet("""
             QTreeWidget {{
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};

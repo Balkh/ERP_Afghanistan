@@ -1,130 +1,86 @@
 from django.http import JsonResponse
-from django.urls import resolve
 from django.utils.deprecation import MiddlewareMixin
-from .services import LicenseService, LicenseValidationError
-import json
+from .validator import LicenseValidator, is_dev_mode
 
 
 class LicenseMiddleware(MiddlewareMixin):
     """
-    Middleware to validate device license for Pharmacy ERP.
+    Lightweight license middleware.
     
-    This middleware checks if the current device has a valid license
-    before allowing access to the application (except for exempt paths).
+    State handling:
+      dev      → No restrictions
+      trial    → Full access (header: X-License-Mode: trial)
+      limited  → Only /licensing/ and /api/system/ accessible, all else blocked
+      licensed → Full access
     """
-    
-    # Paths that don't require license validation
+
     EXEMPT_PATHS = [
-        '/admin/',  # Django admin
-        '/static/',  # Static files
-        '/media/',   # Media files
+        '/admin/',
+        '/static/',
+        '/media/',
         '/favicon.ico',
-        '/licensing/',  # Licensing endpoints (to avoid circular dependency)
-        '/api/',       # API endpoints (for testing)
-    ]
-    
-    # Paths that specifically relate to licensing (always allow)
-    LICENSING_PATHS = [
         '/licensing/',
     ]
-    
+
+    ALLOWED_LIMITED_PATHS = [
+        '/licensing/',
+        '/api/system/',
+    ]
+
     def process_request(self, request):
-        """
-        Process the request and check for valid license.
-        
-        Returns:
-            None: Continue processing the request
-            JsonResponse: Return error response if license validation fails
-        """
-        # Get the path
         path = request.path_info
-        
-        # Check if path is exempt from license validation
+
         if self._is_exempt_path(path):
             return None
-        
-        # Skip license validation for OPTIONS requests (CORS preflight)
+
         if request.method == 'OPTIONS':
             return None
-        
+
         try:
-            # Validate the license for the current device
-            license_obj = LicenseService.validate_license()
-            
-            # Attach license info to request for use in views
-            request.license = license_obj
-            request.license_info = {
-                'license_key': license_obj.license_key,
-                'device_id': license_obj.device_id,
-                'is_valid': license_obj.is_valid(),
-                'expires_date': license_obj.expires_date.isoformat() if license_obj.expires_date else None,
-            }
-            
-        except LicenseValidationError as e:
-            # Return JSON error response for API requests
-            if self._is_api_request(request):
-                return JsonResponse({
-                    'error': 'License validation failed',
-                    'message': str(e),
-                    'code': 'LICENSE_INVALID'
-                }, status=403)
-            
-            # For HTML requests, we could redirect to a license page
-            # For now, return a simple error
+            val = LicenseValidator()
+            state = val.validate()
+            info = val.get_info()
+
+            request.license_mode = state
+            request.license_info = info
+
+            if state == "dev" or state == "licensed":
+                return None
+
+            if state == "trial":
+                return None
+
+            if state == "limited":
+                if not self._is_allowed_in_limited(path):
+                    return JsonResponse({
+                        'error': 'Trial period expired',
+                        'message': info.get('message',
+                                            'Trial has expired. Please activate a license.'),
+                        'code': 'TRIAL_EXPIRED',
+                        'restricted': True,
+                    }, status=403)
+                return None
+
             return JsonResponse({
-                'error': 'License validation failed',
-                'message': str(e),
-                'code': 'LICENSE_INVALID'
+                'error': 'License required',
+                'message': info.get('message', 'No valid license found.'),
+                'code': 'LICENSE_REQUIRED',
             }, status=403)
-        
-        except Exception as e:
-            # Handle unexpected errors
-            return JsonResponse({
-                'error': 'Internal server error',
-                'message': 'An unexpected error occurred during license validation',
-                'code': 'LICENSE_ERROR'
-            }, status=500)
-        
-        return None
-    
+
+        except Exception:
+            request.license_mode = 'unknown'
+            request.license_info = {'mode': 'unknown', 'is_valid': False,
+                                     'message': 'License validation unavailable'}
+            return None
+
     def _is_exempt_path(self, path):
-        """
-        Check if the path is exempt from license validation.
-        
-        Args:
-            path: The request path
-            
-        Returns:
-            bool: True if path is exempt, False otherwise
-        """
-        # Check exact matches and prefixes
-        for exempt_path in self.EXEMPT_PATHS:
-            if path == exempt_path or path.startswith(exempt_path):
+        for p in self.EXEMPT_PATHS:
+            if path == p or path.startswith(p):
                 return True
         return False
-    
-    def _is_api_request(self, request):
-        """
-        Check if the request is an API request (expects JSON response).
-        
-        Args:
-            request: The HTTP request
-            
-        Returns:
-            bool: True if request expects JSON, False otherwise
-        """
-        # Check Accept header
-        accept_header = request.META.get('HTTP_ACCEPT', '')
-        if 'application/json' in accept_header:
-            return True
-        
-        # Check Content-Type for POST/PUT/PATCH
-        content_type = request.META.get('HTTP_CONTENT_TYPE', '')
-        if 'application/json' in content_type:
-            return True
-        
-        # Check if path looks like an API endpoint
-        if request.path.startswith('/api/'):
-            return True
-            
+
+    def _is_allowed_in_limited(self, path):
+        for p in self.ALLOWED_LIMITED_PATHS:
+            if path == p or path.startswith(p):
+                return True
         return False
