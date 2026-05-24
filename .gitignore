@@ -1,33 +1,4 @@
-venv/
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-env/
-ENV/
-.env
-.venv
-.pytest_cache/
-.mypy_cache/
-coverage/
-htmlcov/
-logs/
-*.log
-*.sqlite3
-*.db
-*.iml
-.idea/
-dist/
-build/
-.eggs/
-*.egg-info/
-pip-log.txt
-.pytest_cache/
-coverage.xml
-local_settings.py
-.vscode/
-.DS_Store# ============================================
+# ============================================
 # PYTHON
 # ============================================
 __pycache__/
@@ -44,19 +15,31 @@ build/
 *.tar.gz
 *.so
 *.manifest
-*.spec
 .pytest_cache/
 .coverage
 .coverage.*
 coverage.xml
 *.cover
-*.htmlcov
+htmlcov/
 nosetests.xml
 .cache/
 hypothesis/
 .mypy_cache/
 .ruff_cache/
 .tox/
+
+# ============================================
+# VIRTUAL ENVIRONMENTS
+# ============================================
+venv/
+.venv/
+env/
+.envs/
+virtualenv/
+ENV/
+env.bak/
+venv.bak/
+.python/
 
 # ============================================
 # DJANGO
@@ -74,19 +57,7 @@ static_root/
 backups/
 
 # ============================================
-# VIRTUAL ENVIRONMENTS
-# ============================================
-venv/
-.venv/
-env/
-.envs/
-virtualenv/
-ENV/
-env.bak/
-venv.bak/
-
-# ============================================
-# ENVIRONMENT VARIABLES
+# ENVIRONMENT VARIABLES & SECRETS
 # ============================================
 .env
 .env.*
@@ -100,6 +71,14 @@ venv.bak/
 secrets.json
 credentials.json
 *.secret
+security_baseline.json
+*.lic
+*.license
+*.rsa
+vendor_keys/
+*.enc
+*.private.pem
+*.public.pem
 
 # ============================================
 # IDE / EDITOR
@@ -130,7 +109,7 @@ ui_*.py
 *.qm
 
 # ============================================
-# NODE / NPM (frontend tooling)
+# NODE / NPM
 # ============================================
 node_modules/
 npm-debug.log*
@@ -173,18 +152,6 @@ backups/
 logs/
 
 # ============================================
-# SECURITY / LICENSE
-# ============================================
-*.lic
-*.license
-*.rsa
-vendor_keys/
-security_baseline.json
-*.enc
-*.private.pem
-*.public.pem
-
-# ============================================
 # OS FILES
 # ============================================
 Thumbs.db
@@ -194,7 +161,7 @@ ehthumbs.db
 $RECYCLE.BIN/
 
 # ============================================
-# GENERATED / CACHE
+# GENERATED / CACHE / TEMP
 # ============================================
 temp/
 tmp/
@@ -205,5 +172,5 @@ tmp/
 session.dat
 *.session
 nul
-
 test_output.txt
+.coverage
