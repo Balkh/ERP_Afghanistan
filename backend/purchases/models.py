@@ -292,6 +292,20 @@ class PurchaseInvoice(CompanyScopedMixin, TimeStampedUUIDModel):
         verbose_name=_('Created By')
     )
 
+    # Tax configuration
+    tax_enabled = models.BooleanField(
+        default=False,
+        verbose_name=_('Tax Enabled'),
+        help_text=_('Enable tax calculation for this invoice')
+    )
+    tax_rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name=_('Tax Rate (%)'),
+        help_text=_('Tax rate percentage (e.g. 10.00 for 10%%)')
+    )
+
     # Accounting integration
     journal_entry_id = models.UUIDField(
         null=True,
@@ -334,10 +348,16 @@ class PurchaseInvoice(CompanyScopedMixin, TimeStampedUUIDModel):
 
     def calculate_totals(self):
         """Calculate subtotal, total from line items."""
+        from core.tax.tax_engine import TaxEngine
         self.subtotal = sum(
             item.quantity * item.unit_price for item in self.items.all()
         )
-        self.total_amount = self.subtotal - self.discount + self.tax
+        taxable = self.subtotal - self.discount
+        if self.tax_enabled and self.tax_rate > Decimal('0'):
+            self.tax = TaxEngine.calculate_tax(taxable, self.tax_rate)
+        else:
+            self.tax = Decimal('0.00')
+        self.total_amount = taxable + self.tax
 
     def update_payment_status(self):
         """Update payment status based on paid amount."""

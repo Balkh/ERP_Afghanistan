@@ -2,13 +2,14 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
                                 QTableWidget, QTableWidgetItem,
                                 QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
                                 QDateEdit, QMessageBox, QHeaderView, QAbstractItemView,
-                                QFrame, QMenu, QPushButton)
+                                QFrame, QMenu, QPushButton, QCheckBox)
 from PySide6.QtCore import Qt, QDate, Signal
 from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
 
 from ui.common.printable_invoice import PrintableInvoiceDialog
 from api.endpoints import get_endpoint
+from i18n import DateFormatter, DateFormat
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XXL, MARGIN_PAGE, TEXT_PAGE_TITLE,
                            TEXT_CARD_TITLE, TEXT_BODY, TEXT_TABLE, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_LG, BORDER_RADIUS_SM, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_BORDER, COLOR_TEXT_PRIMARY,
@@ -34,12 +35,38 @@ class PurchaseInvoiceScreen(QWidget):
         super().__init__(parent)
         self.api_client = api_client
         self.auth_manager = auth_manager
+        self.invoice_items = []
         self.current_invoice_id = None
         self.suppliers = []
+        self.products = []
+        self._date_format = self._load_date_format()
 
         self.setup_ui()
+        self._apply_date_format()
         self.setup_shortcuts()
         self.load_suppliers()
+
+    def _load_date_format(self):
+        """Load date format preference from theme config."""
+        try:
+            import json, os
+            config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'theme_preference.json')
+            if os.path.exists(config_path):
+                with open(config_path) as f:
+                    cfg = json.load(f)
+                return cfg.get('date_format', 'gregorian')
+        except Exception:
+            pass
+        return 'gregorian'
+
+    def _apply_date_format(self):
+        """Apply date format to all QDateEdit widgets."""
+        is_jalali = self._date_format == 'shamsi'
+        for w in [self.invoice_date, self.due_date]:
+            if is_jalali:
+                w.setDisplayFormat("yyyy/MM/dd")
+            else:
+                w.setDisplayFormat("yyyy-MM-dd")
 
     def _check_action(self, action: str) -> bool:
         """Check if user has permission for a purchase action."""
@@ -250,13 +277,19 @@ class PurchaseInvoiceScreen(QWidget):
         self.discount_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Discount:", self.discount_input)
 
+        self.tax_enabled_cb = QCheckBox()
+        self.tax_enabled_cb.setChecked(False)
+        self.tax_enabled_cb.stateChanged.connect(self.on_tax_enabled_changed)
+        totals_layout.addRow("Enable Tax:", self.tax_enabled_cb)
+
         self.tax_input = QDoubleSpinBox()
         self.tax_input.setRange(0, 100)
         self.tax_input.setValue(0)
         self.tax_input.setSuffix("%")
         self.tax_input.setMaximumWidth(120)
+        self.tax_input.setEnabled(False)
         self.tax_input.valueChanged.connect(self.recalculate_totals)
-        totals_layout.addRow("Tax:", self.tax_input)
+        totals_layout.addRow("Tax Rate:", self.tax_input)
 
         self.tax_amount_label = QLabel("0.00")
         self.tax_amount_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
@@ -486,6 +519,14 @@ class PurchaseInvoiceScreen(QWidget):
         """Handle item change in table."""
         self.recalculate_totals()
 
+    def on_tax_enabled_changed(self, state):
+        """Enable/disable tax rate input when tax toggle changes."""
+        enabled = state == 2  # Qt.Checked
+        self.tax_input.setEnabled(enabled)
+        if not enabled:
+            self.tax_input.setValue(0)
+        self.recalculate_totals()
+
     def recalculate_totals(self):
         """Recalculate invoice totals."""
         subtotal = Decimal("0")
@@ -495,20 +536,18 @@ class PurchaseInvoiceScreen(QWidget):
                 qty = Decimal(self.items_table.item(row, 4).text() or "0")
                 price = Decimal(self.items_table.item(row, 5).text() or "0")
                 discount = Decimal(self.items_table.item(row, 6).text() or "0")
-                tax_rate = Decimal(str(self.tax_input.value()))
 
                 line_total = qty * price - discount
-                tax = line_total * tax_rate / Decimal("100")
-                final_total = line_total + tax
-
-                self.items_table.item(row, 8).setText(f"{final_total:.2f}")
+                self.items_table.item(row, 8).setText(f"{line_total:.2f}")
                 subtotal += line_total
             except (ValueError, TypeError, AttributeError):
                 pass
 
         discount = Decimal(str(self.discount_input.value()))
         taxable = subtotal - discount
-        tax_amount = taxable * Decimal(str(self.tax_input.value())) / Decimal("100")
+        tax_enabled = self.tax_enabled_cb.isChecked()
+        tax_rate = Decimal(str(self.tax_input.value())) if tax_enabled else Decimal('0')
+        tax_amount = taxable * tax_rate / Decimal("100") if tax_enabled else Decimal("0")
         total = taxable + tax_amount
         paid = Decimal(str(self.paid_input.value()))
         balance = total - paid
@@ -539,16 +578,18 @@ class PurchaseInvoiceScreen(QWidget):
             "supplier_id": self.supplier_combo.currentData(),
             "supplier_name": self.supplier_combo.currentText(),
             "invoice_number": self.invoice_number.text(),
-            "order_date": self.order_date.date().toString("yyyy-MM-dd"),
+            "order_date": self.invoice_date.date().toString("yyyy-MM-dd"),
             "invoice_date": self.invoice_date.date().toString("yyyy-MM-dd"),
             "due_date": self.due_date.date().toString("yyyy-MM-dd"),
             "currency": self.currency_combo.currentText(),
             "subtotal": float(self.subtotal_label.text()),
             "discount": float(self.discount_input.value()),
+            "tax_enabled": self.tax_enabled_cb.isChecked(),
+            "tax_rate": float(self.tax_input.value()),
             "tax": float(self.tax_amount_label.text()),
             "total_amount": float(self.total_label.text()),
             "paid_amount": float(self.paid_input.value()),
-            "notes": self.notes_input.toPlainText(),
+            "notes": "",
             "items": items,
         }
 
@@ -719,12 +760,13 @@ class PurchaseInvoiceScreen(QWidget):
         """Clear the entire form."""
         self.supplier_combo.setCurrentIndex(0)
         self.invoice_number.clear()
-        self.order_date.setDate(QDate.currentDate())
         self.invoice_date.setDate(QDate.currentDate())
         self.due_date.setDate(QDate.currentDate().addDays(30))
         self.notes_input.clear()
         self.discount_input.setValue(0)
+        self.tax_enabled_cb.setChecked(False)
         self.tax_input.setValue(0)
+        self.tax_input.setEnabled(False)
         self.paid_input.setValue(0)
         self.items_table.setRowCount(0)
         self.recalculate_totals()

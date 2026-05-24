@@ -57,6 +57,7 @@ class SalesInvoiceSerializer(serializers.ModelSerializer):
         max_digits=12, decimal_places=2, read_only=True
     )
     writable_items = SalesItemSerializer(many=True, required=False, write_only=True)
+    tax_rate_display = serializers.SerializerMethodField()
     workflow_status = serializers.SerializerMethodField()
     can_submit = serializers.SerializerMethodField()
     can_approve = serializers.SerializerMethodField()
@@ -79,12 +80,16 @@ class SalesInvoiceSerializer(serializers.ModelSerializer):
         status = self.get_workflow_status(obj)
         return status.get('can_post', False) if status else False
 
+    def get_tax_rate_display(self, obj):
+        return f"{obj.tax_rate}%" if obj.tax_enabled else "Disabled"
+
     class Meta:
         model = SalesInvoice
         fields = [
             'id', 'invoice_number', 'customer', 'customer_name',
             'order_date', 'invoice_date', 'due_date',
-            'subtotal', 'discount', 'tax', 'total_amount',
+            'subtotal', 'discount', 'tax', 'tax_enabled', 'tax_rate',
+            'tax_rate_display', 'total_amount',
             'paid_amount', 'remaining_balance',
             'status', 'payment_status',
             'workflow_status', 'can_submit', 'can_approve', 'can_post',
@@ -92,7 +97,7 @@ class SalesInvoiceSerializer(serializers.ModelSerializer):
             'notes', 'is_active', 'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'id', 'subtotal', 'total_amount', 'paid_amount',
+            'id', 'subtotal', 'tax', 'total_amount', 'paid_amount',
             'remaining_balance', 'created_at', 'updated_at'
         ]
         extra_kwargs = {
@@ -101,6 +106,8 @@ class SalesInvoiceSerializer(serializers.ModelSerializer):
             'order_date': {'required': True},
             'invoice_date': {'required': True},
             'due_date': {'required': True},
+            'tax_enabled': {'required': False},
+            'tax_rate': {'required': False},
         }
 
     def create(self, validated_data):

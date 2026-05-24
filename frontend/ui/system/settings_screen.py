@@ -14,7 +14,7 @@ SETTINGS_FILE = os.path.expanduser("~/.pharmacy_erp_settings.json")
 
 THEME_KEYS = ["theme", "language", "timezone", "low_stock_threshold",
               "auto_backup", "backup_frequency", "email_notifications",
-              "low_stock_alerts", "expiry_alerts"]
+              "low_stock_alerts", "expiry_alerts", "date_format"]
 
 
 class SettingsScreen(BaseScreen):
@@ -47,7 +47,8 @@ class SettingsScreen(BaseScreen):
             "backup_frequency": "Daily",
             "email_notifications": False,
             "low_stock_alerts": True,
-            "expiry_alerts": True
+            "expiry_alerts": True,
+            "date_format": "gregorian"
         }
 
     def _apply_defaults(self):
@@ -198,11 +199,18 @@ class SettingsScreen(BaseScreen):
         self.currency_combo = QComboBox()
         self.currency_combo.addItems(["AFN", "USD", "EUR", "PKR", "IRR"])
         self.currency_combo.setMinimumHeight(INPUT_HEIGHT_MD)
-        
+
+        self.date_format_combo = QComboBox()
+        self.date_format_combo.addItems(["Gregorian", "Jalali (Shamsi)"])
+        date_fmt = self._settings.get("date_format", "gregorian")
+        self.date_format_combo.setCurrentText("Jalali (Shamsi)" if date_fmt == "shamsi" else "Gregorian")
+        self.date_format_combo.setMinimumHeight(INPUT_HEIGHT_MD)
+
         general_layout.addRow("Theme:", self.theme_combo)
         general_layout.addRow("Language:", self.language)
         general_layout.addRow("Timezone:", self.timezone)
         general_layout.addRow("Currency:", self.currency_combo)
+        general_layout.addRow("Date Format:", self.date_format_combo)
         
         general_group.setLayout(general_layout)
         layout.addWidget(general_group)
@@ -269,6 +277,7 @@ class SettingsScreen(BaseScreen):
         self._settings["language"] = self.language.currentText()
         self._settings["timezone"] = self.timezone.currentText()
         self._settings["currency"] = self.currency_combo.currentText()
+        self._settings["date_format"] = "shamsi" if self.date_format_combo.currentText() == "Jalali (Shamsi)" else "gregorian"
         self._settings["low_stock_threshold"] = self.low_stock_threshold.value()
         self._settings["auto_backup"] = self.auto_backup.isChecked()
         self._settings["backup_frequency"] = self.backup_frequency.currentText()
@@ -319,6 +328,7 @@ class SettingsScreen(BaseScreen):
             self.language.setCurrentIndex(0)
             self.timezone.setCurrentIndex(0)
             self.currency_combo.setCurrentIndex(0)
+            self.date_format_combo.setCurrentIndex(0)
             self.low_stock_threshold.setValue(10)
             self.auto_backup.setChecked(True)
             self.backup_frequency.setCurrentIndex(0)
@@ -335,7 +345,8 @@ class SettingsScreen(BaseScreen):
                 "backup_frequency": "Daily",
                 "email_notifications": False,
                 "low_stock_alerts": True,
-                "expiry_alerts": True
+                "expiry_alerts": True,
+                "date_format": "gregorian"
             }
             self._save_settings()
             # Also reset company currency
