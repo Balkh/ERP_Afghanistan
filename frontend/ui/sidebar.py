@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
-                                 QPushButton, QSizePolicy, QScrollArea)
+                                 QSizePolicy, QScrollArea)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont
 from theme.theme_engine import ThemeEngine
@@ -288,7 +288,7 @@ class Sidebar(QWidget):
     
     def _create_nav_button(self, title, page_id, page_index):
         """Create a navigation button with enhanced hover/active states."""
-        btn = QPushButton(f"  {title}")
+        btn = EnterpriseButton(f"  {title}")
         btn.setFont(QFont("Segoe UI", TEXT_LABEL))
         btn.setFixedHeight(36)
         btn.setCursor(Qt.PointingHandCursor)
@@ -331,7 +331,7 @@ class Sidebar(QWidget):
         group_layout.setSpacing(SPACING_NONE)
 
         # Group header (clickable for expand/collapse)
-        header_btn = QPushButton()
+        header_btn = EnterpriseButton()
         header_btn.setCursor(Qt.PointingHandCursor)
         header_btn.setFixedHeight(40)
         header_btn.setStyleSheet(f"""
@@ -544,7 +544,7 @@ class Sidebar(QWidget):
             COLOR_PRIMARY, BORDER_RADIUS_MD, COLOR_TEXT_SECONDARY
         )
         # Handle cases where COLOR_BG_HOVER might be missing in some theme contexts
-        hover_bg = locals().get('COLOR_BG_HOVER', '#f1f5f9')
+        hover_bg = locals().get('COLOR_BG_HOVER', COLOR_BG_HOVER)
         
         self.setStyleSheet("""
             Sidebar {{
@@ -554,11 +554,11 @@ class Sidebar(QWidget):
             QLabel#sidebar_header {{
                 color: {COLOR_TEXT_PRIMARY};
                 font-weight: bold;
-                padding: 10px;
+                padding: {SPACING_SM}px;
             }}
             QPushButton {{
                 text-align: left;
-                padding: 10px 15px;
+                padding: {SPACING_SM}px {SPACING_MD}px;
                 border: none;
                 border-radius: {BORDER_RADIUS_MD}px;
                 color: {COLOR_TEXT_SECONDARY};

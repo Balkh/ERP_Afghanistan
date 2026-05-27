@@ -1,6 +1,6 @@
 """Suppliers screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QLineEdit, QPushButton, QSpinBox,
+                                  QLabel, QLineEdit, QSpinBox,
                                    QMessageBox, QFormLayout, QDialog, QComboBox,
                                    QTextEdit, QFrame)
 from PySide6.QtCore import Qt

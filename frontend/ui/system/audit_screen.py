@@ -1,11 +1,11 @@
 """Audit log screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
-                                  QLabel, QLineEdit, QPushButton,
+                                  QLabel, QLineEdit,
                                   QMessageBox, QComboBox, QGroupBox, QDateEdit)
 from PySide6.QtCore import Qt
 from datetime import datetime
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_XS, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
                            COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
@@ -38,7 +38,7 @@ class AuditScreen(BaseScreen):
         layout.addLayout(header_layout)
         
         filter_bar = QGroupBox("Filter Logs")
-        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: 10px; padding-top: 10px; font-size: {TEXT_LABEL}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}")
+        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; font-size: {TEXT_LABEL}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}")
         filter_layout = QGridLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         

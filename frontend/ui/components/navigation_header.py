@@ -19,7 +19,7 @@ Navigation Header Component.
 Reusable header with back, home, close buttons, title, and breadcrumb.
 """
 
-from PySide6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QLabel, QPushButton)
+from PySide6.QtWidgets import (QWidget, QHBoxLayout, QVBoxLayout, QLabel)
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
 

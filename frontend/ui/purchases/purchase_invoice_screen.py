@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
                                 QTableWidget, QTableWidgetItem,
                                 QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
                                 QDateEdit, QMessageBox, QHeaderView, QAbstractItemView,
-                                QFrame, QMenu, QPushButton, QCheckBox)
+                                QFrame, QMenu, QCheckBox)
 from PySide6.QtCore import Qt, QDate, Signal
 from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
@@ -17,6 +17,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING,
                            COLOR_DANGER, COLOR_INFO, DENSITY_COMPACT_ROW)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.operator_safety import DestructiveActionGuard
 
 
 class PurchaseInvoiceScreen(QWidget):
@@ -641,14 +642,11 @@ class PurchaseInvoiceScreen(QWidget):
             QMessageBox.warning(self, "Error", "Save the invoice as draft first.")
             return
 
-        reply = QMessageBox.question(
+        if not DestructiveActionGuard.confirm_irreversible(
             self, "Confirm Invoice",
-            "Are you sure you want to confirm this purchase invoice?\n\n"
-            f"Total: {data['total_amount']:.2f} {data['currency']}",
-            QMessageBox.Yes | QMessageBox.No
-        )
-
-        if reply == QMessageBox.Yes:
+            f"Are you sure you want to confirm this purchase invoice?\n\nTotal: {data['total_amount']:.2f} {data['currency']}"
+        ):
+            return
             try:
                 endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/confirm/"
                 res = self.api_client.post(endpoint, {})
@@ -679,13 +677,11 @@ class PurchaseInvoiceScreen(QWidget):
                 QMessageBox.warning(self, "Validation Error", f"Please enter batch number for row {row + 1}.")
                 return
 
-        reply = QMessageBox.question(
+        if not DestructiveActionGuard.confirm_irreversible(
             self, "Receive Purchase",
-            "This will add stock to inventory.\n\nContinue?",
-            QMessageBox.Yes | QMessageBox.No
-        )
-
-        if reply == QMessageBox.Yes:
+            "This will add stock to inventory.\n\nContinue?"
+        ):
+            return
             try:
                 endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/receive/"
                 res = self.api_client.post(endpoint, {})

@@ -11,6 +11,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN
                            COLOR_PRIMARY, COLOR_SUCCESS,
                            COLOR_WARNING, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.operator_safety import DestructiveActionGuard
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
 
@@ -133,7 +134,7 @@ class JournalEntryScreen(BaseScreen):
         self.type_filter = QComboBox()
         self.type_filter.setStyleSheet("""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
                 selection-background-color: {COLOR_PRIMARY}; selection-color: white;
                 border: 1px solid {COLOR_BORDER}; }}
@@ -151,7 +152,7 @@ class JournalEntryScreen(BaseScreen):
         self.status_filter = QComboBox()
         self.status_filter.setStyleSheet("""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
                 selection-background-color: {COLOR_PRIMARY}; selection-color: white;
                 border: 1px solid {COLOR_BORDER}; }}
@@ -387,11 +388,10 @@ class JournalEntryScreen(BaseScreen):
         if not entry:
             return
 
-        reply = QMessageBox.question(
+        if DestructiveActionGuard.confirm_irreversible(
             self, "Confirm Post",
-            f"Are you sure you want to post journal entry {entry.get('entry_number')}?\nThis action cannot be undone."
-        )
-        if reply == QMessageBox.Yes:
+            f"Are you sure you want to post journal entry {entry.get('entry_number')}?"
+        ):
             try:
                 self.api_client.post(f"/api/accounting/journal-entries/{entry['id']}/post_entry/")
                 self.load_entries()
@@ -404,11 +404,10 @@ class JournalEntryScreen(BaseScreen):
         if not entry:
             return
 
-        reply = QMessageBox.question(
+        if DestructiveActionGuard.confirm_irreversible(
             self, "Confirm Unpost",
             f"Are you sure you want to unpost journal entry {entry.get('entry_number')}?"
-        )
-        if reply == QMessageBox.Yes:
+        ):
             try:
                 self.api_client.post(f"/api/accounting/journal-entries/{entry['id']}/unpost_entry/")
                 self.load_entries()
@@ -421,11 +420,9 @@ class JournalEntryScreen(BaseScreen):
         if not entry:
             return
 
-        reply = QMessageBox.question(
-            self, "Confirm Reverse",
-            f"Are you sure you want to reverse journal entry {entry.get('entry_number')}?\nA new reversal entry will be created."
-        )
-        if reply == QMessageBox.Yes:
+        if DestructiveActionGuard.confirm_accounting_reversal(
+            self, f"journal entry {entry.get('entry_number')}"
+        ):
             try:
                 self.api_client.post(
                     f"/api/accounting/journal-entries/{entry['id']}/reverse_entry/",

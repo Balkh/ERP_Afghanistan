@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox, QCheckBox,
     QDateEdit, QTimeEdit, QDateTimeEdit, QGroupBox, QFrame
 )
-from PySide6.QtCore import Signal, Qt, QDate, QTime, QDateTime
+from PySide6.QtCore import Signal, Qt, QDate, QTime, QDateTime, QTimer
 from typing import Any, Optional, Dict, List
 from enum import Enum
 import re
@@ -378,6 +378,8 @@ class EnterpriseForm(QWidget):
     """
     Enterprise form with multiple fields.
     
+    Phase D.1: Enhanced with dirty state, double-submit prevention, auto-save draft.
+    
     Usage:
         form = EnterpriseForm()
         form.add_field("name", FieldType.TEXT, "Name", required=True)
@@ -390,14 +392,23 @@ class EnterpriseForm(QWidget):
     form_validated = Signal(dict)
     form_changed = Signal(dict)
     
+    DIRTY_STATE_CHANGED = Signal(bool)
+    
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
         
         self._fields: Dict[str, FormField] = {}
         self._field_order: List[str] = []
         self._input_widgets: List[QWidget] = []
+        self._saved_data: Dict[str, Any] = {}
+        self._dirty: bool = False
+        self._submission_lock: bool = False
+        self._draft_key: str = ""
+        self._draft_timer: Optional[QTimer] = None
+        self._version: int = 0
         
         self._setup_ui()
+        self._install_keyboard_shortcuts()
         
     def _setup_ui(self):
         """Setup form UI."""
@@ -421,6 +432,126 @@ class EnterpriseForm(QWidget):
         
         layout.addWidget(self._scroll_area)
         
+    def _install_keyboard_shortcuts(self):
+        """Install keyboard shortcuts (Ctrl+S to save, Escape to cancel)."""
+        from PySide6.QtGui import QShortcut, QKeySequence
+        self._save_shortcut = QShortcut(QKeySequence("Ctrl+S"), self)
+        self._save_shortcut.activated.connect(self.submit)
+
+    # ── Dirty State ──
+
+    def is_dirty(self) -> bool:
+        """Check if form has unsaved changes."""
+        return self._dirty
+
+    def mark_dirty(self):
+        """Mark form as having unsaved changes."""
+        if not self._dirty:
+            self._dirty = True
+            self.DIRTY_STATE_CHANGED.emit(True)
+
+    def mark_clean(self):
+        """Mark form as clean (no unsaved changes)."""
+        self._saved_data = self.get_data()
+        if self._dirty:
+            self._dirty = False
+            self.DIRTY_STATE_CHANGED.emit(False)
+
+    def reset_dirty_state(self):
+        """Reset dirty state without marking clean (for partial resets)."""
+        self._dirty = False
+        self.DIRTY_STATE_CHANGED.emit(False)
+
+    # ── Draft Save / Restore ──
+
+    def enable_draft_autosave(self, draft_key: str, interval_ms: int = 5000):
+        """Enable periodic draft auto-save."""
+        self._draft_key = draft_key
+        if self._draft_timer:
+            self._draft_timer.stop()
+        self._draft_timer = QTimer(self)
+        self._draft_timer.timeout.connect(self._auto_save_draft)
+        self._draft_timer.start(interval_ms)
+
+    def disable_draft_autosave(self):
+        """Disable draft auto-save."""
+        if self._draft_timer:
+            self._draft_timer.stop()
+            self._draft_timer = None
+        self._draft_key = ""
+
+    def _auto_save_draft(self):
+        """Auto-save draft if form is dirty."""
+        if self._dirty and self._draft_key:
+            self.save_draft()
+
+    def save_draft(self, draft_key: str = "") -> bool:
+        """Save form data as draft. Returns True if saved."""
+        key = draft_key or self._draft_key
+        if not key:
+            return False
+        try:
+            import json, os
+            draft_dir = os.path.join(os.path.expanduser("~"), ".pharmacy_erp", "drafts")
+            os.makedirs(draft_dir, exist_ok=True)
+            draft_path = os.path.join(draft_dir, f"{key}.json")
+            with open(draft_path, "w") as f:
+                json.dump(self.get_data(), f)
+            return True
+        except Exception:
+            return False
+
+    def restore_draft(self, draft_key: str = "") -> bool:
+        """Restore form data from draft. Returns True if restored."""
+        key = draft_key or self._draft_key
+        if not key:
+            return False
+        try:
+            import json, os
+            draft_path = os.path.join(os.path.expanduser("~"), ".pharmacy_erp", "drafts", f"{key}.json")
+            if os.path.exists(draft_path):
+                with open(draft_path) as f:
+                    data = json.load(f)
+                self.set_data(data)
+                return True
+        except Exception:
+            pass
+        return False
+
+    def clear_draft(self, draft_key: str = ""):
+        """Delete saved draft."""
+        key = draft_key or self._draft_key
+        if not key:
+            return
+        try:
+            import os
+            draft_path = os.path.join(os.path.expanduser("~"), ".pharmacy_erp", "drafts", f"{key}.json")
+            if os.path.exists(draft_path):
+                os.remove(draft_path)
+        except Exception:
+            pass
+
+    # ── Optimistic Locking ──
+
+    @property
+    def version(self) -> int:
+        """Get form version counter for optimistic locking."""
+        return self._version
+
+    def set_version(self, version: int):
+        """Set version counter for optimistic locking."""
+        self._version = version
+
+    def increment_version(self):
+        """Increment version counter."""
+        self._version += 1
+
+    def has_stale_data(self, server_version: int) -> bool:
+        """Check if form data is stale compared to server version."""
+        return server_version > self._version
+
+    # ── Field Management ──
+
     def add_field(
         self,
         name: str,
@@ -467,8 +598,12 @@ class EnterpriseForm(QWidget):
             self.setTabOrder(widgets[i], widgets[i + 1])
         
     def _on_field_changed(self, name: str, value: Any):
-        """Handle field change."""
+        """Handle field change with dirty state detection."""
         data = self.get_data()
+        if data != self._saved_data:
+            self.mark_dirty()
+        else:
+            self.reset_dirty_state()
         self.form_changed.emit(data)
         
     def get_field(self, name: str) -> Optional[FormField]:
@@ -479,11 +614,14 @@ class EnterpriseForm(QWidget):
         """Get form data."""
         return {name: field.get_value() for name, field in self._fields.items()}
         
-    def set_data(self, data: Dict[str, Any]):
-        """Set form data."""
+    def set_data(self, data: Dict[str, Any], mark_clean: bool = True):
+        """Set form data with optional clean state snapshot."""
         for name, value in data.items():
             if name in self._fields:
                 self._fields[name].set_value(value)
+        if mark_clean:
+            self.mark_clean()
+        self._saved_data = self.get_data()
                 
     def validate(self) -> tuple[bool, Dict[str, str]]:
         """Validate all fields. Scrolls to first error."""
@@ -508,16 +646,28 @@ class EnterpriseForm(QWidget):
         return is_valid, errors
         
     def submit(self) -> bool:
-        """Submit form."""
-        is_valid, errors = self.validate()
+        """Submit form with double-submit prevention."""
+        if self._submission_lock:
+            import logging
+            logging.getLogger(__name__).warning("Double submit prevented")
+            return False
         
-        if is_valid:
-            data = self.get_data()
-            self.form_validated.emit(data)
-            self.form_submitted.emit(data)
-            return True
+        self._submission_lock = True
+        try:
+            is_valid, errors = self.validate()
             
-        return False
+            if is_valid:
+                data = self.get_data()
+                self.form_validated.emit(data)
+                self.form_submitted.emit(data)
+                self.increment_version()
+                self.mark_clean()
+                self.clear_draft()
+                return True
+                
+            return False
+        finally:
+            self._submission_lock = False
     
     def add_action_buttons(self, save_text: str = "Save", cancel_text: str = "Cancel",
                            save_callback=None, cancel_callback=None):

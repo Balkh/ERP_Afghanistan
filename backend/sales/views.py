@@ -22,18 +22,20 @@ from sales.serializers import (
 from inventory.service import StockIntegrationService, StockSelectionMode
 from inventory.models import Warehouse
 from accounting.models import Account
+from core.accounting_registry import ACC
 from security.permissions import RoleBasedPermission
 
 
 class SalesAccountingService:
     """Handles accounting journal entries for sales operations."""
 
-    AR_ACCOUNT_CODE = '1200'
-    REVENUE_ACCOUNT_CODE = '4100'
-    TAX_ACCOUNT_CODE = '2100'
-    CASH_ACCOUNT_CODE = '1010'
-    COGS_ACCOUNT_CODE = '5100'
-    INVENTORY_ACCOUNT_CODE = '1300'
+    # Centralized through ACC registry — these are convenience aliases
+    AR_ACCOUNT_CODE = ACC['ar']
+    REVENUE_ACCOUNT_CODE = ACC['sales_revenue']
+    TAX_ACCOUNT_CODE = ACC['tax_payable']
+    CASH_ACCOUNT_CODE = ACC['cash_on_hand']
+    COGS_ACCOUNT_CODE = ACC['sales_cogs']
+    INVENTORY_ACCOUNT_CODE = ACC['inventory']
 
     @classmethod
     def calculate_cogs(cls, invoice: SalesInvoice, allocations: list) -> Decimal:

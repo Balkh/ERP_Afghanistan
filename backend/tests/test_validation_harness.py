@@ -235,12 +235,20 @@ class RealExecutionTestHarness(TransactionTestCase):
             code='4200', name='Sales Returns', account_type='REVENUE',
             account_category='OPERATING_REVENUE', is_system=True
         )
+        self.account_sales_return = AccountFactory.create(
+            code='4100', name='Sales Returns', account_type='REVENUE',
+            account_category='OPERATING_REVENUE', is_system=True
+        )
         self.account_cogs = AccountFactory.create(
             code='5000', name='Cost of Goods Sold', account_type='EXPENSE',
             account_category='COST_OF_GOODS_SOLD', is_system=True
         )
         self.account_expense = AccountFactory.create(
             code='6000', name='Operating Expense', account_type='EXPENSE',
+            account_category='OPERATING_EXPENSE'
+        )
+        self.account_expense_alt = AccountFactory.create(
+            code='6100', name='Operating Expense Alt', account_type='EXPENSE',
             account_category='OPERATING_EXPENSE'
         )
         # Needed by SalesAccountingService (uses 5100 for COGS, 1010 for Cash)
@@ -267,27 +275,43 @@ class RealExecutionTestHarness(TransactionTestCase):
         self.category_syrups = CategoryFactory.create(name='Syrups')
 
     def _setup_payment_infrastructure(self):
-        PaymentMethod.objects.create(
-            code='CASH', name='Cash', method_type='CASH',
-            is_active=True, is_default=True,
-            fee_percentage=Decimal('0.00'), fee_fixed=Decimal('0.00'),
-            ref_prefix='CSH', ref_format='{prefix}{seq:06d}',
-            provider_name='Cash',
+        self.payment_method, _ = PaymentMethod.objects.get_or_create(
+            code='CASH', defaults=dict(
+                name='Cash', method_type='CASH',
+                is_active=True, is_default=True,
+                fee_percentage=Decimal('0.00'), fee_fixed=Decimal('0.00'),
+                ref_prefix='CSH', ref_format='{prefix}{seq:06d}',
+                provider_name='Cash',
+            )
         )
-        self.payment_account = PaymentAccount.objects.create(
+        self.payment_account, _ = PaymentAccount.objects.get_or_create(
             code='MAIN-CASH',
-            name='Main Cash AFN',
-            account_type='CASH',
-            is_active=True,
-            is_default=True,
-            accounting_account=self.account_cash,
-            currency='AFN',
-            current_balance=Decimal('100000.00'),
+            defaults=dict(
+                name='Main Cash AFN',
+                account_type='CASH',
+                is_active=True,
+                is_default=True,
+                accounting_account=self.account_cash,
+                currency='AFN',
+                current_balance=Decimal('100000.00'),
+            )
         )
 
     def _setup_users(self):
-        self.admin_user = User.objects.create_superuser('admin', 'admin@pharmacy.erp', 'admin123')
-        self.accountant = User.objects.create_user('accountant', 'acc@pharmacy.erp', 'acc123')
+        self.admin_user, _ = User.objects.get_or_create(
+            username='admin',
+            defaults=dict(email='admin@pharmacy.erp', is_superuser=True, is_staff=True),
+        )
+        if not self.admin_user.check_password('admin123'):
+            self.admin_user.set_password('admin123')
+            self.admin_user.save()
+        self.accountant, _ = User.objects.get_or_create(
+            username='accountant',
+            defaults=dict(email='acc@pharmacy.erp'),
+        )
+        if not self.accountant.check_password('acc123'):
+            self.accountant.set_password('acc123')
+            self.accountant.save()
 
     def _setup_business_partners(self):
         self.supplier = SupplierFactory.create(name='Test Supplier')

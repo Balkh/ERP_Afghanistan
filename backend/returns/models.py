@@ -8,6 +8,7 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from core.models import TimeStampedUUIDModel
+from core.transition_provenance import record_transition
 
 
 class ReturnOrder(TimeStampedUUIDModel):
@@ -216,7 +217,7 @@ class ReturnOrder(TimeStampedUUIDModel):
             # Check total already approved returns for this invoice item
             already_returned = ReturnItem.objects.filter(
                 invoice_item=item.invoice_item,
-                return_order__status='APPROVED',
+                return_order__status__in=['APPROVED', 'COMPLETED'],
             ).aggregate(total=models.Sum('return_quantity'))['total'] or Decimal('0.00')
             
             if item.return_quantity + already_returned > original_qty:
@@ -267,8 +268,25 @@ class ReturnOrder(TimeStampedUUIDModel):
         self.approved_by = employee
         from django.utils import timezone
         self.approved_at = timezone.now()
+        record_transition(
+            model_name='ReturnOrder',
+            instance_id=str(self.pk),
+            from_status='PENDING',
+            to_status='APPROVED',
+            source='approve',
+            reason=f'approval by employee {employee}',
+            condition='status == PENDING',
+        )
         self.save()
-        
+
+        # 6. Sync balance — must happen AFTER status update so query sees APPROVED
+        if self.return_type == 'SALE_RETURN' and self.party:
+            from core.balance_sync import BalanceSyncService
+            BalanceSyncService.sync_customer(self.party, lock=True)
+        elif self.return_type == 'PURCHASE_RETURN' and self.supplier:
+            from core.balance_sync import BalanceSyncService
+            BalanceSyncService.sync_supplier(self.supplier, lock=True)
+
         return True
 
     @transaction.atomic
@@ -360,7 +378,14 @@ class ReturnOrder(TimeStampedUUIDModel):
             except JournalEntry.DoesNotExist:
                 pass
 
-        # 3. Reverse customer/supplier balance using centralized sync service
+        # 3. Update status to VOIDED BEFORE balance sync so sync excludes this return
+        self.status = 'VOIDED'
+        self.voided_by = employee
+        self.voided_at = timezone.now()
+        self.void_reason = reason
+        self.save()
+
+        # 4. Reverse customer/supplier balance — status is VOIDED so sync excludes this return
         if self.return_type == 'SALE_RETURN' and self.party:
             from core.balance_sync import BalanceSyncService
             from core.services.financial_audit import FinancialAuditService
@@ -387,13 +412,6 @@ class ReturnOrder(TimeStampedUUIDModel):
                 balance_after=new_balance,
                 user=employee.user if hasattr(employee, 'user') else None,
             )
-
-        # 4. Update status
-        self.status = 'VOIDED'
-        self.voided_by = employee
-        self.voided_at = timezone.now()
-        self.void_reason = reason
-        self.save()
         
         return True
     
@@ -401,14 +419,15 @@ class ReturnOrder(TimeStampedUUIDModel):
         """Create accounting journal entries for the return with tax and discount reversal."""
         from core.drift_prevention.migration_router import MigrationRouter
         from accounting.models import Account
-        
+        from core.accounting_registry import ACC
+
         if self.return_type == 'SALE_RETURN':
             try:
-                ar_account = Account.objects.get(code='1200')
-                sales_return_account = Account.objects.get(code='4200')
-                tax_account = Account.objects.get(code='2100')
-                inventory_account = Account.objects.get(code='1300')
-                cogs_account = Account.objects.get(code='5100')
+                ar_account = Account.objects.get(code=ACC['ar'])
+                sales_return_account = Account.objects.get(code=ACC['sales_returns'])
+                tax_account = Account.objects.get(code=ACC['tax_payable'])
+                inventory_account = Account.objects.get(code=ACC['inventory'])
+                cogs_account = Account.objects.get(code=ACC['sales_cogs'])
             except Account.DoesNotExist:
                 raise ValidationError(_('Required accounting accounts not found.'))
             
@@ -441,18 +460,13 @@ class ReturnOrder(TimeStampedUUIDModel):
                 raise ValidationError(f"Failed to create journal entry: {result.get('errors')}")
             
             self.journal_entry_id = result.get('entry_id')
-            
-            # Update customer balance via centralized sync
-            if self.party:
-                from core.balance_sync import BalanceSyncService
-                BalanceSyncService.sync_customer(self.party, lock=True)
         
         else:  # PURCHASE_RETURN
             # Supplier returns - reduce AP, reduce Inventory, reverse Tax
             try:
-                ap_account = Account.objects.get(code='2100')  # Accounts Payable
-                inventory_account = Account.objects.get(code='1300')  # Inventory
-                tax_account = Account.objects.get(code='2110')  # Purchase Tax Receivable
+                ap_account = Account.objects.get(code=ACC['ap'])
+                inventory_account = Account.objects.get(code=ACC['inventory'])
+                tax_account = Account.objects.get(code=ACC['tax_receivable'])
             except Account.DoesNotExist:
                 raise ValidationError(_('Required accounting accounts not found.'))
             
@@ -488,11 +502,6 @@ class ReturnOrder(TimeStampedUUIDModel):
                 raise ValidationError(f"Failed to create journal entry: {result.get('errors')}")
             
             self.journal_entry_id = result.get('entry_id')
-            
-            # Update supplier balance via centralized sync
-            if self.supplier:
-                from core.balance_sync import BalanceSyncService
-                BalanceSyncService.sync_supplier(self.supplier, lock=True)
         
         self.credit_note_number = f"CN-{self.return_number}"
         self.save()

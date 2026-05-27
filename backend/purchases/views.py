@@ -18,6 +18,7 @@ from purchases.serializers import (
 from inventory.service import StockIntegrationService
 from inventory.models import Warehouse
 from core.view_logging import log_business_event
+from core.accounting_registry import ACC
 from accounting.models import Account
 from security.permissions import RoleBasedPermission
 
@@ -25,10 +26,10 @@ from security.permissions import RoleBasedPermission
 class PurchaseAccountingService:
     """Handles accounting journal entries for purchase operations."""
 
-    AP_ACCOUNT_CODE = '2100'
-    INVENTORY_ACCOUNT_CODE = '1300'
-    TAX_ACCOUNT_CODE = '2110'
-    CASH_ACCOUNT_CODE = '1010'
+    AP_ACCOUNT_CODE = ACC['ap']
+    INVENTORY_ACCOUNT_CODE = ACC['inventory']
+    TAX_ACCOUNT_CODE = ACC['tax_receivable']
+    CASH_ACCOUNT_CODE = ACC['cash_on_hand']
 
     @classmethod
     def create_purchase_journal_entry(cls, invoice: PurchaseInvoice) -> dict:

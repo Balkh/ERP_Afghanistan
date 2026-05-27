@@ -24,11 +24,9 @@ class PaymentReceiptIntegrityTest(TransactionTestCase):
     """Test payment receipt accounting integrity."""
 
     def setUp(self):
-        self.payment_method = PaymentMethod.objects.create(
+        self.payment_method, _ = PaymentMethod.objects.get_or_create(
             code='CASH',
-            name='Cash',
-            method_type='CASH',
-            is_active=True
+            defaults={'name': 'Cash', 'method_type': 'CASH', 'is_active': True}
         )
         self.cash_account = Account.objects.create(
             code='1010', name='Cash Account', account_type='ASSET', is_active=True
@@ -98,11 +96,9 @@ class PaymentDisbursementIntegrityTest(TransactionTestCase):
     """Test payment disbursement accounting integrity."""
 
     def setUp(self):
-        self.payment_method = PaymentMethod.objects.create(
+        self.payment_method, _ = PaymentMethod.objects.get_or_create(
             code='BANK',
-            name='Bank Transfer',
-            method_type='BANK_TRANSFER',
-            is_active=True
+            defaults={'name': 'Bank Transfer', 'method_type': 'BANK_TRANSFER', 'is_active': True}
         )
         self.bank_account = Account.objects.create(
             code='1020', name='Bank Account', account_type='ASSET', is_active=True
@@ -279,11 +275,9 @@ class PaymentTransferIntegrityTest(TransactionTestCase):
             current_balance=Decimal('0.00'),
             is_active=True
         )
-        self.payment_method = PaymentMethod.objects.create(
+        self.payment_method, _ = PaymentMethod.objects.get_or_create(
             code='CASH',
-            name='Cash',
-            method_type='CASH',
-            is_active=True
+            defaults={'name': 'Cash', 'method_type': 'CASH', 'is_active': True}
         )
 
     def test_transfer_creates_journal_entry(self):

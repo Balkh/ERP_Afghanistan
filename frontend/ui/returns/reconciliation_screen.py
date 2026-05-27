@@ -7,11 +7,11 @@ from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE,
-                          TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL,
-                          COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
-                          COLOR_TEXT_MUTED, COLOR_PRIMARY, BORDER_RADIUS_LG, BORDER_RADIUS_MD,
-                          COLOR_TEXT_TITLE)
+from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE,
+                           TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL,
+                           COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
+                           COLOR_TEXT_MUTED, COLOR_PRIMARY, BORDER_RADIUS_LG, BORDER_RADIUS_MD,
+                           COLOR_TEXT_TITLE)
 
 
 class ReconciliationScreen(BaseScreen):
@@ -107,7 +107,7 @@ class ReconciliationScreen(BaseScreen):
         bar.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         bar.setStyleSheet(
             f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}"
+            f"margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
@@ -118,7 +118,7 @@ class ReconciliationScreen(BaseScreen):
         self.status_filter = QComboBox()
         self.status_filter.setStyleSheet("""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
                 selection-background-color: {COLOR_PRIMARY}; selection-color: white;
                 border: 1px solid {COLOR_BORDER}; }}
@@ -135,7 +135,7 @@ class ReconciliationScreen(BaseScreen):
         self.type_filter = QComboBox()
         self.type_filter.setStyleSheet("""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: 4px 8px; }}
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
                 selection-background-color: {COLOR_PRIMARY}; selection-color: white;
                 border: 1px solid {COLOR_BORDER}; }}

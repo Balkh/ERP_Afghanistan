@@ -1,92 +1,144 @@
 """
-Phase 5B.13 — Enterprise Runtime Governor.
+Governance Kernel — Enterprise Runtime Governance Layer.
 
-READ-ONLY aggregation layer that connects existing stability signals
-from across the system into a single unified runtime snapshot.
+Single authoritative source for ALL runtime governance operations.
+Lazily initialized. Zero startup overhead. Forward-compatible.
 
-NO business logic. NO state mutation. Pure observation.
+Modules:
+  kernel               — Central GovernanceKernel orchestrator
+  registries           — Policy, Invariant, Environment, FeatureGate, Readiness, UIRule registries
+  contracts            — Deterministic governance contracts (all domains)
+  enforcer             — Central policy enforcer + state transition validation
+  events               — Structured governance events with noise control
+  metrics              — Lightweight governance metrics (latency, denials, failures)
+  self_health          — Governance kernel self-monitoring and failsafe
+  api                  — Discovery API and auto-documentation
+  readiness            — System readiness validator (11 checks)
+  bootstrap            — Idempotent bootstrap orchestrator
+  state_transitions    — Domain state machines (ReturnOrder, SalesInvoice, PurchaseInvoice)
+  invariant_validator  — Domain invariant validator (6 domains)
+  observability_config — Environment-aware observability sampling
+  ui_governance        — UI governance scanner
+  graceful_degradation — Graceful degradation computation
+  runtime_governor     — Runtime state aggregation (deprecated — use kernel.health())
+  query_governance     — Query governance enforcement (soft mode)
+  chaos/engine         — SAFE chaos execution engine (production-locked, rollback-safe)
+  chaos/classifications — Failure classification system
+  chaos/simulations    — Pre-built chaos simulation scenarios
+
+  deployment           — Phase 1: Deployment Certification (prechecks, atomic validation, fingerprint)
+  backup_recovery      — Phase 2: Backup + Recovery Certification (validation, restore, readiness)
+  upgrade              — Phase 3: Upgrade + Migration Certification (governance, simulation, compat)
+  soak                 — Phase 4: Long-Duration Runtime Certification (soak, memory, drift)
+  offline              — Phase 5: Offline-First + Multi-Branch Certification (resilience, sync, degredation)
+  maintainability      — Phase 6: Operational Maintainability Governance (debt, risk, drift)
+  observability        — Phase 7: Enterprise Operational Observability (health, reconstruction, telemetry)
+  operational_certification — Master orchestrator for all 7 certification phases
+
+KERNEL_VERSION = "2.0.0"
 """
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 
+from core.governance.kernel import GovernanceKernel, PriorityTier, EnforcementResult
+from core.governance.registries import (
+    PolicyRegistry, InvariantRegistry, EnvironmentRegistry,
+    FeatureGateRegistry, ReadinessRegistry, UIRuleRegistry, PolicyRule,
+)
+from core.governance.events import get_event_bus, GovernanceEvent, EventSeverity
+from core.governance.metrics import get_metrics
 
-RUNTIME_GOVERNOR_VERSION = "1.0.0"
+# Certification modules
+from core.governance.deployment import (
+    DeploymentValidator, AtomicDeploymentValidator, DeploymentReport,
+    DeploymentFingerprint, DeploymentCheck,
+)
+from core.governance.backup_recovery import (
+    BackupValidator, RestoreCertification, RecoveryReadinessAssessor,
+    SafeRecoveryManager, BackupValidationResult, RecoveryCertificationResult,
+    RecoveryReadinessScore, SafeRecoveryMode,
+)
+from core.governance.upgrade import (
+    MigrationGovernor, SafeUpgradeSimulator, BackwardCompatibilityValidator,
+    UpgradeAuditLog, UpgradeAuditEntry,
+)
+from core.governance.soak import (
+    SoakTestFramework, SoakTestResult, MemoryStabilityReport, LatencyDriftReport,
+)
+from core.governance.offline import (
+    OfflineResilienceTester, MultiBranchGovernanceValidator,
+    SyncConflictCertifier, NetworkDegradationSimulator,
+)
+from core.governance.maintainability import (
+    TechnicalDebtClassifier, ChangeRiskEngine, ArchitectureFreezeEnforcer,
+    OperationalDriftDetector,
+)
+from core.governance.observability import (
+    OperationalHealthDashboard, IncidentReconstructor,
+    NoiseSafeTelemetryManager, OperationalHealth,
+)
+from core.governance.industrial_test_suite import (
+    IndustrialTestSuiteRunner, IndustrialTestReport,
+    PhaseA, PhaseB, PhaseC, PhaseD, PhaseE, PhaseF, PhaseG,
+    PhaseAResult, PhaseBResult, PhaseCResult, PhaseDResult,
+    PhaseEResult, PhaseFResult, PhaseGResult,
+)
+from core.governance.operational_certification import (
+    OperationalCertificationOrchestrator, MasterCertificationReport,
+    PhaseCertificationResult,
+)
 
+# Control Plane modules
+from core.governance.control_plane import (
+    ControlPlaneOrchestrator,
+    OperationalScheduleRegistry, ScheduleEntry, ScheduleFrequency,
+    ExecutionPolicyEngine, ExecutionStatus,
+    CertificationScheduler,
+    OperationalIntelligenceEngine, TrendWindow, RiskFactors, OperationalRiskScore,
+    DeploymentControlGate, GateResult, GateVerdict,
+    DriftPreventionLayer, DriftEscalationLevel, DriftAlert,
+    RecoveryOrchestrationLayer, RecoveryPlan, RecoveryStep,
+    OperationalHealthLoop, HealthSnapshot, StabilityScore,
+    CONTROL_PLANE_VERSION,
+)
 
-@dataclass
-class RuntimeState:
-    """Unified runtime state snapshot — read-only, aggregated from existing systems."""
-    system_health_score: float = 100.0
-    ui_health_score: float = 100.0
-    api_health_score: float = 100.0
-    stability_score: float = 100.0
-    active_errors: int = 0
-    active_warnings: int = 0
-    degraded_services: List[str] = field(default_factory=list)
-    active_timers_count: int = 0
-    ux_violation_count: int = 0
-    db_status: str = "unknown"
-    last_check: str = field(default_factory=lambda: datetime.utcnow().isoformat() + "Z")
-
-
-def get_runtime_snapshot() -> RuntimeState:
-    """Get a single unified runtime health snapshot.
-
-    Aggregates from:
-    - core.operations.stability (stability score, config drift)
-    - core.operations.health (DB/system health)
-    - core.operations.guardrails (sampling, performance budgets)
-    - core.operations.concurrency (safety status)
-
-    Returns RuntimeState with graceful degradation on any subsystem failure.
-    """
-    state = RuntimeState()
-    degraded = []
-
-    # 1. Stability monitoring
-    try:
-        from core.operations.stability import get_stability_status
-        status = get_stability_status()
-        state.stability_score = status.get("stability_score", 100)
-        if state.stability_score < 100:
-            state.active_warnings += status.get("config_drift_count", 0)
-            if state.stability_score < 60:
-                degraded.append("stability_monitor")
-    except Exception:
-        state.active_warnings += 1
-        degraded.append("stability_monitor")
-
-    # 2. Health monitoring
-    try:
-        from core.operations.health import HealthMonitor
-        db = HealthMonitor.check_database()
-        sys = HealthMonitor.check_system()
-        state.db_status = db.get("status", "unknown")
-        if db.get("status") != "healthy":
-            state.active_errors += 1
-            degraded.append("database")
-        if sys.get("status") != "healthy":
-            state.active_warnings += 1
-            degraded.append("system")
-    except Exception:
-        state.active_errors += 1
-        degraded.append("health_monitor")
-
-    # 3. Guardrails status
-    try:
-        from core.operations.guardrails import get_guardrail_status
-        gr = get_guardrail_status()
-        if not gr.get("all_guards_pass", True):
-            state.active_warnings += 1
-            degraded.append("guardrails")
-    except Exception:
-        pass
-
-    # 4. Compute health scores
-    state.system_health_score = max(0, 100 - (state.active_errors * 15) - (state.active_warnings * 5))
-    state.api_health_score = max(0, 100 - (state.active_errors * 10))
-    state.ui_health_score = max(0, min(100, state.stability_score))
-    state.degraded_services = degraded
-
-    return state
+__all__ = [
+    "GovernanceKernel", "PriorityTier", "EnforcementResult",
+    "PolicyRegistry", "InvariantRegistry", "EnvironmentRegistry",
+    "FeatureGateRegistry", "ReadinessRegistry", "UIRuleRegistry", "PolicyRule",
+    "get_event_bus", "GovernanceEvent", "EventSeverity",
+    "get_metrics",
+    # Phase 1
+    "DeploymentValidator", "AtomicDeploymentValidator", "DeploymentReport",
+    "DeploymentFingerprint", "DeploymentCheck",
+    # Phase 2
+    "BackupValidator", "RestoreCertification", "RecoveryReadinessAssessor",
+    "SafeRecoveryManager", "BackupValidationResult", "RecoveryCertificationResult",
+    "RecoveryReadinessScore", "SafeRecoveryMode",
+    # Phase 3
+    "MigrationGovernor", "SafeUpgradeSimulator", "BackwardCompatibilityValidator",
+    "UpgradeAuditLog", "UpgradeAuditEntry",
+    # Phase 4
+    "SoakTestFramework", "SoakTestResult", "MemoryStabilityReport", "LatencyDriftReport",
+    # Phase 5
+    "OfflineResilienceTester", "MultiBranchGovernanceValidator",
+    "SyncConflictCertifier", "NetworkDegradationSimulator",
+    # Phase 6
+    "TechnicalDebtClassifier", "ChangeRiskEngine", "ArchitectureFreezeEnforcer",
+    "OperationalDriftDetector",
+    # Phase 7
+    "OperationalHealthDashboard", "IncidentReconstructor",
+    "NoiseSafeTelemetryManager", "OperationalHealth",
+    # Orchestrator
+    "OperationalCertificationOrchestrator", "MasterCertificationReport",
+    "PhaseCertificationResult",
+    # Control Plane
+    "ControlPlaneOrchestrator",
+    "OperationalScheduleRegistry", "ScheduleEntry", "ScheduleFrequency",
+    "ExecutionPolicyEngine", "ExecutionStatus",
+    "CertificationScheduler",
+    "OperationalIntelligenceEngine", "TrendWindow", "RiskFactors", "OperationalRiskScore",
+    "DeploymentControlGate", "GateResult", "GateVerdict",
+    "DriftPreventionLayer", "DriftEscalationLevel", "DriftAlert",
+    "RecoveryOrchestrationLayer", "RecoveryPlan", "RecoveryStep",
+    "OperationalHealthLoop", "HealthSnapshot", "StabilityScore",
+    "CONTROL_PLANE_VERSION",
+]

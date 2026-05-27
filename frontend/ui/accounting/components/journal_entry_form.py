@@ -26,6 +26,7 @@ class JournalEntryFormDialog(QDialog):
         self.api_client = api_client or APIClient()
         self.accounts = []
         self.line_items = []
+        self._submitting = False
         self.setup_ui()
         self.load_accounts()
 
@@ -325,13 +326,18 @@ class JournalEntryFormDialog(QDialog):
         return data
 
     def save(self):
+        if self._submitting:
+            return
+        self._submitting = True
         data = self.get_entry_data()
 
         if not data["description"]:
+            self._submitting = False
             QMessageBox.warning(self, "Validation Error", "Description is required.")
             return
         if len(data["lines"]) < 2:
             QMessageBox.warning(self, "Validation Error", "At least 2 lines are required for the entry.")
+            self._submitting = False
             return
 
         # Check balance
@@ -339,16 +345,20 @@ class JournalEntryFormDialog(QDialog):
         total_credit = sum(line["credit"] for line in data["lines"])
         if abs(total_debit - total_credit) > 0.001:
             QMessageBox.warning(self, "Validation Error", "Entry is unbalanced. Total debit and credit must be equal.")
+            self._submitting = False
             return
 
         try:
             response = self.api_client.post("/api/accounting/journal-entries/", data=data)
             if response.get("success") or "id" in response:
+                self._submitting = False
                 self.accept()
             else:
                 errors = response.get("errors", response.get("error", "Unknown error"))
                 if isinstance(errors, list):
                     errors = "\n".join(errors)
                 QMessageBox.critical(self, "Error", f"Failed to save entry:\n{errors}")
+                self._submitting = False
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Server communication error: {e}")
+            self._submitting = False

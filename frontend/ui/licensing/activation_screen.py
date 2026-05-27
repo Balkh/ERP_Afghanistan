@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                                QApplication)
 from PySide6.QtCore import Qt, Signal
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
+from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
                            TEXT_HELPER, BORDER_RADIUS_MD, BORDER_RADIUS_SM, COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
@@ -61,7 +61,7 @@ class ActivationScreen(QWidget):
         
         # Device Information Group
         device_group = QGroupBox("Device Information")
-        device_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: 10px; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
+        device_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
         device_layout = QVBoxLayout()
 
         device_id_label = QLabel(f"Device ID: {self.device_id}")
@@ -76,7 +76,7 @@ class ActivationScreen(QWidget):
         
         # License File Group
         license_group = QGroupBox("License File")
-        license_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: 10px; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
+        license_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
         license_layout = QVBoxLayout()
 
         # Instructions
@@ -113,7 +113,7 @@ class ActivationScreen(QWidget):
         
         # Status Group
         status_group = QGroupBox("Activation Status")
-        status_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: 10px; padding-top: 10px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
+        status_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
         status_layout = QVBoxLayout()
 
         self.status_label = QLabel("Ready to activate")

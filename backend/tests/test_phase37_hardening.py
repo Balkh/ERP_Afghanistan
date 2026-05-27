@@ -2,7 +2,7 @@ import pytest
 from decimal import Decimal
 from django.db import transaction
 from accounting.models import Account, JournalEntry
-from inventory.models import Batch, Product, Warehouse
+from inventory.models import Batch, Product, Warehouse, Category, Unit
 from sales.models import SalesInvoice, Customer
 from core.services.journal_gateway import JournalGateway
 from core.services.financial_truth_engine import FinancialTruthEngine
@@ -16,7 +16,14 @@ class TestPhase37Hardening:
         """Verify that partial failures in a transaction result in a full rollback."""
         # Setup
         customer = Customer.objects.create(name="Test Customer", balance=Decimal('0.00'))
-        product = Product.objects.create(name="Test Product", sku="HARDEN-001")
+        category = Category.objects.create(name="Test Category", is_active=True)
+        unit = Unit.objects.create(name="Piece", symbol="PCS", is_active=True)
+        product = Product.objects.create(
+            name="Test Product", sku="HARDEN-001", barcode="BAR_HARDEN001",
+            generic_name="Test Generic", brand_name="Test Brand",
+            strength="500mg", form="Tablet", manufacturer="Test Mfg",
+            category=category, unit=unit
+        )
         warehouse = Warehouse.objects.create(name="Main Warehouse")
         batch = Batch.objects.create(
             product=product,
@@ -73,7 +80,14 @@ class TestPhase37Hardening:
 
     def test_null_price_handling(self):
         """Verify that the system handles batches with missing or zero prices explicitly."""
-        product = Product.objects.create(name="Free Product", sku="FREE-001")
+        category = Category.objects.create(name="Free Category", is_active=True)
+        unit = Unit.objects.create(name="Piece", symbol="PCS", is_active=True)
+        product = Product.objects.create(
+            name="Free Product", sku="FREE-001", barcode="BAR_FREE001",
+            generic_name="Free Generic", brand_name="Free Brand",
+            strength="250mg", form="Capsule", manufacturer="Free Mfg",
+            category=category, unit=unit
+        )
         warehouse = Warehouse.objects.create(name="Main Warehouse")
         batch = Batch.objects.create(
             product=product,

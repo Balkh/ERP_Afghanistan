@@ -1,16 +1,40 @@
 import os
-import os
-import os
-import os
-import os
-import os
-import os
-import os
-import os
 import logging
 from django.apps import AppConfig
+from django.db.models.signals import post_migrate
 
 logger = logging.getLogger('erp.system')
+
+
+def auto_bootstrap(sender, **kwargs):
+    """Automatically seed roles + assign admin roles after migration."""
+    try:
+        from core.governance.bootstrap import BootstrapOrchestrator
+        orch = BootstrapOrchestrator()
+        results = orch.execute()
+        for r in results:
+            if r["status"] in ("failed", "error"):
+                logger.warning(f"Auto-bootstrap {r['step']}: {r['status']} - {r['detail']}")
+    except Exception as e:
+        logger.warning(f"Auto-bootstrap skipped (first migration?): {e}")
+
+
+def run_readiness_check(sender, **kwargs):
+    """Run readiness validation after migration completes."""
+    try:
+        from core.governance.readiness import get_full_readiness
+        report = get_full_readiness(include_integrity=False)
+        if report.blockers:
+            logger.warning(f"Post-migration readiness: {len(report.blockers)} blocker(s)")
+            for b in report.blockers:
+                logger.warning(f"  BLOCKER: {b}")
+        if report.warnings:
+            logger.warning(f"Post-migration readiness: {len(report.warnings)} warning(s)")
+            for w in report.warnings:
+                logger.warning(f"  WARN: {w}")
+        logger.info(f"Post-migration readiness overall: {report.overall}")
+    except Exception as e:
+        logger.warning(f"Post-migration readiness check skipped: {e}")
 
 
 class CoreConfig(AppConfig):
@@ -20,6 +44,22 @@ class CoreConfig(AppConfig):
 
     def ready(self):
         self._run_startup_diagnostics()
+        self._register_checks()
+        self._connect_post_migrate()
+
+    def _register_checks(self):
+        """Register Django system checks for enterprise governance."""
+        try:
+            import core.checks  # noqa: F401
+            logger.debug("Enterprise governance checks registered")
+        except Exception:
+            pass
+
+    def _connect_post_migrate(self):
+        """Connect post_migrate signal for auto-bootstrap + readiness."""
+        post_migrate.connect(auto_bootstrap, sender=self)
+        post_migrate.connect(run_readiness_check, sender=self)
+        logger.debug("Post-migrate hooks connected: auto-bootstrap + readiness")
 
     def _run_startup_diagnostics(self):
         """Run startup health checks and log results."""

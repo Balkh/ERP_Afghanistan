@@ -125,7 +125,7 @@ class JournalEntryDetailDialog(QDialog):
                 color: {COLOR_TEXT_PRIMARY};
                 font-weight: bold;
                 border: none;
-                padding: 6px;
+                padding: {SPACING_SM}px;
             }}
         """)
         lines_layout.addWidget(self.lines_table)

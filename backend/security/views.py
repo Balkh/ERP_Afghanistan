@@ -156,29 +156,24 @@ def login_view(request):
     except Exception:
         pass
     
-    # Return standardized response
-    response_data = APIResponse.success(
-        data={
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "Bearer",
-            "expires_in": 86400,  # 24 hours in seconds
-            "ui_scopes": ui_scopes,
-            "user": {
-                "id": str(user.id),
-                "username": user.username,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_superuser": user.is_superuser,
-                "roles": roles,
-                "companies": companies
-            }
-        },
-        message="Login successful"
-    )
-    
-    return Response(response_data, status=200)
+    # Return raw data — StandardizedJSONRenderer will wrap it automatically
+    return Response({
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "Bearer",
+        "expires_in": 86400,  # 24 hours in seconds
+        "ui_scopes": ui_scopes,
+        "user": {
+            "id": str(user.id),
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "is_superuser": user.is_superuser,
+            "roles": roles,
+            "companies": companies
+        }
+    }, status=200)
 
 
 @api_view(['POST'])
@@ -227,16 +222,13 @@ def refresh_token_view(request):
     new_access = generate_jwt_token(user, ui_scopes=ui_scopes)
     new_refresh = generate_refresh_token(user)
     
-    return Response(APIResponse.success(
-        data={
-            "access_token": new_access,
-            "refresh_token": new_refresh,
-            "token_type": "Bearer",
-            "expires_in": 86400,
-            "ui_scopes": ui_scopes,
-        },
-        message="Token refreshed successfully"
-    ))
+    return Response({
+        "access_token": new_access,
+        "refresh_token": new_refresh,
+        "token_type": "Bearer",
+        "expires_in": 86400,
+        "ui_scopes": ui_scopes,
+    })
 
 
 @api_view(['POST'])

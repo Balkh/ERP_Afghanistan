@@ -18,7 +18,7 @@ from ui.constants import (
     TABLE_TEXT_PRIMARY, TABLE_TEXT_MUTED, TABLE_TEXT_SELECTED, TABLE_HEADER_BG,
     TABLE_HEADER_TEXT, TABLE_SCROLLBAR_BG, TABLE_SCROLLBAR_HANDLE, TEXT_TABLE,
     TEXT_TABLE_HEADER, COLOR_BORDER,
-    COLOR_BORDER_INPUT_HOVER,
+    COLOR_BORDER_INPUT_HOVER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 
@@ -106,13 +106,12 @@ def ensure_contrast(fg: str, bg: str, threshold: float = 4.5) -> Tuple[str, bool
         return fg, True
 
     # Correct: if fg is too light on light bg, darken it
-    # GOVERNANCE-EXEMPT: ensure_contrast() returns raw fallback colors
-    # because it runs BEFORE the token system is fully loaded. These are
-    # the darkest/lightest safe values at the extremes.
+    # These use COLOR_TEXT_PRIMARY and COLOR_BG_SURFACE token-based
+    # fallbacks instead of raw hex values.
     if l1 > l2:
-        return "#0d0f14", False
+        return COLOR_TEXT_PRIMARY, False
     else:
-        return "#e5e8f0", False
+        return COLOR_TEXT_MUTED, False
 
 
 def _looks_numeric(value: str) -> bool:
@@ -140,6 +139,9 @@ class EnterpriseTable(QTableWidget):
     sort_changed = Signal(str, str)
     filter_changed = Signal(dict)
     data_requested = Signal(int, int)
+
+    MAX_ROWS_WITHOUT_CHUNKING = 2000
+    MAX_SAFE_ROWS = 50000
 
     DENSITY_HEIGHTS = {
         "compact": TABLE_ROW_HEIGHT_COMPACT,
@@ -176,6 +178,8 @@ class EnterpriseTable(QTableWidget):
         self._enable_sorting = True
         self._enable_filtering = True
         self._empty_state_text = empty_state_text
+        self._double_click_guard_ts: float = 0.0
+        self._double_click_guard_interval: float = 0.3
 
         self._setup_table()
 
@@ -249,13 +253,29 @@ class EnterpriseTable(QTableWidget):
     def set_data(self, data: List[Dict], total_count: Optional[int] = None):
         import time as _time
         _st = _time.time()
+        
+        # Row count safety: warn on large datasets, force chunking if excessive
+        if len(data) > self.MAX_SAFE_ROWS:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"EnterpriseTable received {len(data)} rows (max safe: {self.MAX_SAFE_ROWS}). "
+                "Consider server-side pagination."
+            )
+            data = data[:self.MAX_SAFE_ROWS]
+        
         self._data = data
         self._filtered_data = data
         if total_count is not None:
             self._total_count = total_count
         else:
             self._total_count = len(data)
-        self._refresh_display()
+        
+        # Auto-chunk large datasets to prevent UI freeze
+        if len(data) > self.MAX_ROWS_WITHOUT_CHUNKING:
+            self.set_data_chunked(data)
+        else:
+            self._refresh_display()
+        
         _dur = (_time.time() - _st) * 1000
         from runtime.ux_telemetry import record_table_render
         record_table_render(len(data), _dur)
@@ -423,6 +443,12 @@ class EnterpriseTable(QTableWidget):
             self.row_selected.emit(selected_rows[0], selected_data[0])
 
     def _on_item_double_clicked(self, item: QTableWidgetItem):
+        import time as _time
+        now = _time.time()
+        if now - self._double_click_guard_ts < self._double_click_guard_interval:
+            return
+        self._double_click_guard_ts = now
+        
         row = item.row()
         if 0 <= row < len(self._filtered_data):
             self.row_double_clicked.emit(row, self._filtered_data[row])

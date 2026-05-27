@@ -72,12 +72,17 @@ def _setup_common(self):
     self.cogs_account = Account.objects.create(code='5100', name='COGS', account_type='EXPENSE', account_category='COST_OF_GOODS_SOLD', is_active=True)
     self.ap_account = Account.objects.create(code='2200', name='AP', account_type='LIABILITY', account_category='CURRENT_LIABILITY', is_active=True)
     self.purchase_tax_account = Account.objects.create(code='2110', name='Purchase Tax', account_type='ASSET', account_category='CURRENT_ASSET', is_active=True)
+    # PaymentEngine required accounts
+    Account.objects.get_or_create(code='1000', defaults={'name': 'Cash/Bank', 'account_type': 'ASSET', 'account_category': 'CURRENT_ASSET', 'is_active': True})
+    Account.objects.get_or_create(code='6100', defaults={'name': 'Operating Expenses', 'account_type': 'EXPENSE', 'account_category': 'OPERATING_EXPENSE', 'is_active': True})
     # Payment
-    self.payment_method = PaymentMethod.objects.create(name='Cash', code='CASH', method_type='CASH', is_active=True)
+    self.payment_method, _ = PaymentMethod.objects.get_or_create(code='CASH', defaults={'name': 'Cash', 'method_type': 'CASH', 'is_active': True})
     self.payment_account = PaymentAccount.objects.create(
         name='Main Cash', code='MCASH', account_type='CASH',
         accounting_account=self.cash_account, is_active=True
     )
+    # Ensure all active payment accounts have sufficient funds for payment tests
+    PaymentAccount.objects.filter(is_active=True).update(current_balance=Decimal('100000.00'))
 
 
 class TestSalesAccountingCycle(TransactionTestCase):
@@ -218,9 +223,9 @@ class TestSalesAccountingCycle(TransactionTestCase):
         )
         self.assertGreaterEqual(movements.count(), 1)
         self.assertEqual(movements.first().movement_type, 'RETURN_IN')
-        # Verify customer balance reduced
+        # Verify customer balance reduced by return amount
         self.customer.refresh_from_db()
-        self.assertEqual(self.customer.balance, -return_order.total_amount)
+        self.assertEqual(self.customer.balance, invoice.total_amount - return_order.total_amount)
 
     def test_05_return_exceeds_invoice_quantity(self):
         """Step 5: Verify return cannot exceed invoice quantity."""
@@ -677,6 +682,7 @@ class TestReturnVoidFlow(TransactionTestCase):
     def test_void_reverses_customer_balance(self):
         """Voiding should reverse the customer balance change."""
         return_order = self._create_approved_return()
+        self.customer.refresh_from_db()
         initial_balance = self.customer.balance
         
         return_order.void(self.employee, reason='Test void')

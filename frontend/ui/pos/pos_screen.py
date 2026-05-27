@@ -5,7 +5,7 @@ Touch-friendly, keyboard-first, barcode-integrated.
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                 QTableWidget, QTableWidgetItem, QHeaderView,
-                                QLineEdit, QLabel, QComboBox, QPushButton,
+                                QLineEdit, QLabel, QComboBox,
                                 QGroupBox, QFrame, QSplitter, QMessageBox,
                                 QAbstractItemView)
 from PySide6.QtCore import Qt, Signal, QTimer
@@ -26,6 +26,7 @@ from ui.constants import (
     BORDER_RADIUS_LG, COLOR_BG_ELEVATED, COLOR_BG_INPUT,
     COLOR_BORDER, COLOR_TEXT_PRIMARY,
     COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
+    COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_ON_SUCCESS, COLOR_TEXT_ON_WARNING,
     COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
     COLOR_INFO,
 )
@@ -96,7 +97,7 @@ class POSScreen(QWidget):
 
         self.status_label = QLabel("READY")
         self.status_label.setStyleSheet(
-            f"background-color: {COLOR_SUCCESS}; color: #0f1a14; "
+            f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
             f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
             f"font-weight: bold; font-size: {TEXT_TABLE}px;"
         )
@@ -104,13 +105,13 @@ class POSScreen(QWidget):
 
         header.addStretch()
 
-        self.hold_btn = self._action_button("Hold (F6)", COLOR_WARNING, self.hold_sale)
+        self.hold_btn = self._action_button("Hold (F6)", ButtonVariant.WARNING, self.hold_sale)
         header.addWidget(self.hold_btn)
 
-        self.recall_btn = self._action_button("Recall (F7)", COLOR_INFO, self.recall_sale)
+        self.recall_btn = self._action_button("Recall (F7)", ButtonVariant.GHOST, self.recall_sale)
         header.addWidget(self.recall_btn)
 
-        self.new_btn = self._action_button("New Sale (F2)", COLOR_PRIMARY, self.new_sale)
+        self.new_btn = self._action_button("New Sale (F2)", ButtonVariant.PRIMARY, self.new_sale)
         header.addWidget(self.new_btn)
 
         self.layout().addLayout(header)
@@ -401,13 +402,13 @@ class POSScreen(QWidget):
         action_row = QHBoxLayout()
         action_row.setSpacing(SPACING_SM)
 
-        self.pay_btn = self._action_button("Complete Sale (F10)", COLOR_SUCCESS, self._process_payment, size="lg")
-        action_row.addWidget(self.pay_btn, 2)
+        self.pay_btn = self._action_button("Complete Sale (F10)", ButtonVariant.SUCCESS, self._process_payment, size="lg")
+        footer.addWidget(self.pay_btn)
 
-        self.print_btn = self._action_button("Print (F8)", COLOR_INFO, self._print_last_invoice)
-        action_row.addWidget(self.print_btn)
+        self.print_btn = self._action_button("Print (F8)", ButtonVariant.GHOST, self._print_last_invoice)
+        footer.addWidget(self.print_btn)
 
-        self.cancel_btn = self._action_button("Cancel (Esc)", COLOR_DANGER, self.new_sale)
+        self.cancel_btn = self._action_button("Cancel (Esc)", ButtonVariant.DANGER, self.new_sale)
         action_row.addWidget(self.cancel_btn)
 
         zone_layout.addLayout(action_row)
@@ -435,12 +436,12 @@ class POSScreen(QWidget):
 
         self.layout().addLayout(footer)
 
-    def _action_button(self, text, color, callback, size="md"):
-        btn = QPushButton(text)
+    def _action_button(self, text, variant, callback, size="md"):
+        btn = EnterpriseButton(text, variant=variant)
         height = BUTTON_HEIGHT_XL if size == "lg" else BUTTON_HEIGHT_MD
         btn.setFixedHeight(height)
         btn.setStyleSheet(
-            f"background-color: {color}; color: #0f1118; font-weight: bold; "
+            f"font-weight: bold; "
             f"border-radius: {BORDER_RADIUS_MD}; padding: 0 {SPACING_MD}px;"
         )
         btn.clicked.connect(callback)
@@ -679,7 +680,7 @@ class POSScreen(QWidget):
 
         self.status_label.setText("PROCESSING...")
         self.status_label.setStyleSheet(
-            f"background-color: {COLOR_WARNING}; color: #1a1508; "
+            f"background-color: {COLOR_WARNING}; color: {COLOR_TEXT_ON_WARNING}; "
             f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
             f"font-weight: bold; font-size: {TEXT_TABLE}px;"
         )
@@ -711,7 +712,7 @@ class POSScreen(QWidget):
                 self.sale_completed.emit(invoice)
                 self.status_label.setText("COMPLETED")
                 self.status_label.setStyleSheet(
-                    f"background-color: {COLOR_SUCCESS}; color: #0f1a14; "
+                    f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
                     f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
                     f"font-weight: bold; font-size: {TEXT_TABLE}px;"
                 )
@@ -764,7 +765,7 @@ class POSScreen(QWidget):
         self.alerts_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
         self.status_label.setText("READY")
         self.status_label.setStyleSheet(
-            f"background-color: {COLOR_SUCCESS}; color: #0f1a14; "
+            f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
             f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
             f"font-weight: bold; font-size: {TEXT_TABLE}px;"
         )

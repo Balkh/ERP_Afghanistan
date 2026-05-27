@@ -24,12 +24,13 @@ from typing import List, Dict, Tuple, Optional
 # Frontend dir is: E:\Pharmacy_ERP\frontend
 FRONTEND_DIR = Path(__file__).parent.parent
 EXCLUDED_DIRS = {"__pycache__", ".git", "node_modules", ".venv", "venv"}
-EXCLUDED_FILES = {"design_system_governance.py", "pre_commit_enforcer.py"}
+EXCLUDED_FILES = {"design_system_governance.py", "pre_commit_enforcer.py", "constants.py", "ux_governor.py"}
 
 # EXCEPTIONS: Files allowed to have non-token values
 EXCEPTIONS = {
     "printable_invoice.py": "Email/print templates require specific CSS",
-    # Add more exceptions as needed
+    "operator_safety.py": "Example strings with # prefixes (e.g., invoice #123)",
+    "audit_scanner.py": "Governance scanner — lists hex values for validation purposes",
 }
 
 # =====================================================
@@ -47,7 +48,8 @@ COLOR_PATTERNS = [
     (r"rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\s*\)", "RGBA_FUNC", "Use COLOR_* token"),
     # QPen/QBrush with raw colors
     (r"QPen\(QColor\([^)]+\)\)", "QPEN_RAW", "Use COLOR_* token"),
-    (r"QBrush\(QColor\([^)]+\)\)", "QBRUSH_RAW", "Use COLOR_* token"),
+    # Only flag when QColor wraps raw RGB integers, not COLOR_* tokens or variables
+    (r"QBrush\(QColor\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(?:\)|\s*\))", "QBRUSH_RAW", "Use COLOR_* token"),
     # StyleSheet colors in string literals
     (r'["\'][^"\']*:\s*#[0-9a-fA-F]{3,6}\s*;', "STYLESHEET_HEX", "Use COLOR_* token"),
 ]

@@ -3,6 +3,7 @@ from api.endpoints import get_endpoint
 from PySide6.QtCore import Slot
 
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.operator_safety import DestructiveActionGuard
 from .base_screen import BaseInventoryScreen
 
 class CategoryScreen(BaseInventoryScreen):
@@ -115,13 +116,7 @@ class CategoryScreen(BaseInventoryScreen):
     def on_delete_requested(self, category_id):
         """Handle delete request."""
         if category_id:
-            from PySide6.QtWidgets import QMessageBox
-            reply = QMessageBox.question(
-                self, "Confirm Delete",
-                f"Are you sure you want to delete category ID {category_id}?",
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-            )
-            if reply == QMessageBox.Yes:
+            if DestructiveActionGuard.confirm_delete(self, f"category ID {category_id}"):
                 self.delete_category(category_id)
 
     @Slot()

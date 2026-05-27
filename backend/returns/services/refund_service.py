@@ -111,7 +111,7 @@ class RefundExecutionService:
         refunded = Decimal("0.00")
 
         transactions = FinancialTransaction.objects.filter(
-            invoice=invoice,
+            invoice_id=invoice.id,
             status="COMPLETED",
         )
 
@@ -174,7 +174,7 @@ class RefundExecutionService:
 
         from payments.models import FinancialTransaction
         txn_count = FinancialTransaction.objects.filter(
-            invoice=return_order.invoice,
+            invoice_id=return_order.invoice.id,
             status="COMPLETED",
         ).count()
 

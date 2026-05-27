@@ -1,4 +1,5 @@
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.operator_safety import DestructiveActionGuard
 from .base_screen import BaseInventoryScreen
 from api.client import APIClient
 from api.endpoints import get_endpoint
@@ -132,13 +133,7 @@ class ProductScreen(BaseInventoryScreen):
     def on_delete_requested(self, product_id):
         """Handle delete request."""
         if product_id:
-            from PySide6.QtWidgets import QMessageBox
-            reply = QMessageBox.question(
-                self, "Confirm Delete",
-                f"Are you sure you want to delete product ID {product_id}?",
-                QMessageBox.Yes | QMessageBox.No, QMessageBox.No
-            )
-            if reply == QMessageBox.Yes:
+            if DestructiveActionGuard.confirm_delete(self, f"product ID {product_id}"):
                 self.delete_product(product_id)
     
     @Slot()

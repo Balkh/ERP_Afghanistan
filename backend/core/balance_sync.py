@@ -25,8 +25,9 @@ class BalanceSyncService:
     def sync_customer(customer, *, lock: bool = True, user=None, reason: str = '') -> Decimal:
         """Recalculate and persist customer balance atomically.
 
-        Balance = total_invoices - total_payments
-        where invoices are CONFIRMED/DISPATCHED/PARTIAL_PAID/PAID and active.
+        Balance = total_invoices - total_payments - total_approved_return_credits
+        where invoices are CONFIRMED/DISPATCHED/PARTIAL_PAID/PAID and active,
+        and return credits are approved SALE_RETURN credit notes.
 
         Args:
             customer: Customer instance
@@ -38,6 +39,7 @@ class BalanceSyncService:
             New balance as Decimal
         """
         from sales.models import Customer, SalesInvoice, CustomerPayment
+        from returns.models import ReturnOrder
         from core.services.financial_audit import FinancialAuditService
 
         qs = Customer.objects
@@ -59,7 +61,14 @@ class BalanceSyncService:
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
         total_payments = total_payments.quantize(Decimal('0.01'))
 
-        new_balance = (total_invoices - total_payments).quantize(Decimal('0.01'))
+        total_returns = ReturnOrder.objects.filter(
+            party=customer,
+            return_type='SALE_RETURN',
+            status__in=['APPROVED', 'COMPLETED'],
+        ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        total_returns = total_returns.quantize(Decimal('0.01'))
+
+        new_balance = (total_invoices - total_payments - total_returns).quantize(Decimal('0.01'))
         customer.balance = new_balance
         customer.save(update_fields=['balance', 'updated_at'])
 
@@ -79,7 +88,7 @@ class BalanceSyncService:
     def sync_supplier(supplier, *, lock: bool = True, user=None, reason: str = '') -> Decimal:
         """Recalculate and persist supplier balance atomically.
 
-        Balance = total_invoices - total_payments
+        Balance = total_invoices - total_payments - total_approved_return_debits
 
         Args:
             supplier: Supplier instance
@@ -91,6 +100,7 @@ class BalanceSyncService:
             New balance as Decimal
         """
         from purchases.models import Supplier, PurchaseInvoice, SupplierPayment
+        from returns.models import ReturnOrder
         from core.services.financial_audit import FinancialAuditService
 
         qs = Supplier.objects
@@ -112,7 +122,14 @@ class BalanceSyncService:
         ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
         total_payments = total_payments.quantize(Decimal('0.01'))
 
-        new_balance = (total_invoices - total_payments).quantize(Decimal('0.01'))
+        total_returns = ReturnOrder.objects.filter(
+            supplier=supplier,
+            return_type='PURCHASE_RETURN',
+            status__in=['APPROVED', 'COMPLETED'],
+        ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        total_returns = total_returns.quantize(Decimal('0.01'))
+
+        new_balance = (total_invoices - total_payments - total_returns).quantize(Decimal('0.01'))
         supplier.balance = new_balance
         supplier.save(update_fields=['balance', 'updated_at'])
 

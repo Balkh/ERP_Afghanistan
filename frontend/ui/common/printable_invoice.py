@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QPushButton, QTextEdit,
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QTextEdit,
                                QHBoxLayout, QLabel, QMessageBox, QFileDialog)
 from PySide6.QtGui import QFont
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewDialog
@@ -79,13 +79,13 @@ class PrintableInvoiceDialog(QDialog):
         # Buttons
         button_layout = QHBoxLayout()
 
-        self.print_btn = QPushButton("Print")
+        self.print_btn = EnterpriseButton("Print", variant=ButtonVariant.SECONDARY)
         self.print_btn.clicked.connect(self.print_invoice)
 
-        self.print_preview_btn = QPushButton("Print Preview")
+        self.print_preview_btn = EnterpriseButton("Print Preview", variant=ButtonVariant.SECONDARY)
         self.print_preview_btn.clicked.connect(self.print_preview)
 
-        self.save_pdf_btn = QPushButton("Save as PDF")
+        self.save_pdf_btn = EnterpriseButton("Save as PDF", variant=ButtonVariant.SECONDARY)
         self.save_pdf_btn.clicked.connect(self.save_as_pdf)
 
         self.share_wa_btn = EnterpriseButton("Share to WhatsApp", variant=ButtonVariant.SUCCESS)

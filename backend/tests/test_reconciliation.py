@@ -237,11 +237,9 @@ class ReconciliationPaymentTest(TransactionTestCase):
     """Test payment transaction reconciliation."""
 
     def setUp(self):
-        self.payment_method = PaymentMethod.objects.create(
+        self.payment_method, _ = PaymentMethod.objects.get_or_create(
             code='CASH',
-            name='Cash',
-            method_type='CASH',
-            is_active=True
+            defaults={'name': 'Cash', 'method_type': 'CASH', 'is_active': True}
         )
         self.accounting_account = Account.objects.create(
             code='1010', name='Cash Account', account_type='ASSET',

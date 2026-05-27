@@ -17,11 +17,13 @@ Tests for:
 import os
 import tempfile
 import time
+from datetime import timedelta
 from decimal import Decimal
 from io import BytesIO
 
 from django.test import TestCase, override_settings
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from core.import_pipeline import BulkImportEngine, FileParser, ImportValidator
 from core.pdf_generator import generate_sales_invoice_pdf, generate_return_receipt_pdf, pdf_response
@@ -105,7 +107,9 @@ class PDFGenerationTest(TestCase):
         if not cls.unit:
             cls.unit = Unit.objects.create(name='tablet', symbol='tab')
         cls.product = Product.objects.create(
-            name='Test Product', sku='TEST001',
+            name='Test Product', sku='TEST001', barcode='BAR_TEST001',
+            generic_name='Test Generic', brand_name='Test Brand',
+            strength='500mg', form='Tablet', manufacturer='Test Mfg',
             category=cls.category, unit=cls.unit
         )
         cls.warehouse = Warehouse.objects.create(name='Test Warehouse')
@@ -113,6 +117,9 @@ class PDFGenerationTest(TestCase):
         cls.invoice = SalesInvoice.objects.create(
             invoice_number='INV-TEST-001',
             customer=cls.customer,
+            order_date=timezone.now().date(),
+            invoice_date=timezone.now().date(),
+            due_date=timezone.now().date() + timedelta(days=30),
             total_amount=Decimal('100.00'),
             paid_amount=Decimal('50.00'),
             status='CONFIRMED',
@@ -181,8 +188,15 @@ class BulkImportTest(TestCase):
         self.assertTrue(any('name' in str(e).lower() for e in summary.errors))
 
     def test_duplicate_detection(self):
-        from inventory.models import Product
-        Product.objects.create(name='Existing', barcode='DUP001', sku='SKU-DUP')
+        from inventory.models import Product, Category, Unit
+        Category.objects.create(name='Test Cat', is_active=True)
+        Unit.objects.create(name='Piece', symbol='PCS', is_active=True)
+        Product.objects.create(
+            name='Existing', barcode='DUP001', sku='SKU-DUP',
+            generic_name='Existing', brand_name='Existing',
+            strength='500mg', form='Tablet', manufacturer='Test',
+            category=Category.objects.first(), unit=Unit.objects.first()
+        )
 
         csv_content = b'name,barcode,sku\nNew Product,DUP001,SKU-NEW\n'
         engine = BulkImportEngine('product')
@@ -190,12 +204,12 @@ class BulkImportTest(TestCase):
         self.assertEqual(summary.duplicate_rows, 1)
 
     def test_import_execute(self):
-        csv_content = b'name,barcode,sku\nImported 1,IMP001,SKU-IMP1\nImported 2,IMP002,SKU-IMP2\n'
-        engine = BulkImportEngine('product')
+        csv_content = b'name,email,phone,code\nImport Cust A,ca@test.com,555-0001,CA001\nImport Cust B,cb@test.com,555-0002,CB002\n'
+        engine = BulkImportEngine('customer')
         summary = engine.execute(csv_content, 'csv')
         self.assertEqual(summary.imported_count, 2)
-        from inventory.models import Product
-        self.assertEqual(Product.objects.filter(sku__startswith='SKU-IMP').count(), 2)
+        from sales.models import Customer
+        self.assertEqual(Customer.objects.filter(code__startswith='CA').count(), 1)
 
     def test_xlsx_parse(self):
         import openpyxl
@@ -239,9 +253,12 @@ class PasswordResetSecurityTest(TestCase):
     """Test email password reset security."""
 
     def setUp(self):
-        self.user = User.objects.create_user(
-            username='testuser', email='test@example.com', password='oldpass123'
+        self.user, _ = User.objects.get_or_create(
+            username='testuser',
+            defaults={'email': 'test@example.com'}
         )
+        self.user.set_password('oldpass123')
+        self.user.save()
 
     def test_token_generation(self):
         token = PasswordResetToken.generate(self.user)

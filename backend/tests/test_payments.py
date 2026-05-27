@@ -57,7 +57,7 @@ class PaymentMethodModelTests(BaseTestCase):
     def test_payment_method_str_representation(self):
         """Test payment method string representation."""
         from payments.models import PaymentMethod
-        method = PaymentMethodFactory.create(name='Mobile Money', code='MOBILE', method_type='MOBILE_MONEY')
+        method = PaymentMethodFactory.create(name='Mobile Money', code='MOBILE_WALLET', method_type='MOBILE_MONEY')
         self.assertEqual(str(method), 'Mobile Money (MOBILE_MONEY)')
 
 
@@ -100,7 +100,7 @@ class FinancialTransactionTests(TransactionBaseTestCase):
     
     def setUp(self):
         super().setUp()
-        self.method = PaymentMethodFactory.create(code='CASH', method_type='CASH')
+        self.method = PaymentMethodFactory.create(code='TXN_CASH', method_type='CASH')
         self.account = PaymentAccountFactory.create(code='CASH_ACC', account_type='CASH')
     
     def test_create_receipt_transaction(self):
@@ -152,8 +152,8 @@ class PaymentEngineTests(TransactionBaseTestCase):
     
     def setUp(self):
         super().setUp()
-        self.cash_method = PaymentMethodFactory.create(code='CASH', method_type='CASH')
-        self.bank_method = PaymentMethodFactory.create(code='BANK', method_type='BANK_TRANSFER')
+        self.cash_method = PaymentMethodFactory.create(code='ENG_CASH', method_type='CASH')
+        self.bank_method = PaymentMethodFactory.create(code='ENG_BANK', method_type='BANK_TRANSFER')
         self.cash_account = PaymentAccountFactory.create(code='CASH_ACC', account_type='CASH', current_balance=Decimal('5000.00'))
         self.bank_account = PaymentAccountFactory.create(code='BANK_ACC', account_type='BANK', current_balance=Decimal('5000.00'))
         self.customer = CustomerFactory.create()

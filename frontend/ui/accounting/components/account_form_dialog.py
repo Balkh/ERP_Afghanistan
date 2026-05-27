@@ -24,6 +24,7 @@ class AccountFormDialog(EnterpriseDialog):
         self.account_id = account_id
         self.is_editing = account_id is not None
         self.parent_accounts = []
+        self._submitting = False
         content = self._build_content()
         self.set_content(content)
         self.load_parent_accounts()
@@ -190,6 +191,9 @@ class AccountFormDialog(EnterpriseDialog):
         }
 
     def save(self):
+        if self._submitting:
+            return
+        self._submitting = True
         data = self.get_form_data()
         validator = FormValidator()
         validator.validate_required("Account Code", data["code"], "Account code is required")
@@ -201,6 +205,7 @@ class AccountFormDialog(EnterpriseDialog):
             error_messages = "\n".join([f"\u2022 {msg}" for msg in validator.get_errors().values()])
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Validation Error", f"Please fix the following errors:\n\n{error_messages}")
+            self._submitting = False
             return
         try:
             if self.is_editing:
@@ -210,6 +215,8 @@ class AccountFormDialog(EnterpriseDialog):
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self, "Success", "Account saved successfully.")
             self.accept()
+            self._submitting = False
         except Exception as e:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.critical(self, "Error", f"Failed to save account: {e}")
+            self._submitting = False

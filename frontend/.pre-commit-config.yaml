@@ -1,4 +1,4 @@
-# Pre-commit hooks for design system enforcement
+# Pre-commit hooks for design system enforcement and enterprise UX certification
 # Install with: pip install pre-commit && pre-commit install
 
 repos:
@@ -15,3 +15,14 @@ repos:
           STRICT enforcement — FAIL on ANY violation. Blocks hardcoded colors,
           spacing, forbidden fonts, and renderer-layer usage.
           Use COLOR_* tokens, SPACING_* constants, and Enterprise* components.
+
+      - id: enterprise-ux-certifier
+        name: Enterprise UX Certifier
+        entry: python scripts/pre_commit_certifier.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+        description: >
+          Enterprise UX + Operational Safety certification. Runs Design System
+          Enforcer and Enterprise UX Certifier. Blocks commit if either fails.

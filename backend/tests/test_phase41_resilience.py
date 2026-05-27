@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 from sales.models import Customer, SalesInvoice, CustomerPayment
-from inventory.models import Product, Warehouse, Batch, StockMovement
+from inventory.models import Product, Warehouse, Batch, StockMovement, Category, Unit
 from accounting.models import JournalEntry, Account
 from core.services.journal_gateway import JournalGateway
 from inventory.service.stock_integration import StockIntegrationService
@@ -26,7 +26,14 @@ class TestPhase41Resilience:
             first_name='Chaos',
             last_name='User'
         )
-        self.product = Product.objects.create(name="Resilience Medicine", sku="RES-001")
+        self.category = Category.objects.create(name="Resilience Category", is_active=True)
+        self.unit = Unit.objects.create(name="Piece", symbol="PCS", is_active=True)
+        self.product = Product.objects.create(
+            name="Resilience Medicine", sku="RES-001", barcode="BAR_RES001",
+            generic_name="Resilience Generic", brand_name="Resilience Brand",
+            strength="250mg", form="Syrup", manufacturer="Resilience Mfg",
+            category=self.category, unit=self.unit
+        )
         self.warehouse = Warehouse.objects.create(name="Resilience Warehouse")
         self.batch = Batch.objects.create(
             product=self.product,

@@ -105,7 +105,7 @@ class CompanyProfileScreen(BaseScreen):
         self.logo_label.setAlignment(Qt.AlignCenter)
         self.logo_label.setStyleSheet(
             f"color: {COLOR_TEXT_MUTED}; background: {COLOR_BG_SURFACE}; "
-            f"border: 1px dashed {COLOR_BORDER}; border-radius: 8px; padding: 20px;"
+            f"border: 1px dashed {COLOR_BORDER}; border-radius: 8px; padding: {SPACING_LG}px;"
         )
         self.logo_label.setMinimumHeight(120)
         logo_layout.addWidget(self.logo_label)

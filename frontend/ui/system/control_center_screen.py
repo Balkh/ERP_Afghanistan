@@ -41,7 +41,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                QLabel, QFrame, QScrollArea, QListWidget,
                                QListWidgetItem, QHeaderView, QTableWidget,
-                               QTableWidgetItem, QPushButton, QSizePolicy,
+                               QTableWidgetItem, QSizePolicy,
                                QGroupBox)
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
 from PySide6.QtGui import QFont, QColor, QPainter

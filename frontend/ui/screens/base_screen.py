@@ -1,11 +1,13 @@
 """
 Base screen class for all application screens.
 Provides consistent screen lifecycle, navigation, and state management.
+
+Phase D.4: Enterprise hardening — dirty state, navigation guard, submission safety.
 """
 
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QWidget, QMessageBox
 from PySide6.QtCore import Signal, Qt, QTimer
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Callable
 import logging
 
 from runtime.timer_registry import register_timer, unregister_owner
@@ -45,6 +47,10 @@ class BaseScreen(QWidget):
         self._is_visible = False
         self._refresh_timer: Optional[QTimer] = None
         self._auto_refresh_interval = 0
+        self._dirty: bool = False
+        self._dirty_check_enabled: bool = True
+        self._submission_in_progress: bool = False
+        self._on_dirty_callback: Optional[Callable] = None
         
         self._setup_screen()
         
@@ -85,13 +91,6 @@ class BaseScreen(QWidget):
         """Set navigation manager."""
         self._navigation_manager = nav_manager
         
-    def navigate_to(self, screen_id: str, params: Optional[Dict] = None):
-        """Navigate to another screen."""
-        if self._navigation_manager:
-            self._navigation_manager.navigate_to(screen_id, params or {})
-        else:
-            self.navigation_requested.emit(screen_id, params or {})
-            
     def showEvent(self, event):
         """Handle screen show event."""
         super().showEvent(event)
@@ -181,6 +180,84 @@ class BaseScreen(QWidget):
         # This would typically trigger showing skeleton UI elements
         self.data_requested.emit({"action": "set_skeleton_visible", "visible": show})
 
+    # ═══════════════════════════════════════════════════════════
+    # Phase D.4: Dirty State & Navigation Guard
+    # ═══════════════════════════════════════════════════════════
+
+    @property
+    def dirty(self) -> bool:
+        """Check if screen has unsaved changes."""
+        return self._dirty
+
+    def is_dirty(self) -> bool:
+        """Check if screen has unsaved changes."""
+        return self._dirty
+
+    def mark_dirty(self):
+        """Mark screen as having unsaved changes."""
+        if not self._dirty:
+            self._dirty = True
+            if self._on_dirty_callback:
+                self._on_dirty_callback(True)
+            self.data_requested.emit({"action": "dirty_state_changed", "dirty": True})
+
+    def mark_clean(self):
+        """Mark screen as clean (no unsaved changes)."""
+        if self._dirty:
+            self._dirty = False
+            if self._on_dirty_callback:
+                self._on_dirty_callback(False)
+            self.data_requested.emit({"action": "dirty_state_changed", "dirty": False})
+
+    def set_dirty_check_enabled(self, enabled: bool):
+        """Enable or disable dirty state checking."""
+        self._dirty_check_enabled = enabled
+
+    def set_on_dirty_callback(self, callback: Optional[Callable[[bool], None]]):
+        """Set callback for dirty state changes."""
+        self._on_dirty_callback = callback
+
+    def confirm_discard_changes(self) -> bool:
+        """Prompt user to confirm discarding unsaved changes. Returns True to proceed."""
+        if not self._dirty or not self._dirty_check_enabled:
+            return True
+        result = QMessageBox.warning(
+            self, "Unsaved Changes",
+            "You have unsaved changes. Discard them?",
+            QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        return result == QMessageBox.StandardButton.Discard
+
+    def navigate_to(self, screen_id: str, params: Optional[Dict] = None):
+        """Navigate to another screen with dirty state guard."""
+        if self.confirm_discard_changes():
+            if self._navigation_manager:
+                self._navigation_manager.navigate_to(screen_id, params or {})
+            else:
+                self.navigation_requested.emit(screen_id, params or {})
+
+    # ═══════════════════════════════════════════════════════════
+    # Phase D.4: Submission Safety (idempotent save)
+    # ═══════════════════════════════════════════════════════════
+
+    @property
+    def submission_in_progress(self) -> bool:
+        """Check if a submission is currently in progress."""
+        return self._submission_in_progress
+
+    def acquire_submission_lock(self) -> bool:
+        """Acquire submission lock. Returns True if acquired, False if already in progress."""
+        if self._submission_in_progress:
+            logger.warning(f"Submission already in progress for screen {self._screen_id}")
+            return False
+        self._submission_in_progress = True
+        return True
+
+    def release_submission_lock(self):
+        """Release submission lock."""
+        self._submission_in_progress = False
+
 
 class BaseFormScreen(BaseScreen):
     """
@@ -229,21 +306,29 @@ class BaseFormScreen(BaseScreen):
         return True, {}
         
     def submit_form(self):
-        """Submit form data."""
-        is_valid, errors = self.validate_form()
-        
-        if is_valid:
-            from runtime.ux_telemetry import record_form_action
-            record_form_action("submit")
-            self.form_validated.emit(self._form_data)
-            self.form_submitted.emit(self._form_data)
-            return True
-        else:
-            for field, error in errors.items():
-                self.show_field_error(field, error)
-            from runtime.ux_telemetry import record_form_action
-            record_form_action("validation_error")
+        """Submit form data with double-submit prevention."""
+        if not self.acquire_submission_lock():
+            logger.warning(f"Double submit prevented on screen {self._screen_id}")
             return False
+
+        try:
+            is_valid, errors = self.validate_form()
+            
+            if is_valid:
+                from runtime.ux_telemetry import record_form_action
+                record_form_action("submit")
+                self.form_validated.emit(self._form_data)
+                self.form_submitted.emit(self._form_data)
+                self.mark_clean()
+                return True
+            else:
+                for field, error in errors.items():
+                    self.show_field_error(field, error)
+                from runtime.ux_telemetry import record_form_action
+                record_form_action("validation_error")
+                return False
+        finally:
+            self.release_submission_lock()
             
     def show_field_error(self, field: str, error: str):
         """Show field error."""

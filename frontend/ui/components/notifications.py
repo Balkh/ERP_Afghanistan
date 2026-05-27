@@ -9,7 +9,7 @@ from ui.constants import (
     TEXT_TABLE, TEXT_LABEL, TEXT_CARD_TITLE, TEXT_BODY,
     SPACING_XS, SPACING_SM, SPACING_MD, BORDER_RADIUS_LG,
     COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO, COLOR_TEXT_ON_SUCCESS,
-    COLOR_TEXT_ON_DANGER, COLOR_TEXT_ON_WARNING, COLOR_TEXT_ON_PRIMARY,
+    COLOR_TEXT_ON_DANGER, COLOR_TEXT_ON_WARNING, COLOR_TEXT_ON_PRIMARY, COLOR_BG_ELEVATED,
 )
 
 from PySide6.QtWidgets import (
@@ -161,7 +161,7 @@ class NotificationItem(QWidget):
                 font-size: {TEXT_CARD_TITLE}px;
             }}
             IconButton:hover {{
-                background-color: rgba(255,255,255,0.2);
+                background-color: {COLOR_BG_ELEVATED};
                 border-radius: {BORDER_RADIUS_LG};
             }}
         """)

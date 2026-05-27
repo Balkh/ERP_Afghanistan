@@ -7,7 +7,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_DANGER, COLOR_STATUS_VALID)
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QPushButton, QGroupBox, QTextEdit, QMessageBox)
+                                QGroupBox, QTextEdit, QMessageBox)
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize

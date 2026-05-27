@@ -8,6 +8,7 @@ from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPAC
                            TEXT_BODY_SMALL, BORDER_RADIUS_MD, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
                            COLOR_BG_ELEVATED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.operator_safety import DestructiveActionGuard
 from ui.screens.base_screen import BaseScreen
 
 
@@ -76,7 +77,7 @@ class ChartOfAccountsScreen(BaseScreen):
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: 4px 8px;
+                padding: {SPACING_XS}px {SPACING_SM}px;
             }}
             QComboBox QAbstractItemView {{
                 background-color: {COLOR_BG_ELEVATED};
@@ -134,10 +135,10 @@ class ChartOfAccountsScreen(BaseScreen):
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_MD}px;
                 font-size: {TEXT_BODY}px;
-                padding: 4px;
+                padding: {SPACING_XS}px;
             }}
             QTreeWidget::item {{
-                padding: 8px 4px;
+                padding: {SPACING_SM}px {SPACING_XS}px;
                 border-bottom: 1px solid {COLOR_BORDER};
             }}
             QTreeWidget::item:selected {{
@@ -150,7 +151,7 @@ class ChartOfAccountsScreen(BaseScreen):
             QHeaderView::section {{
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};
-                padding: 8px 4px;
+                padding: {SPACING_SM}px {SPACING_XS}px;
                 border: none;
                 border-bottom: 2px solid {COLOR_BORDER};
                 font-weight: 600;
@@ -306,12 +307,7 @@ class ChartOfAccountsScreen(BaseScreen):
         if not acc_id:
             return
 
-        reply = QMessageBox.question(
-            self, "Confirm Delete",
-            "Are you sure you want to delete this account?",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if reply == QMessageBox.Yes:
+        if DestructiveActionGuard.confirm_delete(self, "this account"):
             try:
                 self.api_client.delete(f"/api/accounting/accounts/{acc_id}/")
                 self.load_accounts()

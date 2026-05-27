@@ -314,6 +314,22 @@ class SupplierPaymentModelTests(BaseTestCase):
         super().setUpTestData()
         cls._setup_payment_infrastructure(include_extra_codes=True)
 
+    def setUp(self):
+        super().setUp()
+        from payments.models import PaymentAccount
+        from decimal import Decimal
+        PaymentAccount.objects.get_or_create(
+            code='AA-TEST',
+            defaults={
+                'name': 'Test Payment Account',
+                'account_type': 'CASH',
+                'accounting_account': self.account_cash,
+                'is_active': True,
+                'current_balance': Decimal('1000000.00'),
+                'currency': 'AFN',
+            }
+        )
+
     def test_create_supplier_payment(self):
         """Test basic payment creation."""
         payment = SupplierPaymentFactory.create()

@@ -1,6 +1,6 @@
 """Customers screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QLineEdit, QPushButton,
+                                  QLabel, QLineEdit,
                                   QMessageBox, QFormLayout, QGroupBox, QDialog,
                                    QTextEdit, QComboBox, QFrame)
 from PySide6.QtCore import Qt

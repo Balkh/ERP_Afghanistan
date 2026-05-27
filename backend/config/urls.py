@@ -127,6 +127,9 @@ urlpatterns = [
 
     # ─── Phase 20 — Financial Operations Cohesion ───
     path('api/v1/payment-operations/', include('core.api.v1.payment_operations_urls')),
+
+    # ─── Phase Harden — Enterprise Governance ───
+    path('api/governance/', include('core.governance.urls')),
 ]
 
 # Serve static files in development
