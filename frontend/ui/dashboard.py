@@ -7,13 +7,13 @@ from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_6, SPACI
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_INFO, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
 from ui.components.kpi_cards import KPICard
 from theme.theme_engine import ThemeEngine
+from ui.screens.base_screen import BaseScreen
 
 
-class Dashboard(QWidget):
+class Dashboard(BaseScreen):
     """Role-aware Dashboard widget fetching real data from /api/control-center/."""
 
     def __init__(self, role=None, api_client=None):
-        super().__init__()
         self._role = role or UserRole.ADMIN
         self._api_client = api_client
         self._dashboard_data = {}
@@ -26,8 +26,7 @@ class Dashboard(QWidget):
             'mauve': COLOR_INFO,
             'peach': COLOR_WARNING,
         }
-
-        self._build_static_ui()
+        super().__init__()
 
         self._refresh_timer = QTimer(self)
         self._refresh_timer.timeout.connect(self.refresh_data)
@@ -36,10 +35,10 @@ class Dashboard(QWidget):
         self._theme_token = ThemeEngine.instance().register(self.refresh_theme)
 
         if self._api_client:
-            QTimer.singleShot(200, self.refresh_data)
+            QTimer.singleShot(3500, self.refresh_data)
 
-    def set_api_client(self, api_client):
-        self._api_client = api_client
+    def set_api_client(self, client):
+        self._api_client = client
         self.refresh_data()
 
     def set_role(self, role):
@@ -49,7 +48,7 @@ class Dashboard(QWidget):
 
     def refresh_theme(self):
         """Re-apply dashboard stylesheets with current theme colors."""
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             QWidget#dashboard {{ background-color: {COLOR_BG_MAIN}; }}
         """)
         for child in self.findChildren(QScrollArea):
@@ -69,10 +68,19 @@ class Dashboard(QWidget):
             self._refresh_timer.stop()
         ThemeEngine.instance().unregister(self._theme_token)
 
+    def _on_screen_shown(self):
+        if self._refresh_timer and not self._refresh_timer.isActive():
+            self._refresh_timer.start(120000)
+
+    def _on_screen_hidden(self):
+        if self._refresh_timer and self._refresh_timer.isActive():
+            self._refresh_timer.stop()
+
     # ------------------------------------------------------------------
     # Static UI  (built once, never fully rebuilt)
     # ------------------------------------------------------------------
-    def _build_static_ui(self):
+    def _setup_screen(self):
+        super()._setup_screen()
         if self.layout():
             while self.layout().count():
                 item = self.layout().takeAt(0)
@@ -80,7 +88,7 @@ class Dashboard(QWidget):
                     item.widget().deleteLater()
 
         self.setObjectName("dashboard")
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             QWidget#dashboard {{ background-color: {COLOR_BG_MAIN}; }}
         """)
 
@@ -437,7 +445,7 @@ class Dashboard(QWidget):
     def _alert_line(self, label, status, color_key):
         c = self._color_map.get(color_key, COLOR_PRIMARY)
         box = QFrame()
-        box.setStyleSheet("""
+        box.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_BORDER};
                 border: 1px solid {COLOR_BORDER_LIGHT};

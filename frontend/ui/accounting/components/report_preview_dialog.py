@@ -1,27 +1,30 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTextEdit,
-                               QPushButton, QLabel, QFileDialog, QMessageBox)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QTextEdit,
+                                QLabel, QFileDialog, QWidget)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QTextDocument
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog
 from api.document_action_service import DocumentActionService
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.components.dialogs import AlertDialog, EnterpriseDialog, DialogType
 from utils.qr_generator import QRCodeGenerator
 from ui.constants import TEXT_DISPLAY, TEXT_BODY, COLOR_WHATSAPP
 
 
-class ReportPreviewDialog(QDialog):
+class ReportPreviewDialog(EnterpriseDialog):
     """Dialog to preview a report in text format with print/PDF support."""
 
     def __init__(self, parent=None, title="", text_content="", report_meta=None):
-        super().__init__(parent)
-        self.title = title
-        self.setWindowTitle(f"Report Preview - {title}")
-        self.setMinimumSize(800, 600)
+        self._title = title
         self.text_content = text_content
         self.report_meta = report_meta or {}
         self.qr_pixmap = None
-        self.setup_ui()
+        super().__init__(f"Report Preview - {title}", DialogType.CUSTOM, parent)
+        self.setMinimumSize(800, 600)
+        self._build_content()
         self._generate_qr_code()
+
+    def _create_button_area(self):
+        return None
 
     def _generate_qr_code(self):
         """Generate QR code for the report."""
@@ -30,8 +33,9 @@ class ReportPreviewDialog(QDialog):
             if qr_data:
                 self.qr_pixmap = QRCodeGenerator.generate_pixmap(qr_data, size=80)
 
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
 
         header_layout = QHBoxLayout()
         header = QLabel(f"Report: {self.windowTitle()}")
@@ -75,6 +79,9 @@ class ReportPreviewDialog(QDialog):
 
         layout.addLayout(buttons)
 
+        self.set_content(widget)
+        return widget
+
     def print_report(self):
         printer = QPrinter(QPrinter.HighResolution)
         from PySide6.QtWidgets import QApplication
@@ -101,13 +108,13 @@ class ReportPreviewDialog(QDialog):
             doc.setDefaultFont(QFont("Courier New", TEXT_BODY))
             doc.print_(printer)
 
-            QMessageBox.information(self, "Success", f"PDF saved to {file_path}")
+            AlertDialog.info("Success", f"PDF saved to {file_path}", self)
 
     def share_report(self):
         """Share the report summary via WhatsApp."""
         # For general reports, we share a summary message
         report_data = {
-            'report_name': self.title,
+            'report_name': self._title,
             'summary': {
                 'Content': 'Full report details available in PDF/Print format.',
                 'Note': 'This is a computer generated summary.'

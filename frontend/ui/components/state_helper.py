@@ -19,7 +19,7 @@ Usage:
 
 from typing import Optional, Callable, List, Tuple
 
-from PySide6.QtWidgets import QVBoxLayout, QLabel, QPushButton, QFrame, QHBoxLayout
+from PySide6.QtWidgets import QVBoxLayout, QLabel, QFrame, QHBoxLayout
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 

@@ -1,38 +1,60 @@
 """Workflows API Views"""
-from rest_framework import viewsets, status, generics
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from rest_framework import viewsets, status, generics
+from rest_framework.response import Response
+
+from core.api.responses import APIResponse
+from core.multitenant.views import UnifiedEnterpriseViewSetMixin
+from security.permissions import RoleBasedPermission
 from workflows.models import (
-    WorkflowInstance, ApprovalChain, ApprovalLevel, ApprovalRequest, WorkflowState
+    WorkflowInstance,
+    ApprovalChain,
+    ApprovalRequest,
+)
+from workflows.serializers import (
+    WorkflowInstanceSerializer,
+    WorkflowInstanceListSerializer,
+    ApprovalChainSerializer,
+    ApprovalRequestSerializer,
 )
 from workflows.services import WorkflowService, WorkflowValidator
-from core.api.responses import APIResponse
-from security.permissions import RoleBasedPermission
-from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 
 
 class WorkflowInstanceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """Workflow instances CRUD"""
+
     queryset = WorkflowInstance.objects.all()
     permission_classes = [RoleBasedPermission]
-    
+    serializer_class = WorkflowInstanceSerializer
+
+    def get_serializer_class(self):
+        if self.action == "list":
+            return WorkflowInstanceListSerializer
+        return WorkflowInstanceSerializer
+
     def get_queryset(self):
         qs = super().get_queryset()
-        return qs
+        return qs.select_related("pending_approver", "created_by", "company").order_by(
+            "-created_at"
+        )
 
 
 class ApprovalChainViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """Approval chains CRUD"""
+
     queryset = ApprovalChain.objects.all()
     permission_classes = [RoleBasedPermission]
+    serializer_class = ApprovalChainSerializer
 
 
 class ApprovalRequestViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     """Approval requests CRUD"""
+
     queryset = ApprovalRequest.objects.all()
     permission_classes = [RoleBasedPermission]
+    serializer_class = ApprovalRequestSerializer
 
 
 class WorkflowStatusView(generics.GenericAPIView):

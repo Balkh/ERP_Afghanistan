@@ -1,12 +1,13 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                               QLineEdit, QLabel, QFrame, QComboBox)
 from PySide6.QtCore import Signal
 from ui.constants import (SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, COLOR_TEXT_PRIMARY, COLOR_BG_DIALOG, COLOR_BG_ELEVATED, BORDER_RADIUS_MD,
                            COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, COLOR_BORDER,
-                           COLOR_PRIMARY)
+                           COLOR_PRIMARY, COLOR_TEXT_ON_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.screens.base_screen import BaseScreen
 
-class BaseInventoryScreen(QWidget):
+class BaseInventoryScreen(BaseScreen):
     """Base class for inventory management screens."""
     
     # Signals
@@ -18,11 +19,13 @@ class BaseInventoryScreen(QWidget):
     filter_changed = Signal(str)
     
     def __init__(self, title="Inventory Screen"):
+        self._inventory_title = title
         super().__init__()
         self.setWindowTitle(title)
-        self.setup_ui()
+        self._setup_screen()
         
-    def setup_ui(self):
+    def _setup_screen(self):
+        super()._setup_screen()
         """Setup the base UI components."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE,  MARGIN_PAGE,  MARGIN_PAGE,  MARGIN_PAGE)
@@ -39,13 +42,13 @@ class BaseInventoryScreen(QWidget):
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search items...")
         self.search_input.setMinimumWidth(180)
-        self.search_input.setStyleSheet("""
+        self.search_input.setStyleSheet(f"""
             QLineEdit {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER_INPUT};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px 10px;
+                padding: {SPACING_SM}px {SPACING_SM}px;
             }}
             QLineEdit:focus {{
                 border-color: {COLOR_BORDER_INPUT_HOVER};
@@ -55,13 +58,13 @@ class BaseInventoryScreen(QWidget):
         
         # Filter bar
         self.filter_combo = QComboBox()
-        self.filter_combo.setStyleSheet("""
+        self.filter_combo.setStyleSheet(f"""
             QComboBox {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER_INPUT};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px 10px;
+                padding: {SPACING_SM}px {SPACING_SM}px;
                 min-width: 120px;
             }}
             QComboBox:focus {{
@@ -71,7 +74,7 @@ class BaseInventoryScreen(QWidget):
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
                 selection-background-color: {COLOR_PRIMARY};
-                selection-color: white;
+                selection-color: {COLOR_TEXT_ON_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
             }}
         """)

@@ -1,5 +1,7 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QWidget, QFrame,
                                 QLineEdit, QComboBox, QTextEdit, QLabel, QCheckBox)
+from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtCore import Qt
 from api.client import APIClient
 from api.endpoints import extract_list
 from ui.utils.validation import FormValidator
@@ -10,7 +12,7 @@ from ui.constants import (SPACING_SM, SPACING_MD, SPACING_XL, SPACING_XXL, TEXT_
                            DIALOG_WIDTH_FORM_PREFERRED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.forms import FormSection
-from ui.components.dialogs import EnterpriseDialog, DialogType
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
 import re
 
 
@@ -27,19 +29,21 @@ class AccountFormDialog(EnterpriseDialog):
         self._submitting = False
         content = self._build_content()
         self.set_content(content)
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save)
         self.load_parent_accounts()
         if self.is_editing:
             self.load_account()
 
     def _build_content(self):
         content = QWidget()
-        content.setStyleSheet("""
+        content.setStyleSheet(f"""
             QLineEdit, QComboBox {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER_INPUT};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px 10px;
+                padding: {SPACING_SM}px {SPACING_SM}px;
             }}
             QLineEdit:focus, QComboBox:focus {{
                 border-color: {COLOR_BORDER_INPUT_HOVER};
@@ -52,7 +56,7 @@ class AccountFormDialog(EnterpriseDialog):
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER_INPUT};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px 10px;
+                padding: {SPACING_SM}px {SPACING_SM}px;
             }}
             QTextEdit:focus {{
                 border-color: {COLOR_BORDER_INPUT_HOVER};
@@ -175,8 +179,7 @@ class AccountFormDialog(EnterpriseDialog):
                 if idx >= 0:
                     self.parent_combo.setCurrentIndex(idx)
         except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Failed to load account: {e}")
+            AlertDialog.error("Error", f"Failed to load account: {e}", self)
 
     def get_form_data(self):
         parent_data = self.parent_combo.currentData()
@@ -203,8 +206,7 @@ class AccountFormDialog(EnterpriseDialog):
             validator.validate_error("Account Code", "Account code must contain only uppercase letters, numbers, hyphens, and underscores")
         if validator.has_errors():
             error_messages = "\n".join([f"\u2022 {msg}" for msg in validator.get_errors().values()])
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "Validation Error", f"Please fix the following errors:\n\n{error_messages}")
+            AlertDialog.warning("Validation Error", f"Please fix the following errors:\n\n{error_messages}", self)
             self._submitting = False
             return
         try:
@@ -212,11 +214,9 @@ class AccountFormDialog(EnterpriseDialog):
                 self.api_client.put(f"/api/accounting/accounts/{self.account_id}/", data=data)
             else:
                 self.api_client.post("/api/accounting/accounts/", data=data)
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.information(self, "Success", "Account saved successfully.")
+            AlertDialog.info("Success", "Account saved successfully.", self)
             self.accept()
             self._submitting = False
         except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Failed to save account: {e}")
+            AlertDialog.error("Error", f"Failed to save account: {e}", self)
             self._submitting = False

@@ -98,7 +98,7 @@ class LeaveScreen(BaseScreen):
             else:
                 self.set_state(ScreenState.READY)
         except Exception as e:
-            print(f"Error loading leave: {e}")
+            self.error_label.setText(f"Error loading leave: {e}")
             self.leave_records = []
             self.set_state(ScreenState.ERROR)
         

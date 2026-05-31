@@ -8,8 +8,8 @@ Phase 5B.12 — Decision Intelligence Dashboard.
 4. Decision Comparison Panel
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QTextEdit, QTabWidget, QTableWidget,
-                                 QTableWidgetItem)
+                                 QTextEdit, QTabWidget, QTableWidget,
+                                 QTableWidgetItem, QAbstractItemView)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
@@ -17,25 +17,25 @@ from api.client import APIClient
 from ui.causal_scoring.causal_scoring_engine import CausalScoringEngine
 from ui.causal_scoring.decision_impact_engine import DecisionImpactEngine
 from ui.components.tables import build_table_stylesheet
+from ui.screens.base_screen import BaseScreen
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_PRIMARY, COLOR_BORDER,
                            SPACING_LG, SPACING_MD, SPACING_SM, SPACING_XL,
                            TEXT_BODY, TEXT_PAGE_TITLE, MARGIN_PAGE, BORDER_RADIUS_MD)
-from ui.constants import TEXT_PAGE_TITLE, TEXT_BODY
 
 
-class DecisionIntelligenceDashboard(QWidget):
+class DecisionIntelligenceDashboard(BaseScreen):
     """Main decision intelligence screen with 4 analysis sections."""
 
     def __init__(self, api_client: APIClient = None):
-        super().__init__()
         self._api_client = api_client or APIClient()
         self._scoring = CausalScoringEngine(self._api_client)
         self._ranking = DecisionImpactEngine(self._api_client)
-        self._build_ui()
-        QTimer.singleShot(500, self._refresh_all)
+        super().__init__()
+        self._setup_screen()
 
-    def _build_ui(self):
+    def _setup_screen(self):
+        super()._setup_screen()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
@@ -55,7 +55,7 @@ class DecisionIntelligenceDashboard(QWidget):
         layout.addLayout(header)
 
         tabs = QTabWidget()
-        tabs.setStyleSheet("""
+        tabs.setStyleSheet(f"""
             QTabWidget::pane {{ border: none; background: {COLOR_BG_MAIN}; }}
             QTabBar::tab {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             padding: {SPACING_MD}px {SPACING_XL}px; border: 1px solid {COLOR_BORDER};
@@ -74,6 +74,7 @@ class DecisionIntelligenceDashboard(QWidget):
         self.ranked_table.horizontalHeader().setStretchLastSection(True)
         self.ranked_table.setAlternatingRowColors(True)
         self.ranked_table.setStyleSheet(build_table_stylesheet())
+        self.ranked_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         t1l.addWidget(self.ranked_table)
         tabs.addTab(tab1, "① Ranked Decisions")
 
@@ -82,7 +83,7 @@ class DecisionIntelligenceDashboard(QWidget):
         t2l = QVBoxLayout(tab2)
         self.causal_text = QTextEdit()
         self.causal_text.setReadOnly(True)
-        self.causal_text.setStyleSheet("""
+        self.causal_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
@@ -95,7 +96,7 @@ class DecisionIntelligenceDashboard(QWidget):
         t3l = QVBoxLayout(tab3)
         self.matrix_text = QTextEdit()
         self.matrix_text.setReadOnly(True)
-        self.matrix_text.setStyleSheet("""
+        self.matrix_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
@@ -108,7 +109,7 @@ class DecisionIntelligenceDashboard(QWidget):
         t4l = QVBoxLayout(tab4)
         self.compare_text = QTextEdit()
         self.compare_text.setReadOnly(True)
-        self.compare_text.setStyleSheet("""
+        self.compare_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
             font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
@@ -117,6 +118,12 @@ class DecisionIntelligenceDashboard(QWidget):
         tabs.addTab(tab4, "④ Decision Comparison")
 
         layout.addWidget(tabs)
+
+    def _on_screen_shown(self):
+        pass
+
+    def load_data(self, params=None):
+        QTimer.singleShot(500, self._refresh_all)
 
     def _refresh_all(self):
         self._refresh_ranked()

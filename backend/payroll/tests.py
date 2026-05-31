@@ -158,7 +158,7 @@ class PayrollAPITests(APITestCase):
     """Integration tests for Payroll API"""
     
     def setUp(self):
-        self.user = User.objects.create_user(username='api_payroll', password='api123')
+        self.user = User.objects.create_superuser(username='api_payroll', password='api123')
         self.client.force_authenticate(user=self.user)
         
         # Create department and position

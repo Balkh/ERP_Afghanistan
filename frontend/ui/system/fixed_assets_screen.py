@@ -1,17 +1,21 @@
 """Fixed Assets management screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
-                                  QMessageBox, QComboBox, QGroupBox, QFormLayout,
-                                  QDialog, QTabWidget, QDoubleSpinBox,
-                                  QDateEdit, QWidget, QFrame, QPushButton,
+                                  QComboBox, QGroupBox,
+                                  QTabWidget, QDoubleSpinBox,
+                                  QDateEdit, QWidget, QFrame,
                                   QTableWidget, QTableWidgetItem)
+from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE,
                            BUTTON_HEIGHT_MD, TABLE_ROW_HEIGHT_MD, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_SUCCESS,
                            COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from ui.components.tables import EnterpriseTable, TableColumn, build_table_stylesheet
+from ui.components.forms import FormSection
 
 
 class FixedAssetsScreen(BaseScreen):
@@ -41,7 +45,7 @@ class FixedAssetsScreen(BaseScreen):
         layout.addLayout(header_layout)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
+        self.tabs.setStyleSheet(f"""
             QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
             QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
@@ -131,6 +135,8 @@ class FixedAssetsScreen(BaseScreen):
         layout.addLayout(button_layout)
         
         self.categories_table = QTableWidget()
+        self.categories_table.setStyleSheet(build_table_stylesheet())
+        self.categories_table.setAlternatingRowColors(True)
         self.categories_table.setColumnCount(5)
         self.categories_table.setHorizontalHeaderLabels(["Name", "Description", "Depreciation Method", "Useful Life (Years)", "Actions"])
         self.categories_table.horizontalHeader().setStretchLastSection(True)
@@ -169,6 +175,8 @@ class FixedAssetsScreen(BaseScreen):
         layout.addLayout(button_layout)
         
         self.depreciation_table = QTableWidget()
+        self.depreciation_table.setStyleSheet(build_table_stylesheet())
+        self.depreciation_table.setAlternatingRowColors(True)
         self.depreciation_table.setColumnCount(7)
         self.depreciation_table.setHorizontalHeaderLabels(["Asset", "Category", "Cost", "Accumulated Depr.", "Current Depr.", "Book Value", "Year"])
         self.depreciation_table.horizontalHeader().setStretchLastSection(True)
@@ -261,7 +269,7 @@ class FixedAssetsScreen(BaseScreen):
             self.depreciation_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
     
     def _add_asset(self):
-        dialog = AssetDialog(self)
+        dialog = AssetDialog(self, api_client=self._api_client)
         dialog.exec()
     
     def on_show(self):
@@ -271,19 +279,28 @@ class FixedAssetsScreen(BaseScreen):
         self._load_depreciation()
 
 
-class AssetDialog(QDialog):
+class AssetDialog(EnterpriseDialog):
     """Dialog for adding assets."""
     
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Add Asset")
+    def __init__(self, parent=None, api_client=None):
+        super().__init__("Add Asset", DialogType.CUSTOM, parent)
         self.setMinimumSize(500, 450)
-        self._setup_ui()
+        self._submitting = False
+        self._asset_id = None
+        self.api_client = api_client
+        content = self._build_content()
+        self.set_content(content)
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save)
     
-    def _setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+    
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         
-        form_layout = QFormLayout()
+        section = FormSection("Asset Details", primary=True)
         
         self.name = QLineEdit()
         self.name.setPlaceholderText("Asset name")
@@ -305,14 +322,14 @@ class AssetDialog(QDialog):
         self.depreciation_method = QComboBox()
         self.depreciation_method.addItems(["Straight Line", "Declining Balance", "Sum of Years"])
         
-        form_layout.addRow("Name:", self.name)
-        form_layout.addRow("Category:", self.category)
-        form_layout.addRow("Purchase Date:", self.purchase_date)
-        form_layout.addRow("Purchase Cost:", self.purchase_cost)
-        form_layout.addRow("Useful Life (Years):", self.useful_life)
-        form_layout.addRow("Depreciation Method:", self.depreciation_method)
+        section.add_field(self.name, "Name:")
+        section.add_field(self.category, "Category:")
+        section.add_field(self.purchase_date, "Purchase Date:")
+        section.add_field(self.purchase_cost, "Purchase Cost:")
+        section.add_field(self.useful_life, "Useful Life (Years):")
+        section.add_field(self.depreciation_method, "Depreciation Method:")
         
-        layout.addLayout(form_layout)
+        layout.addWidget(section)
         layout.addStretch()
         
         btn_layout = QHBoxLayout()
@@ -325,11 +342,38 @@ class AssetDialog(QDialog):
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(ok_btn)
         layout.addLayout(btn_layout)
+        
+        return widget
     
     def save(self):
-        if not self.name.text().strip():
-            QMessageBox.warning(self, "Validation", "Asset name is required.")
+        if self._submitting:
             return
-        
-        QMessageBox.information(self, "Success", "Asset created!")
-        self.accept()
+        self._submitting = True
+        name = self.name.text().strip()
+        if not name:
+            AlertDialog.warning("Validation Error", "Asset name is required.", self)
+            self._submitting = False
+            return
+        data = {
+            "name": name,
+            "category": self.category.currentText(),
+            "purchase_date": self.purchase_date.date().toString("yyyy-MM-dd"),
+            "purchase_cost": str(self.purchase_cost.value()),
+            "useful_life": str(int(self.useful_life.value())),
+            "depreciation_method": self.depreciation_method.currentText(),
+        }
+        try:
+            if self._asset_id:
+                response = self.api_client.put(f"/api/assets/assets/{self._asset_id}/", data)
+            else:
+                response = self.api_client.post("/api/assets/assets/", data)
+            if response and (response.get("success") or response.get("id")):
+                AlertDialog.info("Success", "Asset saved.", self)
+                self.accept()
+            else:
+                errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
+                AlertDialog.error("Error", str(errors), self)
+        except Exception as e:
+            AlertDialog.error("Error", str(e), self)
+        finally:
+            self._submitting = False

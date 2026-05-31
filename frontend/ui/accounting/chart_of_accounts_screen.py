@@ -1,13 +1,14 @@
-from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QMessageBox, QHeaderView,
+from PySide6.QtWidgets import (QTreeWidget, QTreeWidgetItem, QHeaderView,
                                QHBoxLayout, QFrame, QAbstractItemView, QVBoxLayout,
                                QComboBox, QLineEdit, QLabel)
 from PySide6.QtCore import Qt, Signal
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_TOOLBAR, TEXT_PAGE_TITLE, TEXT_BODY,
-                           TEXT_BODY_SMALL, BORDER_RADIUS_MD, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+                           TEXT_BODY_SMALL, BORDER_RADIUS_MD, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
                            COLOR_BG_ELEVATED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
 from ui.components.operator_safety import DestructiveActionGuard
 from ui.screens.base_screen import BaseScreen
 
@@ -19,7 +20,7 @@ class ChartOfAccountsScreen(BaseScreen):
 
     def __init__(self, parent=None):
         super().__init__(parent, screen_id="chart_of_accounts")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.accounts = []
         self.setup_ui()
         self.load_accounts()
@@ -71,7 +72,7 @@ class ChartOfAccountsScreen(BaseScreen):
         self.type_filter.addItem("All Types", "")
         for acc_type in ["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"]:
             self.type_filter.addItem(acc_type, acc_type)
-        self.type_filter.setStyleSheet("""
+        self.type_filter.setStyleSheet(f"""
             QComboBox {{
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};
@@ -83,7 +84,7 @@ class ChartOfAccountsScreen(BaseScreen):
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
                 selection-background-color: {COLOR_PRIMARY};
-                selection-color: white;
+                selection-color: {COLOR_TEXT_ON_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
             }}
         """)
@@ -128,7 +129,7 @@ class ChartOfAccountsScreen(BaseScreen):
         tree.setSortingEnabled(True)
         tree.setAlternatingRowColors(True)
         tree.setIndentation(24)
-        tree.setStyleSheet("""
+        tree.setStyleSheet(f"""
             QTreeWidget {{
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};
@@ -143,7 +144,7 @@ class ChartOfAccountsScreen(BaseScreen):
             }}
             QTreeWidget::item:selected {{
                 background-color: {COLOR_PRIMARY};
-                color: white;
+                color: {COLOR_TEXT_ON_PRIMARY};
             }}
             QTreeWidget::item:hover {{
                 background-color: {COLOR_BG_SURFACE};
@@ -312,4 +313,4 @@ class ChartOfAccountsScreen(BaseScreen):
                 self.api_client.delete(f"/api/accounting/accounts/{acc_id}/")
                 self.load_accounts()
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete account: {e}")
+                AlertDialog.error(self, "Error", f"Failed to delete account: {e}")

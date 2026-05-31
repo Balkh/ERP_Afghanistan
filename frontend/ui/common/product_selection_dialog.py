@@ -1,21 +1,21 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLineEdit,
-                               QTableWidget, QTableWidgetItem, QHeaderView,
-                               QPushButton, QLabel, QAbstractItemView)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLineEdit,
+                                QTableWidget, QTableWidgetItem, QHeaderView,
+                                QLabel, QAbstractItemView, QWidget)
 from PySide6.QtCore import Qt, QTimer
 from ui.constants import COLOR_SUCCESS
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.components.dialogs import EnterpriseDialog, DialogType
+from ui.components.tables import build_table_stylesheet
 
-class ProductSelectionDialog(QDialog):
+class ProductSelectionDialog(EnterpriseDialog):
     """Professional product selection dialog with search."""
     
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
         self._api_client = api_client
         self.selected_product = None
-        
-        self.setWindowTitle("Select Product")
+        super().__init__("Select Product", DialogType.CUSTOM, parent)
         self.setMinimumSize(700, 500)
-        self.setup_ui()
+        self._build_content()
         
         # Search debounce
         self.search_timer = QTimer()
@@ -25,8 +25,12 @@ class ProductSelectionDialog(QDialog):
         # Initial load
         self.perform_search()
 
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         
         # Search bar
         search_layout = QHBoxLayout()
@@ -39,6 +43,8 @@ class ProductSelectionDialog(QDialog):
         
         # Table
         self.table = QTableWidget()
+        self.table.setStyleSheet(build_table_stylesheet())
+        self.table.setAlternatingRowColors(True)
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Name", "Generic Name", "Barcode", "Price", "Stock"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -60,6 +66,8 @@ class ProductSelectionDialog(QDialog):
         btns.addWidget(self.cancel_btn)
         
         layout.addLayout(btns)
+        
+        self.set_content(widget)
 
     def perform_search(self):
         if not self._api_client:

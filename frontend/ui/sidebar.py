@@ -5,7 +5,7 @@ from PySide6.QtGui import QFont
 from theme.theme_engine import ThemeEngine
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from ui.role_manager import UserRole, get_visible_navigation_items, is_navigation_item_visible
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_HOVER, COLOR_BG_FOCUS, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_DANGER, COLOR_DANGER_HOVER, COLOR_DANGER_ACTIVE)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_HOVER, COLOR_BG_FOCUS, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_DANGER, COLOR_DANGER_HOVER, COLOR_DANGER_ACTIVE)
 
 
 class Sidebar(QWidget):
@@ -37,6 +37,7 @@ class Sidebar(QWidget):
         self._role = role
         self._navigation_items = {}  # page_id -> button reference
         self._active_page_id: str = ""  # currently active navigation item
+        self._role_renderer = None  # Set by main_window for delegated visibility
         
         # Setup UI
         self.setup_ui()
@@ -60,6 +61,16 @@ class Sidebar(QWidget):
         self._role = role
         self.apply_role_filter(role)
 
+    @property
+    def role_renderer(self):
+        """Get the RoleRenderer instance."""
+        return self._role_renderer
+
+    @role_renderer.setter
+    def role_renderer(self, renderer):
+        """Set the RoleRenderer instance for delegated visibility control."""
+        self._role_renderer = renderer
+
     def set_module_visibility(self, module: str, visible: bool) -> None:
         """Show/hide a module group in the sidebar. Used by RoleRenderer."""
         group_widget = self._group_widgets.get(module)
@@ -70,7 +81,15 @@ class Sidebar(QWidget):
             header_frame.setVisible(visible)
     
     def apply_role_filter(self, role: UserRole):
-        """Apply role-based visibility filter to navigation items."""
+        """Apply role-based visibility filter to navigation items.
+        
+        Delegates to RoleRenderer if available (single source of truth).
+        Falls back to local ROLE_PERMISSIONS for backward compatibility.
+        """
+        if self._role_renderer and self._role_renderer.auth_manager.is_authenticated:
+            self._role_renderer.apply_scopes()
+            return
+        
         visible_items = get_visible_navigation_items(role)
         
         # Update visibility of each navigation item
@@ -93,7 +112,7 @@ class Sidebar(QWidget):
                 "hr_reports": {"employee_summary", "attendance_report", "leave_report", "overtime_report"},
                 "payroll_reports": {"payroll_summary", "payroll_trend", "payroll_dept_cost", "payroll_emp_history"},
                 "cash_flow": {"cash_flow"},
-                "system": {"control_center", "observability", "decision_workspace", "intelligence_hub", "invoice_templates", "entities", "licensing", "fixed_assets", "backup", "audit", "user_management", "role_management", "company_profile"}
+                "system": {"control_center", "analytics", "observability", "decision_workspace", "intelligence_hub", "invoice_templates", "entities", "licensing", "fixed_assets", "backup", "audit", "user_management", "role_management", "company_profile"}
             }
             group_items = group_items_map.get(group_name, set())
             any_visible = any(item in visible_items for item in group_items)
@@ -112,7 +131,7 @@ class Sidebar(QWidget):
         # Use scroll area for scrolling support
         self._scroll_area = QScrollArea()
         self._scroll_area.setWidgetResizable(True)
-        self._scroll_area.setStyleSheet("""
+        self._scroll_area.setStyleSheet(f"""
             QScrollArea {{ 
                 border: none; 
                 background-color: {COLOR_BG_MAIN}; 
@@ -223,6 +242,7 @@ class Sidebar(QWidget):
         
         self._create_group(nav_layout, "HR", "hr", [
             ("Employees", "employees", 23),
+            ("Departments & Positions", "departments_positions", 67),
             ("Attendance", "attendance", 24),
             ("Leave", "leave", 25),
             ("Payroll", "payroll", 26),
@@ -245,6 +265,7 @@ class Sidebar(QWidget):
         self._create_group(nav_layout, "System", "system", [
             ("Intelligence Hub", "intelligence_hub", 32),
             ("Control Center", "control_center", 38),
+            ("Analytics", "analytics", 40),
             ("Observability Console", "observability", 39),
             ("Decision Support", "decision_workspace", 47),
             ("Invoice Templates", "invoice_templates", 33),
@@ -290,23 +311,26 @@ class Sidebar(QWidget):
         """Create a navigation button with enhanced hover/active states."""
         btn = EnterpriseButton(f"  {title}")
         btn.setFont(QFont("Segoe UI", TEXT_LABEL))
-        btn.setFixedHeight(36)
+        btn.setMinimumHeight(34)
         btn.setCursor(Qt.PointingHandCursor)
         btn.setStyleSheet(f"""
-            QPushButton {{
+            EnterpriseButton {{
                 background-color: transparent;
                 color: {COLOR_TEXT_SECONDARY};
                 border: none;
                 border-radius: {BORDER_RADIUS_MD};
                 text-align: left;
                 padding-left: {SPACING_LG}px;
+                padding-top: {SPACING_XS}px;
+                padding-bottom: {SPACING_XS}px;
                 font-weight: 400;
+                min-height: 20px;
             }}
-            QPushButton:hover {{
+            EnterpriseButton:hover {{
                 background-color: {COLOR_BG_HOVER};
                 color: {COLOR_TEXT_PRIMARY};
             }}
-            QPushButton:pressed {{
+            EnterpriseButton:pressed {{
                 background-color: {COLOR_BG_FOCUS};
                 color: {COLOR_TEXT_PRIMARY};
             }}
@@ -322,7 +346,6 @@ class Sidebar(QWidget):
 
     def _create_group(self, parent_layout, title, group_name, items):
         """Create a collapsible group with proper structure."""
-        # Group container widget
         group_widget = QWidget()
         group_widget.setStyleSheet("background-color: transparent;")
         group_widget.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
@@ -330,56 +353,40 @@ class Sidebar(QWidget):
         group_layout.setContentsMargins(0, 0, 0, 0)
         group_layout.setSpacing(SPACING_NONE)
 
-        # Group header (clickable for expand/collapse)
-        header_btn = EnterpriseButton()
-        header_btn.setCursor(Qt.PointingHandCursor)
-        header_btn.setFixedHeight(40)
-        header_btn.setStyleSheet(f"""
-            QPushButton {{
+        header_style = f"""
+            EnterpriseButton {{
                 background-color: transparent;
                 border: none;
                 text-align: left;
                 padding-left: {SPACING_SM}px;
-                color: {COLOR_TEXT_PRIMARY};
+                padding-top: {SPACING_XS}px;
+                padding-bottom: {SPACING_XS}px;
+                color: {COLOR_PRIMARY};
                 font-weight: bold;
                 font-size: {TEXT_CARD_TITLE}px;
+                min-height: 24px;
             }}
-            QPushButton:hover {{
+            EnterpriseButton:hover {{
                 background-color: {COLOR_BG_HOVER};
             }}
-        """)
+        """
 
-        # Header layout
-        header_layout = QHBoxLayout(header_btn)
-        header_layout.setContentsMargins(SPACING_SM,  0,  SPACING_SM,  0)
-
-        # Arrow indicator
-        arrow_label = QLabel("▶")
-        arrow_label.setFixedWidth(20)
-        arrow_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_LABEL}px;")
-
-        # Title
-        title_label = QLabel(title)
-        title_label.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
-        title_label.setStyleSheet(f"color: {COLOR_PRIMARY};")
-
-        header_layout.addWidget(arrow_label)
-        header_layout.addWidget(title_label)
-        header_layout.addStretch()
-
-        # Store arrow for state updates
-        header_btn._arrow = arrow_label
+        is_expanded = self._expanded_groups.get(group_name, False)
+        arrow = "▼" if is_expanded else "▶"
+        header_btn = EnterpriseButton(f"{arrow}  {title}")
+        header_btn.setCursor(Qt.PointingHandCursor)
+        header_btn.setFixedHeight(42)
+        header_btn.setStyleSheet(header_style)
+        header_btn.setProperty("group_name", group_name)
+        header_btn.clicked.connect(lambda checked, g=group_name: self._toggle_group(g))
 
         group_layout.addWidget(header_btn)
-
-        # Store header reference
         setattr(self, f"_{group_name}_header", header_btn)
 
-        # Child items container
         items_widget = QWidget()
         items_widget.setStyleSheet(f"background-color: {COLOR_BG_MAIN};")
         items_layout = QVBoxLayout(items_widget)
-        items_layout.setContentsMargins(SPACING_XL + SPACING_SM,  SPACING_XS,  SPACING_SM,  SPACING_SM)
+        items_layout.setContentsMargins(SPACING_XL + SPACING_SM, SPACING_XS, SPACING_SM, SPACING_SM)
         items_layout.setSpacing(SPACING_XS)
 
         for item_title, page_id, page_index in items:
@@ -387,38 +394,14 @@ class Sidebar(QWidget):
             items_layout.addWidget(btn)
 
         group_layout.addWidget(items_widget)
-
-        # Store group container
         self._group_widgets[group_name] = group_widget
         parent_layout.addWidget(group_widget)
 
-        # Connect toggle
-        header_btn.clicked.connect(lambda checked, g=group_name: self._toggle_group(g))
-
-        # Set initial state (collapsed by default)
-        is_expanded = self._expanded_groups.get(group_name, False)
         if not is_expanded:
             items_widget.setVisible(False)
             items_widget.setMaximumHeight(0)
-            arrow_label.setText("▶")
-            if header_btn:
-                header_btn.setStyleSheet(f"""
-                    QPushButton {{
-                        background-color: transparent;
-                        border: none;
-                        text-align: left;
-                        padding-left: {SPACING_SM}px;
-                        color: {COLOR_TEXT_PRIMARY};
-                        font-weight: bold;
-                        font-size: {TEXT_CARD_TITLE}px;
-                    }}
-                    QPushButton:hover {{
-                        background-color: {COLOR_BG_HOVER};
-                    }}
-                """)
-            group_widget.setMaximumHeight(40)
+            group_widget.setMaximumHeight(42)
         else:
-            arrow_label.setText("▼")
             items_widget.setVisible(True)
             items_widget.setMaximumHeight(16777215)
             group_widget.setMaximumHeight(16777215)
@@ -434,8 +417,7 @@ class Sidebar(QWidget):
             return
 
         header_btn = getattr(self, f"_{group_name}_header", None)
-        
-        # Get the items widget 
+
         items_widget = None
         layout = group_widget.layout()
         for i in range(layout.count()):
@@ -444,25 +426,30 @@ class Sidebar(QWidget):
                 items_widget = widget
                 break
 
-        if new_state:  # Should be expanded
+        # Get the title text from the button (strip arrow prefix)
+        title_text = ""
+        if header_btn:
+            btn_text = header_btn.text()
+            title_text = btn_text.replace("▶ ", "").replace("▼ ", "")
+
+        if new_state:
             if items_widget:
                 items_widget.setVisible(True)
                 items_widget.setMaximumHeight(16777215)
-            if header_btn and hasattr(header_btn, '_arrow'):
-                header_btn._arrow.setText("▼")
+            if header_btn:
+                header_btn.setText(f"▼  {title_text}")
             group_widget.setMaximumHeight(16777215)
-        else:  # Should be collapsed
+        else:
             if items_widget:
                 items_widget.setVisible(False)
                 items_widget.setMaximumHeight(0)
-            if header_btn and hasattr(header_btn, '_arrow'):
-                header_btn._arrow.setText("▶")
-            group_widget.setMaximumHeight(40)
+            if header_btn:
+                header_btn.setText(f"▶  {title_text}")
+            group_widget.setMaximumHeight(42)
 
         group_widget.layout().invalidate()
         group_widget.update()
-        
-        # Force layout update
+
         from PySide6.QtWidgets import QApplication
         QApplication.processEvents()
 
@@ -483,7 +470,7 @@ class Sidebar(QWidget):
         """Apply active or default style to a navigation button."""
         if active:
             btn.setStyleSheet(f"""
-                QPushButton {{
+                EnterpriseButton {{
                     background-color: {COLOR_BG_FOCUS};
                     color: {COLOR_TEXT_PRIMARY};
                     border: none;
@@ -492,14 +479,14 @@ class Sidebar(QWidget):
                     padding-left: {SPACING_LG}px;
                     font-weight: 600;
                 }}
-                QPushButton:hover {{
+                EnterpriseButton:hover {{
                     background-color: {COLOR_BG_HOVER};
                     color: {COLOR_TEXT_PRIMARY};
                 }}
             """)
         else:
             btn.setStyleSheet(f"""
-                QPushButton {{
+                EnterpriseButton {{
                     background-color: transparent;
                     color: {COLOR_TEXT_SECONDARY};
                     border: none;
@@ -508,11 +495,11 @@ class Sidebar(QWidget):
                     padding-left: {SPACING_LG}px;
                     font-weight: 400;
                 }}
-                QPushButton:hover {{
+                EnterpriseButton:hover {{
                     background-color: {COLOR_BG_HOVER};
                     color: {COLOR_TEXT_PRIMARY};
                 }}
-                QPushButton:pressed {{
+                EnterpriseButton:pressed {{
                     background-color: {COLOR_BG_FOCUS};
                     color: {COLOR_TEXT_PRIMARY};
                 }}
@@ -539,14 +526,7 @@ class Sidebar(QWidget):
 
     def _apply_theme_style(self):
         """Apply theme-specific sidebar styling."""
-        from ui.constants import (
-            COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
-            COLOR_PRIMARY, BORDER_RADIUS_MD, COLOR_TEXT_SECONDARY
-        )
-        # Handle cases where COLOR_BG_HOVER might be missing in some theme contexts
-        hover_bg = locals().get('COLOR_BG_HOVER', COLOR_BG_HOVER)
-        
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             Sidebar {{
                 background-color: {COLOR_BG_ELEVATED};
                 border-right: 1px solid {COLOR_BORDER};
@@ -556,22 +536,6 @@ class Sidebar(QWidget):
                 font-weight: bold;
                 padding: {SPACING_SM}px;
             }}
-            QPushButton {{
-                text-align: left;
-                padding: {SPACING_SM}px {SPACING_MD}px;
-                border: none;
-                border-radius: {BORDER_RADIUS_MD}px;
-                color: {COLOR_TEXT_SECONDARY};
-                background: transparent;
-            }}
-            QPushButton:hover {{
-                background-color: {hover_bg};
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QPushButton#active {{
-                background-color: {COLOR_PRIMARY};
-                color: white;
-            }}
         """)
 
     def _refresh_all_styles(self):
@@ -579,7 +543,7 @@ class Sidebar(QWidget):
         self._apply_theme_style()
         # Scroll area (cached ref — no findChildren)
         if hasattr(self, '_scroll_area'):
-            self._scroll_area.setStyleSheet("""
+            self._scroll_area.setStyleSheet(f"""
                 QScrollArea {{ 
                     border: none; 
                     background-color: {COLOR_BG_MAIN}; 
@@ -613,7 +577,7 @@ class Sidebar(QWidget):
         # All navigation buttons
         for page_id, btn in self._navigation_items.items():
             btn.setStyleSheet(f"""
-                QPushButton {{
+                EnterpriseButton {{
                     background-color: transparent;
                     color: {COLOR_TEXT_SECONDARY};
                     border: none;
@@ -622,11 +586,11 @@ class Sidebar(QWidget):
                     padding-left: {SPACING_LG}px;
                     font-weight: 400;
                 }}
-                QPushButton:hover {{
+                EnterpriseButton:hover {{
                     background-color: {COLOR_BG_HOVER};
                     color: {COLOR_TEXT_PRIMARY};
                 }}
-                QPushButton:pressed {{
+                EnterpriseButton:pressed {{
                     background-color: {COLOR_BG_FOCUS};
                     color: {COLOR_TEXT_PRIMARY};
                 }}
@@ -637,7 +601,7 @@ class Sidebar(QWidget):
             header_btn = getattr(self, f"_{group_name}_header", None)
             if header_btn:
                 header_btn.setStyleSheet(f"""
-                    QPushButton {{
+                    EnterpriseButton {{
                         background-color: transparent;
                         border: none;
                         text-align: left;
@@ -646,7 +610,7 @@ class Sidebar(QWidget):
                         font-weight: bold;
                         font-size: {TEXT_CARD_TITLE}px;
                     }}
-                    QPushButton:hover {{
+                    EnterpriseButton:hover {{
                         background-color: {COLOR_BG_HOVER};
                     }}
                 """)
@@ -659,18 +623,18 @@ class Sidebar(QWidget):
 
         # Bottom frame with logout (cached ref)
         if hasattr(self, '_bottom_frame') and hasattr(self, 'logout_btn'):
-            self.logout_btn.setStyleSheet("""
-                QPushButton {{
+            self.logout_btn.setStyleSheet(f"""
+                EnterpriseButton {{
                     background-color: {COLOR_DANGER};
                     color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
                     border-radius: {BORDER_RADIUS_LG};
                     padding: {SPACING_MD}px;
                 }}
-                QPushButton:hover {{
+                EnterpriseButton:hover {{
                     background-color: {COLOR_DANGER_HOVER};
                 }}
-                QPushButton:pressed {{
+                EnterpriseButton:pressed {{
                     background-color: {COLOR_DANGER_ACTIVE};
                 }}
             """)

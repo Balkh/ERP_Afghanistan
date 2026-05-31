@@ -1,17 +1,19 @@
 """Cost Centers management screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
-                                  QMessageBox, QComboBox, QGroupBox,
-                                  QFormLayout, QDialog, QTextEdit)
+                                  QComboBox, QGroupBox,
+                                  QTextEdit, QWidget)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from api.endpoints import get_endpoint
 from api.client import APIClient
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
                            TEXT_LABEL, BORDER_RADIUS_LG, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.forms import FormSection
 
 
 class CostCentersScreen(BaseScreen):
@@ -198,26 +200,34 @@ class CostCentersScreen(BaseScreen):
         ]
     
     def _add_cost_center(self):
-        dialog = CostCenterDialog(self)
+        dialog = CostCenterDialog(self, api_client=self.api_client)
         dialog.exec()
     
     def on_show(self):
         self._load_cost_centers()
 
 
-class CostCenterDialog(QDialog):
+class CostCenterDialog(EnterpriseDialog):
     """Dialog for adding/editing cost centers."""
     
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Add Cost Center")
+    def __init__(self, parent=None, api_client=None):
+        super().__init__("Add Cost Center", DialogType.CUSTOM, parent)
         self.setMinimumSize(500, 400)
-        self._setup_ui()
-    
-    def _setup_ui(self):
-        layout = QVBoxLayout(self)
+        self._submitting = False
+        self._center_id = None
+        self.api_client = api_client
+        self._build_content()
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save)
+
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         
-        form_layout = QFormLayout()
+        section = FormSection("Cost Center Details", primary=True)
         
         self.name = QLineEdit()
         self.name.setPlaceholderText("Cost center name")
@@ -238,14 +248,14 @@ class CostCenterDialog(QDialog):
         self.description.setPlaceholderText("Description")
         self.description.setMinimumHeight(80)
         
-        form_layout.addRow("Name:", self.name)
-        form_layout.addRow("Code:", self.code)
-        form_layout.addRow("Type:", self.cost_type)
-        form_layout.addRow("Manager:", self.manager)
-        form_layout.addRow("Budget:", self.budget)
-        form_layout.addRow("Description:", self.description)
+        section.add_field(self.name, "Name:")
+        section.add_field(self.code, "Code:")
+        section.add_field(self.cost_type, "Type:")
+        section.add_field(self.manager, "Manager:")
+        section.add_field(self.budget, "Budget:")
+        section.add_field(self.description, "Description:")
         
-        layout.addLayout(form_layout)
+        layout.addWidget(section)
         
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(SPACING_SM)
@@ -257,11 +267,38 @@ class CostCenterDialog(QDialog):
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(ok_btn)
         layout.addLayout(btn_layout)
+
+        self.set_content(widget)
     
     def save(self):
-        if not self.name.text().strip():
-            QMessageBox.warning(self, "Validation", "Name is required.")
+        if self._submitting:
             return
-        
-        QMessageBox.information(self, "Success", "Cost center saved!")
-        self.accept()
+        self._submitting = True
+        name = self.name.text().strip()
+        if not name:
+            AlertDialog.warning("Validation Error", "Name is required.", self)
+            self._submitting = False
+            return
+        data = {
+            "name": name,
+            "code": self.code.text().strip(),
+            "cost_type": self.cost_type.currentText(),
+            "manager": self.manager.text().strip(),
+            "budget": self.budget.text().strip() or "0",
+            "description": self.description.toPlainText().strip(),
+        }
+        try:
+            if self._center_id:
+                response = self.api_client.put(f"/api/cost-centers/centers/{self._center_id}/", data)
+            else:
+                response = self.api_client.post("/api/cost-centers/centers/", data)
+            if response and (response.get("success") or response.get("id")):
+                AlertDialog.info("Success", "Cost center saved.", self)
+                self.accept()
+            else:
+                errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
+                AlertDialog.error("Error", str(errors), self)
+        except Exception as e:
+            AlertDialog.error("Error", str(e), self)
+        finally:
+            self._submitting = False

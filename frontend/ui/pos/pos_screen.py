@@ -6,15 +6,16 @@ Touch-friendly, keyboard-first, barcode-integrated.
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                 QTableWidget, QTableWidgetItem, QHeaderView,
                                 QLineEdit, QLabel, QComboBox,
-                                QGroupBox, QFrame, QSplitter, QMessageBox,
+                                QGroupBox, QFrame, QSplitter,
                                 QAbstractItemView)
-from PySide6.QtCore import Qt, Signal, QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from decimal import Decimal
 from datetime import date
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.components.dialogs import AlertDialog
 
-from ui.common.barcode_scanner import BarcodeScannerInput
+from ui.common.barcode_search import BarcodeSearchLineEdit as BarcodeScannerInput
 from ui.common.batch_selection import BatchSelectionDialog
 from ui.common.printable_invoice import PrintableInvoiceDialog
 from api.endpoints import get_endpoint
@@ -30,9 +31,10 @@ from ui.constants import (
     COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
     COLOR_INFO,
 )
+from ui.screens.base_screen import BaseScreen
 
 
-class POSScreen(QWidget):
+class POSScreen(BaseScreen):
     """
     Pharmacy POS screen optimized for cashier workflow.
 
@@ -58,11 +60,7 @@ class POSScreen(QWidget):
     └─────────────────────────────────────────────────────┘
     """
 
-    sale_completed = Signal(dict)
-    sale_failed = Signal(str)
-
     def __init__(self, parent=None, api_client=None, auth_manager=None):
-        super().__init__(parent)
         self.api_client = api_client
         self.auth_manager = auth_manager
         self.cart_items = []
@@ -70,13 +68,21 @@ class POSScreen(QWidget):
         self.products_cache = []
         self.current_customer = None
         self._is_loading = False
-
-        self.setup_ui()
+        self._held_sales = []
+        self._last_invoice = None
+        super().__init__(parent)
         self.setup_shortcuts()
-        self.load_customers()
         self.scan_input.setFocus()
 
-    def setup_ui(self):
+    def _on_screen_shown(self):
+        pass
+
+    def load_data(self, params=None):
+        self.load_customers()
+        super().load_data(params)
+
+    def _setup_screen(self):
+        super()._setup_screen()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_MD)
@@ -148,7 +154,7 @@ class POSScreen(QWidget):
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
             f"font-weight: bold; border: 2px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 12px; padding-top: {SPACING_LG}px; }}"
+            f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; color: {COLOR_PRIMARY}; }}"
         )
@@ -179,7 +185,7 @@ class POSScreen(QWidget):
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
             f"font-weight: bold; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 12px; padding-top: {SPACING_LG}px; }}"
+            f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
         )
@@ -222,7 +228,7 @@ class POSScreen(QWidget):
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
             f"font-weight: bold; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 12px; padding-top: {SPACING_LG}px; }}"
+            f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
         )
@@ -257,7 +263,7 @@ class POSScreen(QWidget):
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
             f"font-weight: bold; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 12px; padding-top: {SPACING_LG}px; }}"
+            f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
         )
@@ -288,7 +294,7 @@ class POSScreen(QWidget):
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
             f"font-weight: bold; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 12px; padding-top: {SPACING_LG}px; }}"
+            f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
         )
@@ -363,7 +369,7 @@ class POSScreen(QWidget):
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
             f"font-weight: bold; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 12px; padding-top: {SPACING_LG}px; }}"
+            f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
         )
@@ -403,10 +409,10 @@ class POSScreen(QWidget):
         action_row.setSpacing(SPACING_SM)
 
         self.pay_btn = self._action_button("Complete Sale (F10)", ButtonVariant.SUCCESS, self._process_payment, size="lg")
-        footer.addWidget(self.pay_btn)
+        action_row.addWidget(self.pay_btn)
 
         self.print_btn = self._action_button("Print (F8)", ButtonVariant.GHOST, self._print_last_invoice)
-        footer.addWidget(self.print_btn)
+        action_row.addWidget(self.print_btn)
 
         self.cancel_btn = self._action_button("Cancel (Esc)", ButtonVariant.DANGER, self.new_sale)
         action_row.addWidget(self.cancel_btn)
@@ -665,7 +671,7 @@ class POSScreen(QWidget):
 
     def _process_payment(self):
         if not self.cart_items:
-            QMessageBox.warning(self, "Empty Cart", "Add items to the cart before completing the sale.")
+            AlertDialog.warning("Empty Cart", "Add items to the cart before completing the sale.", self)
             return
 
         total = sum(item["total"] for item in self.cart_items)
@@ -675,7 +681,7 @@ class POSScreen(QWidget):
             paid = total
 
         if paid < total:
-            QMessageBox.warning(self, "Insufficient Payment", f"Total: {total:.2f} AFN, Paid: {paid:.2f} AFN")
+            AlertDialog.warning("Insufficient Payment", f"Total: {total:.2f} AFN, Paid: {paid:.2f} AFN", self)
             return
 
         self.status_label.setText("PROCESSING...")
@@ -709,7 +715,6 @@ class POSScreen(QWidget):
             response = self.api_client.post(endpoint, invoice_data)
             if response and response.get("success"):
                 invoice = response.get("data", response)
-                self.sale_completed.emit(invoice)
                 self.status_label.setText("COMPLETED")
                 self.status_label.setStyleSheet(
                     f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
@@ -720,23 +725,22 @@ class POSScreen(QWidget):
                 self.new_sale()
             else:
                 error = response.get("error", "Unknown error") if response else "No response"
-                self.sale_failed.emit(error)
                 self.status_label.setText("FAILED")
                 self.status_label.setStyleSheet(
-                    f"background-color: {COLOR_DANGER}; color: white; "
+                    f"background-color: {COLOR_DANGER}; color: {COLOR_TEXT_ON_PRIMARY}; "
                     f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
                     f"font-weight: bold; font-size: {TEXT_TABLE}px;"
                 )
         except Exception as e:
-            self.sale_failed.emit(str(e))
             self.status_label.setText("ERROR")
             self.status_label.setStyleSheet(
-                f"background-color: {COLOR_DANGER}; color: white; "
+                f"background-color: {COLOR_DANGER}; color: {COLOR_TEXT_ON_PRIMARY}; "
                 f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
                 f"font-weight: bold; font-size: {TEXT_TABLE}px;"
             )
 
     def _show_invoice_preview(self, invoice):
+        self._last_invoice = invoice
         try:
             dialog = PrintableInvoiceDialog(
                 self,
@@ -749,7 +753,22 @@ class POSScreen(QWidget):
             pass
 
     def _print_last_invoice(self):
-        pass
+        """Print the last completed invoice."""
+        if not self._last_invoice:
+            from ui.components.dialogs import AlertDialog
+            AlertDialog.warning("No Invoice", "No invoice to print. Complete a sale first.", self)
+            return
+        try:
+            from ui.common.printable_invoice import PrintableInvoiceDialog
+            dialog = PrintableInvoiceDialog(
+                invoice=self._last_invoice,
+                invoice_type="sale",
+                api_client=self.api_client,
+            )
+            dialog.exec()
+        except Exception as e:
+            from ui.components.dialogs import AlertDialog
+            AlertDialog.error("Print Error", f"Failed to print invoice: {e}", self)
 
     def new_sale(self):
         self.cart_items = []
@@ -772,11 +791,42 @@ class POSScreen(QWidget):
         self.scan_input.setFocus()
 
     def hold_sale(self):
+        """Hold the current sale for later recall."""
         if not self.cart_items:
             return
+        held = {
+            "cart_items": list(self.cart_items),
+            "customer": self.current_customer,
+            "customer_index": self.customer_combo.currentIndex(),
+        }
+        self._held_sales.append(held)
+        self.new_sale()
+        self.status_label.setText(f"SALE HELD ({len(self._held_sales)} held)")
+        self.status_label.setStyleSheet(
+            f"background-color: {COLOR_WARNING}; color: {COLOR_TEXT_ON_PRIMARY}; "
+            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
+            f"font-weight: bold; font-size: {TEXT_TABLE}px;"
+        )
 
     def recall_sale(self):
-        pass
+        """Recall the last held sale."""
+        if not self._held_sales:
+            from ui.components.dialogs import AlertDialog
+            AlertDialog.info("No Held Sales", "No held sales to recall.", self)
+            return
+        held = self._held_sales.pop()
+        self.cart_items = held["cart_items"]
+        self.current_customer = held["customer"]
+        idx = held.get("customer_index", 0)
+        if idx < self.customer_combo.count():
+            self.customer_combo.setCurrentIndex(idx)
+        self._refresh_cart()
+        self.status_label.setText("READY")
+        self.status_label.setStyleSheet(
+            f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
+            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
+            f"font-weight: bold; font-size: {TEXT_TABLE}px;"
+        )
 
     def _remove_selected_item(self):
         row = self.cart_table.currentRow()

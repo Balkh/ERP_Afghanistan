@@ -1,35 +1,38 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTableWidget,
-                               QTableWidgetItem, QPushButton, QLineEdit,
-                               QLabel, QHeaderView, QAbstractItemView, QComboBox,
-                               QMessageBox)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QTableWidget,
+                                QTableWidgetItem, QLineEdit,
+                                QLabel, QHeaderView, QAbstractItemView, QComboBox, QWidget)
 from PySide6.QtCore import Qt, Signal
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.components.dialogs import EnterpriseDialog, DialogType, ConfirmDialog
+from ui.components.tables import build_table_stylesheet
 from PySide6.QtGui import QFont
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, TEXT_TABLE, TEXT_CARD_TITLE)
 
 
-class BatchSelectionDialog(QDialog):
+class BatchSelectionDialog(EnterpriseDialog):
     """Dialog for selecting batches for a product."""
 
     batch_selected = Signal(dict)
 
     def __init__(self, parent=None, product_id=None, product_name="", required_quantity=0, api_client=None):
-        super().__init__(parent)
         self.product_id = product_id
         self.product_name = product_name
         self.required_quantity = required_quantity
         self.api_client = api_client
         self.batches = []
         self.selected_batch = None
-
-        self.setWindowTitle(f"Select Batch - {product_name}")
+        super().__init__(f"Select Batch - {product_name}", DialogType.CUSTOM, parent)
         self.setModal(True)
         self.resize(800, 500)
-        self.setup_ui()
+        self._build_content()
         self.load_batches()
 
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
@@ -63,6 +66,8 @@ class BatchSelectionDialog(QDialog):
 
         # Batch table
         self.table = QTableWidget()
+        self.table.setStyleSheet(build_table_stylesheet())
+        self.table.setAlternatingRowColors(True)
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels([
             "Select", "Batch #", "Expiry Date", "Remaining Qty", "Location", "Unit Cost", "Status"
@@ -96,6 +101,8 @@ class BatchSelectionDialog(QDialog):
         button_layout.addWidget(self.select_button)
         button_layout.addWidget(cancel_button)
         layout.addLayout(button_layout)
+
+        self.set_content(widget)
 
     def populate_warehouses(self):
         self.warehouse_combo.addItem("Main Warehouse", "warehouse-1")
@@ -209,13 +216,11 @@ class BatchSelectionDialog(QDialog):
         batch = self.batches[row]
 
         if batch["remaining_quantity"] < self.required_quantity:
-            reply = QMessageBox.question(
+            if not ConfirmDialog.confirm(
                 self,
                 "Insufficient Stock",
                 f"Batch has {batch['remaining_quantity']} units but {self.required_quantity} required.\n\nSelect anyway?",
-                QMessageBox.Yes | QMessageBox.No
-            )
-            if reply == QMessageBox.No:
+            ):
                 return
 
         self.selected_batch = batch

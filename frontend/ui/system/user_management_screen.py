@@ -1,14 +1,16 @@
 """User Management Screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QAbstractItemView, QComboBox,
-                                  QLineEdit, QGroupBox, QFormLayout, QMessageBox,
-                                  QDialog, QCheckBox, QTabWidget,
-                                  QWidget, QPushButton, QTableWidgetItem)
+                                  QLineEdit,
+                                  QCheckBox, QTabWidget,
+                                  QWidget, QTableWidgetItem)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from ui.screens.base_screen import BaseScreen
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
+from ui.components.forms import FormSection
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_CARD_TITLE,
                            TEXT_BODY, BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_SUCCESS)
@@ -162,6 +164,7 @@ class UserManagementScreen(BaseScreen):
             if result.get('success'):
                 self._roles = result.get('data', [])
         except Exception as e:
+            # TODO: Replace with user-facing error state (no error_label/empty_label available)
             print(f"Error loading roles: {e}")
     
     def load_users(self):
@@ -175,6 +178,7 @@ class UserManagementScreen(BaseScreen):
                 self._users = result.get('data', {}).get('results', [])
                 self.populate_table()
         except Exception as e:
+            # TODO: Replace with user-facing error state (no error_label/empty_label available)
             print(f"Error loading users: {e}")
     
     def populate_table(self):
@@ -223,37 +227,55 @@ class UserManagementScreen(BaseScreen):
         row = selected[0].row()
         user_data = self._users[row]
         
-        reply = QMessageBox.question(
-            self, "Delete User",
+        reply = ConfirmDialog.confirm(
+            "Delete User",
             f"Are you sure you want to delete user '{user_data.get('username')}'?",
-            QMessageBox.Yes | QMessageBox.No
+            self
         )
         
-        if reply == QMessageBox.Yes:
+        if reply:
             try:
                 self._api_client.delete(f"/api/auth/users/{user_data['id']}/")
                 self.load_users()
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete user: {e}")
+                AlertDialog.error("Error", f"Failed to delete user: {e}", self)
 
 
-class UserDialog(QDialog):
+class UserDialog(EnterpriseDialog):
     """Dialog for creating/editing users."""
     
     def __init__(self, api_client=None, parent=None, user_data=None):
-        super().__init__(parent)
         self.api_client = api_client
         self.user_data = user_data
-        self.setWindowTitle("User Account")
+        super().__init__("User Account", DialogType.CUSTOM, parent)
         self.setMinimumWidth(450)
-        self._setup_ui()
+        content = self._build_content()
+        self.set_content(content)
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save)
         if user_data:
             self._load_user_data()
+    
+    def _create_button_area(self):
+        return None
+    
+    def _load_user_data(self):
+        """Load existing user data into form fields."""
+        if self.user_data:
+            self.username.setText(self.user_data.get("username", ""))
+            self.email.setText(self.user_data.get("email", ""))
+            self.first_name.setText(self.user_data.get("first_name", ""))
+            self.last_name.setText(self.user_data.get("last_name", ""))
+            self.is_active.setChecked(self.user_data.get("is_active", True))
+            role_name = self.user_data.get("role", "")
+            idx = self.role_combo.findText(role_name)
+            if idx >= 0:
+                self.role_combo.setCurrentIndex(idx)
 
-    def _setup_ui(self):
-        self.setMinimumWidth(500)
-        self.setStyleSheet("""
-            QDialog {{ 
+    def _build_content(self):
+        widget = QWidget()
+        widget.setStyleSheet(f"""
+            QWidget {{ 
                 background-color: {COLOR_BG_MAIN}; 
             }}
             QGroupBox {{ 
@@ -330,7 +352,7 @@ class UserDialog(QDialog):
                 border-color: {COLOR_PRIMARY};
             }}
         """)
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(SPACING_XL + SPACING_SM,  SPACING_XL + SPACING_SM,  SPACING_XL + SPACING_SM,  SPACING_XL + SPACING_SM)
         layout.setSpacing(SPACING_SM + SPACING_XS)
         
@@ -343,25 +365,13 @@ class UserDialog(QDialog):
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
         
-        form_group = QGroupBox("")
-        form_group.setStyleSheet("""
-            QGroupBox {{
-                border: 1px solid {COLOR_BG_ELEVATED};
-                border-radius: {BORDER_RADIUS_LG};
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                padding: {SPACING_SM};
-            }}
-        """)
-        form_layout = QFormLayout(form_group)
-        form_layout.setLabelAlignment(Qt.AlignRight)
-        form_layout.setHorizontalSpacing(20)
-        form_layout.setVerticalSpacing(12)
+        section = FormSection("User Details", primary=True)
         
         self.username = QLineEdit()
         self.username.setMinimumHeight(40)
         self.username.setPlaceholderText("Enter username")
         self.password = QLineEdit()
-        self.password.setEchoMode(QLineEdit.Password)
+        self.password.setEchoMode(QLineEdit.EchoMode.Password)
         self.password.setMinimumHeight(40)
         self.password.setPlaceholderText("Enter password")
         self.email = QLineEdit()
@@ -385,16 +395,16 @@ class UserDialog(QDialog):
         self.is_active.setChecked(True)
         self.is_active.setStyleSheet(f"margin-top: {SPACING_MD}px;")
         
-        form_layout.addRow("Username:", self.username)
+        section.add_field(self.username, "Username:")
         if not self.user_data:
-            form_layout.addRow("Password:", self.password)
-        form_layout.addRow("Email:", self.email)
-        form_layout.addRow("First Name:", self.first_name)
-        form_layout.addRow("Last Name:", self.last_name)
-        form_layout.addRow("Role:", self.role_combo)
-        form_layout.addRow("", self.is_active)
+            section.add_field(self.password, "Password:")
+        section.add_field(self.email, "Email:")
+        section.add_field(self.first_name, "First Name:")
+        section.add_field(self.last_name, "Last Name:")
+        section.add_field(self.role_combo, "Role:")
+        section.add_field(self.is_active)
         
-        layout.addWidget(form_group)
+        layout.addWidget(section)
         
         # Spacer
         layout.addSpacing(15)
@@ -407,47 +417,47 @@ class UserDialog(QDialog):
         
         save_btn = EnterpriseButton("Save User", variant=ButtonVariant.PRIMARY, size=ButtonSize.LARGE)
         save_btn.setMinimumWidth(130)
-        save_btn.clicked.connect(self.accept)
+        save_btn.clicked.connect(self.save)
         
         buttons.addWidget(cancel_btn)
         buttons.addWidget(save_btn)
         layout.addLayout(buttons)
+        
+        return widget
     
     def save(self):
         """Save user data."""
-        if not self.username.text():
-            QMessageBox.warning(self, "Error", "Username is required")
+        if not self.username.text().strip():
+            AlertDialog.warning("Validation Error", "Username is required.", self)
             return
         
-        # Get role id from selected role name
-        role_name = self.role.currentText()
-        role_id = None
-        for r in self._roles:
-            if r.get('name') == role_name:
-                role_id = r.get('id')
-                break
+        role_value = self.role_combo.currentData()
         
         data = {
-            "username": self.username.text(),
-            "email": self.email.text(),
-            "first_name": self.first_name.text(),
-            "last_name": self.last_name.text(),
+            "username": self.username.text().strip(),
+            "email": self.email.text().strip(),
+            "first_name": self.first_name.text().strip(),
+            "last_name": self.last_name.text().strip(),
             "is_active": self.is_active.isChecked(),
-            "role_ids": [role_id] if role_id else []
+            "role": role_value,
         }
         
-        if not self._user:
-            data["password"] = "changeme123"
+        if not self.user_data:
+            pwd = self.password.text().strip() if self.password.text() else "changeme123"
+            data["password"] = pwd
         
         try:
-            if self._user:
-                result = self._api_client.update_user(self._user['id'], data)
+            if self.user_data:
+                result = self.api_client.update_user(self.user_data['id'], data)
             else:
-                result = self._api_client.create_user(data)
+                result = self.api_client.create_user(data)
             
             if result.get('success'):
                 self.accept()
             else:
-                QMessageBox.warning(self, "Error", result.get('error', {}).get('message', 'Failed to save'))
+                error_msg = result.get('error', {})
+                if isinstance(error_msg, dict):
+                    error_msg = error_msg.get('message', 'Failed to save')
+                AlertDialog.warning("Error", str(error_msg), self)
         except Exception as e:
-            QMessageBox.warning(self, "Error", str(e))
+            AlertDialog.warning("Error", str(e), self)

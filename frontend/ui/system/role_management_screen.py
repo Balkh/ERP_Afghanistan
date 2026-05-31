@@ -1,12 +1,15 @@
 """Role Management Screen for ERP — CRUD for roles + permission assignment."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QAbstractItemView,
-                               QLineEdit, QGroupBox, QFormLayout, QMessageBox,
-                               QDialog, QCheckBox, QScrollArea, QWidget,
-                               QSplitter, QTableWidgetItem, QTextEdit)
+                                QLineEdit, QGroupBox,
+                                QCheckBox, QScrollArea, QWidget,
+                                QSplitter, QTableWidgetItem, QTextEdit)
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from ui.screens.base_screen import BaseScreen
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
+from ui.components.forms import FormSection
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE,
                           TEXT_CARD_TITLE, TEXT_BODY, TEXT_BODY_SMALL, BORDER_RADIUS_SM,
                           BORDER_RADIUS_MD, COLOR_BG_MAIN, COLOR_BG_SURFACE,
@@ -106,7 +109,7 @@ class RoleManagementScreen(BaseScreen):
         self.perm_desc = QTextEdit()
         self.perm_desc.setReadOnly(True)
         self.perm_desc.setMaximumHeight(60)
-        self.perm_desc.setStyleSheet("""
+        self.perm_desc.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_SECONDARY};
                         border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
                         padding: {SPACING_SM}; font-size: {TEXT_BODY_SMALL}pt; }}
@@ -139,12 +142,14 @@ class RoleManagementScreen(BaseScreen):
                 self._roles = result.get("data", [])
                 self._populate_role_table()
         except Exception as e:
+            # TODO: Replace with user-facing error state (no error_label/empty_label available)
             print(f"Error loading roles: {e}")
         try:
             result = self._api_client.get_permissions()
             if result.get("success"):
                 self._permissions = result.get("data", [])
         except Exception as e:
+            # TODO: Replace with user-facing error state (no error_label/empty_label available)
             print(f"Error loading permissions: {e}")
 
     def _populate_role_table(self):
@@ -207,7 +212,7 @@ class RoleManagementScreen(BaseScreen):
 
         for module_name in sorted(modules.keys()):
             group = QGroupBox(f"{module_name} ({len(modules[module_name])})")
-            group.setStyleSheet("""
+            group.setStyleSheet(f"""
                 QGroupBox {{ font-weight: bold; font-size: {TEXT_BODY}pt;
                     border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
                     margin-top: {SPACING_SM}; padding-top: {SPACING_MD}; padding-left: {SPACING_MD};
@@ -251,27 +256,26 @@ class RoleManagementScreen(BaseScreen):
         name = self._selected_role.get("name", "")
         user_count = self._selected_role.get("user_count", 0)
         if user_count > 0:
-            QMessageBox.warning(self, "Cannot Delete",
-                                f"Role '{name}' has {user_count} user(s) assigned. Remove them first.")
+            AlertDialog.warning("Cannot Delete",
+                                f"Role '{name}' has {user_count} user(s) assigned. Remove them first.", self)
             return
-        reply = QMessageBox.question(
+        reply = ConfirmDialog.confirm(
             self, "Delete Role",
             f"Are you sure you want to delete role '{name}'?",
-            QMessageBox.Yes | QMessageBox.No
         )
-        if reply == QMessageBox.Yes:
+        if reply:
             try:
                 result = self._api_client.delete_role(self._selected_role["id"])
                 if result.get("success"):
-                    QMessageBox.information(self, "Deleted", f"Role '{name}' deleted.")
+                    AlertDialog.info("Deleted", f"Role '{name}' deleted.", self)
                     self.load_data()
                     self._selected_role = None
                     self.perm_title.setText("Select a role to manage permissions")
                     self.btn_save_perms.setEnabled(False)
                 else:
-                    QMessageBox.warning(self, "Error", result.get("error", {}).get("message", "Failed to delete"))
+                    AlertDialog.warning("Error", result.get("error", {}).get("message", "Failed to delete"), self)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to delete role: {e}")
+                AlertDialog.error("Error", f"Failed to delete role: {e}", self)
 
     def save_permissions(self):
         if not self._selected_role:
@@ -285,36 +289,43 @@ class RoleManagementScreen(BaseScreen):
         try:
             result = self._api_client.update_role(self._selected_role["id"], data)
             if result.get("success"):
-                QMessageBox.information(self, "Saved", "Permissions updated successfully.")
+                AlertDialog.info("Saved", "Permissions updated successfully.", self)
                 self.load_data()
             else:
-                QMessageBox.warning(self, "Error", result.get("error", {}).get("message", "Failed to save"))
+                AlertDialog.warning("Error", result.get("error", {}).get("message", "Failed to save"), self)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save permissions: {e}")
+            AlertDialog.error("Error", f"Failed to save permissions: {e}", self)
 
     def on_show(self):
         self.load_data()
 
 
-class RoleDialog(QDialog):
+class RoleDialog(EnterpriseDialog):
     """Dialog for creating/editing roles."""
 
     def __init__(self, api_client=None, role_data=None, parent=None):
-        super().__init__(parent)
         self.api_client = api_client
         self.role_data = role_data
-        self.setWindowTitle("Create Role" if not role_data else "Edit Role")
+        title = "Create Role" if not role_data else "Edit Role"
+        super().__init__(title, DialogType.CUSTOM, parent)
         self.setMinimumWidth(450)
-        self._setup_ui()
+        content = self._build_content()
+        self.set_content(content)
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save)
         if role_data:
             self._load_data()
 
-    def _setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setSpacing(SPACING_MD)
 
-        self.setStyleSheet("""
-            QDialog {{ background-color: {COLOR_BG_MAIN}; }}
+        widget.setStyleSheet(f"""
+            QWidget {{ background-color: {COLOR_BG_MAIN}; }}
             QLabel {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt; }}
             QLineEdit, QTextEdit {{
                 background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
@@ -327,13 +338,7 @@ class RoleDialog(QDialog):
             QCheckBox::indicator:checked {{ background-color: {COLOR_SUCCESS}; border-color: {COLOR_SUCCESS}; }}
         """)
 
-        form = QGroupBox("")
-        form.setStyleSheet("""
-            QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_MD}; }}
-        """)
-        form_layout = QFormLayout(form)
-        form_layout.setSpacing(SPACING_MD)
+        section = FormSection("Role Details", primary=True)
 
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("e.g. Warehouse Manager")
@@ -344,11 +349,11 @@ class RoleDialog(QDialog):
         self.active_cb.setChecked(True)
         self.require_2fa = QCheckBox("Require 2FA for users with this role")
 
-        form_layout.addRow("Name:", self.name_input)
-        form_layout.addRow("Description:", self.desc_input)
-        form_layout.addRow("", self.active_cb)
-        form_layout.addRow("", self.require_2fa)
-        layout.addWidget(form)
+        section.add_field(self.name_input, "Name:")
+        section.add_field(self.desc_input, "Description:")
+        section.add_field(self.active_cb)
+        section.add_field(self.require_2fa)
+        layout.addWidget(section)
 
         btn_layout = QHBoxLayout()
         cancel_btn = EnterpriseButton(text="Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
@@ -360,6 +365,8 @@ class RoleDialog(QDialog):
         btn_layout.addWidget(save_btn)
         layout.addLayout(btn_layout)
 
+        return widget
+
     def _load_data(self):
         self.name_input.setText(self.role_data.get("name", ""))
         self.desc_input.setText(self.role_data.get("description", ""))
@@ -369,7 +376,7 @@ class RoleDialog(QDialog):
     def save(self):
         name = self.name_input.text().strip()
         if not name:
-            QMessageBox.warning(self, "Error", "Role name is required.")
+            AlertDialog.warning("Error", "Role name is required.", self)
             return
         data = {
             "name": name,
@@ -385,6 +392,6 @@ class RoleDialog(QDialog):
             if result.get("success"):
                 self.accept()
             else:
-                QMessageBox.warning(self, "Error", result.get("error", {}).get("message", "Failed to save"))
+                AlertDialog.warning("Error", result.get("error", {}).get("message", "Failed to save"), self)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save role: {e}")
+            AlertDialog.error("Error", f"Failed to save role: {e}", self)

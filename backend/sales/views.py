@@ -411,12 +411,12 @@ class SalesInvoiceViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
     ordering = ['-order_date']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        # Use GET parameters (compatible with both Django and DRF Request)
         include_inactive = self.request.GET.get('include_inactive', 'false')
         if include_inactive == 'true':
             queryset = SalesInvoice.objects.all()
-        return queryset
+        else:
+            queryset = super().get_queryset()
+        return queryset.select_related('customer', 'company')
 
     def perform_create(self, serializer):
         """Create invoice with centralized credit limit enforcement via CreditPolicyEngine."""

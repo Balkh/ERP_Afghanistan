@@ -8,7 +8,7 @@ from PySide6.QtGui import QPainter, QColor, QPen
 class LoadingSpinner(QWidget):
     """Circular loading spinner."""
     
-    def __init__(self, size=40, color="COLOR_PRIMARY", parent=None):
+    def __init__(self, size=40, color=COLOR_PRIMARY, parent=None):
         super().__init__(parent)
         self.size = size
         self.color = QColor(color)

@@ -3,8 +3,9 @@ Correlation Intelligence Service - Cross-System Event Correlation Engine.
 Aggregates data from Sales, Accounting, Inventory, and Workflows into a unified ecosystem.
 """
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class CorrelationIntelligenceService:
     """
@@ -16,42 +17,96 @@ class CorrelationIntelligenceService:
         self.api_client = api_client
         self.event_chains: List[Dict[str, Any]] = []
 
-    def build_correlation_ecosystem(self) -> Dict[str, Any]:
-        """
-        Fetch data from all modules and correlate them into a single intelligence structure.
-        """
+    def build_from_prefetched(self, sources: Dict[str, Any]) -> Dict[str, Any]:
+        """Build correlation from hub-bundle sources (no HTTP)."""
         try:
-            # 1. Fetch source data from multiple APIs
-            invoices = self._fetch_data('/api/sales/invoices/?limit=20')
-            workflows = self._fetch_data('/api/workflows/instances/?limit=50')
-            journals = self._fetch_data('/api/accounting/journal-entries/?limit=50')
-            payments = self._fetch_data('/api/sales/payments/?limit=20')
-            
-            # 2. Correlate Invoices with Workflows, Journals, and Payments
+            invoices = sources.get("invoices") or []
+            workflows = sources.get("workflows") or []
+            journals = sources.get("journals") or []
+            payments = sources.get("payments") or []
             chains = []
             for inv in invoices:
-                chain = self._build_chain_for_invoice(inv, workflows, journals, payments)
-                chains.append(chain)
-            
+                chains.append(
+                    self._build_chain_for_invoice(inv, workflows, journals, payments)
+                )
             self.event_chains = chains
-            
-            # 3. Calculate Global Consistency Score
             score = self._calculate_erp_consistency_score(chains)
-            
             return {
                 "status": "ok",
                 "consistency_score": score,
                 "chains": chains,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "source": "hub_bundle",
             }
         except Exception as e:
             return {"status": "error", "message": str(e)}
 
+    def build_correlation_ecosystem(self, parallel: bool = True) -> Dict[str, Any]:
+        """
+        Fetch data from all modules and correlate them into a single intelligence structure.
+        Safe to call from a worker thread when using parallel=True (background HTTP).
+        """
+        try:
+            endpoints = {
+                "invoices": "/api/sales/invoices/?limit=20",
+                "workflows": "/api/workflows/instances/?limit=50",
+                "journals": "/api/accounting/journal-entries/?limit=50",
+                "payments": "/api/sales/payments/?limit=20",
+            }
+            if parallel:
+                fetched = self._fetch_all_parallel(endpoints)
+            else:
+                fetched = {k: self._fetch_data(url) for k, url in endpoints.items()}
+
+            invoices = fetched.get("invoices") or []
+            workflows = fetched.get("workflows") or []
+            journals = fetched.get("journals") or []
+            payments = fetched.get("payments") or []
+            partial = any(
+                fetched.get(k) is None for k in endpoints
+            )  # reserved for future explicit partial flags
+
+            chains = []
+            for inv in invoices:
+                chain = self._build_chain_for_invoice(inv, workflows, journals, payments)
+                chains.append(chain)
+
+            self.event_chains = chains
+            score = self._calculate_erp_consistency_score(chains)
+
+            status = "ok" if chains or not partial else "partial"
+            return {
+                "status": status,
+                "consistency_score": score,
+                "chains": chains,
+                "timestamp": datetime.now().isoformat(),
+                "partial": partial,
+            }
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    def _fetch_all_parallel(self, endpoints: Dict[str, str]) -> Dict[str, Optional[List[Dict[str, Any]]]]:
+        """Fetch multiple endpoints concurrently (intended for worker threads)."""
+        results: Dict[str, Optional[List[Dict[str, Any]]]] = {k: [] for k in endpoints}
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            future_map = {
+                pool.submit(self._fetch_data, url): key for key, url in endpoints.items()
+            }
+            for future in as_completed(future_map):
+                key = future_map[future]
+                try:
+                    results[key] = future.result()
+                except Exception:
+                    results[key] = []
+        return results
+
     def _fetch_data(self, endpoint: str) -> List[Dict[str, Any]]:
-        res = self.api_client.get(endpoint)
-        if isinstance(res, dict) and 'data' in res:
-            data = res['data']
-            return data.get('results', data) if isinstance(data, dict) else data
+        res = self.api_client.get(endpoint, background=True, retries=2)
+        if isinstance(res, dict) and res.get("success") is False:
+            return []
+        if isinstance(res, dict) and "data" in res:
+            data = res["data"]
+            return data.get("results", data) if isinstance(data, dict) else data
         return res if isinstance(res, list) else []
 
     def _build_chain_for_invoice(self, inv, workflows, journals, payments) -> Dict[str, Any]:

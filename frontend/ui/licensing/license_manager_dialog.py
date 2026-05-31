@@ -1,10 +1,10 @@
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, BORDER_RADIUS_MD, BORDER_RADIUS_LG, SPACING_SM)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_PRIMARY, BORDER_RADIUS_MD, BORDER_RADIUS_LG, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG)
 """
 License manager dialog for Pharmacy ERP.
 Provides a tabbed interface for license activation and status viewing.
 """
 
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QTabWidget, QMessageBox)
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QTabWidget)
 import sys
 import os
 
@@ -13,25 +13,31 @@ frontend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 sys.path.insert(0, frontend_dir)
 sys.path.insert(0, os.path.join(frontend_dir, 'license'))
 
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from .activation_screen import ActivationScreen
 from .license_status_screen import LicenseStatusScreen
 
 
-class LicenseManagerDialog(QDialog):
+class LicenseManagerDialog(EnterpriseDialog):
     """Dialog for managing Pharmacy ERP licenses."""
     
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Pharmacy ERP License Manager")
+        super().__init__("Pharmacy ERP License Manager", DialogType.CUSTOM, parent)
         self.setModal(True)
         self.resize(600, 500)
-        self.setup_ui()
+        content = self._build_content()
+        self.set_content(content)
         
-    def setup_ui(self):
-        """Set up the user interface."""
+    def _create_button_area(self):
+        return None
+        
+    def _build_content(self):
+        """Build the user interface content."""
+        widget = QWidget()
+        
         # Set dark theme stylesheet
-        self.setStyleSheet("""
-            QDialog {{
+        widget.setStyleSheet(f"""
+            QWidget {{
                 background-color: {COLOR_BG_MAIN};
             }}
             QLabel {{
@@ -41,13 +47,13 @@ class LicenseManagerDialog(QDialog):
                 color: {COLOR_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_LG};
-                margin-top: 12px;
-                padding-top: 12px;
+                margin-top: {SPACING_MD}px;
+                padding-top: {SPACING_MD}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 0 5px;
+                padding: 0 {SPACING_XS}px;
             }}
             QTabWidget::pane {{
                 border: 1px solid {COLOR_BORDER};
@@ -56,26 +62,15 @@ class LicenseManagerDialog(QDialog):
             QTabBar::tab {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
-                padding: {SPACING_SM}px 16px;
+                padding: {SPACING_SM}px {SPACING_LG}px;
                 border: none;
             }}
             QTabBar::tab:selected {{
                 background-color: {COLOR_BORDER};
             }}
-            QPushButton {{
-                background-color: {COLOR_PRIMARY};
-                color: {COLOR_BG_MAIN};
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px 16px;
-                font-weight: bold;
-            }}
-            QPushButton:hover {{
-                background-color: {COLOR_PRIMARY_HOVER};
-            }}
         """)
         
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(widget)
         
         # Create tab widget
         self.tab_widget = QTabWidget()
@@ -103,14 +98,15 @@ class LicenseManagerDialog(QDialog):
         
         layout.addLayout(button_layout)
         
+        return widget
+        
     def on_activation_success(self):
         """Handle successful license activation."""
-        QMessageBox.information(
-            self,
+        AlertDialog.info(
             "Activation Successful",
             "Pharmacy ERP has been successfully activated!\n\n"
             "Please restart the application to apply the license.",
-            QMessageBox.Ok
+            self,
         )
         # Refresh the license status screen
         self.license_status_screen.license_validator.force_revalidation()
@@ -118,11 +114,10 @@ class LicenseManagerDialog(QDialog):
         
     def on_activation_failed(self, message):
         """Handle failed license activation."""
-        QMessageBox.warning(
-            self,
+        AlertDialog.warning(
             "Activation Failed",
             f"License activation failed:\n\n{message}",
-            QMessageBox.Ok
+            self,
         )
 
 

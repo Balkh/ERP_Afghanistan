@@ -1,8 +1,8 @@
 """Payroll management screen."""
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                  QLabel, QLineEdit,
-                                 QMessageBox, QComboBox, QFormLayout,
-                                   QDialog, QTabWidget, QDoubleSpinBox,
+                                 QComboBox, QFormLayout,
+                                   QTabWidget, QDoubleSpinBox,
                                  QCheckBox, QFrame)
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
@@ -13,6 +13,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 
 
 class PayrollScreen(BaseScreen):
@@ -62,7 +63,7 @@ class PayrollScreen(BaseScreen):
         layout.addWidget(self.error_label)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
+        self.tabs.setStyleSheet(f"""
             QTabWidget::pane {{ 
                 border: 1px solid {COLOR_BORDER}; 
                 border-radius: {BORDER_RADIUS_LG}; 
@@ -72,7 +73,7 @@ class PayrollScreen(BaseScreen):
                 background: {COLOR_TEXT_SECONDARY}; 
                 color: {COLOR_TEXT_PRIMARY};
                 border: none; 
-                padding: {SPACING_MD}px 24px; 
+                padding: {SPACING_MD}px {SPACING_XXL}px; 
                 border-top-left-radius: 6px; 
                 border-top-right-radius: 6px; 
             }}
@@ -132,7 +133,7 @@ class PayrollScreen(BaseScreen):
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_bar = QFrame()
-        filter_bar.setStyleSheet("""
+        filter_bar.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_BG_SURFACE};
                 border-radius: {BORDER_RADIUS_LG};
@@ -152,7 +153,9 @@ class PayrollScreen(BaseScreen):
         
         action_layout = QHBoxLayout()
         generate_btn = EnterpriseButton(text="Generate Payroll", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        generate_btn.clicked.connect(self._generate_payroll)
         approve_btn = EnterpriseButton(text="Approve", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        approve_btn.clicked.connect(self._approve_payroll)
         
         action_layout.addWidget(generate_btn)
         action_layout.addWidget(approve_btn)
@@ -177,6 +180,9 @@ class PayrollScreen(BaseScreen):
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         action_layout = QHBoxLayout()
+        self.btn_generate_payslip = EnterpriseButton(text="Generate Payslip", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.btn_generate_payslip.clicked.connect(self._generate_payslip)
+        action_layout.addWidget(self.btn_generate_payslip)
         export_btn = EnterpriseButton(text="Export to Excel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         action_layout.addWidget(export_btn)
         action_layout.addStretch()
@@ -334,9 +340,82 @@ class PayrollScreen(BaseScreen):
             {"employee_name": "Maria Haq", "period": "April 2026", "basic_salary": "20000.00", "total_allowances": "3000.00", "total_deductions": "2500.00", "gross_salary": "23000.00", "net_salary": "20500.00", "status": "Paid"},
         ]
     
-    def _add_salary_structure(self):
-        dialog = SalaryStructureDialog(self)
+    def _generate_payslip(self):
+        """Generate payslip for the selected payroll record."""
+        from ui.hr.payslip_dialog import PayslipDialog
+
+        selected_rows = self.records_table.get_selected_data()
+        if not selected_rows:
+            AlertDialog.warning("No Selection", "Please select a payroll record to generate a payslip.", self)
+            return
+
+        selected = selected_rows[0]
+        payslip_data = {
+            "company_name": "Pharmacy ERP",
+            "employee_name": selected.get("employee_name", "N/A"),
+            "department": selected.get("department", "Pharmacy"),
+            "position": selected.get("position", "Staff"),
+            "period": selected.get("period", "N/A"),
+            "currency": "AFN",
+            "basic_salary": float(selected.get("basic_salary", 0)),
+            "earnings": [
+                {"label": "Basic Salary", "amount": float(selected.get("basic_salary", 0))},
+                {"label": "Allowances", "amount": float(selected.get("total_allowances", 0))},
+            ],
+            "deductions": [
+                {"label": "Tax", "amount": float(selected.get("tax", 0))},
+                {"label": "Insurance", "amount": float(selected.get("insurance", 0))},
+                {"label": "Loan Deduction", "amount": float(selected.get("loan_deduction", 0))},
+            ],
+            "total_earnings": float(selected.get("gross_salary", 0)),
+            "total_deductions": float(selected.get("total_deductions", 0)),
+            "net_pay": float(selected.get("net_salary", 0)),
+        }
+
+        dialog = PayslipDialog(self, payslip_data=payslip_data)
         dialog.exec()
+
+    def _add_salary_structure(self):
+        dialog = SalaryStructureDialog(self, api_client=self.api_client)
+        if dialog.exec():
+            self._load_salary_structures()
+    
+    def _generate_payroll(self):
+        """Generate payroll for the selected cycle."""
+        selected_rows = self.cycle_table.get_selected_data()
+        if not selected_rows:
+            AlertDialog.warning("No Selection", "Please select a payroll cycle to generate.", self)
+            return
+        try:
+            endpoint = get_endpoint("payroll_generate") or "/api/payroll/generate/"
+            response = self.api_client.post(endpoint, {})
+            if response and isinstance(response, dict) and response.get("success"):
+                AlertDialog.info("Success", "Payroll generated successfully.", self)
+                self._load_payroll_cycles()
+                self._load_payroll_records()
+            else:
+                error = response.get("error", "Generation failed") if isinstance(response, dict) else "Generation failed"
+                AlertDialog.error("Error", str(error), self)
+        except Exception as e:
+            AlertDialog.error("Error", f"Failed to generate payroll: {e}", self)
+
+    def _approve_payroll(self):
+        """Approve the selected payroll cycle."""
+        selected_rows = self.cycle_table.get_selected_data()
+        if not selected_rows:
+            AlertDialog.warning("No Selection", "Please select a payroll cycle to approve.", self)
+            return
+        try:
+            endpoint = get_endpoint("payroll_approve") or "/api/payroll/approve/"
+            response = self.api_client.post(endpoint, {})
+            if response and isinstance(response, dict) and response.get("success"):
+                AlertDialog.info("Success", "Payroll approved successfully.", self)
+                self._load_payroll_cycles()
+            else:
+                error = response.get("error", "Approval failed") if isinstance(response, dict) else "Approval failed"
+                AlertDialog.error("Error", str(error), self)
+        except Exception as e:
+            AlertDialog.error("Error", f"Failed to approve payroll: {e}", self)
     
     def _on_screen_shown(self):
         """Called when screen is shown (overrides BaseScreen)."""
@@ -344,17 +423,24 @@ class PayrollScreen(BaseScreen):
         self.load_data()
 
 
-class SalaryStructureDialog(QDialog):
+class SalaryStructureDialog(EnterpriseDialog):
     """Dialog for creating salary structures."""
     
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Add Salary Structure")
+    def __init__(self, parent=None, api_client=None):
+        super().__init__("Add Salary Structure", DialogType.CUSTOM, parent)
         self.setMinimumSize(500, 400)
-        self._setup_ui()
+        self._submitting = False
+        self._structure_id = None
+        self.api_client = api_client
+        content = self._build_content()
+        self.set_content(content)
     
-    def _setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+    
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         
         form_layout = QFormLayout()
         
@@ -386,11 +472,35 @@ class SalaryStructureDialog(QDialog):
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(ok_btn)
         layout.addLayout(btn_layout)
+        
+        return widget
     
     def save(self):
-        if not self.name.text().strip():
-            QMessageBox.warning(self, "Validation", "Name is required.")
+        if self._submitting:
             return
-        
-        QMessageBox.information(self, "Success", "Salary structure created!")
-        self.accept()
+        self._submitting = True
+        name = self.name.text().strip()
+        if not name:
+            AlertDialog.warning("Validation Error", "Name is required.", self)
+            self._submitting = False
+            return
+        data = {
+            "name": name,
+            "basic_salary": str(self.basic_salary.value()),
+            "is_active": self.is_active.isChecked(),
+        }
+        try:
+            if self._structure_id:
+                response = self.api_client.put(f"/api/payroll/records/{self._structure_id}/", data)
+            else:
+                response = self.api_client.post("/api/payroll/records/", data)
+            if response and (response.get("success") or response.get("id")):
+                AlertDialog.info("Success", "Salary structure saved.", self)
+                self.accept()
+            else:
+                errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
+                AlertDialog.error("Error", str(errors), self)
+        except Exception as e:
+            AlertDialog.error("Error", str(e), self)
+        finally:
+            self._submitting = False

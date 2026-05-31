@@ -1,99 +1,120 @@
 import time
-import requests
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+
+from api.client import APIClient
+
 
 class ControlCenterService:
     """
     Service layer for Control Center.
-    Handles resilient API communication with timeouts, retries, and normalized responses.
+    Supports single BFF bundle (Sprint 2) or legacy per-endpoint fetch.
     """
-    
-    def __init__(self, base_url: str = "http://localhost:8000"):
-        self.base_url = base_url
-        self.session = requests.Session()
-        self.session.headers.update({
-            "Content-Type": "application/json",
-            "Accept": "application/json; version=v1"
-        })
-        # Cache for last known good values
+
+    def __init__(self, base_url: str = "http://localhost:8000", api_client=None):
+        self.base_url = base_url.rstrip("/")
+        self._api = api_client or APIClient()
         self._cache: Dict[str, Any] = {}
 
     def _normalize_response(self, status: str, data: Any = None, error: str = "") -> Dict[str, Any]:
-        """Standardize the response format."""
         return {
-            "status": status,  # "ok", "error", "unavailable"
+            "status": status,
             "data": data or {},
             "error": error,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
+    def _fetch_hub_bundle(self) -> Optional[Dict[str, Any]]:
+        """Single round-trip via authenticated API client."""
+        try:
+            res = self._api.get(
+                "/api/control-center/hub-bundle/",
+                background=True,
+                retries=1,
+            )
+            if isinstance(res, dict) and res.get("success") is False:
+                return None
+            bundle = res.get("data", res) if isinstance(res, dict) else res
+            if not isinstance(bundle, dict):
+                return None
+            return {
+                "health": self._normalize_response("ok", bundle.get("health", {})),
+                "intelligence": self._normalize_response("ok", bundle.get("intelligence", {})),
+                "signals": self._normalize_response("ok", bundle.get("signals", [])),
+                "jobs": self._normalize_response("ok", bundle.get("jobs", {})),
+                "financial": self._normalize_response("ok", bundle.get("financial", {})),
+                "inventory": self._normalize_response("ok", bundle.get("inventory", {})),
+                "ops": self._normalize_response("ok", bundle.get("operations", {})),
+                "stats": self._normalize_response("ok", bundle.get("stats", {})),
+                "workflows": self._normalize_response(
+                    "ok",
+                    bundle.get("workflows_pending", bundle.get("workflow_instances", [])),
+                ),
+                "_bundle_raw": bundle,
+            }
+        except Exception:
+            return None
+
     def fetch_endpoint(self, key: str, url: str, timeout: int = 8, retries: int = 2) -> Dict[str, Any]:
-        """
-        Fetch a single endpoint with retry logic and timeout.
-        """
-        full_url = f"{self.base_url}{url}"
         attempt = 0
-        
+
         while attempt <= retries:
             try:
-                response = self.session.get(full_url, timeout=timeout)
-                
-                if response.status_code == 200:
-                    try:
-                        res_json = response.json()
-                        # Handle standardized backend wrapper
-                        data = res_json.get('data', res_json) if isinstance(res_json, dict) and 'success' in res_json else res_json
-                        
-                        # Update cache with last known good value
-                        self._cache[key] = data
-                        return self._normalize_response("ok", data=data)
-                    except ValueError:
-                        return self._normalize_response("error", error="Invalid JSON response")
-                
-                # If not 200, maybe retry
-                attempt += 1
-                if attempt <= retries:
-                    time.sleep(0.5 * attempt) # Simple backoff
-                    continue
-                
-                return self._normalize_response("unavailable", 
-                                             data=self._cache.get(key), 
-                                             error=f"HTTP {response.status_code}")
+                res = self._api.get(url, background=True, retries=0)
 
-            except requests.exceptions.RequestException as e:
+                if isinstance(res, dict) and res.get("success") is False:
+                    attempt += 1
+                    if attempt <= retries:
+                        time.sleep(0.5 * attempt)
+                        continue
+                    return self._normalize_response(
+                        "unavailable",
+                        data=self._cache.get(key),
+                        error=res.get("error", "Request failed"),
+                    )
+
+                data = res.get("data", res) if isinstance(res, dict) and "success" in res else res
+                self._cache[key] = data
+                return self._normalize_response("ok", data=data)
+
+            except Exception as e:
                 attempt += 1
                 if attempt <= retries:
                     time.sleep(0.5 * attempt)
                     continue
-                
-                return self._normalize_response("unavailable", 
-                                             data=self._cache.get(key), 
-                                             error=str(e))
-        
+                return self._normalize_response(
+                    "unavailable",
+                    data=self._cache.get(key),
+                    error=str(e),
+                )
+
         return self._normalize_response("unavailable", data=self._cache.get(key), error="Max retries reached")
 
     def get_dashboard_data(self) -> Dict[str, Any]:
-        """
-        Fetch all dashboard components. 
-        Each component is fetched independently to support partial data rendering.
-        """
+        bundled = self._fetch_hub_bundle()
+        if bundled:
+            return bundled
+
         endpoints = {
-            'health': '/api/control-center/health/',
-            'intelligence': '/api/control-center/intelligence/',
-            'signals': '/api/control-center/signals/active/',
-            'jobs': '/api/control-center/jobs/',
-            'financial': '/api/control-center/financial/',
-            'inventory': '/api/control-center/inventory/',
-            'ops': '/api/control-center/operations/',
-            'stats': '/api/control-center/stats/',
-            'workflows': '/api/workflows/my-pending/'
+            "health": "/api/control-center/health/",
+            "intelligence": "/api/control-center/intelligence/",
+            "signals": "/api/control-center/signals/active/",
+            "jobs": "/api/control-center/jobs/",
+            "financial": "/api/control-center/financial/",
+            "inventory": "/api/control-center/inventory/",
+            "ops": "/api/control-center/operations/",
+            "stats": "/api/control-center/stats/",
+            "workflows": "/api/workflows/my-pending/",
         }
-        
+
         results = {}
         for key, url in endpoints.items():
-            # Critical endpoints get more retries, others less
-            is_critical = key in ['health', 'ops', 'stats']
+            is_critical = key in ["health", "ops", "stats"]
             results[key] = self.fetch_endpoint(key, url, retries=2 if is_critical else 1)
-            
+
         return results
+
+    def get_hub_bundle_raw(self) -> Optional[Dict[str, Any]]:
+        """Full bundle for Correlation / Workflow consumers."""
+        data = self.get_dashboard_data()
+        return data.get("_bundle_raw")

@@ -1,16 +1,17 @@
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
                                QHeaderView, QAbstractItemView,
                                QComboBox, QLineEdit, QDateEdit,
-                               QMessageBox, QGroupBox, QApplication)
+                               QGroupBox, QApplication)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
-                           TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
+                           TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS,
                            COLOR_WARNING, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
 from ui.components.operator_safety import DestructiveActionGuard
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
@@ -23,14 +24,16 @@ class JournalEntryScreen(BaseScreen):
 
     def __init__(self, parent=None):
         super().__init__(parent, screen_id="journal_entries")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.entries = []
         self._is_loading = False
         self.setup_ui()
         try:
             self.load_entries()
         except Exception as e:
-            print(f"Initial load failed: {e}")
+            self.empty_label.setText(f"Initial load failed: {e}")
+            self.empty_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+            self.empty_label.setVisible(True)
 
     def _on_screen_shown(self):
         """Prevent BaseScreen from auto-loading on show — we load in __init__."""
@@ -114,12 +117,12 @@ class JournalEntryScreen(BaseScreen):
 
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
-        bar.setStyleSheet("""
+        bar.setStyleSheet(f"""
             QGroupBox {{
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_LG};
-                margin-top: 10px;
-                padding-top: 10px;
+                margin-top: {SPACING_SM}px;
+                padding-top: {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
                 font-size: {TEXT_LABEL}pt;
                 font-weight: 700;
@@ -132,11 +135,11 @@ class JournalEntryScreen(BaseScreen):
         type_layout = QVBoxLayout()
         type_layout.addWidget(QLabel("Entry Type:"))
         self.type_filter = QComboBox()
-        self.type_filter.setStyleSheet("""
+        self.type_filter.setStyleSheet(f"""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                selection-background-color: {COLOR_PRIMARY}; selection-color: {COLOR_TEXT_ON_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; }}
         """)
         self.type_filter.addItem("All", "")
@@ -150,11 +153,11 @@ class JournalEntryScreen(BaseScreen):
         status_layout = QVBoxLayout()
         status_layout.addWidget(QLabel("Status:"))
         self.status_filter = QComboBox()
-        self.status_filter.setStyleSheet("""
+        self.status_filter.setStyleSheet(f"""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                selection-background-color: {COLOR_PRIMARY}; selection-color: {COLOR_TEXT_ON_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; }}
         """)
         self.status_filter.addItem("All", "")
@@ -294,7 +297,9 @@ class JournalEntryScreen(BaseScreen):
         except Exception as e:
             self.entries = []
             self._populate_table()
-            print(f"Error loading entries: {e}")
+            self.empty_label.setText(f"Error loading entries: {e}")
+            self.empty_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+            self.empty_label.setVisible(True)
 
     def _populate_table(self):
         if not self.entries:
@@ -395,9 +400,9 @@ class JournalEntryScreen(BaseScreen):
             try:
                 self.api_client.post(f"/api/accounting/journal-entries/{entry['id']}/post_entry/")
                 self.load_entries()
-                QMessageBox.information(self, "Success", "Journal entry posted successfully.")
+                AlertDialog.info("Success", "Journal entry posted successfully.", self)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to post entry: {e}")
+                AlertDialog.error("Error", f"Failed to post entry: {e}", self)
 
     def _on_unpost(self):
         entry = self._get_selected_entry()
@@ -411,9 +416,9 @@ class JournalEntryScreen(BaseScreen):
             try:
                 self.api_client.post(f"/api/accounting/journal-entries/{entry['id']}/unpost_entry/")
                 self.load_entries()
-                QMessageBox.information(self, "Success", "Journal entry unposted successfully.")
+                AlertDialog.info("Success", "Journal entry unposted successfully.", self)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to unpost entry: {e}")
+                AlertDialog.error("Error", f"Failed to unpost entry: {e}", self)
 
     def _on_reverse(self):
         entry = self._get_selected_entry()
@@ -429,9 +434,9 @@ class JournalEntryScreen(BaseScreen):
                     data={"reason": "Reversed from UI"}
                 )
                 self.load_entries()
-                QMessageBox.information(self, "Success", "Journal entry reversed successfully.")
+                AlertDialog.info("Success", "Journal entry reversed successfully.", self)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to reverse entry: {e}")
+                AlertDialog.error("Error", f"Failed to reverse entry: {e}", self)
 
     def _show_entry_detail(self, entry):
         from ui.accounting.components.journal_entry_detail import JournalEntryDetailDialog

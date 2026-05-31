@@ -1,5 +1,5 @@
 """Reconciliation management screen for returns."""
-from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QMessageBox,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
                                 QComboBox, QGroupBox, QInputDialog, QFileDialog)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
@@ -7,18 +7,19 @@ from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE,
                            TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL,
                            COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED, COLOR_PRIMARY, BORDER_RADIUS_LG, BORDER_RADIUS_MD,
-                           COLOR_TEXT_TITLE)
+                           COLOR_TEXT_TITLE, COLOR_TEXT_ON_PRIMARY)
 
 
 class ReconciliationScreen(BaseScreen):
     """Screen for managing reconciliation entries and mismatches."""
 
     def __init__(self, api_client=None, parent=None):
-        super().__init__(api_client=api_client, parent=parent)
+        super().__init__(parent=parent)
         self._api_client = api_client
         self.entries_data = []
 
@@ -116,11 +117,11 @@ class ReconciliationScreen(BaseScreen):
         status_layout = QVBoxLayout()
         status_layout.addWidget(QLabel("Status:"))
         self.status_filter = QComboBox()
-        self.status_filter.setStyleSheet("""
+        self.status_filter.setStyleSheet(f"""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                selection-background-color: {COLOR_PRIMARY}; selection-color: {COLOR_TEXT_ON_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; }}
         """)
         self.status_filter.addItems(["All Status", "PENDING", "MATCHED", "MISMATCHED", "FIXED"])
@@ -133,11 +134,11 @@ class ReconciliationScreen(BaseScreen):
         type_layout = QVBoxLayout()
         type_layout.addWidget(QLabel("Transaction Type:"))
         self.type_filter = QComboBox()
-        self.type_filter.setStyleSheet("""
+        self.type_filter.setStyleSheet(f"""
             QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
             QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY}; selection-color: white;
+                selection-background-color: {COLOR_PRIMARY}; selection-color: {COLOR_TEXT_ON_PRIMARY};
                 border: 1px solid {COLOR_BORDER}; }}
         """)
         self.type_filter.addItems(["All Types", "INVOICE", "RETURN", "PAYMENT", "ADJUSTMENT"])
@@ -274,13 +275,13 @@ class ReconciliationScreen(BaseScreen):
             f"Notes: {entry.get('notes', 'None')}\n"
             f"Fixed By: {entry.get('fixed_by_name', 'N/A')}"
         )
-        QMessageBox.information(self, "Reconciliation Details", details)
+        AlertDialog.info("Reconciliation Details", details, self)
 
     def _fix_mismatch(self):
         """Fix a mismatched reconciliation entry."""
         selected = self.table.selectedItems()
         if not selected:
-            QMessageBox.warning(self, "No Selection", "Please select an entry to fix.")
+            AlertDialog.warning("No Selection", "Please select an entry to fix.", self)
             return
 
         row = selected[0].row()
@@ -291,7 +292,7 @@ class ReconciliationScreen(BaseScreen):
             return
 
         if entry.get("status") != "MISMATCHED":
-            QMessageBox.warning(self, "Invalid Action", "Only MISMATCHED entries can be fixed.")
+            AlertDialog.warning("Invalid Action", "Only MISMATCHED entries can be fixed.", self)
             return
 
         notes, ok = QInputDialog.getText(
@@ -319,18 +320,18 @@ class ReconciliationScreen(BaseScreen):
                 })
 
                 if response and (response.get("success") or response.get("id")):
-                    QMessageBox.information(self, "Success", "Reconciliation entry marked as FIXED.")
+                    AlertDialog.info("Success", "Reconciliation entry marked as FIXED.", self)
                     self._load_entries()
                 else:
                     err = response.get("error", "Unknown error") if response else "No response"
-                    QMessageBox.critical(self, "Error", f"Failed to fix: {err}")
+                    AlertDialog.error("Error", f"Failed to fix: {err}", self)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"API Error: {e}")
+                AlertDialog.error("Error", f"API Error: {e}", self)
 
     def _export_csv(self):
         """Export reconciliation entries to CSV."""
         if not self._api_client:
-            QMessageBox.warning(self, "No Connection", "CSV export requires API connection.")
+            AlertDialog.warning("No Connection", "CSV export requires API connection.", self)
             return
         
         file_path, _ = QFileDialog.getSaveFileName(
@@ -352,11 +353,11 @@ class ReconciliationScreen(BaseScreen):
             if response:
                 with open(file_path, 'wb') as f:
                     f.write(response)
-                QMessageBox.information(self, "Success", f"Reconciliation exported to:\n{file_path}")
+                AlertDialog.info("Success", f"Reconciliation exported to:\n{file_path}", self)
             else:
-                QMessageBox.critical(self, "Error", "Failed to export reconciliation.")
+                AlertDialog.error("Error", "Failed to export reconciliation.", self)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Export failed: {e}")
+            AlertDialog.error("Error", f"Export failed: {e}", self)
 
     def on_show(self):
         """Called when screen is shown."""

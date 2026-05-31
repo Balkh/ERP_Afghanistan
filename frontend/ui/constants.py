@@ -178,10 +178,10 @@ _THEME_DARK = {
     "COLOR_SUCCESS_HOVER": "#94e2d5",
     "COLOR_SUCCESS_ACTIVE": "#74c7a0",
     "COLOR_SUCCESS_MUTED": "#5a7a6a",
-    "COLOR_SUCCESS_BG": "#1e3a2",
+    "COLOR_SUCCESS_BG": "#1e3a2e",
 
     # ── STATE: WARNING ──
-    "COLOR_WARNING": "#f9e2a",
+    "COLOR_WARNING": "#f9e2af",
     "COLOR_WARNING_HOVER": "#fab387",
     "COLOR_WARNING_ACTIVE": "#f38ba8",
     "COLOR_WARNING_MUTED": "#8a7a5a",
@@ -259,9 +259,9 @@ _THEME_DARK = {
     # ── VALIDATION ──
     "COLOR_HELPER_TEXT": "#6c7086",
     "COLOR_VALID_SUCCESS": "#a6e3a1",
-    "COLOR_VALID_WARNING": "#f9e2a",
+    "COLOR_VALID_WARNING": "#f9e2af",
     "COLOR_VALID_ERROR": "#f38ba8",
-    "COLOR_VALID_BG_SUCCESS": "#1e3a2",
+    "COLOR_VALID_BG_SUCCESS": "#1e3a2e",
     "COLOR_VALID_BG_WARNING": "#3a3520",
     "COLOR_VALID_BG_ERROR": "#3a1f2a",
     "COLOR_INPUT_SUCCESS": "#4a8a5a",
@@ -284,7 +284,7 @@ _THEME_DARK = {
     "COLOR_STATUS_VALID": "#a6e3a1",
     "COLOR_STATUS_INVALID": "#f38ba8",
     "COLOR_STATUS_WARNING": "#fab387",
-    "COLOR_STATUS_PENDING": "#f9e2a",
+    "COLOR_STATUS_PENDING": "#f9e2af",
 
     # ── TYPOGRAPHY ──
     "COLOR_TEXT_TITLE": "#e5e8f0",
@@ -319,9 +319,9 @@ _THEME_LIGHT = {
     # ── PRIMARY BRAND (Modern Indigo/Blue) ──
     "COLOR_PRIMARY": "#2563eb",            # Blue-600
     "COLOR_PRIMARY_HOVER": "#1d4ed8",      # Blue-700
-    "COLOR_PRIMARY_ACTIVE": "#1e40a",     # Blue-800
+    "COLOR_PRIMARY_ACTIVE": "#1e40af",    # Blue-800
     "COLOR_PRIMARY_MUTED": "#93c5fd",      # Blue-300
-    "COLOR_PRIMARY_BG": "#eff6",         # Blue-50
+    "COLOR_PRIMARY_BG": "#eff6fe",        # Blue-50
 
     # ── STATE COLORS (Semantic) ──
     "COLOR_SUCCESS": "#059669",            # Emerald-600
@@ -341,7 +341,7 @@ _THEME_LIGHT = {
     "COLOR_DANGER": "#e11d48",             # Rose-600
     "COLOR_DANGER_HOVER": "#be123c",       # Rose-700
     "COLOR_DANGER_ACTIVE": "#9f1239",
-    "COLOR_DANGER_MUTED": "#fda4a",
+    "COLOR_DANGER_MUTED": "#fda4af",
     "COLOR_DANGER_BG": "#fff1f2",         # Rose-50
 
     # ── STATE: INFO ──
@@ -349,7 +349,7 @@ _THEME_LIGHT = {
     "COLOR_INFO_HOVER": "#0284c7",
     "COLOR_INFO_ACTIVE": "#0369a1",
     "COLOR_INFO_MUTED": "#7dd3fc",
-    "COLOR_INFO_BG": "#f0f9",
+    "COLOR_INFO_BG": "#f0f9ff",
 
     # ── BORDERS ──
     "COLOR_BORDER": "#cbd5e1",             # Slate-300: Visible border
@@ -374,7 +374,7 @@ _THEME_LIGHT = {
     "TABLE_BG_PRIMARY": "#fff",
     "TABLE_BG_SECONDARY": "#f8fafc",
     "TABLE_BG_HOVER": "#f1f5f9",
-    "TABLE_BG_SELECTED": "#eff6",
+    "TABLE_BG_SELECTED": "#eff6fe",
     "TABLE_GRID_COLOR": "#cbd5e1",         # Visible grid lines
     "TABLE_TEXT_PRIMARY": "#020617",
     "TABLE_TEXT_MUTED": "#475569",
@@ -523,24 +523,6 @@ BORDER_RADIUS_MD = 8        # Modern, softer radius
 BORDER_RADIUS_LG = 12       # For cards and sections
 BORDER_RADIUS_XL = 16
 BORDER_RADIUS_PILL = 99     # Standard pill radius
-
-# Opacity values
-OPACITY_DISABLED = 0.5
-OPACITY_HOVER = 0.8
-OPACITY_PRESSED = 0.6
-
-# Duration for animations (in milliseconds)
-ANIMATION_FAST = 150
-ANIMATION_NORMAL = 250
-ANIMATION_SLOW = 350
-
-# Z-index values for layering
-Z_INDEX_BACKGROUND = 0
-Z_INDEX_CONTENT = 1
-Z_INDEX_OVERLAY = 2
-Z_INDEX_TOOLTIP = 3
-Z_INDEX_MODAL = 4
-Z_INDEX_TOAST = 5
 
 # ═══════════════════════════════════════════════════════════════
 # COLOR TOKENS — sourced from the active theme dict above.

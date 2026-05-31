@@ -9,12 +9,9 @@ from ui.constants import (
     COLOR_BG_ELEVATED, SPACING_NONE, SPACING_XS, SPACING_MD,
     SPACING_LG, TEXT_LABEL, TEXT_SECTION_TITLE,
     TEXT_TABLE, MARGIN_PAGE, SPACING_6, BORDER_RADIUS_PILL)
+import importlib
+
 from theme.style_builder import UIStyleBuilder
-from ui.system.control_center_screen import ControlCenterScreen
-from ui.system.workflow_intelligence_screen import WorkflowIntelligenceScreen
-from ui.system.integrity_screen import SystemIntegrityScreen
-from ui.system.drift_intelligence_screen import DriftIntelligenceScreen
-from ui.system.correlation_screen import SystemCorrelationScreen
 from utils.logger import (
     generate_operational_dashboard_data,
     get_event_summary,
@@ -29,6 +26,7 @@ class IntelligenceHubScreen(BaseScreen):
         self._api_client = api_client
         self._kpi_value_labels = {}
         self._risk_value_labels = {}
+        self._loaded_tab_index = None
         self._setup_ui()
 
     def _setup_ui(self):
@@ -76,12 +74,37 @@ class IntelligenceHubScreen(BaseScreen):
         self.tabs.addTab(self.overview_tab, "Overview")
 
         self.tab_instances = {
-            1: {"class": ControlCenterScreen, "instance": None, "label": "Observability"},
-            2: {"class": WorkflowIntelligenceScreen, "instance": None, "label": "Workflows"},
-            3: {"class": SystemIntegrityScreen, "instance": None, "label": "Integrity"},
-            4: {"class": DriftIntelligenceScreen, "instance": None, "label": "Drift Intel"},
-            5: {"class": SystemCorrelationScreen, "instance": None, "label": "Correlation"},
-            6: {"class": None, "instance": None, "label": "Decisions"},
+            1: {
+                "module": "ui.system.control_center_screen",
+                "class_name": "ControlCenterScreen",
+                "instance": None,
+                "label": "Observability",
+            },
+            2: {
+                "module": "ui.system.workflow_intelligence_screen",
+                "class_name": "WorkflowIntelligenceScreen",
+                "instance": None,
+                "label": "Workflows",
+            },
+            3: {
+                "module": "ui.system.integrity_screen",
+                "class_name": "SystemIntegrityScreen",
+                "instance": None,
+                "label": "Integrity",
+            },
+            4: {
+                "module": "ui.system.drift_intelligence_screen",
+                "class_name": "DriftIntelligenceScreen",
+                "instance": None,
+                "label": "Drift Intel",
+            },
+            5: {
+                "module": "ui.system.correlation_screen",
+                "class_name": "SystemCorrelationScreen",
+                "instance": None,
+                "label": "Correlation",
+            },
+            6: {"module": None, "class_name": None, "instance": None, "label": "Decisions"},
         }
 
         for i in range(1, 6):
@@ -253,25 +276,69 @@ class IntelligenceHubScreen(BaseScreen):
             self.decisions_list_detail.addItem("Decision engine temporarily unavailable.")
             self.decisions_list_detail.setUpdatesEnabled(True)
 
+    def _import_screen_class(self, module_path: str, class_name: str):
+        module = importlib.import_module(module_path)
+        return getattr(module, class_name)
+
+    def _teardown_tab(self, index: int):
+        tab_info = self.tab_instances.get(index)
+        if not tab_info or tab_info.get("instance") is None:
+            return
+        instance = tab_info["instance"]
+        if hasattr(instance, "_on_screen_hidden"):
+            instance._on_screen_hidden()
+        instance.setParent(None)
+        instance.deleteLater()
+        tab_info["instance"] = None
+        placeholder = QWidget()
+        QVBoxLayout(placeholder).addWidget(
+            QLabel(f"Loading {tab_info['label']}...")
+        )
+        self.tabs.blockSignals(True)
+        self.tabs.removeTab(index)
+        self.tabs.insertTab(index, placeholder, tab_info["label"])
+        self.tabs.blockSignals(False)
+
     def _on_tab_changed(self, index):
         if index == 0:
+            if self._loaded_tab_index is not None:
+                self._teardown_tab(self._loaded_tab_index)
+                self._loaded_tab_index = None
             return
         if index == 6:
+            if self._loaded_tab_index is not None and self._loaded_tab_index != 6:
+                self._teardown_tab(self._loaded_tab_index)
+            self._loaded_tab_index = None
             self._refresh_decisions_tab()
             return
+        prev = self._loaded_tab_index
+        if prev is not None and prev != index:
+            self._teardown_tab(prev)
         tab_info = self.tab_instances.get(index)
-        if tab_info and tab_info["instance"] is None:
-            screen_class = tab_info["class"]
+        if not tab_info:
+            return
+        if tab_info["instance"] is None:
+            screen_class = self._import_screen_class(
+                tab_info["module"], tab_info["class_name"]
+            )
             instance = screen_class(api_client=self._api_client)
             tab_info["instance"] = instance
+            self.tabs.blockSignals(True)
             self.tabs.removeTab(index)
             self.tabs.insertTab(index, instance, tab_info["label"])
             self.tabs.setCurrentIndex(index)
+            self.tabs.blockSignals(False)
             if hasattr(instance, "_on_screen_shown"):
                 instance._on_screen_shown()
+        self._loaded_tab_index = index
 
     def _on_screen_shown(self):
         self._refresh_overview_dashboard()
+
+    def _on_screen_hidden(self):
+        if self._loaded_tab_index is not None:
+            self._teardown_tab(self._loaded_tab_index)
+            self._loaded_tab_index = None
 
     def _refresh_overview_dashboard(self):
         try:

@@ -1,9 +1,10 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QTextEdit,
-                               QHBoxLayout, QLabel, QMessageBox, QFileDialog)
+from PySide6.QtWidgets import (QVBoxLayout, QTextEdit,
+                                QHBoxLayout, QLabel, QFileDialog, QWidget)
 from PySide6.QtGui import QFont
 from PySide6.QtPrintSupport import QPrinter, QPrintDialog, QPrintPreviewDialog
 from api.document_action_service import DocumentActionService
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from utils.invoice_template_engine import InvoiceTemplateEngine
 from utils.qr_generator import QRCodeGenerator
 from api.client import APIClient
@@ -12,31 +13,31 @@ from ui.constants import (COLOR_WHATSAPP, SPACING_MD, SPACING_SM, SPACING_LG, SP
                            TEXT_SECTION_TITLE, TEXT_TABLE)
 
 
-class PrintableInvoiceDialog(QDialog):
+class PrintableInvoiceDialog(EnterpriseDialog):
     """Dialog for previewing and printing invoices."""
 
     def __init__(self, parent=None, invoice_data=None, invoice_type="sale", api_client=None):
-        super().__init__(parent)
         self.invoice_data = invoice_data or {}
         self.invoice_type = invoice_type
         self._api_client = api_client or APIClient()
         self.template_engine = InvoiceTemplateEngine()
         self.company_info = self._load_company_info()
-        
-        self.setWindowTitle("Print Invoice")
+        super().__init__("Print Invoice", DialogType.CUSTOM, parent)
         self.setModal(True)
         self.resize(900, 700)
-        self.setup_ui()
+        content = self._build_content()
+        self.set_content(content)
         self.render_invoice()
+
+    def _create_button_area(self):
+        return None
     
     def _load_company_info(self):
         """Load company info from backend API (SSOT)."""
         try:
             resp = self._api_client.get("/api/companies/config/")
-            if resp.status_code == 200:
-                data = resp.json()
-                if data.get("success"):
-                    data = data.get("data", data)
+            if isinstance(resp, dict) and resp.get("success"):
+                data = resp.get("data", resp)
                 return {
                     "name": data.get("company_name", "Pharmacy ERP"),
                     "address": data.get("address", ""),
@@ -58,8 +59,9 @@ class PrintableInvoiceDialog(QDialog):
             "invoice_footer": "",
         }
 
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
 
         # Title
@@ -102,6 +104,8 @@ class PrintableInvoiceDialog(QDialog):
         button_layout.addWidget(close_btn)
         layout.addLayout(button_layout)
 
+        return widget
+
     def render_invoice(self):
         """Render invoice using dynamic engine if possible, else fallback."""
         try:
@@ -143,8 +147,11 @@ class PrintableInvoiceDialog(QDialog):
 
         from ui.constants import (
             COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_PRIMARY, COLOR_BORDER,
-            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
-            COLOR_SUCCESS, COLOR_DANGER, COLOR_WARNING
+            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY,
+            COLOR_SUCCESS, COLOR_DANGER, COLOR_WARNING,
+            SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
+            BORDER_RADIUS_MD, BORDER_RADIUS_LG,
+            TEXT_BODY, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_TABLE, TEXT_TABLE_HEADER, TEXT_HELPER
         )
 
         __header_color = COLOR_PRIMARY
@@ -162,25 +169,25 @@ class PrintableInvoiceDialog(QDialog):
         <head>
             <style>
                 body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: {SPACING_XL}px; font-size: {TEXT_BODY}px; color: {COLOR_TEXT_PRIMARY}; background-color: {COLOR_BG_SURFACE}; }}
-                .header {{ background-color: {header_color}; color: white; padding: {SPACING_XL}px; border-radius: 8px; }}
+                .header {{ background-color: {header_color}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_XL}px; border-radius: {BORDER_RADIUS_LG}px; }}
                 .header h1 {{ margin: 0; font-size: {TEXT_SECTION_TITLE}px; }}
                 .header p {{ margin: {SPACING_XS}px 0; opacity: 0.9; }}
                 .invoice-info {{ display: flex; justify-content: space-between; margin: {SPACING_XL}px 0; }}
                 .invoice-info div {{ width: 48%; }}
                 table {{ width: 100%; border-collapse: collapse; margin: {SPACING_XL}px 0; }}
-                th {{ background-color: {accent_color}; color: white; padding: {SPACING_MD}px; text-align: left; font-weight: 600; }}
+                th {{ background-color: {accent_color}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_MD}px; text-align: left; font-weight: 600; }}
                 td {{ padding: {SPACING_SM}px 10px; border-bottom: 1px solid {table_border_color}; color: {COLOR_TEXT_PRIMARY}; }}
                 tr:nth-child(even) {{ background-color: {even_row_bg}; }}
                 .totals {{ text-align: right; margin: {SPACING_XL}px 0; }}
                 .totals table {{ width: 300px; margin-left: auto; }}
                 .totals th {{ text-align: right; background-color: transparent; color: {COLOR_TEXT_SECONDARY}; }}
                 .totals td {{ text-align: right; font-weight: 500; }}
-                .grand-total {{ font-size: {TEXT_CARD_TITLE}px; font-weight: bold; background-color: {header_color} !important; color: white !important; }}
+                .grand-total {{ font-size: {TEXT_CARD_TITLE}px; font-weight: bold; background-color: {header_color} !important; color: {COLOR_TEXT_ON_PRIMARY} !important; }}
                 .footer {{ text-align: center; margin-top: 40px; color: {footer_text_color}; font-size: {TEXT_TABLE}px; border-top: 1px solid {footer_border_color}; padding-top: 10px; }}
                 .status {{ display: inline-block; padding: {SPACING_XS}px 10px; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: 10px; }}
-                .status-paid {{ background-color: {status_paid_bg}; color: white; }}
-                .status-unpaid {{ background-color: {status_unpaid_bg}; color: white; }}
-                .status-partial {{ background-color: {status_partial_bg}; color: white; }}
+                .status-paid {{ background-color: {status_paid_bg}; color: {COLOR_TEXT_ON_PRIMARY}; }}
+                .status-unpaid {{ background-color: {status_unpaid_bg}; color: {COLOR_TEXT_ON_PRIMARY}; }}
+                .status-partial {{ background-color: {status_partial_bg}; color: {COLOR_TEXT_ON_PRIMARY}; }}
             </style>
         </head>
         <body>
@@ -286,13 +293,14 @@ class PrintableInvoiceDialog(QDialog):
     def _render_qr_code_fallback(self, inv: dict) -> str:
         """Render a QR code for the invoice using local generator."""
         try:
+            from ui.constants import SPACING_XS, SPACING_MD, TEXT_HELPER, COLOR_TEXT_MUTED
             qr_data = QRCodeGenerator.generate_invoice_qr_data(inv)
             qr_uri = QRCodeGenerator.generate_data_uri(qr_data, size=80)
             if qr_uri:
-                return '''
-                <div style="text-align: center; margin-top: 15px;">
+                return f'''
+                <div style="text-align: center; margin-top: {SPACING_MD}px;">
                     <img src="{qr_uri}" alt="QR Code" width="80" height="80">
-                    <p style="font-size: {TEXT_BODY_SMALL}px; color: #666; margin-top: 4px;">Scan to Verify Invoice</p>
+                    <p style="font-size: {TEXT_HELPER}px; color: {COLOR_TEXT_MUTED}; margin-top: {SPACING_XS}px;">Scan to Verify Invoice</p>
                 </div>
                 '''
         except Exception:
@@ -325,7 +333,7 @@ class PrintableInvoiceDialog(QDialog):
             printer.setOutputFileName(file_path)
             self.preview.print_(printer)
 
-            QMessageBox.information(self, "Success", f"Invoice saved to:\n{file_path}")
+            AlertDialog.info(self, "Success", f"Invoice saved to:\n{file_path}")
 
     def share_invoice(self):
         """Share the invoice via WhatsApp."""

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QPushButton, QSizePolicy
 from PySide6.QtCore import Signal, QSize, Qt
 from enum import Enum
 from typing import Optional
-from ui.constants import SPACING_SM, BORDER_RADIUS_SM
+from ui.constants import SPACING_SM, SPACING_LG, BORDER_RADIUS_SM
 
 
 class ButtonVariant(Enum):
@@ -211,7 +211,7 @@ class SplitButton(QPushButton):
                 background-color: {COLOR_PRIMARY};
                 color: {COLOR_TEXT_ON_PRIMARY};
                 border: none;
-                padding: {SPACING_SM}px 16px;
+                padding: {SPACING_SM}px {SPACING_LG}px;
                 border-radius: {BORDER_RADIUS_SM}px;
                 font-weight: 600;
             }}

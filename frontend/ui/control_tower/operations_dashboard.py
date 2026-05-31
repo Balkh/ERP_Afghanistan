@@ -1,23 +1,24 @@
 """
 OperationsDashboard — consolidated system operations + health monitoring.
-Hosts: ControlCenter, SystemHealth, FinancialTower, WorkflowExecution.
+Hosts: Approvals.
 """
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QTabWidget, QLabel
+from PySide6.QtWidgets import QVBoxLayout, QTabWidget, QLabel
 from ui.constants import (MARGIN_PAGE, SPACING_MD,
                            TEXT_PAGE_TITLE, COLOR_TEXT_PRIMARY)
-from ui.system.control_center_screen import ControlCenterScreen
-from ui.control_tower.system_health_screen import SystemHealthOverviewScreen
-from ui.control_tower.financial_control_tower_screen import FinancialControlTowerScreen
-from ui.control_tower.workflow_execution_screen import WorkflowExecutionScreen
 from ui.governance.approval_screen import ApprovalWorkflowScreen
+from ui.screens.base_screen import BaseScreen
 
 
-class OperationsDashboard(QWidget):
+class OperationsDashboard(BaseScreen):
     """Consolidated operations dashboard — control center + health + tower + approvals."""
 
     def __init__(self, parent=None, api_client=None):
+        self._init_api_client = api_client
         super().__init__(parent)
+
+    def _setup_screen(self):
+        super()._setup_screen()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
@@ -27,9 +28,8 @@ class OperationsDashboard(QWidget):
         layout.addWidget(header)
 
         tabs = QTabWidget()
-        tabs.addTab(ControlCenterScreen(api_client=api_client), "Control Center")
-        tabs.addTab(SystemHealthOverviewScreen(api_client=api_client), "System Health")
-        tabs.addTab(FinancialControlTowerScreen(api_client=api_client), "Financial Tower")
-        tabs.addTab(WorkflowExecutionScreen(api_client=api_client), "Workflow Execution")
-        tabs.addTab(ApprovalWorkflowScreen(api_client=api_client), "Approvals")
+        tabs.addTab(ApprovalWorkflowScreen(api_client=self._init_api_client), "Approvals")
         layout.addWidget(tabs)
+
+    def _on_screen_shown(self):
+        pass

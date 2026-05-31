@@ -26,8 +26,9 @@ from core.operations.control_center import (
     control_center, quick_stats, health_live, financial_summary,
     inventory_summary, operations_summary, hr_summary,
     operational_intelligence, signal_summary, active_signals, register_signal,
-    jobs_dashboard
+    jobs_dashboard,
 )
+from core.operations.hub_bff import intelligence_hub_bundle as hub_bundle
 from core.operations.decision_engine import get_active_decisions, get_decision_summary, evaluate_event_decisions
 
 
@@ -81,6 +82,7 @@ urlpatterns = [
     path('api/control-center/decisions/detail/', decisions_detail, name='decisions-detail'),
     path('api/control-center/decisions/evaluate/', decisions_evaluate_event, name='decisions-evaluate'),
     path('api/control-center/jobs/', jobs_dashboard, name='control-jobs'),
+    path('api/control-center/hub-bundle/', hub_bundle, name='control-hub-bundle'),
     path('api/auth/', include('security.urls')),
     path('api/inventory/', include('inventory.urls')),
     path('api/sales/', include('sales.urls')),

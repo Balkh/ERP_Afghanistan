@@ -44,7 +44,7 @@ class FinancialAuditLogScreen(BaseScreen):
 
     def __init__(self, parent=None):
         super().__init__(parent, screen_id="financial_audit")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.setup_ui()
         self.load_logs()
 
@@ -94,7 +94,7 @@ class FinancialAuditLogScreen(BaseScreen):
 
         # Summary bar
         self.summary_bar = QLabel("Loading audit logs...")
-        self.summary_bar.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL};")
+        self.summary_bar.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt;")
         layout.addWidget(self.summary_bar)
 
         # Scroll area
@@ -108,9 +108,9 @@ class FinancialAuditLogScreen(BaseScreen):
 
         # Audit log table
         log_group = QGroupBox("Audit Entries")
-        log_group.setStyleSheet("""
+        log_group.setStyleSheet(f"""
             QGroupBox {{
-                font-size: {TEXT_SECTION_TITLE};
+                font-size: {TEXT_SECTION_TITLE}pt;
                 font-weight: bold;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
@@ -149,7 +149,7 @@ class FinancialAuditLogScreen(BaseScreen):
             from_date = self.date_filter.date().toPython()
             params['from_date'] = from_date.isoformat()
 
-            response = self.api_client.get("audit/audit-trails/", params=params)
+            response = self.api_client.get("/api/audit/logs/", params=params)
             if response and response.get("success", True):
                 data = response.get("data", response)
                 results = data.get("results", []) if isinstance(data, dict) else data

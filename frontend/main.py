@@ -1,8 +1,9 @@
 import sys
 import os
 import logging
-from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QMessageBox, QDialog
+from PySide6.QtWidgets import QApplication, QMainWindow, QLabel, QDialog
 from PySide6.QtCore import Qt, QTimer
+from ui.components.dialogs import AlertDialog
 from theme.theme_engine import ThemeEngine
 from ui.main_window import MainWindow
 from utils.device_fingerprint import generate_device_id
@@ -59,12 +60,9 @@ def global_excepthook(exc_type, exc_value, exc_traceback):
         pass
     print(f"[FATAL] Unhandled exception: {tb_text}", file=sys.stderr)
     try:
-        from PySide6.QtWidgets import QMessageBox
-        QMessageBox.critical(
-            None, "Unexpected Error",
+        AlertDialog.error("Unexpected Error",
             f"An unexpected error occurred:\n\n{exc_type.__name__}: {exc_value}\n\n"
-            "The application may become unstable. Please restart."
-        )
+            "The application may become unstable. Please restart.")
     except Exception:
         pass
 
@@ -125,7 +123,7 @@ def main():
                 for f in tampered_files:
                     msg += f"  - {f}\n"
                 msg += "The application will now exit for security reasons."
-                QMessageBox.critical(None, "Security Error", msg)
+                AlertDialog.error("Security Error", msg)
                 sys.exit(1)
         
         QTimer.singleShot(1000, run_integrity_check)
@@ -230,7 +228,7 @@ def main():
         log.debug("Main window shown", extra={'extra_fields': {'tags': ['ui']}})
     except Exception as e:
         log.critical(f"Main window error: {e}", exc_info=True, extra={'extra_fields': {'tags': ['ui']}})
-        QMessageBox.critical(None, "Error", f"Failed to start application: {e}")
+        AlertDialog.error("Error", f"Failed to start application: {e}")
 
     log.debug("Entering application event loop", extra={'extra_fields': {'tags': ['system']}})
     result = app.exec()

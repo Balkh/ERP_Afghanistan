@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QDate
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_XS, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_PAGE_TITLE,
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_PAGE_TITLE,
                            TEXT_BODY, TEXT_LABEL, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
@@ -42,12 +42,12 @@ class AttendanceScreen(BaseScreen):
 
         # Filters
         filter_bar = QGroupBox("Filter by Date")
-        filter_bar.setStyleSheet("""
+        filter_bar.setStyleSheet(f"""
             QGroupBox {{
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_LG};
-                margin-top: 10px;
-                padding-top: 10px;
+                margin-top: {SPACING_SM}px;
+                padding-top: {SPACING_SM}px;
                 background-color: {COLOR_BG_MAIN};
                 color: {COLOR_TEXT_PRIMARY};
                 font-size: {TEXT_LABEL}pt;
@@ -114,7 +114,7 @@ class AttendanceScreen(BaseScreen):
             else:
                 self.set_state(ScreenState.READY)
         except Exception as e:
-            print(f"Error loading attendance: {e}")
+            self.error_label.setText(f"Error loading attendance: {e}")
             self.records = []
             self.set_state(ScreenState.ERROR)
         

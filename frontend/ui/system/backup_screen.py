@@ -12,7 +12,7 @@ ARCHITECTURE LOCK — DO NOT MODIFY WITHOUT REVIEW:
     GUARDRAIL 6: No fallback state computation — if SSOT fails, show UNAVAILABLE
 """
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
-                                QWidget, QLabel, QGroupBox, QMessageBox, QFrame,
+                                QWidget, QLabel, QGroupBox, QFrame,
                                 QDialog, QTextEdit)
 from PySide6.QtCore import Qt
 from api.client import APIClient
@@ -21,7 +21,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN
                            COLOR_TEXT_MUTED, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
                            COLOR_BG_MAIN, COLOR_FORM_FOOTER_BORDER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.components.dialogs import EnterpriseDialog, DialogType
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
 
@@ -626,12 +626,9 @@ class BackupControlScreen(BaseScreen):
     def _create_backup(self):
         if self._is_busy:
             return
-        reply = QMessageBox.question(
-            self, "Create Backup",
+        if not ConfirmDialog.confirm("Create Backup",
             "Create a new backup now? This may take a few minutes.",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if reply != QMessageBox.Yes:
+            self):
             return
 
         self._set_busy(True)
@@ -640,7 +637,7 @@ class BackupControlScreen(BaseScreen):
                 "description": "Manual backup from Control Center",
             })
             if isinstance(response, dict) and response.get("success"):
-                QMessageBox.information(self, "Backup", "Backup created successfully.")
+                AlertDialog.info("Backup", "Backup created successfully.", self)
                 self._refresh()
             else:
                 err = "Unknown error"
@@ -650,9 +647,9 @@ class BackupControlScreen(BaseScreen):
                         err = err_info.get("message", str(err_info))
                     else:
                         err = str(err_info)
-                QMessageBox.warning(self, "Backup Failed", f"Failed: {err}")
+                AlertDialog.warning("Backup Failed", f"Failed: {err}", self)
         except Exception as e:
-            QMessageBox.warning(self, "Backup Failed", f"Failed: {e}")
+            AlertDialog.warning("Backup Failed", f"Failed: {e}", self)
         finally:
             self._set_busy(False)
 
@@ -661,12 +658,12 @@ class BackupControlScreen(BaseScreen):
             return
         row = self._backup_table.currentRow()
         if row < 0:
-            QMessageBox.warning(self, "Restore", "Select a backup to restore.")
+            AlertDialog.warning("Restore", "Select a backup to restore.", self)
             return
 
         backup = self._backups[row] if row < len(self._backups) else None
         if not backup:
-            QMessageBox.warning(self, "Restore", "No backup data found.")
+            AlertDialog.warning("Restore", "No backup data found.", self)
             return
 
         metadata = {
@@ -691,7 +688,7 @@ class BackupControlScreen(BaseScreen):
             if not (isinstance(response, dict) and response.get('success')):
                 self._restore_state = 'FAILED'
                 self._update_restore_state()
-                QMessageBox.warning(self, "Restore", f"Validation failed: {response}")
+                AlertDialog.warning("Restore", f"Validation failed: {response}", self)
                 return
 
             self._restore_state = 'SNAPSHOT_CREATED'
@@ -701,23 +698,23 @@ class BackupControlScreen(BaseScreen):
             if isinstance(response, dict) and response.get('success'):
                 self._restore_state = 'COMPLETED'
                 self._update_restore_state()
-                QMessageBox.information(self, "Restore", "Restore completed successfully.")
+                AlertDialog.info("Restore", "Restore completed successfully.", self)
             else:
                 self._restore_state = 'FAILED'
                 self._update_restore_state()
                 err = response.get('error', 'Unknown error') if isinstance(response, dict) else str(response)
-                QMessageBox.warning(self, "Restore Failed", f"Restore failed: {err}")
+                AlertDialog.warning("Restore Failed", f"Restore failed: {err}", self)
         except Exception as e:
             self._restore_state = 'FAILED'
             self._update_restore_state()
-            QMessageBox.critical(self, "Restore Error", f"Restore error: {e}")
+            AlertDialog.error("Restore Error", f"Restore error: {e}", self)
         finally:
             self._set_busy(False)
 
     def _verify_selected(self):
         row = self._backup_table.currentRow()
         if row < 0:
-            QMessageBox.warning(self, "Verify", "Select a backup to verify.")
+            AlertDialog.warning("Verify", "Select a backup to verify.", self)
             return
 
         backup = self._backups[row] if row < len(self._backups) else None
@@ -728,26 +725,23 @@ class BackupControlScreen(BaseScreen):
         try:
             response = self.api_client.post(f"/api/backup/records/{backup_id}/verify/", {})
             if isinstance(response, dict) and response.get('success'):
-                QMessageBox.information(self, "Verify", "Backup verified successfully.")
+                AlertDialog.info("Verify", "Backup verified successfully.", self)
                 self._refresh()
             else:
                 msg = response.get('message', 'Verification failed') if isinstance(response, dict) else 'Verification failed'
-                QMessageBox.warning(self, "Verify", msg)
+                AlertDialog.warning("Verify", msg, self)
         except Exception as e:
-            QMessageBox.warning(self, "Verify Failed", f"Failed: {e}")
+            AlertDialog.warning("Verify Failed", f"Failed: {e}", self)
 
     def _delete_selected(self):
         row = self._backup_table.currentRow()
         if row < 0:
-            QMessageBox.warning(self, "Delete", "Select a backup to delete.")
+            AlertDialog.warning("Delete", "Select a backup to delete.", self)
             return
 
-        reply = QMessageBox.warning(
-            self, "Delete Backup",
+        if not ConfirmDialog.confirm("Delete Backup",
             "Delete this backup permanently? This cannot be undone.",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if reply != QMessageBox.Yes:
+            self):
             return
 
         backup = self._backups[row] if row < len(self._backups) else None
@@ -758,16 +752,16 @@ class BackupControlScreen(BaseScreen):
         try:
             response = self.api_client.delete(f"/api/backup/records/{backup_id}/delete_backup/")
             if isinstance(response, dict) and response.get('success'):
-                QMessageBox.information(self, "Delete", "Backup deleted.")
+                AlertDialog.info("Delete", "Backup deleted.", self)
                 self._refresh()
             else:
-                QMessageBox.warning(self, "Delete Failed", "Failed to delete backup.")
+                AlertDialog.warning("Delete Failed", "Failed to delete backup.", self)
         except Exception as e:
-            QMessageBox.warning(self, "Delete Failed", f"Failed: {e}")
+            AlertDialog.warning("Delete Failed", f"Failed: {e}", self)
 
     def _send_latest_email(self):
         if not self._backups:
-            QMessageBox.warning(self, "Email", "No backups available to send.")
+            AlertDialog.warning("Email", "No backups available to send.", self)
             return
 
         latest = self._backups[0]
@@ -777,18 +771,18 @@ class BackupControlScreen(BaseScreen):
                 "backup_record_id": str(backup_id),
             })
             if isinstance(response, dict) and response.get('success'):
-                QMessageBox.information(self, "Email", "Backup sent via email successfully.")
+                AlertDialog.info("Email", "Backup sent via email successfully.", self)
                 self._fetch_email_history()
                 self._update_email_table()
             else:
                 err = response.get('error', 'Unknown error') if isinstance(response, dict) else str(response)
                 queued = isinstance(response, dict) and response.get('queued')
                 if queued:
-                    QMessageBox.information(self, "Email Queued", f"Offline — queued for retry: {err}")
+                    AlertDialog.info("Email Queued", f"Offline — queued for retry: {err}", self)
                 else:
-                    QMessageBox.warning(self, "Email Failed", f"Failed: {err}")
+                    AlertDialog.warning("Email Failed", f"Failed: {err}", self)
         except Exception as e:
-            QMessageBox.warning(self, "Email Failed", f"Failed: {e}")
+            AlertDialog.warning("Email Failed", f"Failed: {e}", self)
 
     def _open_email_config(self):
         from ui.system.email_config_dialog import EmailConfigDialog
@@ -803,27 +797,27 @@ class BackupControlScreen(BaseScreen):
             if isinstance(response, dict) and response.get('success'):
                 processed = response.get('data', response).get('processed', 0)
                 failed = response.get('data', response).get('failed', 0)
-                QMessageBox.information(self, "Retry Queue", f"Processed: {processed}, Failed: {failed}")
+                AlertDialog.info("Retry Queue", f"Processed: {processed}, Failed: {failed}", self)
                 self._fetch_email_history()
                 self._update_email_table()
             else:
                 err = response.get('error', 'Unknown') if isinstance(response, dict) else str(response)
-                QMessageBox.warning(self, "Retry Failed", f"Failed: {err}")
+                AlertDialog.warning("Retry Failed", f"Failed: {err}", self)
         except Exception as e:
-            QMessageBox.warning(self, "Retry Failed", f"Failed: {e}")
+            AlertDialog.warning("Retry Failed", f"Failed: {e}", self)
         finally:
             self._set_busy(False)
 
     def _retry_single_email(self):
         row = self._email_table.currentRow()
         if row < 0 or row >= len(self._email_history):
-            QMessageBox.warning(self, "Retry", "Select an email entry to retry.")
+            AlertDialog.warning("Retry", "Select an email entry to retry.", self)
             return
 
         entry = self._email_history[row]
         queue_file = entry.get('_queue_file', '')
         if not queue_file:
-            QMessageBox.warning(self, "Retry", "No retry file found for this entry.")
+            AlertDialog.warning("Retry", "No retry file found for this entry.", self)
             return
 
         self._set_busy(True)
@@ -832,16 +826,16 @@ class BackupControlScreen(BaseScreen):
                 "queue_file": queue_file,
             })
             if isinstance(response, dict) and response.get('success'):
-                QMessageBox.information(self, "Retry", "Email sent successfully.")
+                AlertDialog.info("Retry", "Email sent successfully.", self)
                 self._fetch_email_history()
                 self._update_email_table()
             else:
                 err = response.get('error', 'Unknown') if isinstance(response, dict) else str(response)
-                QMessageBox.warning(self, "Retry Failed", f"Failed: {err}")
+                AlertDialog.warning("Retry Failed", f"Failed: {err}", self)
         except Exception as e:
-            QMessageBox.warning(self, "Retry Failed", f"Failed: {e}")
+            AlertDialog.warning("Retry Failed", f"Failed: {e}", self)
         finally:
             self._set_busy(False)
 
     def _show_error(self, message: str):
-        QMessageBox.critical(self, "Error", message)
+        AlertDialog.error("Error", message, self)

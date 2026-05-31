@@ -4,35 +4,37 @@ Phase 5B.12 — Causal Strength Path Visualizer.
 Shows top 3 strongest causal paths per anomaly/risk/forecast.
 Highlights strong vs weak links, bottleneck nodes, and weighted chains.
 """
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QTextEdit, QComboBox, QGroupBox,
-                                 QTableWidget, QTableWidgetItem)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
+                                 QTextEdit, QComboBox, QGroupBox,
+                                 QTableWidget, QTableWidgetItem, QAbstractItemView)
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from api.client import APIClient
 from ui.causal_scoring.causal_scoring_engine import CausalScoringEngine
 from ui.components.tables import build_table_stylesheet
-from ui.constants import (COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_PRIMARY,
-                           COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
-                           COLOR_BORDER, SPACING_LG, SPACING_SM, MARGIN_PAGE,
-                           SPACING_6, TEXT_SECTION_TITLE, TEXT_CARD_TITLE, BORDER_RADIUS_MD)
+from ui.constants import (SPACING_SM, SPACING_MD, SPACING_XL, SPACING_LG, SPACING_6,
+                           BORDER_RADIUS_MD, MARGIN_PAGE,
+                           COLOR_TEXT_PRIMARY, COLOR_BG_SURFACE, COLOR_BORDER,
+                           COLOR_PRIMARY, COLOR_WARNING, COLOR_DANGER, COLOR_INFO,
+                           TEXT_SECTION_TITLE, TEXT_CARD_TITLE)
+from ui.screens.base_screen import BaseScreen
 
 
 _CHAIN_COLORS = [COLOR_DANGER, COLOR_WARNING, COLOR_INFO]
 
 
-class CausalStrengthPanel(QWidget):
+class CausalStrengthPanel(BaseScreen):
     """Visualizes top 3 strongest causal paths with weighted links."""
 
     def __init__(self, api_client: APIClient = None):
-        super().__init__()
         self._api_client = api_client or APIClient()
         self._engine = CausalScoringEngine(self._api_client)
-        self._build_ui()
-        QTimer.singleShot(300, self._analyze)
+        super().__init__()
+        self._setup_screen()
 
-    def _build_ui(self):
+    def _setup_screen(self):
+        super()._setup_screen()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
@@ -60,16 +62,16 @@ class CausalStrengthPanel(QWidget):
         # Top 3 paths
         for i in range(3):
             group = QGroupBox(f"Path #{i + 1}")
-            group.setStyleSheet("""
+            group.setStyleSheet(f"""
                 QGroupBox {{ color: {_CHAIN_COLORS[i]}; font-weight: bold;
                 border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px; padding-top: 18px; }}
+                padding: {SPACING_SM}px; padding-top: {SPACING_XL}px; }}
             """)
             g_layout = QVBoxLayout(group)
             text = QTextEdit()
             text.setReadOnly(True)
             text.setObjectName(f"path_{i}")
-            text.setStyleSheet("""
+            text.setStyleSheet(f"""
                 QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
                 border: none; font-family: 'Consolas', monospace; font-size: {TEXT_CARD_TITLE}px; }}
             """)
@@ -79,9 +81,9 @@ class CausalStrengthPanel(QWidget):
 
         # Summary table
         summary_group = QGroupBox("All Nodes — Scored & Ranked")
-        summary_group.setStyleSheet("""
+        summary_group.setStyleSheet(f"""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
-            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; padding-top: 18px; }}
+            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; padding-top: {SPACING_XL}px; }}
         """)
         summary_layout = QVBoxLayout(summary_group)
         self.table = QTableWidget()
@@ -90,8 +92,15 @@ class CausalStrengthPanel(QWidget):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
         self.table.setStyleSheet(build_table_stylesheet())
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         summary_layout.addWidget(self.table)
         layout.addWidget(summary_group)
+
+    def _on_screen_shown(self):
+        pass
+
+    def load_data(self, params=None):
+        QTimer.singleShot(300, self._analyze)
 
     def _analyze(self):
         domain = self.domain_combo.currentText()

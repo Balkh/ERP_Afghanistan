@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-05-25T23:59:00",
+  "total_modules": 31,
+  "tiers": {
+    "CRITICAL": {
+      "count": 10,
+      "minimum_coverage": 85,
+      "weight": 10.0,
+      "modules": [
+        {"name": "accounting", "description": "Chart of accounts, journal entries, financial reports", "critical_subpaths": ["models", "services/journal_engine", "services/financial_reports", "services/account_hierarchy"]},
+        {"name": "core.integrity", "description": "Integrity enforcement layer", "critical_subpaths": ["engine", "gate", "controller", "detector", "freeze"]},
+        {"name": "core.audit", "description": "Audit engine — ledger, inventory, event, drift", "critical_subpaths": ["engine", "models", "ledger_audit", "drift_detector"]},
+        {"name": "core.runner", "description": "C-RUNNER orchestration engine", "critical_subpaths": ["engine", "snapshot_manager", "validator", "daily_cycle"]},
+        {"name": "core.sandbox", "description": "Controlled execution sandbox", "critical_subpaths": ["engine", "bridge", "event_bus"]},
+        {"name": "core.governance", "description": "Enterprise governance kernel, guarantees, deployment", "critical_subpaths": ["kernel", "ecek", "orchestrator"]},
+        {"name": "inventory", "description": "Products, batches, warehouses, stock movements", "critical_subpaths": ["models", "service/stock_integration"]},
+        {"name": "governance", "description": "Evolution governance — change, migration, release gates", "critical_subpaths": ["change_analyzer", "migration_guard", "release_gates", "invariant_registry", "governance_engine"]},
+        {"name": "test_governance", "description": "Test governance — coverage, quality, confidence", "critical_subpaths": ["critical_registry", "weighted_coverage", "coverage_policy", "confidence_engine"]},
+        {"name": "security", "description": "Auth, RBAC, permissions, rate limiting", "critical_subpaths": ["models", "permissions", "rate_limiter"]}
+      ]
+    },
+    "HIGH": {
+      "count": 6,
+      "minimum_coverage": 65,
+      "weight": 5.0,
+      "modules": [
+        {"name": "payments", "description": "Payment engine, financial transactions", "critical_subpaths": ["models", "services", "views"]},
+        {"name": "sales", "description": "Sales invoices, customers, credit", "critical_subpaths": ["models", "services/fifo_allocation", "views"]},
+        {"name": "purchases", "description": "Purchase invoices, suppliers", "critical_subpaths": ["models", "services/fifo_allocation", "views"]},
+        {"name": "core.operations", "description": "Operational intelligence, alerts, trends", "critical_subpaths": ["operational_intelligence", "control_center", "signal_coordinator"]},
+        {"name": "payroll", "description": "Payroll processing, cycles", "critical_subpaths": ["models", "services"]},
+        {"name": "hr", "description": "HR — employees, attendance, leave", "critical_subpaths": ["models", "services"]}
+      ]
+    },
+    "NORMAL": {
+      "count": 8,
+      "minimum_coverage": 35,
+      "weight": 2.0,
+      "modules": [
+        {"name": "core.api", "description": "API renderers, responses, pagination"},
+        {"name": "config", "description": "Django settings, celery config"},
+        {"name": "pre_production_hardening", "description": "Pre-production validation scripts"},
+        {"name": "production_gate", "description": "Production gate certification"},
+        {"name": "production_infrastructure", "description": "Infrastructure migration validation"},
+        {"name": "core.events", "description": "Event handlers"},
+        {"name": "core.seeders", "description": "Data seeders for testing"},
+        {"name": "core.logging", "description": "Logging infrastructure"}
+      ]
+    },
+    "LOW": {
+      "count": 3,
+      "minimum_coverage": 0,
+      "weight": 0.5,
+      "modules": [
+        {"name": "core.management.commands", "description": "Management commands"},
+        {"name": "core.performance", "description": "Performance utilities"},
+        {"name": "core.uuid_safety", "description": "UUID safety checks"}
+      ]
+    }
+  }
+}

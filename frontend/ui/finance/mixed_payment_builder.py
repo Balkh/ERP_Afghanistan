@@ -1,9 +1,9 @@
 """Phase 20: Mixed Payment Builder dialog."""
 from decimal import Decimal
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QLineEdit, QComboBox, QPushButton, QGroupBox,
-    QMessageBox, QHeaderView, QTableWidget,
+    QVBoxLayout, QHBoxLayout, QGridLayout,
+    QLabel, QLineEdit, QComboBox, QGroupBox,
+    QHeaderView, QTableWidget, QAbstractItemView, QWidget,
 )
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
@@ -18,15 +18,16 @@ from ui.constants import (
     BORDER_RADIUS_SM, BORDER_RADIUS_LG, DIALOG_WIDTH_WIDE,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog, EnterpriseDialog, DialogType
+from ui.components.tables import build_table_stylesheet
 
 
-class MixedPaymentBuilderDialog(QDialog):
+class MixedPaymentBuilderDialog(EnterpriseDialog):
     """Dialog for building mixed/split payments across multiple methods."""
 
     payment_validated = Signal(dict)
 
     def __init__(self, parent=None, api_client=None, total_amount=Decimal("0.00"), entity_type="customer", entity_id=None):
-        super().__init__(parent)
         self.api_client = api_client or APIClient()
         self.total_amount = total_amount
         self.entity_type = entity_type  # "customer" or "supplier"
@@ -34,13 +35,17 @@ class MixedPaymentBuilderDialog(QDialog):
         self.splits = []
         self.payment_methods = []
         self.payment_accounts = []
-        self.setWindowTitle("Mixed Payment Builder")
+        super().__init__("Mixed Payment Builder", DialogType.CUSTOM, parent)
         self.setMinimumWidth(DIALOG_WIDTH_WIDE)
-        self.setup_ui()
+        self._build_content()
         self._load_payment_data()
 
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setSpacing(SPACING_LG)
 
         # Header
@@ -67,7 +72,7 @@ class MixedPaymentBuilderDialog(QDialog):
         splits_group.setFont(QFont("Segoe UI", TEXT_LABEL))
         splits_group.setStyleSheet(
             f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}"
+            f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         splits_layout = QVBoxLayout(splits_group)
 
@@ -81,6 +86,9 @@ class MixedPaymentBuilderDialog(QDialog):
         header.setSectionResizeMode(3, QHeaderView.Fixed)
         self.splits_table.setColumnWidth(2, 120)
         self.splits_table.setColumnWidth(3, 40)
+        self.splits_table.setStyleSheet(build_table_stylesheet())
+        self.splits_table.setAlternatingRowColors(True)
+        self.splits_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         splits_layout.addWidget(self.splits_table)
 
         # Add split button
@@ -95,7 +103,7 @@ class MixedPaymentBuilderDialog(QDialog):
         self.validation_group.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.validation_group.setStyleSheet(
             f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}"
+            f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         validation_layout = QGridLayout(self.validation_group)
 
@@ -130,6 +138,9 @@ class MixedPaymentBuilderDialog(QDialog):
         button_layout.addWidget(self.btn_submit)
 
         layout.addLayout(button_layout)
+
+        self.set_content(widget)
+        return widget
 
     def _load_payment_data(self):
         """Load payment methods and accounts."""
@@ -180,7 +191,7 @@ class MixedPaymentBuilderDialog(QDialog):
         # Remove button
         remove_btn = EnterpriseButton("×", variant=ButtonVariant.GHOST)
         remove_btn.setFixedWidth(30)
-        remove_btn.setStyleSheet("""
+        remove_btn.setStyleSheet(f"""
             EnterpriseButton {{
                 background-color: transparent;
                 color: {COLOR_DANGER};
@@ -188,9 +199,9 @@ class MixedPaymentBuilderDialog(QDialog):
                 font-weight: bold;
                 border: none;
             }}
-            QPushButton:hover {{
+            EnterpriseButton:hover {{
                 background-color: {COLOR_DANGER}20;
-                border-radius: 4px;
+                border-radius: {BORDER_RADIUS_SM}px;
             }}
         """)
         remove_btn.clicked.connect(lambda: self._remove_split_row(row))
@@ -235,7 +246,7 @@ class MixedPaymentBuilderDialog(QDialog):
         """Validate splits via API."""
         splits = self._get_splits_data()
         if not splits:
-            QMessageBox.warning(self, "No Splits", "Please add at least one payment split.")
+            AlertDialog.warning("No Splits", "Please add at least one payment split.", self)
             return
 
         try:
@@ -247,13 +258,13 @@ class MixedPaymentBuilderDialog(QDialog):
             if response and response.get("success"):
                 data = response.get("data", {})
                 if data.get("is_valid"):
-                    QMessageBox.information(self, "Valid", "Mixed payment is valid.")
+                    AlertDialog.info("Valid", "Mixed payment is valid.", self)
                     self.payment_validated.emit(data)
                 else:
                     errors = data.get("errors", [])
-                    QMessageBox.warning(self, "Invalid", "\n".join(errors))
+                    AlertDialog.warning("Invalid", "\n".join(errors), self)
         except Exception as e:
-            QMessageBox.critical(self, "Validation Error", str(e))
+            AlertDialog.error("Validation Error", str(e), self)
 
     def _get_splits_data(self):
         """Get splits data from table."""
@@ -279,12 +290,12 @@ class MixedPaymentBuilderDialog(QDialog):
         """Submit the mixed payment."""
         splits = self._get_splits_data()
         if not splits:
-            QMessageBox.warning(self, "No Splits", "Please add at least one payment split.")
+            AlertDialog.warning("No Splits", "Please add at least one payment split.", self)
             return
 
         split_total = self._calculate_split_total()
         if abs(float(self.total_amount) - split_total) > 0.001:
-            QMessageBox.warning(self, "Amount Mismatch", "Split total must equal the payment amount.")
+            AlertDialog.warning("Amount Mismatch", "Split total must equal the payment amount.", self)
             return
 
         # Return the splits data for processing
@@ -301,7 +312,7 @@ class MixedPaymentBuilderDialog(QDialog):
         return getattr(self, "result_data", None)
 
     def _combo_style(self):
-        return """
+        return f"""
             QComboBox {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -318,7 +329,7 @@ class MixedPaymentBuilderDialog(QDialog):
         """
 
     def _input_style(self):
-        return """
+        return f"""
             QLineEdit {{
                 background-color: {COLOR_BG_INPUT};
                 border: 1px solid {COLOR_BORDER};

@@ -1,12 +1,14 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QGroupBox,
-                               QFormLayout, QFileDialog, QMessageBox, QPushButton)
+                                QFormLayout, QFileDialog)
 from PySide6.QtCore import Qt, QTimer
 from ui.screens.base_screen import BaseScreen
+from ui.components.forms import FormSection
 from ui.constants import (SPACING_LG, SPACING_MD, TEXT_PAGE_TITLE, TEXT_CARD_TITLE,
                            TEXT_BODY, TEXT_LABEL, COLOR_TEXT_PRIMARY, COLOR_SUCCESS,
                            COLOR_DANGER, COLOR_WARNING, COLOR_INFO, BORDER_RADIUS_MD,
                            COLOR_BG_ELEVATED, COLOR_BORDER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog, ConfirmDialog
 from api.client import APIClient
 
 
@@ -38,36 +40,34 @@ class LicensingScreen(BaseScreen):
         layout.addWidget(title)
 
         # ── Status Group ──────────────────────────────────────
-        status_group = QGroupBox("License Status")
-        status_layout = QFormLayout(status_group)
+        status_section = FormSection("License Status", primary=True)
 
         self.mode_label = QLabel("—")
         self.mode_label.setStyleSheet(f"font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;")
-        status_layout.addRow("Mode:", self.mode_label)
+        status_section.add_field(self.mode_label, "Mode:")
 
         self.days_label = QLabel("—")
-        status_layout.addRow("Days Remaining:", self.days_label)
+        status_section.add_field(self.days_label, "Days Remaining:")
 
         self.message_label = QLabel("")
         self.message_label.setWordWrap(True)
         self.message_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
-        status_layout.addRow("Message:", self.message_label)
+        status_section.add_field(self.message_label, "Message:")
 
-        layout.addWidget(status_group)
+        layout.addWidget(status_section)
 
         # ── Device Group ──────────────────────────────────────
-        device_group = QGroupBox("Device Information")
-        device_layout = QFormLayout(device_group)
+        device_section = FormSection("Device Information", primary=True)
 
         self.fingerprint_label = QLabel("—")
         self.fingerprint_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.fingerprint_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt;")
-        device_layout.addRow("Device ID:", self.fingerprint_label)
+        device_section.add_field(self.fingerprint_label, "Device ID:")
 
         self.os_label = QLabel("—")
-        device_layout.addRow("OS:", self.os_label)
+        device_section.add_field(self.os_label, "OS:")
 
-        layout.addWidget(device_group)
+        layout.addWidget(device_section)
 
         # ── Actions ───────────────────────────────────────────
         actions_group = QGroupBox("Actions")
@@ -97,7 +97,8 @@ class LicensingScreen(BaseScreen):
         try:
             resp = self._api.get("/api/licensing/info/")
             if resp and resp.get("success"):
-                self._state = resp.get("data", {})
+                data = resp.get("data", {})
+                self._state = data if isinstance(data, dict) else {"mode": "unknown", "device_id": str(data)}
             self._update_display()
         except Exception:
             self.mode_label.setText("OFFLINE")
@@ -126,16 +127,16 @@ class LicensingScreen(BaseScreen):
         try:
             resp = self._api.post("/api/licensing/import-license/", data={"file_path": path})
             if resp and resp.get("success"):
-                QMessageBox.information(self, "Success", resp.get("message", "License activated"))
+                AlertDialog.info(self, "Success", resp.get("message", "License activated"))
                 self._refresh()
             else:
                 msg = (resp or {}).get("error", "Import failed")
-                QMessageBox.warning(self, "Error", msg)
+                AlertDialog.warning(self, "Error", msg)
         except Exception as e:
-            QMessageBox.warning(self, "Error", str(e))
+            AlertDialog.warning(self, "Error", str(e))
 
     def _show_fingerprint(self):
-        fp = self._state.get("device_id", self.fingerprint_label.text())
-        QMessageBox.information(self, "Device Fingerprint",
+        fp = self._state.get("device_id", self.fingerprint_label.text()) if isinstance(self._state, dict) else str(self._state)
+        AlertDialog.info("Device Fingerprint",
                                 f"Device ID:\n{fp}\n\n"
-                                "This identifies your device for license binding.")
+                                "This identifies your device for license binding.", self)

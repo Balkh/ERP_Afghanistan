@@ -1,12 +1,15 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFrame, QWidget,
                                 QLineEdit, QComboBox, QTextEdit, QLabel)
+from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtCore import Qt
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_BODY_SMALL, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED, COLOR_BG_DIALOG, COLOR_FORM_DESCRIPTION_BG, COLOR_FORM_FOOTER_BORDER,
                            COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, BORDER_RADIUS_MD,
                            INPUT_HEIGHT_MD, DIALOG_WIDTH_FORM_MIN, DIALOG_WIDTH_FORM_PREFERRED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.forms import FormSection
-from ui.components.dialogs import EnterpriseDialog, DialogType
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from api.endpoints import get_endpoint, extract_list
 
 
 class ProductFormDialog(EnterpriseDialog):
@@ -17,20 +20,23 @@ class ProductFormDialog(EnterpriseDialog):
         super().__init__(title, DialogType.CUSTOM, parent)
         self.product_id = product_id
         self.api_client = api_client
+        self._submitting = False
         content = self._build_content()
         self.set_content(content)
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.accept)
         if product_id:
             self.load_product_data()
 
     def _build_content(self):
         content = QWidget()
-        content.setStyleSheet("""
+        content.setStyleSheet(f"""
             QLineEdit, QComboBox {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER_INPUT};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px 10px;
+                padding: {SPACING_SM}px {SPACING_SM}px;
             }}
             QLineEdit:focus, QComboBox:focus {{
                 border-color: {COLOR_BORDER_INPUT_HOVER};
@@ -43,7 +49,7 @@ class ProductFormDialog(EnterpriseDialog):
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER_INPUT};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px 10px;
+                padding: {SPACING_SM}px {SPACING_SM}px;
             }}
             QTextEdit:focus {{
                 border-color: {COLOR_BORDER_INPUT_HOVER};
@@ -111,6 +117,103 @@ class ProductFormDialog(EnterpriseDialog):
         layout.addWidget(self.description_input)
 
         return content
+
+    def populate_categories(self):
+        if not self.api_client:
+            return
+        try:
+            endpoint = get_endpoint("categories")
+            response = self.api_client.get(endpoint)
+            items = extract_list(response)
+            for cat in items:
+                name = cat.get("name", "")
+                self.category_combo.addItem(name, cat.get("id"))
+        except Exception:
+            pass
+
+    def populate_units(self):
+        if not self.api_client:
+            return
+        try:
+            endpoint = get_endpoint("units")
+            response = self.api_client.get(endpoint)
+            items = extract_list(response)
+            for unit in items:
+                name = unit.get("name", "")
+                self.unit_combo.addItem(name, unit.get("id"))
+        except Exception:
+            pass
+
+    def load_product_data(self):
+        if not self.api_client or not self.product_id:
+            return
+        try:
+            endpoint = get_endpoint("products")
+            response = self.api_client.get(f"{endpoint}{self.product_id}/")
+            if response and isinstance(response, dict):
+                data = response.get("data", response)
+            else:
+                return
+            self.name_input.setText(data.get("name", ""))
+            self.generic_name_input.setText(data.get("generic_name", ""))
+            self.brand_name_input.setText(data.get("brand_name", ""))
+            self.barcode_input.setText(data.get("barcode", ""))
+            self.sku_input.setText(data.get("sku", ""))
+            self.description_input.setPlainText(data.get("description", ""))
+            cat_id = data.get("category")
+            if cat_id is not None:
+                idx = self.category_combo.findData(cat_id)
+                if idx >= 0:
+                    self.category_combo.setCurrentIndex(idx)
+            unit_id = data.get("unit")
+            if unit_id is not None:
+                idx = self.unit_combo.findData(unit_id)
+                if idx >= 0:
+                    self.unit_combo.setCurrentIndex(idx)
+            self.prescription_check.setCurrentIndex(1 if data.get("requires_prescription") else 0)
+            self.controlled_check.setCurrentIndex(1 if data.get("is_controlled") else 0)
+            self.active_check.setCurrentIndex(1 if data.get("is_active", True) else 0)
+        except Exception:
+            pass
+
+    def accept(self):
+        if self._submitting:
+            return
+        self._submitting = True
+        name = self.name_input.text().strip()
+        if not name:
+            AlertDialog.warning("Validation Error", "Product name is required.", self)
+            self._submitting = False
+            return
+        data = {
+            "name": name,
+            "generic_name": self.generic_name_input.text().strip(),
+            "brand_name": self.brand_name_input.text().strip(),
+            "category": self.category_combo.currentData(),
+            "unit": self.unit_combo.currentData(),
+            "barcode": self.barcode_input.text().strip(),
+            "sku": self.sku_input.text().strip(),
+            "requires_prescription": self.prescription_check.currentIndex() == 1,
+            "is_controlled": self.controlled_check.currentIndex() == 1,
+            "is_active": self.active_check.currentIndex() == 1,
+            "description": self.description_input.toPlainText().strip(),
+        }
+        try:
+            endpoint = get_endpoint("products")
+            if self.product_id:
+                response = self.api_client.put(f"{endpoint}{self.product_id}/", data)
+            else:
+                response = self.api_client.post(endpoint, data)
+            if response and (response.get("success") or response.get("id")):
+                AlertDialog.info("Success", "Product saved.", self)
+                super().accept()
+            else:
+                errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
+                AlertDialog.error("Error", str(errors), self)
+        except Exception as e:
+            AlertDialog.error("Error", str(e), self)
+        finally:
+            self._submitting = False
 
     def _create_button_area(self):
         button_area = QFrame()

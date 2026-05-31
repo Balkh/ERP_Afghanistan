@@ -1,10 +1,11 @@
 """Audit log screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
                                   QLabel, QLineEdit,
-                                  QMessageBox, QComboBox, QGroupBox, QDateEdit)
+                                  QComboBox, QGroupBox, QDateEdit)
 from PySide6.QtCore import Qt
 from datetime import datetime
 from ui.screens.base_screen import BaseScreen
+from ui.components.dialogs import AlertDialog
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
                            COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
@@ -184,15 +185,8 @@ class AuditScreen(BaseScreen):
         msg += f"<b>Action:</b> {action}<br>"
         msg += f"<b>Entity:</b> {entity} (ID: {entity_id})<br><br>"
         msg += f"<b>Summary:</b> {details}<br>"
-        
-        # Show in a custom dialog for better formatting if needed, 
-        # but QMessageBox with RichText works for now
-        detail_box = QMessageBox(self)
-        detail_box.setWindowTitle("Audit Detail View")
-        detail_box.setTextFormat(Qt.RichText)
-        detail_box.setText(msg)
-        detail_box.setStandardButtons(QMessageBox.Ok)
-        detail_box.exec()
+
+        AlertDialog.info("Audit Detail View", msg, self)
     
     def on_show(self):
         self._load_audit_logs()

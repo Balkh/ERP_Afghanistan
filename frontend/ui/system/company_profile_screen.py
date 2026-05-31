@@ -1,13 +1,15 @@
 """Company Profile screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
-                               QLabel, QLineEdit, QTextEdit, QGroupBox,
-                               QComboBox, QMessageBox, QFileDialog, QScrollArea, QWidget)
+                                QLabel, QLineEdit, QTextEdit, QGroupBox,
+                                QComboBox, QFileDialog, QScrollArea, QWidget)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (SPACING_MD, SPACING_LG, TEXT_PAGE_TITLE, INPUT_HEIGHT_MD, COLOR_BG_SURFACE, COLOR_BORDER,
-                          COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED)
+                          BORDER_RADIUS_MD, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
+from ui.components.forms import FormSection
 
 
 class CompanyProfileScreen(BaseScreen):
@@ -35,9 +37,7 @@ class CompanyProfileScreen(BaseScreen):
         container_layout.setSpacing(SPACING_LG)
 
         # Identity section
-        identity_group = QGroupBox("Company Identity")
-        identity_layout = QFormLayout()
-        identity_layout.setSpacing(SPACING_MD)
+        identity_section = FormSection("Company Identity", primary=True)
 
         self.name_edit = QLineEdit()
         self.name_edit.setPlaceholderText("Company name")
@@ -51,16 +51,13 @@ class CompanyProfileScreen(BaseScreen):
         self.tax_edit.setPlaceholderText("Tax registration number")
         self.tax_edit.setMinimumHeight(INPUT_HEIGHT_MD)
 
-        identity_layout.addRow("Company Name:", self.name_edit)
-        identity_layout.addRow("Company Code:", self.code_edit)
-        identity_layout.addRow("Tax Number:", self.tax_edit)
-        identity_group.setLayout(identity_layout)
-        container_layout.addWidget(identity_group)
+        identity_section.add_field(self.name_edit, "Company Name:")
+        identity_section.add_field(self.code_edit, "Company Code:")
+        identity_section.add_field(self.tax_edit, "Tax Number:")
+        container_layout.addWidget(identity_section)
 
         # Contact section
-        contact_group = QGroupBox("Contact Information")
-        contact_layout = QFormLayout()
-        contact_layout.setSpacing(SPACING_MD)
+        contact_section = FormSection("Contact Information")
 
         self.email_edit = QLineEdit()
         self.email_edit.setPlaceholderText("contact@company.com")
@@ -74,16 +71,13 @@ class CompanyProfileScreen(BaseScreen):
         self.address_edit.setPlaceholderText("Full address")
         self.address_edit.setMaximumHeight(80)
 
-        contact_layout.addRow("Email:", self.email_edit)
-        contact_layout.addRow("Phone:", self.phone_edit)
-        contact_layout.addRow("Address:", self.address_edit)
-        contact_group.setLayout(contact_layout)
-        container_layout.addWidget(contact_group)
+        contact_section.add_field(self.email_edit, "Email:")
+        contact_section.add_field(self.phone_edit, "Phone:")
+        contact_section.add_field(self.address_edit, "Address:")
+        container_layout.addWidget(contact_section)
 
         # Currency section
-        currency_group = QGroupBox("Currency Settings")
-        currency_layout = QFormLayout()
-        currency_layout.setSpacing(SPACING_MD)
+        currency_section = FormSection("Currency Settings")
 
         self.default_currency = QComboBox()
         self.default_currency.addItems(["AFN", "USD", "EUR", "PKR", "IRR"])
@@ -91,10 +85,9 @@ class CompanyProfileScreen(BaseScreen):
         self.secondary_currency = QComboBox()
         self.secondary_currency.addItems(["USD", "AFN", "EUR", "PKR", "IRR"])
 
-        currency_layout.addRow("Default Currency:", self.default_currency)
-        currency_layout.addRow("Secondary Currency:", self.secondary_currency)
-        currency_group.setLayout(currency_layout)
-        container_layout.addWidget(currency_group)
+        currency_section.add_field(self.default_currency, "Default Currency:")
+        currency_section.add_field(self.secondary_currency, "Secondary Currency:")
+        container_layout.addWidget(currency_section)
 
         # Logo section
         logo_group = QGroupBox("Company Logo")
@@ -105,7 +98,7 @@ class CompanyProfileScreen(BaseScreen):
         self.logo_label.setAlignment(Qt.AlignCenter)
         self.logo_label.setStyleSheet(
             f"color: {COLOR_TEXT_MUTED}; background: {COLOR_BG_SURFACE}; "
-            f"border: 1px dashed {COLOR_BORDER}; border-radius: 8px; padding: {SPACING_LG}px;"
+            f"border: 1px dashed {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_LG}px;"
         )
         self.logo_label.setMinimumHeight(120)
         logo_layout.addWidget(self.logo_label)
@@ -140,7 +133,7 @@ class CompanyProfileScreen(BaseScreen):
     def _load_profile(self):
         """Load company profile from API."""
         if not self._api_client:
-            QMessageBox.warning(self, "Company Profile", "API client not available.")
+            AlertDialog.warning(self, "Company Profile", "API client not available.")
             return
 
         try:
@@ -171,16 +164,16 @@ class CompanyProfileScreen(BaseScreen):
                 else:
                     self.logo_label.setText("No logo uploaded")
 
-                QMessageBox.information(self, "Company Profile", "Profile loaded successfully.")
+                AlertDialog.info(self, "Company Profile", "Profile loaded successfully.")
             else:
-                QMessageBox.warning(self, "Company Profile", f"Failed to load profile: {resp}")
+                AlertDialog.warning(self, "Company Profile", f"Failed to load profile: {resp}")
         except Exception as e:
-            QMessageBox.critical(self, "Company Profile", f"Error loading profile: {e}")
+            AlertDialog.error(self, "Company Profile", f"Error loading profile: {e}")
 
     def _save_profile(self):
         """Save company profile to API."""
         if not self._api_client:
-            QMessageBox.warning(self, "Company Profile", "API client not available.")
+            AlertDialog.warning(self, "Company Profile", "API client not available.")
             return
 
         payload = {
@@ -196,10 +189,10 @@ class CompanyProfileScreen(BaseScreen):
         }
 
         if not payload["name"]:
-            QMessageBox.warning(self, "Company Profile", "Company name is required.")
+            AlertDialog.warning(self, "Company Profile", "Company name is required.")
             return
         if not payload["code"]:
-            QMessageBox.warning(self, "Company Profile", "Company code is required.")
+            AlertDialog.warning(self, "Company Profile", "Company code is required.")
             return
 
         try:
@@ -211,11 +204,11 @@ class CompanyProfileScreen(BaseScreen):
             if resp and resp.get("success"):
                 data = resp["data"]
                 self._company_id = data.get("id")
-                QMessageBox.information(self, "Company Profile", "Profile saved successfully.")
+                AlertDialog.info(self, "Company Profile", "Profile saved successfully.")
             else:
-                QMessageBox.warning(self, "Company Profile", f"Failed to save: {resp}")
+                AlertDialog.warning(self, "Company Profile", f"Failed to save: {resp}")
         except Exception as e:
-            QMessageBox.critical(self, "Company Profile", f"Error saving profile: {e}")
+            AlertDialog.error(self, "Company Profile", f"Error saving profile: {e}")
 
     def _upload_logo(self):
         """Upload company logo."""

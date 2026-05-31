@@ -23,28 +23,32 @@ from ui.constants import (
 Document Action Dialog - Centralized dialog for Printing and Sharing.
 """
 
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QFrame, QLineEdit)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, 
+                               QFrame, QLineEdit, QWidget)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import EnterpriseDialog, DialogType
 
 from api.document_action_service import DocumentActionService
 
-class DocumentActionDialog(QDialog):
+class DocumentActionDialog(EnterpriseDialog):
     """
     Unified dialog for document actions (Print, PDF, WhatsApp).
     """
     def __init__(self, parent=None, doc_type="invoice", data=None):
-        super().__init__(parent)
         self.doc_type = doc_type
         self.data = data or {}
-        self.setWindowTitle(f"Document Actions - {doc_type.capitalize()}")
+        super().__init__(f"Document Actions - {doc_type.capitalize()}", DialogType.CUSTOM, parent)
         self.setMinimumWidth(400)
-        self._setup_ui()
+        self._build_content()
         
-    def _setup_ui(self):
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(SPACING_XL + SPACING_SM,  SPACING_XL + SPACING_SM,  SPACING_XL + SPACING_SM,  SPACING_XL + SPACING_SM)
         layout.setSpacing(SPACING_LG)
         
@@ -74,19 +78,17 @@ class DocumentActionDialog(QDialog):
         btn_layout.setSpacing(SPACING_SM + SPACING_XS)
         
         # 1. Print Button
-        self.print_btn = EnterpriseButton("🖨️  Print Document", variant=ButtonVariant.PRIMARY, size=ButtonSize.LARGE)
-        self.print_btn.setFixedHeight(45)
+        self.print_btn = EnterpriseButton("Print Document", variant=ButtonVariant.PRIMARY, size=ButtonSize.LARGE)
         self.print_btn.clicked.connect(self._on_print)
         btn_layout.addWidget(self.print_btn)
         
         # 2. PDF Button
-        self.pdf_btn = EnterpriseButton("📄  Download as PDF", variant=ButtonVariant.SECONDARY, size=ButtonSize.LARGE)
-        self.pdf_btn.setFixedHeight(45)
+        self.pdf_btn = EnterpriseButton("Download as PDF", variant=ButtonVariant.SECONDARY, size=ButtonSize.LARGE)
         btn_layout.addWidget(self.pdf_btn)
 
         # separator
         line = QFrame()
-        line.setFrameShape(QFrame.HLine)
+        line.setFrameShape(QFrame.Shape.HLine)
         line.setStyleSheet(f"color: {COLOR_BORDER_LIGHT};")
         btn_layout.addWidget(line)
 
@@ -98,16 +100,13 @@ class DocumentActionDialog(QDialog):
         wa_row = QHBoxLayout()
         self.phone_input = QLineEdit()
         self.phone_input.setPlaceholderText("Phone (e.g. 93700123456)")
-        self.phone_input.setFixedHeight(40)
-        self.phone_input.setStyleSheet(f"background: {COLOR_BG_INPUT}; border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: {BORDER_RADIUS_MD}; padding: 0 10px;")
+        self.phone_input.setStyleSheet(f"background: {COLOR_BG_INPUT}; border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: {BORDER_RADIUS_MD}; padding: 0 {SPACING_SM}px;")
         
         # Pre-fill phone if available in data
         if 'customer_phone' in self.data:
             self.phone_input.setText(self.data['customer_phone'])
             
         self.wa_btn = EnterpriseButton("Share", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
-        self.wa_btn.setFixedWidth(80)
-        self.wa_btn.setFixedHeight(40)
         self.wa_btn.clicked.connect(self._on_whatsapp)
         
         wa_row.addWidget(self.phone_input)
@@ -120,6 +119,8 @@ class DocumentActionDialog(QDialog):
         close_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY)
         close_btn.clicked.connect(self.reject)
         layout.addWidget(close_btn, 0, Qt.AlignCenter)
+
+        self.set_content(widget)
 
     def _on_print(self):
         DocumentActionService.print_document(self.doc_type, self.data)

@@ -147,5 +147,5 @@ class CategoryScreen(BaseInventoryScreen):
             self.api_client.delete(f"/api/inventory/categories/{category_id}/")
             self.load_categories()
         except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Failed to delete category: {e}")
+            from ui.components.dialogs import AlertDialog
+            AlertDialog.error(self, "Error", f"Failed to delete category: {e}")

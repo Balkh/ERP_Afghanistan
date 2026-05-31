@@ -1,7 +1,7 @@
 """Phase 20: Supplier Payment Workspace screen."""
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QComboBox, QGroupBox, QMessageBox, QApplication,
+    QLabel, QComboBox, QGroupBox, QApplication,
     QSplitter,
 )
 from PySide6.QtCore import Qt, Signal, Qt as QtCore
@@ -16,6 +16,7 @@ from ui.constants import (
     BORDER_RADIUS_SM, BORDER_RADIUS_LG,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
 from ui.screens.base_screen import BaseScreen
@@ -190,7 +191,7 @@ class SupplierPaymentWorkspace(BaseScreen):
         section.setFont(QFont("Segoe UI", TEXT_LABEL))
         section.setStyleSheet(
             f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}"
+            f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         layout = QGridLayout(section)
         layout.setSpacing(SPACING_MD)
@@ -214,7 +215,7 @@ class SupplierPaymentWorkspace(BaseScreen):
         return section
 
     def _combo_style(self):
-        return """
+        return f"""
             QComboBox {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -366,9 +367,14 @@ class SupplierPaymentWorkspace(BaseScreen):
     def _on_process_payment(self):
         """Open process payment dialog."""
         if not self.supplier_id:
-            QMessageBox.warning(self, "No Supplier", "Please select a supplier first.")
+            AlertDialog.warning("No Supplier", "Please select a supplier first.", self)
             return
-        QMessageBox.information(self, "Coming Soon", "Payment processing dialog will be implemented next.")
+        AlertDialog.info(
+            "Payment Processing",
+            "Use the Payments screen (idx 18) to process supplier payments.\n\n"
+            "Select this supplier from the supplier dropdown to view and process their payments.",
+            self,
+        )
 
     def _on_allocate_fifo(self):
         """Run FIFO allocation for unallocated payments."""
@@ -379,15 +385,16 @@ class SupplierPaymentWorkspace(BaseScreen):
             response = self.api_client.post(endpoint, {})
             if response and response.get("success"):
                 data = response.get("data", {})
-                QMessageBox.information(
-                    self, "Allocation Complete",
+                AlertDialog.info(
+                    "Allocation Complete",
                     f"Allocated {data.get('allocations_created', 0)} payments.\n"
-                    f"Total: {self._safe_float(data.get('total_allocated', 0)):,.2f}"
+                    f"Total: {self._safe_float(data.get('total_allocated', 0)):,.2f}",
+                    self,
                 )
                 self.allocation_completed.emit(data)
                 self.refresh_workspace()
         except Exception as e:
-            QMessageBox.critical(self, "Allocation Error", str(e))
+            AlertDialog.error("Allocation Error", str(e), self)
 
     def _safe_float(self, value, default=0.0):
         try:

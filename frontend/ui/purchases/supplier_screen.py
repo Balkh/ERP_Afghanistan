@@ -1,15 +1,18 @@
 """Suppliers screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit, QSpinBox,
-                                   QMessageBox, QFormLayout, QDialog, QComboBox,
-                                   QTextEdit, QFrame)
+                                   QFormLayout, QComboBox,
+                                   QTextEdit, QFrame, QWidget, QGroupBox)
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen, ScreenState
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
                            BUTTON_HEIGHT_MD, INPUT_HEIGHT_MD, TABLE_ROW_HEIGHT_MD, BORDER_RADIUS_MD, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from ui.components.forms import FormSection
 
 
 class SupplierScreen(BaseScreen):
@@ -38,6 +41,14 @@ class SupplierScreen(BaseScreen):
         add_btn = EnterpriseButton(text="Add Supplier", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         add_btn.clicked.connect(self.add_supplier)
         header.addWidget(add_btn)
+
+        edit_btn = EnterpriseButton(text="Edit", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        edit_btn.clicked.connect(self.edit_supplier)
+        header.addWidget(edit_btn)
+
+        delete_btn = EnterpriseButton(text="Delete", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        delete_btn.clicked.connect(self.delete_supplier)
+        header.addWidget(delete_btn)
 
         refresh_btn = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         refresh_btn.clicked.connect(self.load_suppliers)
@@ -123,7 +134,7 @@ class SupplierScreen(BaseScreen):
                             elif 'id' in data:
                                 self.suppliers = [data]
                     else:
-                        print(f"API error: {response.get('error', {})}")
+                        self.error_label.setText(f"API error: {response.get('error', {})}")
                         self.set_state(ScreenState.ERROR)
                 elif isinstance(response, list):
                     self.suppliers = [s for s in response if isinstance(s, dict)]
@@ -135,7 +146,7 @@ class SupplierScreen(BaseScreen):
                     self.set_state(ScreenState.READY)
             except Exception as e:
                 self.suppliers = []
-                print(f"Failed to load suppliers: {e}")
+                self.error_label.setText(f"Failed to load suppliers: {e}")
                 self.set_state(ScreenState.ERROR)
         
         self.update_table()
@@ -178,61 +189,67 @@ class SupplierScreen(BaseScreen):
         if dialog.exec():
             self.load_suppliers()
 
+    def edit_supplier(self):
+        """Edit selected supplier."""
+        selected = self.table.selectedItems()
+        if not selected:
+            return
+        row = selected[0].row()
+        supplier = self.suppliers[row] if row < len(self.suppliers) else None
+        if not supplier:
+            return
+        dialog = SupplierDialog(self.api_client, supplier=supplier)
+        if dialog.exec():
+            self.load_suppliers()
 
-class SupplierDialog(QDialog):
+    def delete_supplier(self):
+        """Delete selected supplier."""
+        from ui.components.dialogs import ConfirmDialog
+        selected = self.table.selectedItems()
+        if not selected:
+            return
+        row = selected[0].row()
+        supplier = self.suppliers[row] if row < len(self.suppliers) else None
+        if not supplier:
+            return
+        reply = ConfirmDialog.confirm(
+            "Delete Supplier",
+            f"Are you sure you want to delete supplier '{supplier.get('name', '')}'?",
+            self
+        )
+        if reply:
+            try:
+                endpoint = get_endpoint("suppliers")
+                self.api_client.delete(f"{endpoint}{supplier['id']}/")
+                self.load_suppliers()
+            except Exception as e:
+                AlertDialog.error("Error", f"Failed to delete supplier: {e}", self)
+
+
+class SupplierDialog(EnterpriseDialog):
     """Supplier add/edit dialog with full features."""
 
-    @staticmethod
-    def _submit_style():
-        from ui.constants import COLOR_SUCCESS, COLOR_SUCCESS_HOVER, COLOR_SUCCESS_ACTIVE, COLOR_TEXT_MUTED, COLOR_TEXT_ON_PRIMARY, TEXT_CARD_TITLE
-        return """
-            QPushButton {{
-                background-color: {COLOR_SUCCESS};
-                color: {COLOR_TEXT_ON_PRIMARY};
-                border: none;
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_MD}px 24px;
-                font-weight: bold;
-                font-size: {TEXT_CARD_TITLE}px;
-            }}
-            QPushButton:hover {{ background-color: {COLOR_SUCCESS_HOVER}; }}
-            QPushButton:pressed {{ background-color: {COLOR_SUCCESS_ACTIVE}; }}
-            QPushButton:disabled {{ background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_MUTED}; }}
-        """
-
-    @staticmethod
-    def _input_style():
-        from ui.constants import COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_BORDER, COLOR_BORDER_FOCUS, TEXT_BODY, PADDING_INPUT_H
-        return """
-            QLineEdit, QTextEdit, QComboBox {{
-                background-color: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {PADDING_INPUT_H}px;
-                font-size: {TEXT_BODY}px;
-            }}
-            QLineEdit:focus, QTextEdit:focus, QComboBox:focus {{
-                border: 1px solid {COLOR_BORDER_FOCUS};
-            }}
-        """
-
     def __init__(self, api_client=None, supplier=None):
-        super().__init__()
         self.api_client = api_client
         self.supplier = supplier
         self._is_submitting = False
-        self.setWindowTitle("Add Supplier" if not supplier else "Edit Supplier")
+        title = "Add Supplier" if not supplier else "Edit Supplier"
+        super().__init__(title, DialogType.CUSTOM, None)
         self.resize(550, 650)
         self.setMinimumHeight(650)
         self.setMaximumHeight(750)
-        self.setStyleSheet(self._input_style())
-        self.setup_ui()
+        self._build_content()
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save)
 
-    def setup_ui(self):
-        from PySide6.QtWidgets import QScrollArea, QGroupBox
-        
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        from PySide6.QtWidgets import QScrollArea
+
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(SPACING_SM, SPACING_SM, SPACING_SM, SPACING_SM)
         layout.setSpacing(SPACING_SM)
         
@@ -378,44 +395,36 @@ class SupplierDialog(QDialog):
         form_layout.addRow("City:", self.city)
         form_layout.addRow("Supply Categories*:", self.supply_categories)
         
-        # Bank details group
-        bank_group = QGroupBox("Bank Details")
-        bank_layout = QFormLayout()
-        bank_layout.addRow("Bank Name:", self.bank_name)
-        bank_layout.addRow("Account #:", self.bank_account)
-        bank_layout.addRow("IBAN:", self.iban)
-        bank_layout.addRow("SWIFT:", self.swift_code)
-        bank_group.setLayout(bank_layout)
-        form_layout.addRow(bank_group)
+        # Bank details section
+        bank_section = FormSection("Bank Details")
+        bank_section.add_field(self.bank_name, "Bank Name:")
+        bank_section.add_field(self.bank_account, "Account #:")
+        bank_section.add_field(self.iban, "IBAN:")
+        bank_section.add_field(self.swift_code, "SWIFT:")
+        form_layout.addRow(bank_section)
         
-        # Contact group
-        contact_group = QGroupBox("Contact Person")
-        contact_layout = QFormLayout()
-        contact_layout.addRow("Name:", self.contact_person)
-        contact_layout.addRow("Role:", self.contact_role)
-        contact_layout.addRow("Phone:", self.contact_phone)
-        contact_layout.addRow("Email:", self.contact_email)
-        contact_group.setLayout(contact_layout)
-        form_layout.addRow(contact_group)
+        # Contact section
+        contact_section = FormSection("Contact Person")
+        contact_section.add_field(self.contact_person, "Name:")
+        contact_section.add_field(self.contact_role, "Role:")
+        contact_section.add_field(self.contact_phone, "Phone:")
+        contact_section.add_field(self.contact_email, "Email:")
+        form_layout.addRow(contact_section)
         
-        # Business terms group
-        terms_group = QGroupBox("Business Terms")
-        terms_layout = QFormLayout()
-        terms_layout.addRow("Delivery Terms:", self.delivery_terms)
-        terms_layout.addRow("Lead Time (days):", self.lead_time)
-        terms_layout.addRow("Min Order Value:", self.minimum_order)
-        terms_layout.addRow("Quality Rating (0-5):", self.quality_rating)
-        terms_group.setLayout(terms_layout)
-        form_layout.addRow(terms_group)
+        # Business terms section
+        terms_section = FormSection("Business Terms")
+        terms_section.add_field(self.delivery_terms, "Delivery Terms:")
+        terms_section.add_field(self.lead_time, "Lead Time (days):")
+        terms_section.add_field(self.minimum_order, "Min Order Value:")
+        terms_section.add_field(self.quality_rating, "Quality Rating (0-5):")
+        form_layout.addRow(terms_section)
         
-        # Financial group
-        financial_group = QGroupBox("Financial Details")
-        financial_layout = QFormLayout()
-        financial_layout.addRow("Credit Limit:", self.credit_limit)
-        financial_layout.addRow("Payment Terms (days):", self.payment_terms)
-        financial_layout.addRow("Tax Number:", self.tax_number)
-        financial_group.setLayout(financial_layout)
-        form_layout.addRow(financial_group)
+        # Financial section
+        financial_section = FormSection("Financial Details")
+        financial_section.add_field(self.credit_limit, "Credit Limit:")
+        financial_section.add_field(self.payment_terms, "Payment Terms (days):")
+        financial_section.add_field(self.tax_number, "Tax Number:")
+        form_layout.addRow(financial_section)
         
         # Add scroll area
         scroll.setWidget(form)
@@ -438,6 +447,8 @@ class SupplierDialog(QDialog):
         layout.addLayout(buttons_layout)
         
         self.subtype_combo.currentTextChanged.connect(self.on_subtype_changed)
+
+        return widget
     
     def on_subtype_changed(self, subtype):
         """Show/hide fields based on subtype."""
@@ -483,11 +494,11 @@ class SupplierDialog(QDialog):
             self._is_submitting = False
             self.btn_save.setEnabled(True)
             self.btn_save.setText("Save Supplier")
-            QMessageBox.warning(self, "Validation Error", "\n".join(validation_errors))
+            AlertDialog.warning("Validation Error", "\n".join(validation_errors), self)
             return
         
         if not self.phone.text().strip():
-            QMessageBox.warning(self, "Validation Error", "Phone number is required.")
+            AlertDialog.warning("Validation Error", "Phone number is required.", self)
             return
         
         # Build data
@@ -538,17 +549,17 @@ class SupplierDialog(QDialog):
                 response = self.api_client.post(endpoint, data)
                 if response and isinstance(response, dict):
                     if response.get("success") or response.get("id"):
-                        QMessageBox.information(self, "Success", "Supplier saved successfully.")
+                        AlertDialog.info("Success", "Supplier saved successfully.", self)
                         self.accept()
                         return
                     error_msg = response.get("error", {}).get("message", "Failed to save supplier") if isinstance(response, dict) else "Failed to save supplier"
-                    QMessageBox.warning(self, "Error", error_msg)
+                    AlertDialog.warning("Error", error_msg, self)
                 else:
-                    QMessageBox.warning(self, "Error", "Failed to save supplier")
+                    AlertDialog.warning("Error", "Failed to save supplier", self)
             except Exception as e:
-                QMessageBox.warning(self, "Error", f"Failed to save: {e}")
+                AlertDialog.warning("Error", f"Failed to save: {e}", self)
         else:
-            QMessageBox.information(self, "Success", "Supplier saved successfully (offline mode).")
+            AlertDialog.info("Success", "Supplier saved successfully (offline mode).", self)
             self.accept()
         
         # Reset button state on failure

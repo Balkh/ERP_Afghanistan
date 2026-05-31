@@ -86,6 +86,7 @@ class ProductScreen(BaseInventoryScreen):
             
             self.update_table()
         except Exception as e:
+            # TODO: Replace with user-facing error state (no error_label/empty_label available)
             print(f"Error loading products: {e}")
             self.products = []
             self.update_table()
@@ -165,5 +166,5 @@ class ProductScreen(BaseInventoryScreen):
             self.api_client.delete(f"/api/inventory/products/{product_id}/")
             self.load_products()
         except Exception as e:
-            # Show error message
+            # TODO: Replace with user-facing error state (no error_label/empty_label available)
             print(f"Error deleting product: {e}")

@@ -1,0 +1,149 @@
+{
+  "certification": {
+    "audit_date": "2026-05-27",
+    "system": "Pharmacy ERP — Full Stack",
+    "overall_score": 71,
+    "overall_verdict": "PILOT_READY",
+    "score_breakdown": {
+      "endpoint_screen_coverage": { "score": 85, "verdict": "PASS" },
+      "workflow_integrity": { "score": 85, "verdict": "PASS" },
+      "form_system": { "score": 40, "verdict": "FAIL" },
+      "table_system": { "score": 55, "verdict": "FAIL" },
+      "reporting_system": { "score": 85, "verdict": "PASS" },
+      "role_based_access_ux": { "score": 65, "verdict": "PASS" },
+      "api_contract": { "score": 85, "verdict": "PASS" },
+      "human_error_resilience": { "score": 55, "verdict": "FAIL" },
+      "visual_maturity": { "score": 72, "verdict": "PASS" },
+      "performance_responsiveness": { "score": 80, "verdict": "PASS" }
+    }
+  },
+  "issues": {
+    "blockers": [
+      {
+        "id": "B1",
+        "severity": "HIGH",
+        "category": "workflow_integrity",
+        "description": "Period close/lock endpoints not exposed in any UI screen",
+        "endpoints": ["POST /api/accounting/fiscal-periods/{pk}/close/", "POST /api/accounting/fiscal-periods/{pk}/lock/"],
+        "files": ["frontend/ui/accounting/"]
+      },
+      {
+        "id": "B2",
+        "severity": "MEDIUM",
+        "category": "workflow_integrity",
+        "description": "Payroll generate/approve endpoints not exposed in UI",
+        "endpoints": ["POST /api/payroll/generate/", "POST /api/payroll/approve/"],
+        "files": ["frontend/ui/hr/payroll_screen.py"]
+      },
+      {
+        "id": "B3",
+        "severity": "MEDIUM",
+        "category": "visual_maturity",
+        "description": "22 raw QDialog subclasses not migrated to EnterpriseDialog",
+        "count": 22,
+        "files": ["frontend/ui/*/*.py — various dialog classes"]
+      },
+      {
+        "id": "B4",
+        "severity": "MEDIUM",
+        "category": "visual_maturity",
+        "description": "19 QWidget/QFrame screens not migrated to BaseScreen",
+        "count": 19,
+        "files": ["Dashboard, POS, SalesInvoice, PurchaseInvoice, and 15 others"]
+      }
+    ],
+    "recommended": [
+      {
+        "id": "R1",
+        "category": "form_system",
+        "description": "EnterpriseForm (500 lines) is completely unused dead code — adopt or remove",
+        "file": "frontend/ui/components/forms.py"
+      },
+      {
+        "id": "R2",
+        "category": "table_system",
+        "description": "13 screens still use raw QTableWidget instead of EnterpriseTable",
+        "files": ["trial_balance", "profit_loss", "balance_sheet", "arap_ageing", "batch", "stock_movement", "customer_payment_workspace", "supplier_payment_workspace", "payment_allocation", "financial_operations", "attendance", "payroll", "observability"]
+      },
+      {
+        "id": "R3",
+        "category": "human_error_resilience",
+        "description": "No centralized form validation — all forms use ad-hoc QFormLayout without validation pipeline"
+      },
+      {
+        "id": "R4",
+        "category": "human_error_resilience",
+        "description": "No double-click prevention on submit buttons"
+      },
+      {
+        "id": "R5",
+        "category": "human_error_resilience",
+        "description": "No unsaved-changes warning when navigating away from dirty forms"
+      },
+      {
+        "id": "R6",
+        "category": "endpoint_screen_coverage",
+        "description": "Jobs module (6 endpoints) has zero UI — users cannot monitor/manage background jobs"
+      },
+      {
+        "id": "R7",
+        "category": "human_error_resilience",
+        "description": "No session timeout warning before auto-logout"
+      },
+      {
+        "id": "R8",
+        "category": "performance_responsiveness",
+        "description": "Skeleton loaders, deferred rendering, and chunked table data available but not adopted by any screen"
+      },
+      {
+        "id": "R9",
+        "category": "visual_maturity",
+        "description": "~15 remaining untokenized spacing values in stylesheets"
+      },
+      {
+        "id": "R10",
+        "category": "endpoint_screen_coverage",
+        "description": "Insurance module (3 endpoints) has zero UI"
+      }
+    ]
+  },
+  "workflow_gaps": [
+    { "id": "WG1", "workflow": "Accounting", "gap": "Period close/lock not exposed in UI", "severity": "HIGH" },
+    { "id": "WG2", "workflow": "Payroll", "gap": "Payroll generate/approve not exposed in UI", "severity": "MEDIUM" },
+    { "id": "WG3", "workflow": "Sales", "gap": "Credit approval workflow not exposed in sales_invoice_screen", "severity": "MEDIUM" },
+    { "id": "WG4", "workflow": "Budgeting", "gap": "Budget approve/reject/lock/transfer not exposed", "severity": "LOW" },
+    { "id": "WG5", "workflow": "Fixed Assets", "gap": "Asset activate/decommission/impair/depreciation not exposed", "severity": "LOW" }
+  ],
+  "production_gates": {
+    "all_core_financial_workflows_operational": true,
+    "double_entry_accounting_validated": true,
+    "payment_integration_tested": true,
+    "pdf_print_generation_works": true,
+    "api_contract_standardized": true,
+    "role_based_access_enforced": true,
+    "test_suite_passing": true,
+    "coverage_baseline_established": true,
+    "visual_design_system_adopted": false,
+    "form_validation_centralized": false,
+    "table_system_standardized": false,
+    "ux_error_prevention": false,
+    "ui_state_handling_complete": false,
+    "qwidget_to_basescreen_migrated": false,
+    "qdialog_to_enterprisedialog_migrated": false
+  },
+  "metadata": {
+    "total_api_endpoints": 146,
+    "total_screens": 66,
+    "basescreen_screens": 37,
+    "enterprisedialog_dialogs": 11,
+    "raw_qdialog_remaining": 22,
+    "raw_qwidget_screens_remaining": 19,
+    "raw_qtables_remaining": 13,
+    "raw_qpushbutton_test_files": 3,
+    "enterpriseform_usage": "ZERO — dead code",
+    "overall_test_suite": "~1587+ tests passing",
+    "payment_purchase_tests": "59/59 PASS",
+    "validation_harness_tests": "6/6 PASS",
+    "coverage_percentage": "~8.8%"
+  }
+}

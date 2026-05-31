@@ -2,11 +2,12 @@
 Phase 5B.6 — Event Store Viewer Screen.
 Browse events, verify claims, and view Event Store state.
 """
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QTableWidget, QTableWidgetItem,
-                                 QLineEdit, QComboBox)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
+                                 QTableWidget, QTableWidgetItem,
+                                 QLineEdit, QComboBox, QAbstractItemView)
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.screens.base_screen import BaseScreen
 
 from api.client import APIClient
 from api.truth_client import TruthAPIClient
@@ -16,19 +17,18 @@ from ui.constants import (COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECON
                            TEXT_LABEL, TEXT_PAGE_TITLE, SPACING_LG,
     SPACING_SM, MARGIN_PAGE,
                            SPACING_6, BORDER_RADIUS_MD)
-from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL
 
 
-class EventStoreScreen(QWidget):
+class EventStoreScreen(BaseScreen):
     """Screen for browsing the Event Store and verifying claims."""
 
     def __init__(self, api_client: APIClient = None):
-        super().__init__()
         self._api = TruthAPIClient(api_client or APIClient())
-        self._build_ui()
-        self._refresh()
+        super().__init__()
+        self._setup_screen()
 
-    def _build_ui(self):
+    def _setup_screen(self):
+        super()._setup_screen()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
@@ -74,7 +74,14 @@ class EventStoreScreen(QWidget):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
         self.table.setStyleSheet(build_table_stylesheet())
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         layout.addWidget(self.table)
+
+    def _on_screen_shown(self):
+        pass
+
+    def load_data(self, params=None):
+        self._refresh()
 
     def _refresh(self):
         try:

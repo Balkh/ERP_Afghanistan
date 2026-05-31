@@ -4,9 +4,9 @@ Allows users to allocate unallocated customer payments to outstanding
 invoices using the FIFO (First In, First Out) strategy. Shows available
 payments, outstanding invoices, and the allocation results.
 """
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
                                 QFrame, QGroupBox, QHeaderView, QTableWidget,
-                                QTableWidgetItem, QMessageBox)
+                                QTableWidgetItem, QWidget)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 
@@ -15,27 +15,31 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, MARGIN_CARD,
                            COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_WARNING,
                            COLOR_INFO, BORDER_RADIUS_MD)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog, EnterpriseDialog, DialogType
+from ui.components.tables import build_table_stylesheet
 from api.client import APIClient
 
 
-class FIFOAllocationDialog(QDialog):
+class FIFOAllocationDialog(EnterpriseDialog):
     """Dialog for allocating unallocated payments to invoices via FIFO."""
 
     def __init__(self, customer_id=None, customer_name=None, parent=None):
-        super().__init__(parent)
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.customer_id = customer_id
         self.customer_name = customer_name or "All Customers"
-        self.setup_ui()
-        self.load_data()
-
-    def setup_ui(self):
-        self.setWindowTitle(f"FIFO Payment Allocation — {self.customer_name}")
+        super().__init__(f"FIFO Payment Allocation — {self.customer_name}", DialogType.CUSTOM, parent)
         self.setMinimumWidth(700)
         self.setMinimumHeight(500)
         self.setModal(True)
+        self._build_content()
+        self.load_data()
 
-        layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setSpacing(SPACING_MD)
         layout.setContentsMargins(MARGIN_CARD, MARGIN_CARD, MARGIN_CARD, MARGIN_CARD)
 
@@ -48,7 +52,7 @@ class FIFOAllocationDialog(QDialog):
         subtitle = QLabel(
             "Automatically allocate unallocated payments to the oldest outstanding invoices first."
         )
-        subtitle.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY_SMALL};")
+        subtitle.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY_SMALL}pt;")
         subtitle.setWordWrap(True)
         layout.addWidget(subtitle)
 
@@ -69,21 +73,11 @@ class FIFOAllocationDialog(QDialog):
 
         # Unallocated payments table
         payments_group = QGroupBox("Unallocated Payments")
-        payments_group.setStyleSheet("""
-            QGroupBox {{
-                font-size: {TEXT_SECTION_TITLE};
-                font-weight: bold;
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
-                margin-top: {SPACING_MD};
-                padding-top: {SPACING_MD};
-            }}
-            QGroupBox::title {{ subcontrol-origin: margin; left: {SPACING_MD}; padding: 0 {SPACING_SM}; }}
-        """)
         payments_layout = QVBoxLayout(payments_group)
 
         self.payments_table = QTableWidget()
+        self.payments_table.setStyleSheet(build_table_stylesheet())
+        self.payments_table.setAlternatingRowColors(True)
         self.payments_table.setColumnCount(4)
         self.payments_table.setHorizontalHeaderLabels(["Date", "Payment #", "Amount", "Method"])
         self.payments_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -96,21 +90,11 @@ class FIFOAllocationDialog(QDialog):
 
         # Outstanding invoices table
         invoices_group = QGroupBox("Outstanding Invoices (Oldest First)")
-        invoices_group.setStyleSheet("""
-            QGroupBox {{
-                font-size: {TEXT_SECTION_TITLE};
-                font-weight: bold;
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
-                margin-top: {SPACING_MD};
-                padding-top: {SPACING_MD};
-            }}
-            QGroupBox::title {{ subcontrol-origin: margin; left: {SPACING_MD}; padding: 0 {SPACING_SM}; }}
-        """)
         invoices_layout = QVBoxLayout(invoices_group)
 
         self.invoices_table = QTableWidget()
+        self.invoices_table.setStyleSheet(build_table_stylesheet())
+        self.invoices_table.setAlternatingRowColors(True)
         self.invoices_table.setColumnCount(4)
         self.invoices_table.setHorizontalHeaderLabels(["Invoice #", "Date", "Total", "Remaining"])
         self.invoices_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -143,21 +127,16 @@ class FIFOAllocationDialog(QDialog):
         btn_layout.addStretch()
         layout.addLayout(btn_layout)
 
+        self.set_content(widget)
+        return widget
+
     def _create_summary_card(self, title, value, color):
         card = QFrame()
-        card.setStyleSheet("""
-            QFrame {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_MD};
-            }}
-        """)
         card_layout = QVBoxLayout(card)
         card_layout.setSpacing(SPACING_XS)
 
         title_label = QLabel(title)
-        title_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY_SMALL};")
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY_SMALL}pt;")
         card_layout.addWidget(title_label)
 
         value_label = QLabel(str(value))
@@ -240,7 +219,7 @@ class FIFOAllocationDialog(QDialog):
                     child.setText(f"{min(total_unallocated, total_outstanding):,.2f} AFN")
 
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to load data: {e}")
+            AlertDialog.warning("Error", f"Failed to load data: {e}", self)
 
     def run_allocation(self):
         """Run FIFO allocation via backend endpoint."""
@@ -251,15 +230,16 @@ class FIFOAllocationDialog(QDialog):
                 data = response.get("data", response)
                 allocated_count = data.get("allocated_count", 0)
                 total_allocated = data.get("total_allocated", 0)
-                QMessageBox.information(
-                    self, "Allocation Complete",
+                AlertDialog.info(
+                    "Allocation Complete",
                     f"Allocated {allocated_count} payments\n"
-                    f"Total: {total_allocated:,.2f} AFN"
+                    f"Total: {total_allocated:,.2f} AFN",
+                    self
                 )
                 self.load_data()
             else:
-                QMessageBox.warning(self, "Allocation Failed", str(response))
+                AlertDialog.warning("Allocation Failed", str(response), self)
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Failed to run allocation: {e}")
+            AlertDialog.warning("Error", f"Failed to run allocation: {e}", self)
         finally:
             self.allocate_btn.setEnabled(True)

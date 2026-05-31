@@ -1,40 +1,91 @@
 from decimal import Decimal
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QFrame,
-                               QLineEdit, QComboBox, QTextEdit, QPushButton,
-                               QLabel, QMessageBox, QDateEdit, QTableWidget,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout, QFrame,
+                               QLineEdit, QComboBox, QTextEdit, QWidget,
+                               QLabel, QDateEdit, QTableWidget,
                                QHeaderView, QAbstractItemView, QGroupBox,
                                QDoubleSpinBox, QCheckBox)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from api.client import APIClient
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, COLOR_SUCCESS, COLOR_DANGER, COLOR_BG_DIALOG,
-    COLOR_BG_SURFACE, COLOR_BG_DIALOG, COLOR_BG_INPUT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
-    COLOR_BORDER, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, COLOR_SUCCESS_BG, COLOR_DANGER_BG, COLOR_FORM_SECTION_TITLE, COLOR_FORM_SECTION_DIVIDER,
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
+    MARGIN_PAGE, COLOR_SUCCESS, COLOR_DANGER, COLOR_BG_SURFACE,
+    COLOR_BG_INPUT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
+    COLOR_BORDER, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER,
+    COLOR_SUCCESS_BG, COLOR_DANGER_BG, COLOR_FORM_SECTION_TITLE, COLOR_FORM_SECTION_DIVIDER,
     BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, TEXT_SECTION_TITLE,
     TEXT_CARD_TITLE, TEXT_LABEL, INPUT_HEIGHT_MD, DIALOG_WIDTH_WIDE,
     SECTION_TITLE_SPACING)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import build_table_stylesheet
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from ui.components.forms import FormSection
 
 
-class JournalEntryFormDialog(QDialog):
+class JournalEntryFormDialog(EnterpriseDialog):
     """Dialog for creating a new journal entry with line items."""
 
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
-        self.setWindowTitle("Create New Journal Entry")
-        self.api_client = api_client or APIClient()
+        self._api_client = api_client or APIClient()
         self.accounts = []
         self.line_items = []
         self._submitting = False
-        self.setup_ui()
-        self.load_accounts()
-
-    def setup_ui(self):
+        super().__init__("Create New Journal Entry", DialogType.CUSTOM, parent)
         self.setMinimumWidth(DIALOG_WIDTH_WIDE)
         self.setMinimumHeight(700)
-        self.setStyleSheet("""
-            QDialog {{ background-color: {COLOR_BG_DIALOG}; }}
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save)
+        self.load_accounts()
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
+        layout.setSpacing(SPACING_MD + SPACING_XS)
+
+        title = QLabel("Create Journal Entry")
+        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
+        title_font.setWeight(QFont.Weight.Bold)
+        title.setFont(title_font)
+        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        layout.addWidget(title)
+
+        # Header Information
+        header_section = FormSection("General Information", primary=True)
+
+        self.entry_type = QComboBox()
+        self.entry_type.setMinimumHeight(INPUT_HEIGHT_MD)
+        for t in ["SALE", "PURCHASE", "PAYMENT", "RECEIPT", "ADJUSTMENT", "TRANSFER", "OPENING", "CLOSING"]:
+            self.entry_type.addItem(t, t)
+        header_section.add_field(self.entry_type, "Entry Type:")
+
+        self.entry_date = QDateEdit()
+        self.entry_date.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.entry_date.setCalendarPopup(True)
+        self.entry_date.setDisplayFormat("yyyy-MM-dd")
+        from datetime import date
+        self.entry_date.setDate(date.today())
+        header_section.add_field(self.entry_date, "Entry Date:")
+
+        self.description = QTextEdit()
+        self.description.setMaximumHeight(80)
+        self.description.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.description.setPlaceholderText("Enter overall entry description...")
+        header_section.add_field(self.description, "Description:")
+
+        self.reference = QLineEdit()
+        self.reference.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.reference.setPlaceholderText("Reference number (optional)")
+        header_section.add_field(self.reference, "Reference:")
+
+        self.auto_post = QCheckBox("Auto-post after creation")
+        self.auto_post.setStyleSheet(f"margin-left: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY};")
+        header_section.add_field(self.auto_post, "")
+
+        layout.addWidget(header_section)
+
+        # Journal Lines
+        lines_group = QGroupBox("Journal Lines (Articles)")
+        lines_group.setStyleSheet(f"""
             QGroupBox {{
                 font-weight: 700;
                 font-size: {TEXT_LABEL}pt;
@@ -51,73 +102,7 @@ class JournalEntryFormDialog(QDialog):
                 padding: 0 {SPACING_MD}px;
                 color: {COLOR_FORM_SECTION_TITLE};
             }}
-            QLabel {{ color: {COLOR_TEXT_PRIMARY}; }}
-            QLineEdit, QComboBox, QTextEdit, QDateEdit, QDoubleSpinBox {{
-                background-color: {COLOR_BG_INPUT};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_INPUT};
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM}px;
-            }}
-            QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QDateEdit:focus, QDoubleSpinBox:focus {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-            QLineEdit:hover, QComboBox:hover, QTextEdit:hover, QDateEdit:hover, QDoubleSpinBox:hover {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
         """)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
-        layout.setSpacing(SPACING_MD + SPACING_XS)
-
-        title = QLabel("Create Journal Entry")
-        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
-        title_font.setWeight(QFont.Weight.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
-        layout.addWidget(title)
-
-        # Header Information
-        header_group = QGroupBox("General Information")
-        header_layout = QFormLayout(header_group)
-        header_layout.setLabelAlignment(Qt.AlignRight)
-        header_layout.setSpacing(SPACING_MD + SPACING_XS)
-        header_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
-
-        self.entry_type = QComboBox()
-        self.entry_type.setMinimumHeight(INPUT_HEIGHT_MD)
-        for t in ["SALE", "PURCHASE", "PAYMENT", "RECEIPT", "ADJUSTMENT", "TRANSFER", "OPENING", "CLOSING"]:
-            self.entry_type.addItem(t, t)
-        header_layout.addRow("Entry Type:", self.entry_type)
-
-        self.entry_date = QDateEdit()
-        self.entry_date.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.entry_date.setCalendarPopup(True)
-        self.entry_date.setDisplayFormat("yyyy-MM-dd")
-        from datetime import date
-        self.entry_date.setDate(date.today())
-        header_layout.addRow("Entry Date:", self.entry_date)
-
-        self.description = QTextEdit()
-        self.description.setMaximumHeight(80)
-        self.description.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.description.setPlaceholderText("Enter overall entry description...")
-        header_layout.addRow("Description:", self.description)
-
-        self.reference = QLineEdit()
-        self.reference.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.reference.setPlaceholderText("Reference number (optional)")
-        header_layout.addRow("Reference:", self.reference)
-
-        self.auto_post = QCheckBox("Auto-post after creation")
-        self.auto_post.setStyleSheet("margin-left: 5px; color: {COLOR_TEXT_PRIMARY};")
-        header_layout.addRow("", self.auto_post)
-
-        layout.addWidget(header_group)
-
-        # Journal Lines
-        lines_group = QGroupBox("Journal Lines (Articles)")
         lines_layout = QVBoxLayout(lines_group)
         lines_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
 
@@ -147,11 +132,11 @@ class JournalEntryFormDialog(QDialog):
 
         # Totals and Balance
         bottom_layout = QHBoxLayout()
-        
+
         totals_frame = QFrame()
         totals_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG};")
         totals_layout = QHBoxLayout(totals_frame)
-        
+
         totals_layout.addWidget(QLabel("Total Debit:"))
         self.total_debit_label = QLabel("0.00")
         debit_font = QFont("Segoe UI", TEXT_CARD_TITLE)
@@ -160,7 +145,7 @@ class JournalEntryFormDialog(QDialog):
         self.total_debit_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
         totals_layout.addWidget(self.total_debit_label)
 
-        totals_layout.addSpacing(20)
+        totals_layout.addSpacing(SPACING_XL)
 
         totals_layout.addWidget(QLabel("Total Credit:"))
         self.total_credit_label = QLabel("0.00")
@@ -178,7 +163,7 @@ class JournalEntryFormDialog(QDialog):
         self.balance_label.setFont(balance_font)
         self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_SUCCESS_BG};")
         totals_layout.addWidget(self.balance_label)
-        
+
         bottom_layout.addWidget(totals_frame)
         layout.addLayout(bottom_layout)
 
@@ -204,10 +189,14 @@ class JournalEntryFormDialog(QDialog):
         self._add_line()
         self._add_line()
 
+        return widget
+
+    def _create_button_area(self):
+        return None
+
     def load_accounts(self):
         try:
-            self.accounts = self.api_client.get("/api/accounting/accounts/leaf_accounts/")
-            # Refresh all existing account combos
+            self.accounts = self._api_client.get("/api/accounting/accounts/leaf_accounts/")
             for row in range(self.lines_table.rowCount()):
                 combo = self.lines_table.cellWidget(row, 0)
                 if isinstance(combo, QComboBox):
@@ -251,7 +240,7 @@ class JournalEntryFormDialog(QDialog):
         credit_spin.valueChanged.connect(self._update_totals)
         self.lines_table.setCellWidget(row, 3, credit_spin)
 
-        remove_btn = EnterpriseButton("✕", variant=ButtonVariant.GHOST)
+        remove_btn = EnterpriseButton("x", variant=ButtonVariant.GHOST)
         remove_btn.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold;")
         remove_btn.setCursor(Qt.PointingHandCursor)
         remove_btn.clicked.connect(lambda checked, r=row: self._remove_line_at(r))
@@ -265,8 +254,6 @@ class JournalEntryFormDialog(QDialog):
             self._update_totals()
 
     def _remove_line_at(self, row):
-        # Need to find the actual row index because rows might have shifted
-        # A better way is to find which row the button belongs to
         button = self.sender()
         if button:
             index = self.lines_table.indexAt(button.pos())
@@ -333,23 +320,22 @@ class JournalEntryFormDialog(QDialog):
 
         if not data["description"]:
             self._submitting = False
-            QMessageBox.warning(self, "Validation Error", "Description is required.")
+            AlertDialog.warning("Validation Error", "Description is required.", self)
             return
         if len(data["lines"]) < 2:
-            QMessageBox.warning(self, "Validation Error", "At least 2 lines are required for the entry.")
+            AlertDialog.warning("Validation Error", "At least 2 lines are required for the entry.", self)
             self._submitting = False
             return
 
-        # Check balance
         total_debit = sum(line["debit"] for line in data["lines"])
         total_credit = sum(line["credit"] for line in data["lines"])
         if abs(total_debit - total_credit) > 0.001:
-            QMessageBox.warning(self, "Validation Error", "Entry is unbalanced. Total debit and credit must be equal.")
+            AlertDialog.warning("Validation Error", "Entry is unbalanced. Total debit and credit must be equal.", self)
             self._submitting = False
             return
 
         try:
-            response = self.api_client.post("/api/accounting/journal-entries/", data=data)
+            response = self._api_client.post("/api/accounting/journal-entries/", data=data)
             if response.get("success") or "id" in response:
                 self._submitting = False
                 self.accept()
@@ -357,8 +343,8 @@ class JournalEntryFormDialog(QDialog):
                 errors = response.get("errors", response.get("error", "Unknown error"))
                 if isinstance(errors, list):
                     errors = "\n".join(errors)
-                QMessageBox.critical(self, "Error", f"Failed to save entry:\n{errors}")
+                AlertDialog.error("Error", f"Failed to save entry:\n{errors}", self)
                 self._submitting = False
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Server communication error: {e}")
+            AlertDialog.error("Error", f"Server communication error: {e}", self)
             self._submitting = False

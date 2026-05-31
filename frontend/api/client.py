@@ -49,20 +49,22 @@ class APIClient(QObject):
                       data: Optional[Dict] = None, 
                       params: Optional[Dict] = None,
                       headers: Optional[Dict] = None,
-                      raw_response: bool = False) -> Any:
+                      raw_response: bool = False,
+                      background: bool = False) -> Any:
         """Make an HTTP request and return the response data."""
         _req_start = time.time()
-        # Update loading state
+        # Update loading state (skip overlay for background/worker-thread fetches)
         self._loading_count += 1
-        if self._loading_count == 1:
-            # Show loading overlay on first request
+        if self._loading_count == 1 and not background:
+            # Show loading overlay on first foreground request
             from ui.main_window import MainWindow
             # Find the main window to show loading overlay
             app = QApplication.instance()
-            for widget in app.topLevelWidgets():
-                if isinstance(widget, MainWindow):
-                    widget.loading_overlay.show_overlay()
-                    break
+            if app:
+                for widget in app.topLevelWidgets():
+                    if isinstance(widget, MainWindow):
+                        widget.loading_overlay.show_overlay()
+                        break
         
         url = f"{self.base_url}{endpoint}"
 
@@ -201,40 +203,53 @@ class APIClient(QObject):
         except Exception:
             pass
     
+    @staticmethod
+    def _is_retryable_error(exc: Exception) -> bool:
+        """Retry only transient transport failures — never HTTP 4xx/5xx."""
+        if isinstance(exc, APIError):
+            if exc.status_code is not None:
+                return False
+            return True
+        if isinstance(exc, requests.exceptions.Timeout):
+            return True
+        if isinstance(exc, requests.exceptions.ConnectionError):
+            return True
+        if isinstance(exc, requests.exceptions.ChunkedEncodingError):
+            return True
+        return isinstance(exc, requests.exceptions.RequestException)
+
     def get(self, endpoint: str, params: Optional[Dict] = None, 
-            headers: Optional[Dict] = None, retries: int = 3, raw_response: bool = False) -> Any:
-        """Make a GET request with automatic retries for network issues (non-blocking)."""
+            headers: Optional[Dict] = None, retries: int = 3, raw_response: bool = False,
+            background: bool = False) -> Any:
+        """GET with fail-fast on HTTP errors; retry only connection/timeouts."""
         last_error = None
-        for attempt in range(retries):
+        max_attempts = max(1, retries)
+        for attempt in range(max_attempts):
             try:
-                return self._make_request("GET", endpoint, params=params, headers=headers, raw_response=raw_response)
+                return self._make_request(
+                    "GET", endpoint, params=params, headers=headers,
+                    raw_response=raw_response, background=background,
+                )
             except APIError as e:
-                if e.status_code and 400 <= e.status_code < 500:
-                    self._show_error_toast("GET", endpoint, str(e))
+                last_error = e
+                if e.status_code is not None:
+                    if not background:
+                        self._show_error_toast("GET", endpoint, str(e))
                     if raw_response:
                         return None
                     return {"success": False, "data": [], "error": str(e)}
-                last_error = e
-                # Non-blocking retry: process pending UI events before retrying
-                try:
-                    from PySide6.QtWidgets import QApplication
-                    if QApplication.instance():
-                        QApplication.processEvents()
-                except Exception:
-                    pass
+                if not self._is_retryable_error(e) or attempt >= max_attempts - 1:
+                    break
             except Exception as e:
                 last_error = e
-                # Non-blocking retry: process pending UI events before retrying
-                try:
-                    from PySide6.QtWidgets import QApplication
-                    if QApplication.instance():
-                        QApplication.processEvents()
-                except Exception:
-                    pass
-        
-        log.error(f"GET {endpoint} failed after {retries} attempts: {last_error}",
-                   extra={'extra_fields': {'tags': ['api', 'error'], 'retries': retries}})
-        self._show_error_toast("GET", endpoint, f"Connection failed after {retries} retries.")
+                if not self._is_retryable_error(e) or attempt >= max_attempts - 1:
+                    break
+                time.sleep(0.35 * (attempt + 1))
+
+        log.error(f"GET {endpoint} failed after {max_attempts} attempts: {last_error}",
+                   extra={'extra_fields': {'tags': ['api', 'error'], 'retries': max_attempts}})
+        if not background:
+            self._show_error_toast("GET", endpoint, f"Connection failed after {max_attempts} retries.")
         if raw_response:
             return None
         return {"success": False, "data": [], "error": str(last_error)}

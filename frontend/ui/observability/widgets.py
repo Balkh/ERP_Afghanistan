@@ -82,7 +82,7 @@ class SeverityBadge(QLabel):
             self._severity, (COLOR_TEXT_MUTED, COLOR_BG_MAIN)
         )
         self.setStyleSheet(
-            """
+            f"""
             background-color: {bg};
             color: {COLOR_BG_MAIN};
             padding: {SPACING_XS}px {SPACING_SM}px;
@@ -133,7 +133,7 @@ class HealthBar(QProgressBar):
         else:
             __color = COLOR_DANGER
 
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             QProgressBar {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -202,7 +202,7 @@ class TimelineEventWidget(QFrame):
     def __init__(self, timestamp="", severity="info", description="", parent=None):
         super().__init__(parent)
         self.setObjectName("timelineEvent")
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             QFrame#timelineEvent {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER_LIGHT};
@@ -241,7 +241,7 @@ class IncidentCard(QFrame):
         __severity_color = SeverityBadge.SEVERITY_COLORS.get(
             severity.lower(), (COLOR_TEXT_MUTED, COLOR_BG_MAIN)
         )[0]
-        self.setStyleSheet("""
+        self.setStyleSheet(f"""
             QFrame#incidentCard {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER_LIGHT};
@@ -330,7 +330,7 @@ class SectionHeader(QFrame):
         if action_text:
             self.action_btn = QLabel(action_text)
             self.action_btn.setFont(QFont("Segoe UI", TEXT_TABLE))
-            self.action_btn.setStyleSheet("""
+            self.action_btn.setStyleSheet(f"""
                 color: {COLOR_INFO};
                 border: none;
             padding: {SPACING_XS}px {SPACING_SM}px;

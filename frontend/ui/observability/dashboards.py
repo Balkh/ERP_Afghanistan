@@ -2,13 +2,13 @@ import time
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
                                 QLabel, QFrame, QTableWidget, QTableWidgetItem,
-                                QHeaderView, QComboBox, QPushButton,
+                                QHeaderView, QComboBox,
                                 QListWidget, QListWidgetItem, QSplitter,
                                 QTextEdit, QAbstractItemView, QTabWidget)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
 
-from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, COLOR_PRIMARY,
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, COLOR_PRIMARY,
                           COLOR_SUCCESS, COLOR_WARNING,
                           COLOR_DANGER, COLOR_INFO, COLOR_TEXT_PRIMARY,
                           COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
@@ -16,10 +16,10 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN
                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, TEXT_LABEL, TEXT_PAGE_TITLE,
                           TEXT_TABLE, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
                            SPACING_6, BORDER_RADIUS_SM)
-from ui.constants import TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_TABLE
 from ui.observability.widgets import (StatusIndicator, MetricCard, HealthBar,
                                        SectionHeader, VirtualTimelineWidget)
 from ui.observability.base_view_model import AsyncDataLoader
+from ui.screens.base_screen import BaseScreen
 
 
 def _make_styled_table(headers, parent=None):
@@ -102,16 +102,23 @@ def _severity_to_color(severity):
     return COLOR_TEXT_MUTED
 
 
-class _BaseDashboard(QWidget):
+class _BaseDashboard(BaseScreen):
     def __init__(self, api_client, parent=None):
-        super().__init__(parent)
         self._api_client = api_client
         self._data_loaders: list = []
         self._stale_data = False
+        super().__init__(parent)
+        self._setup_screen()
+
+    def _setup_screen(self):
+        super()._setup_screen()
         self._setup_dashboard()
 
     def _setup_dashboard(self):
         raise NotImplementedError
+
+    def _on_screen_shown(self):
+        pass
 
     def start_auto_refresh(self, interval_ms=5000):
         for loader in self._data_loaders:
@@ -750,7 +757,7 @@ class DigitalTwinTelemetryView(_BaseDashboard):
         layout.addLayout(summary_grid)
 
         tab = QTabWidget()
-        tab.setStyleSheet("""
+        tab.setStyleSheet(f"""
             QTabWidget::pane {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER};
@@ -759,7 +766,7 @@ class DigitalTwinTelemetryView(_BaseDashboard):
             QTabBar::tab {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_SECONDARY};
-                padding: {SPACING_6}px 16px;
+                padding: {SPACING_6}px {SPACING_LG}px;
                 border: none;
                 font-size: {TEXT_LABEL}px;
             }}

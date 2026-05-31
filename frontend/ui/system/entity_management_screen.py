@@ -1,8 +1,9 @@
-from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QMessageBox)
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
+                                  QComboBox, QFormLayout, QWidget)
 from ui.screens.base_screen import BaseScreen
-from ui.constants import (SPACING_MD, SPACING_LG, TEXT_PAGE_TITLE, COLOR_TEXT_PRIMARY)
+from ui.constants import (SPACING_MD, SPACING_LG, SPACING_SM, TEXT_PAGE_TITLE, COLOR_TEXT_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog, EnterpriseDialog, DialogType
 from ui.components.tables import EnterpriseTable, TableColumn
 from api.client import APIClient
 
@@ -30,8 +31,22 @@ class EntityManagementScreen(BaseScreen):
         header_layout.addStretch()
         
         self.add_btn = EnterpriseButton(text="+ Add Entity", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
-        self.add_btn.clicked.connect(self.show_add_entity_dialog)
+        self.add_btn.clicked.connect(self._show_add_dialog)
         header_layout.addWidget(self.add_btn)
+        
+        self.edit_btn = EnterpriseButton(text="Edit", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.edit_btn.clicked.connect(self._show_edit_dialog)
+        self.edit_btn.setEnabled(False)
+        header_layout.addWidget(self.edit_btn)
+        
+        self.delete_btn = EnterpriseButton(text="Delete", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.delete_btn.clicked.connect(self._delete_entity)
+        self.delete_btn.setEnabled(False)
+        header_layout.addWidget(self.delete_btn)
+        
+        self.refresh_btn = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.refresh_btn.clicked.connect(self.load_entities)
+        header_layout.addWidget(self.refresh_btn)
         
         layout.addLayout(header_layout)
 
@@ -45,7 +60,14 @@ class EntityManagementScreen(BaseScreen):
             TableColumn("is_default", "Default", width=60, align="center"),
         ]
         self.table = EnterpriseTable(columns)
+        self.table.itemSelectionChanged.connect(self._on_selection_changed)
         layout.addWidget(self.table)
+
+    def _on_selection_changed(self):
+        selected = self.table.selectedItems()
+        has_selection = bool(selected)
+        self.edit_btn.setEnabled(has_selection)
+        self.delete_btn.setEnabled(has_selection)
 
     def load_entities(self):
         try:
@@ -69,5 +91,148 @@ class EntityManagementScreen(BaseScreen):
             })
         self.table.set_data(data)
 
-    def show_add_entity_dialog(self):
-        QMessageBox.information(self, "Entity Management", "Entity creation is available in the admin panel.")
+    def _get_selected_entity(self):
+        selected = self.table.selectedItems()
+        if not selected:
+            return None
+        row = selected[0].row()
+        code = self.table.item(row, 0).text()
+        return next((e for e in self.entities_data if e.get('code') == code), None)
+
+    def _show_add_dialog(self):
+        dialog = EntityDialog(api_client=self._api_client, parent=self)
+        if dialog.exec():
+            self.load_entities()
+
+    def _show_edit_dialog(self):
+        entity = self._get_selected_entity()
+        if not entity:
+            return
+        dialog = EntityDialog(api_client=self._api_client, entity=entity, parent=self)
+        if dialog.exec():
+            self.load_entities()
+
+    def _delete_entity(self):
+        entity = self._get_selected_entity()
+        if not entity:
+            return
+        from ui.components.dialogs import ConfirmDialog
+        if ConfirmDialog.confirm("Delete Entity", f"Are you sure you want to delete '{entity.get('name')}'?", self):
+            try:
+                response = self._api_client.delete(f"/api/entities/entities/{entity['id']}/")
+                if response and isinstance(response, dict) and response.get("success"):
+                    AlertDialog.info("Success", "Entity deleted successfully.", self)
+                    self.load_entities()
+                else:
+                    error = response.get("error", "Delete failed") if isinstance(response, dict) else "Delete failed"
+                    AlertDialog.error("Error", str(error), self)
+            except Exception as e:
+                AlertDialog.error("Error", f"Failed to delete entity: {e}", self)
+
+
+class EntityDialog(EnterpriseDialog):
+    """Dialog for creating/editing entities."""
+    
+    def __init__(self, api_client=None, entity=None, parent=None):
+        self._api_client = api_client
+        self._entity = entity
+        self._submitting = False
+        title = "Edit Entity" if entity else "Add Entity"
+        super().__init__(title, DialogType.CUSTOM, parent)
+        self.setMinimumWidth(450)
+        content = self._build_content()
+        self.set_content(content)
+
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        
+        form = QFormLayout()
+        
+        self.code_input = QLineEdit()
+        self.code_input.setPlaceholderText("Entity code")
+        if self._entity:
+            self.code_input.setText(self._entity.get("code", ""))
+        
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Entity name")
+        if self._entity:
+            self.name_input.setText(self._entity.get("name", ""))
+        
+        self.type_combo = QComboBox()
+        self.type_combo.addItems(["COMPANY", "BRANCH", "DEPARTMENT", "DIVISION"])
+        if self._entity:
+            idx = self.type_combo.findText(self._entity.get("entity_type", "COMPANY"))
+            if idx >= 0:
+                self.type_combo.setCurrentIndex(idx)
+        
+        self.phone_input = QLineEdit()
+        self.phone_input.setPlaceholderText("Phone number")
+        if self._entity:
+            self.phone_input.setText(self._entity.get("phone", ""))
+        
+        self.email_input = QLineEdit()
+        self.email_input.setPlaceholderText("Email address")
+        if self._entity:
+            self.email_input.setText(self._entity.get("email", ""))
+        
+        form.addRow("Code:", self.code_input)
+        form.addRow("Name:", self.name_input)
+        form.addRow("Type:", self.type_combo)
+        form.addRow("Phone:", self.phone_input)
+        form.addRow("Email:", self.email_input)
+        
+        layout.addLayout(form)
+        layout.addStretch()
+        
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+        cancel_btn = EnterpriseButton("Cancel", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        cancel_btn.clicked.connect(self.reject)
+        save_btn = EnterpriseButton("Save", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        save_btn.clicked.connect(self._save)
+        btn_layout.addWidget(cancel_btn)
+        btn_layout.addWidget(save_btn)
+        layout.addLayout(btn_layout)
+        
+        return widget
+
+    def _save(self):
+        if self._submitting:
+            return
+        self._submitting = True
+        
+        code = self.code_input.text().strip()
+        name = self.name_input.text().strip()
+        
+        if not code or not name:
+            AlertDialog.warning("Validation Error", "Code and Name are required.", self)
+            self._submitting = False
+            return
+        
+        data = {
+            "code": code,
+            "name": name,
+            "entity_type": self.type_combo.currentText(),
+            "phone": self.phone_input.text().strip(),
+            "email": self.email_input.text().strip(),
+        }
+        
+        try:
+            if self._entity:
+                response = self._api_client.put(f"/api/entities/entities/{self._entity['id']}/", data)
+            else:
+                response = self._api_client.post("/api/entities/entities/", data)
+            
+            if response and isinstance(response, dict) and (response.get("success") or response.get("id")):
+                self.accept()
+            else:
+                error = response.get("error", "Save failed") if isinstance(response, dict) else "Save failed"
+                AlertDialog.error("Error", str(error), self)
+        except Exception as e:
+            AlertDialog.error("Error", f"Failed to save entity: {e}", self)
+        finally:
+            self._submitting = False

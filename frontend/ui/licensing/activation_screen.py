@@ -4,10 +4,11 @@ Allows users to activate the software using license files.
 """
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                               QFileDialog, QMessageBox, QGroupBox,
+                               QFileDialog, QGroupBox,
                                QApplication)
 from PySide6.QtCore import Qt, Signal
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
                            TEXT_HELPER, BORDER_RADIUS_MD, BORDER_RADIUS_SM, COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
@@ -151,7 +152,7 @@ class ActivationScreen(QWidget):
     def activate_license(self):
         """Activate the license using the selected file."""
         if not self.selected_license_file or not os.path.exists(self.selected_license_file):
-            QMessageBox.warning(self, "Error", "Please select a valid license file first.")
+            AlertDialog.warning(self, "Error", "Please select a valid license file first.")
             return
         
         # Update UI
@@ -177,7 +178,7 @@ class ActivationScreen(QWidget):
                 self.status_label.setText("Activation successful!")
                 self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: {SPACING_SM}px;")
                 
-                QMessageBox.information(
+                AlertDialog.info(
                     self,
                     "Activation Successful",
                     "Pharmacy ERP has been successfully activated!\n\n"
@@ -189,7 +190,7 @@ class ActivationScreen(QWidget):
                 self.status_label.setText(f"Activation failed: {message}")
                 self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; padding: {SPACING_SM}px;")
                 
-                QMessageBox.warning(
+                AlertDialog.warning(
                     self,
                     "Activation Failed",
                     f"License activation failed:\n\n{message}\n\n"
@@ -202,7 +203,7 @@ class ActivationScreen(QWidget):
             self.status_label.setText(f"Activation error: {str(e)}")
             self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; padding: {SPACING_SM}px;")
             
-            QMessageBox.critical(
+            AlertDialog.error(
                 self,
                 "Activation Error",
                 f"An error occurred during activation:\n\n{str(e)}"

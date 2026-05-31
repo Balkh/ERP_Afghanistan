@@ -94,7 +94,7 @@ class FinancialOperationsConsole(BaseScreen):
         """Create a standard card with title and content."""
         card = QFrame()
         card.setObjectName("financeCard")
-        card.setStyleSheet("""
+        card.setStyleSheet(f"""
             QFrame#financeCard {{
                 background-color: {COLOR_BG_CARD};
                 border: 1px solid {COLOR_BORDER};

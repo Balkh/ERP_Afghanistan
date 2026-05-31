@@ -281,7 +281,7 @@ class JournalEngine:
         entry.is_posted = False
         entry.save(update_fields=['is_posted', 'updated_at'])
 
-        JournalEngine.recalculate_all_balances()
+        JournalEngine._inverse_update_balances(entry)
 
         JournalEngine.log_event(
             entry=entry,
@@ -373,6 +373,20 @@ class JournalEngine:
                 balance = total_credit - total_debit
 
             Account.objects.filter(id=account.id).update(balance=balance)
+
+    @staticmethod
+    @transaction.atomic
+    def _inverse_update_balances(entry: JournalEntry):
+        """Inverse update: subtract this entry's amounts from account balances (for unpost)."""
+        for line in entry.lines.all():
+            account = Account.objects.select_for_update().get(id=line.account.id)
+
+            if account.account_type in ['ASSET', 'EXPENSE']:
+                new_balance = account.balance - line.debit + line.credit
+            else:
+                new_balance = account.balance - line.credit + line.debit
+
+            Account.objects.filter(id=account.id).update(balance=new_balance)
 
     @staticmethod
     def recalculate_all_balances():

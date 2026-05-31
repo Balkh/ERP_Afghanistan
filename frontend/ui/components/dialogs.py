@@ -5,7 +5,7 @@ from ui.constants import (
     COLOR_BG_SECTION, COLOR_BORDER,
     BORDER_RADIUS_LG,
     DIALOG_WIDTH_MIN, DIALOG_WIDTH_PREFERRED, DIALOG_WIDTH_MAX,
-    TEXT_CARD_TITLE, TEXT_BODY, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V,
+    TEXT_CARD_TITLE, TEXT_BODY, TEXT_LABEL, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V,
 )
 
 """
@@ -66,7 +66,7 @@ class EnterpriseDialog(QDialog):
             self.setWindowFlags(
                 Qt.WindowType.Dialog | 
                 Qt.WindowType.WindowTitleHint |
-                Qt.WindowType.CloseButtonHint
+                Qt.WindowType.WindowCloseButtonHint
             )
             
         self._setup_ui()
@@ -330,6 +330,10 @@ class LoadingDialog(EnterpriseDialog):
         self.setMinimumWidth(200)
         self.setMinimumHeight(100)
 
+    def set_message(self, message: str):
+        """Update loading message."""
+        self._message_label.setText(message)
+
 def confirm_dialog(parent, title: str, message: str) -> bool:
     """
     Helper function to show a confirmation dialog and return result.
@@ -337,7 +341,5 @@ def confirm_dialog(parent, title: str, message: str) -> bool:
     """
     dialog = ConfirmDialog(title, message, parent)
     return dialog.exec() == QDialog.DialogCode.Accepted
-        
-    def set_message(self, message: str):
-        """Update loading message."""
-        self._message_label.setText(message)
+
+LoadingDialog.set_message = lambda self, message: self._message_label.setText(message)

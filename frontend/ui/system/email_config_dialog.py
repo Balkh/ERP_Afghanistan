@@ -1,13 +1,13 @@
 """Email Configuration Dialog for Offsite Replication."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QWidget, QFrame,
-                                QLineEdit, QCheckBox, QGroupBox, QFormLayout,
-                                QMessageBox)
-from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XXL, TEXT_SECTION_TITLE,
+                                QLineEdit, QCheckBox)
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XXL, TEXT_SECTION_TITLE,
                            TEXT_BODY, BORDER_RADIUS_MD, COLOR_BG_INPUT,
                            COLOR_BORDER,
                            COLOR_TEXT_PRIMARY, COLOR_PRIMARY, COLOR_FORM_FOOTER_BORDER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.components.dialogs import EnterpriseDialog, DialogType
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from ui.components.forms import FormSection
 
 
 class EmailConfigDialog(EnterpriseDialog):
@@ -31,60 +31,49 @@ class EmailConfigDialog(EnterpriseDialog):
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700;")
         layout.addWidget(title)
 
-        form_group = QGroupBox("SMTP Settings")
-        form_group.setStyleSheet("""
-            QGroupBox {{
-                font-size: {TEXT_BODY}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px;
-                margin-top: 10px; padding-top: {SPACING_MD}px;
-            }}
-            QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}
-        """)
-        form_layout = QFormLayout()
-        form_layout.setSpacing(SPACING_MD)
+        section = FormSection("SMTP Settings", primary=True)
 
         self.enabled_cb = QCheckBox("Enable offsite email replication")
         self.enabled_cb.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
-        form_layout.addRow(self.enabled_cb)
+        section.add_field(self.enabled_cb)
 
         self.smtp_host = QLineEdit()
         self.smtp_host.setPlaceholderText("smtp.gmail.com")
         self._style_input(self.smtp_host)
-        form_layout.addRow("SMTP Host", self.smtp_host)
+        section.add_field(self.smtp_host, "SMTP Host")
 
         self.smtp_port = QLineEdit()
         self.smtp_port.setPlaceholderText("587")
         self._style_input(self.smtp_port)
-        form_layout.addRow("SMTP Port", self.smtp_port)
+        section.add_field(self.smtp_port, "SMTP Port")
 
         self.smtp_user = QLineEdit()
         self.smtp_user.setPlaceholderText("your@email.com")
         self._style_input(self.smtp_user)
-        form_layout.addRow("Username", self.smtp_user)
+        section.add_field(self.smtp_user, "Username")
 
         self.smtp_password = QLineEdit()
-        self.smtp_password.setEchoMode(QLineEdit.Password)
+        self.smtp_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.smtp_password.setPlaceholderText("App password")
         self._style_input(self.smtp_password)
-        form_layout.addRow("Password", self.smtp_password)
+        section.add_field(self.smtp_password, "Password")
 
         self.from_email = QLineEdit()
         self.from_email.setPlaceholderText("your@email.com")
         self._style_input(self.from_email)
-        form_layout.addRow("From Email", self.from_email)
+        section.add_field(self.from_email, "From Email")
 
         self.recipients = QLineEdit()
         self.recipients.setPlaceholderText("admin@company.com, backup@company.com")
         self._style_input(self.recipients)
-        form_layout.addRow("Recipients (comma-separated)", self.recipients)
+        section.add_field(self.recipients, "Recipients (comma-separated)")
 
         self.use_tls = QCheckBox("Use TLS")
         self.use_tls.setChecked(True)
         self.use_tls.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
-        form_layout.addRow(self.use_tls)
+        section.add_field(self.use_tls)
 
-        form_group.setLayout(form_layout)
-        layout.addWidget(form_group)
+        layout.addWidget(section)
 
         return content
 
@@ -118,7 +107,7 @@ class EmailConfigDialog(EnterpriseDialog):
         return button_area
 
     def _style_input(self, widget):
-        widget.setStyleSheet("""
+        widget.setStyleSheet(f"""
             QLineEdit {{
                 background: {COLOR_BG_INPUT};
                 color: {COLOR_TEXT_PRIMARY};
@@ -159,7 +148,7 @@ class EmailConfigDialog(EnterpriseDialog):
     def _test_email(self):
         recipient = self.from_email.text().strip()
         if not recipient:
-            QMessageBox.warning(self, "Test Email", "Enter a From Email address first.")
+            AlertDialog.warning("Test Email", "Enter a From Email address first.", self)
             return
 
         self.test_btn.setEnabled(False)
@@ -170,14 +159,14 @@ class EmailConfigDialog(EnterpriseDialog):
                 "recipient": recipient,
             })
             if isinstance(response, dict) and response.get('success'):
-                QMessageBox.information(self, "Test Email", response.get('message', 'Test email sent successfully.'))
+                AlertDialog.info("Test Email", response.get('message', 'Test email sent successfully.'), self)
             else:
                 err = response.get('error', 'Unknown error') if isinstance(response, dict) else str(response)
                 category = response.get('error_category', '') if isinstance(response, dict) else ''
                 hint = self._error_hint(category)
-                QMessageBox.warning(self, "Test Failed", f"{err}\n\n{hint}")
+                AlertDialog.warning("Test Failed", f"{err}\n\n{hint}", self)
         except Exception as e:
-            QMessageBox.warning(self, "Test Failed", f"Failed: {e}")
+            AlertDialog.warning("Test Failed", f"Failed: {e}", self)
         finally:
             self.test_btn.setEnabled(True)
             self.test_btn.setText("Send Test Email")
@@ -204,16 +193,16 @@ class EmailConfigDialog(EnterpriseDialog):
         }
 
         if config['enabled'] and not config['smtp_host']:
-            QMessageBox.warning(self, "Save", "SMTP Host is required when email is enabled.")
+            AlertDialog.warning("Save", "SMTP Host is required when email is enabled.", self)
             return
 
         try:
             response = self.api_client.post("/api/backup/offsite-replication/save-config/", config)
             if isinstance(response, dict) and response.get('success'):
-                QMessageBox.information(self, "Save", "Configuration saved successfully.")
+                AlertDialog.info("Save", "Configuration saved successfully.", self)
                 self.accept()
             else:
                 err = response.get('error', 'Unknown error') if isinstance(response, dict) else str(response)
-                QMessageBox.warning(self, "Save Failed", f"Failed: {err}")
+                AlertDialog.warning("Save Failed", f"Failed: {err}", self)
         except Exception as e:
-            QMessageBox.warning(self, "Save Failed", f"Failed: {e}")
+            AlertDialog.warning("Save Failed", f"Failed: {e}", self)

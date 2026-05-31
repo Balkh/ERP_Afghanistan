@@ -1,12 +1,13 @@
 """Login screen for ERP."""
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
                                  QLineEdit, QCheckBox, QFrame,
-                                 QGraphicsDropShadowEffect)
+                                 QGraphicsDropShadowEffect, QWidget)
 from PySide6.QtCore import Signal, Qt, QTimer
 from PySide6.QtGui import QColor
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import EnterpriseDialog, DialogType
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE, TEXT_BODY, TEXT_BODY_SMALL,
-                           TEXT_LABEL, TEXT_HELPER, TEXT_DISPLAY, BORDER_RADIUS_MD, BORDER_RADIUS_XL, PADDING_DIALOG, INPUT_HEIGHT_XL, BUTTON_HEIGHT_XL,
+                           TEXT_LABEL, TEXT_HELPER, TEXT_DISPLAY, BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_XL, PADDING_DIALOG, INPUT_HEIGHT_XL, BUTTON_HEIGHT_XL,
                            COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_BG_INPUT, COLOR_BORDER, COLOR_BORDER_LIGHT,
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
@@ -18,32 +19,29 @@ from utils.logger import get_logger
 
 log = get_logger('auth')
 
-# Design system imports
-from ui.constants import (
-    COLOR_PRIMARY, COLOR_BG_MAIN, COLOR_BG_ELEVATED,
-    COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER
-)
 
-
-class LoginDialog(QDialog):
+class LoginDialog(EnterpriseDialog):
     """Professional login dialog with JWT authentication."""
     
     login_successful = Signal(dict)  # user data
     
-    def __init__(self, api_client=None, auth_manager=None):
-        super().__init__()
+    def __init__(self, api_client=None, auth_manager=None, parent=None):
         self.api_client = api_client or APIClient()
         self.auth_manager = auth_manager or AuthManager(self.api_client)
-        self.setWindowTitle("Pharmacy ERP - Login")
-        self.setMinimumSize(480, 640)
-        self.setModal(True)
         self._loading = False
         self._attempts = 0
-        self.setup_ui()
+        super().__init__("Pharmacy ERP - Login", DialogType.CUSTOM, parent)
+        self.setMinimumSize(480, 640)
+        self.setModal(True)
+        content = self._build_content()
+        self.set_content(content)
     
-    def setup_ui(self):
-        # Set main dialog layout
-        main_layout = QVBoxLayout(self)
+    def _create_button_area(self):
+        return None
+    
+    def _build_content(self):
+        main_widget = QWidget()
+        main_layout = QVBoxLayout(main_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
         
@@ -79,7 +77,7 @@ class LoginDialog(QDialog):
         logo_label.setAlignment(Qt.AlignCenter)
         
         title_label = QLabel("Welcome Back")
-        title_label.setStyleSheet("""
+        title_label.setStyleSheet(f"""
             font-size: {TEXT_PAGE_TITLE}pt; 
             font-weight: bold; 
             color: {COLOR_TEXT_PRIMARY};
@@ -176,8 +174,8 @@ class LoginDialog(QDialog):
         main_layout.addWidget(container)
         
         # Apply Stylesheet
-        self.setStyleSheet("""
-            QDialog {{
+        main_widget.setStyleSheet(f"""
+            QWidget {{
                 background-color: {COLOR_BG_MAIN};
             }}
             #loginCard {{
@@ -204,7 +202,7 @@ class LoginDialog(QDialog):
             QCheckBox::indicator {{
                 width: 16px;
                 height: 16px;
-                border-radius: 4px;
+                border-radius: {BORDER_RADIUS_SM}px;
                 border: 1px solid {COLOR_BORDER};
             }}
             QCheckBox::indicator:checked {{
@@ -216,6 +214,8 @@ class LoginDialog(QDialog):
         # Connect enter keys
         self.username.returnPressed.connect(self.do_login)
         self.password.returnPressed.connect(self.do_login)
+        
+        return main_widget
     
     def toggle_password(self, checked):
         """Toggle password visibility."""

@@ -161,5 +161,5 @@ class BatchScreen(BaseInventoryScreen):
             self.api_client.delete(f"/api/inventory/batches/{batch_id}/")
             self.load_batches()
         except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Failed to delete batch: {e}")
+            from ui.components.dialogs import AlertDialog
+            AlertDialog.error(self, "Error", f"Failed to delete batch: {e}")

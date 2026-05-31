@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
-                               QComboBox, QDateEdit, QMessageBox,
+                               QComboBox, QDateEdit,
                                QGroupBox, QApplication)
 from PySide6.QtCore import Qt, QDate
 from api.client import APIClient
@@ -8,6 +8,7 @@ from utils.company_config import get_cached_config
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE, TEXT_BODY, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
 
@@ -17,7 +18,7 @@ class AccountLedgerScreen(BaseScreen):
 
     def __init__(self, parent=None):
         super().__init__(parent, screen_id="account_ledger")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.accounts = []
         self._is_loading = False
         self.setup_ui()
@@ -174,7 +175,7 @@ class AccountLedgerScreen(BaseScreen):
     def load_ledger(self):
         account_id = self.account_combo.currentData()
         if not account_id:
-            QMessageBox.warning(self, "Warning", "Please select an account.")
+            AlertDialog.warning("Warning", "Please select an account.", self)
             return
 
         self._show_loading()
@@ -247,7 +248,7 @@ class AccountLedgerScreen(BaseScreen):
 
     def export_csv(self):
         if not hasattr(self, 'ledger_data') or not self.ledger_data:
-            QMessageBox.warning(self, "Warning", "Load the ledger first.")
+            AlertDialog.warning("Warning", "Load the ledger first.", self)
             return
 
         from PySide6.QtWidgets import QFileDialog
@@ -271,13 +272,13 @@ class AccountLedgerScreen(BaseScreen):
                 
                 with open(file_path, "w", encoding="utf-8") as f:
                     f.write(csv_data if isinstance(csv_data, str) else str(csv_data))
-                QMessageBox.information(self, "Success", f"Ledger exported to {file_path}")
+                AlertDialog.info("Success", f"Ledger exported to {file_path}", self)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to export: {e}")
+                AlertDialog.error("Error", f"Failed to export: {e}", self)
 
     def print_preview(self):
         if not hasattr(self, 'ledger_data') or not self.ledger_data:
-            QMessageBox.warning(self, "Warning", "Load the ledger first.")
+            AlertDialog.warning("Warning", "Load the ledger first.", self)
             return
 
         try:
@@ -307,4 +308,4 @@ class AccountLedgerScreen(BaseScreen):
             dialog = ReportPreviewDialog(self, f"Ledger - {self.ledger_data.get('account_name')}", text_data, report_meta)
             dialog.exec()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to generate preview: {e}")
+            AlertDialog.error("Error", f"Failed to generate preview: {e}", self)

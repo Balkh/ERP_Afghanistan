@@ -7,10 +7,11 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_DANGER, COLOR_STATUS_VALID)
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                                QGroupBox, QTextEdit, QMessageBox)
+                                QGroupBox, QTextEdit)
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
 import os
 import sys
 from datetime import datetime
@@ -117,7 +118,7 @@ class LicenseStatusScreen(QWidget):
         self.details_text.setMaximumHeight(200)
         self.details_text.setReadOnly(True)
         self.details_text.setFont(QFont("Consolas", TEXT_TABLE))
-        self.details_text.setStyleSheet("""
+        self.details_text.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
@@ -268,7 +269,7 @@ class LicenseStatusScreen(QWidget):
     def view_license_file(self):
         """View the current license file in a dialog."""
         if not self.current_license_data:
-            QMessageBox.information(self, "Info", "No license data available to view.")
+            AlertDialog.info(self, "Info", "No license data available to view.")
             return
         
         # Create and show license details dialog
@@ -308,7 +309,7 @@ class LicenseDetailsDialog(QWidget):
         details_text = QTextEdit()
         details_text.setReadOnly(True)
         details_text.setFont(QFont("Consolas", TEXT_BODY))
-        details_text.setStyleSheet("""
+        details_text.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};

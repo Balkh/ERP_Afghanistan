@@ -368,12 +368,14 @@ class JournalEntryViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
     ordering = ['-entry_date']
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        # Use GET parameters (compatible with both Django and DRF Request)
         include_inactive = self.request.GET.get('include_inactive', 'false')
         if include_inactive == 'true':
             queryset = JournalEntry.objects.all()
-        return queryset
+        else:
+            queryset = super().get_queryset()
+        return queryset.select_related('created_by', 'company').prefetch_related(
+            'lines', 'lines__account'
+        )
 
     @action(detail=True, methods=['post'])
     def post_entry(self, request, pk=None):

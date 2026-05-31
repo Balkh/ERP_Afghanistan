@@ -2,9 +2,9 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                  QLabel, QLineEdit,
                                  QComboBox, QGroupBox,
-                                  QMessageBox, QDialog,
-                                  QFormLayout)
+                                  QFormLayout, QWidget)
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence, QShortcut
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from ui.utils.debounce import Debouncer
@@ -13,6 +13,8 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            TEXT_BODY, TEXT_LABEL, INPUT_HEIGHT_MD, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from ui.components.forms import FormSection
 from ui.utils.validation import FormValidator
 
 
@@ -49,17 +51,26 @@ class EmployeeScreen(BaseScreen):
         self.add_btn = EnterpriseButton(text="+ Add Employee", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.add_btn.clicked.connect(self.add_employee)
         action_layout.addWidget(self.add_btn)
+
+        self.edit_btn = EnterpriseButton(text="Edit", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.edit_btn.clicked.connect(self.edit_employee)
+        action_layout.addWidget(self.edit_btn)
+
+        self.delete_btn = EnterpriseButton(text="Delete", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.delete_btn.clicked.connect(self.delete_employee)
+        action_layout.addWidget(self.delete_btn)
+
         action_layout.addStretch()
         layout.addLayout(action_layout)
 
         # Filters
         filter_bar = QGroupBox("Filter Employees")
-        filter_bar.setStyleSheet("""
+        filter_bar.setStyleSheet(f"""
             QGroupBox {{
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_LG};
-                margin-top: 10px;
-                padding-top: 10px;
+                margin-top: {SPACING_SM}px;
+                padding-top: {SPACING_SM}px;
                 background-color: {COLOR_BG_MAIN};
                 color: {COLOR_TEXT_PRIMARY};
                 font-size: {TEXT_LABEL}pt;
@@ -129,7 +140,7 @@ class EmployeeScreen(BaseScreen):
             else:
                 self.set_state(ScreenState.READY)
         except Exception as e:
-            print(f"Error loading employees: {e}")
+            self.error_label.setText(f"Error loading employees: {e}")
             self.employees = []
             self.set_state(ScreenState.ERROR)
         
@@ -189,30 +200,79 @@ class EmployeeScreen(BaseScreen):
         except Exception as e:
             import traceback
             traceback.print_exc()
-            QMessageBox.critical(self, "Error", f"Failed to open dialog: {str(e)}")
+            AlertDialog.error("Error", f"Failed to open dialog: {str(e)}", self)
+
+    def edit_employee(self):
+        """Edit selected employee."""
+        selected = self.table.selectedItems()
+        if not selected:
+            return
+        row = selected[0].row()
+        employee = self.employees[row] if row < len(self.employees) else None
+        if not employee:
+            return
+        try:
+            dialog = EmployeeDialog(parent=self, api_client=self.api_client, employee=employee)
+            dialog.setWindowTitle("Edit Employee")
+            if dialog.exec():
+                self.load_employees()
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            AlertDialog.error("Error", f"Failed to open dialog: {str(e)}", self)
+
+    def delete_employee(self):
+        """Delete selected employee."""
+        from ui.components.dialogs import ConfirmDialog
+        selected = self.table.selectedItems()
+        if not selected:
+            return
+        row = selected[0].row()
+        employee = self.employees[row] if row < len(self.employees) else None
+        if not employee:
+            return
+        first_name = employee.get('first_name', '')
+        last_name = employee.get('last_name', '')
+        full_name = f"{first_name} {last_name}".strip() or "this employee"
+        reply = ConfirmDialog.confirm(
+            "Delete Employee",
+            f"Are you sure you want to delete employee '{full_name}'?",
+            self
+        )
+        if reply:
+            try:
+                endpoint = get_endpoint("employees") or "/api/hr/employees/"
+                self.api_client.delete(f"{endpoint}{employee['id']}/")
+                self.load_employees()
+            except Exception as e:
+                AlertDialog.error("Error", f"Failed to delete employee: {e}", self)
 
 
-class EmployeeDialog(QDialog):
+class EmployeeDialog(EnterpriseDialog):
     """Employee add/edit dialog."""
     
     def __init__(self, parent=None, api_client=None, employee=None):
-        super().__init__(parent)
         self.api_client = api_client or APIClient()
         self.employee = employee
-        self.setWindowTitle("Add Employee" if not employee else "Edit Employee")
+        title = "Add Employee" if not employee else "Edit Employee"
+        super().__init__(title, DialogType.CUSTOM, parent)
         self.setMinimumWidth(500)
-        self.setup_ui()
+        self._build_content()
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save)
         if employee:
-            self.load_data()
-    
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
+            self._load_employee_data()
+
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_MD)
         
-        form_group = QGroupBox("Employee Information")
-        form = QFormLayout(form_group)
-        form.setSpacing(SPACING_MD)
+        section = FormSection("Employee Information", primary=True)
         
         self.first_name = QLineEdit()
         self.first_name.setPlaceholderText("Enter first name")
@@ -238,14 +298,14 @@ class EmployeeDialog(QDialog):
         self.position.setMinimumHeight(INPUT_HEIGHT_MD)
         self._load_positions()
         
-        form.addRow("First Name*:", self.first_name)
-        form.addRow("Last Name*:", self.last_name)
-        form.addRow("Email:", self.email)
-        form.addRow("Phone:", self.phone)
-        form.addRow("Department:", self.department)
-        form.addRow("Position:", self.position)
+        section.add_field(self.first_name, "First Name*:")
+        section.add_field(self.last_name, "Last Name*:")
+        section.add_field(self.email, "Email:")
+        section.add_field(self.phone, "Phone:")
+        section.add_field(self.department, "Department:")
+        section.add_field(self.position, "Position:")
         
-        layout.addWidget(form_group)
+        layout.addWidget(section)
         
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(SPACING_SM)
@@ -257,6 +317,8 @@ class EmployeeDialog(QDialog):
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(ok_btn)
         layout.addLayout(btn_layout)
+
+        return widget
         
     def _load_departments(self):
         self.department.addItem("Select Department", None)
@@ -278,7 +340,7 @@ class EmployeeDialog(QDialog):
         except Exception:
             pass
 
-    def load_data(self):
+    def _load_employee_data(self):
         """Load existing employee data."""
         emp = self.employee
         self.first_name.setText(emp.get('first_name', ''))
@@ -304,7 +366,7 @@ class EmployeeDialog(QDialog):
         
         if validator.has_errors():
             error_messages = "\n".join([f"• {msg}" for msg in validator.get_errors().values()])
-            QMessageBox.warning(self, "Validation Error", f"Please fix the following errors:\n\n{error_messages}")
+            AlertDialog.warning("Validation Error", f"Please fix the following errors:\n\n{error_messages}", self)
             return
         
         data = {
@@ -324,10 +386,10 @@ class EmployeeDialog(QDialog):
                 response = self.api_client.post(endpoint, data)
                 
             if response and (response.get("success") or response.get("id")):
-                QMessageBox.information(self, "Success", "Employee saved successfully.")
+                AlertDialog.info("Success", "Employee saved successfully.", self)
                 self.accept()
             else:
                 msg = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed to save"
-                QMessageBox.critical(self, "Error", f"Failed to save: {msg}")
+                AlertDialog.error("Error", f"Failed to save: {msg}", self)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"API Error: {e}")
+            AlertDialog.error("Error", f"API Error: {e}", self)

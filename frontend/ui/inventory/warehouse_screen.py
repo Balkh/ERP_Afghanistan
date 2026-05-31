@@ -149,5 +149,5 @@ class WarehouseScreen(BaseInventoryScreen):
             self.api_client.delete(f"/api/inventory/warehouses/{warehouse_id}/")
             self.load_warehouses()
         except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Failed to delete warehouse: {e}")
+            from ui.components.dialogs import AlertDialog
+            AlertDialog.error(self, "Error", f"Failed to delete warehouse: {e}")

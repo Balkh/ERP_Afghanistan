@@ -33,7 +33,7 @@ class UIStyleBuilder:
                 border: 1px solid {bg if variant != "secondary" else _tokens.COLOR_BORDER};
                 font-weight: 600;
                 border-radius: {_tokens.BORDER_RADIUS_MD}px;
-                padding: 8px 20px;
+                padding: {_tokens.SPACING_SM}px {_tokens.SPACING_XL}px;
                 font-size: {_tokens.TEXT_BODY}pt;
             }}
             QPushButton:hover {{
@@ -61,7 +61,7 @@ class UIStyleBuilder:
                     border: 1px solid transparent;
                     font-weight: 600;
                     border-radius: {_tokens.BORDER_RADIUS_MD}px;
-                    padding: 8px 20px;
+                    padding: {_tokens.SPACING_SM}px {_tokens.SPACING_XL}px;
                 }}
                 QPushButton:hover {{
                     background-color: {_tokens.COLOR_BG_HOVER};
@@ -87,7 +87,7 @@ class UIStyleBuilder:
             COLOR_TEXT_PRIMARY, TEXT_BODY, COLOR_PRIMARY_MUTED,
             COLOR_BORDER_INPUT_HOVER, COLOR_PRIMARY, COLOR_BG_SURFACE,
             COLOR_BG_MAIN, COLOR_TEXT_MUTED, COLOR_BORDER_LIGHT,
-            COLOR_TEXT_SECONDARY
+            COLOR_TEXT_SECONDARY, SPACING_SM
         )
 
         border_color = COLOR_BORDER_INPUT
@@ -103,7 +103,7 @@ class UIStyleBuilder:
                 background-color: {COLOR_BG_INPUT};
                 border: 1px solid {border_color};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: 10px 12px;
+                padding: {SPACING_SM}px {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
                 font-size: {TEXT_BODY}pt;
                 selection-background-color: {COLOR_PRIMARY_MUTED};

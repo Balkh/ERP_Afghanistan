@@ -1,12 +1,14 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFrame, QWidget,
                                 QLineEdit, QSpinBox, QLabel, QComboBox)
+from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtCore import Qt
 from ui.constants import (SPACING_SM, SPACING_MD, SPACING_XL, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_BODY_SMALL, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED, COLOR_BG_DIALOG, COLOR_BORDER_INPUT,
                            COLOR_BORDER_INPUT_HOVER, COLOR_FORM_FOOTER_BORDER, BORDER_RADIUS_MD,
                            DIALOG_WIDTH_FORM_MIN, DIALOG_WIDTH_FORM_PREFERRED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.forms import FormSection
-from ui.components.dialogs import EnterpriseDialog, DialogType
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 
 
 class WarehouseFormDialog(EnterpriseDialog):
@@ -19,18 +21,20 @@ class WarehouseFormDialog(EnterpriseDialog):
         self.api_client = api_client
         content = self._build_content()
         self.set_content(content)
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.accept)
         if warehouse_id:
             self.load_warehouse_data()
 
     def _build_content(self):
         content = QWidget()
-        content.setStyleSheet("""
+        content.setStyleSheet(f"""
             QLineEdit, QComboBox, QSpinBox {{
                 background-color: {COLOR_BG_DIALOG};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER_INPUT};
                 border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px 10px;
+                padding: {SPACING_SM}px {SPACING_SM}px;
             }}
             QLineEdit:focus, QComboBox:focus, QSpinBox:focus {{
                 border-color: {COLOR_BORDER_INPUT_HOVER};
@@ -117,8 +121,7 @@ class WarehouseFormDialog(EnterpriseDialog):
     def accept(self):
         name = self.name_input.text().strip()
         if not name:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, "Validation Error", "Warehouse name is required.")
+            AlertDialog.warning("Validation Error", "Warehouse name is required.", self)
             return
         data = self.get_form_data()
         try:
@@ -129,9 +132,7 @@ class WarehouseFormDialog(EnterpriseDialog):
             if response.get('success') or 'id' in response:
                 super().accept()
             else:
-                from PySide6.QtWidgets import QMessageBox
                 error_msg = response.get('error', {}).get('message', "Unknown error occurred.")
-                QMessageBox.critical(self, "Error", f"Failed to save warehouse: {error_msg}")
+                AlertDialog.error("Error", f"Failed to save warehouse: {error_msg}", self)
         except Exception as e:
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(self, "Error", f"Server communication error: {e}")
+            AlertDialog.error("Error", f"Server communication error: {e}", self)

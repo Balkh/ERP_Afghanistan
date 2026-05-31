@@ -4,16 +4,17 @@ Supports Accounting, HR, and Payroll report types via configuration.
 """
 
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-                                QDateEdit, QGroupBox, QMessageBox, QFileDialog,
+                                QDateEdit, QGroupBox, QFileDialog,
                                 QApplication)
 from PySide6.QtCore import Qt, QDate, QThread, Signal
 from datetime import date
 from api.client import APIClient
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
-from ui.constants import (SPACING_XS, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
+from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
                            BORDER_RADIUS_MD, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED)
 from ui.screens.base_screen import BaseScreen
+from ui.components.dialogs import AlertDialog, ConfirmDialog
 
 
 REPORT_TYPES = {
@@ -201,7 +202,7 @@ class ReportBrowser(BaseScreen):
 
     def __init__(self, parent=None, report_type="trial_balance"):
         super().__init__(parent, screen_id=f"report_{report_type}")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.report_type = report_type
         self.report_data = {}
         self._build_ui()
@@ -222,18 +223,18 @@ class ReportBrowser(BaseScreen):
 
         # Toolbar with type selector + date + actions
         toolbar = QGroupBox("Parameters")
-        toolbar.setStyleSheet("""
+        toolbar.setStyleSheet(f"""
             QGroupBox {{
                 font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_MD}px;
-                margin-top: 10px; padding-top: 10px;
+                margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px;
             }}
             QGroupBox::title {{
                 subcontrol-origin: margin;
                 subcontrol-position: top left;
-                padding: 0 5px;
+                padding: 0 {SPACING_XS}px;
             }}
         """)
         bar_layout = QHBoxLayout(toolbar)
@@ -607,7 +608,7 @@ class ReportBrowser(BaseScreen):
 
     def _export_csv(self):
         if not self.report_data:
-            QMessageBox.warning(self, "Warning", "Run the report first.")
+            AlertDialog.warning(self, "Warning", "Run the report first.")
             return
         config = REPORT_TYPES.get(self.report_type)
         if not config:
@@ -633,6 +634,6 @@ class ReportBrowser(BaseScreen):
                 with open(file_path, "w", encoding="utf-8") as f:
                     content = resp if isinstance(resp, str) else str(resp)
                     f.write(content)
-                QMessageBox.information(self, "Success", f"Exported to {file_path}")
+                AlertDialog.info(self, "Success", f"Exported to {file_path}")
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Export failed: {e}")
+                AlertDialog.error(self, "Error", f"Export failed: {e}")

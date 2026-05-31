@@ -55,13 +55,13 @@ class CreditWarningDialog(EnterpriseDialog):
 
         # Customer info
         customer_label = QLabel(f"Customer: {self.customer_name}")
-        customer_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY};")
+        customer_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
         customer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(customer_label)
 
         # Credit details card
         details_card = QFrame()
-        details_card.setStyleSheet("""
+        details_card.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -89,11 +89,11 @@ class CreditWarningDialog(EnterpriseDialog):
         for label_text, value_text in rows:
             row_layout = QHBoxLayout()
             label = QLabel(label_text)
-            label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY};")
+            label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}pt;")
             row_layout.addWidget(label)
             row_layout.addStretch()
             value = QLabel(value_text)
-            value.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}; font-weight: bold;")
+            value.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt; font-weight: bold;")
             row_layout.addWidget(value)
             details_layout.addLayout(row_layout)
 
@@ -114,7 +114,7 @@ class CreditWarningDialog(EnterpriseDialog):
             msg_color = COLOR_SUCCESS
 
         msg_label = QLabel(msg)
-        msg_label.setStyleSheet(f"color: {msg_color}; font-size: {TEXT_BODY_SMALL};")
+        msg_label.setStyleSheet(f"color: {msg_color}; font-size: {TEXT_BODY_SMALL}pt;")
         msg_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         msg_label.setWordWrap(True)
         layout.addWidget(msg_label)

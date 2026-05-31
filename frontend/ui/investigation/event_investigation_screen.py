@@ -4,10 +4,11 @@ Phase 5B.7 — Event Investigation Screen.
 Event → Detail → Trace → Timeline → Causation → Drift
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QTextEdit, QLineEdit, QSplitter)
+                                 QTextEdit, QLineEdit, QSplitter)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.screens.base_screen import BaseScreen
 
 from api.client import APIClient
 from api.truth_client import TruthAPIClient
@@ -18,22 +19,22 @@ from ui.constants import (COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_TEXT_PRIMAR
                            COLOR_PRIMARY, COLOR_BORDER,
                            SPACING_LG, SPACING_SM, TEXT_SECTION_TITLE, MARGIN_PAGE,
                            BORDER_RADIUS_MD, BORDER_RADIUS_SM)
-from ui.constants import TEXT_SECTION_TITLE
 
 
-class EventInvestigationScreen(QWidget):
+class EventInvestigationScreen(BaseScreen):
     """Full event investigation: Event → Detail → Trace → Timeline → Causation → Drift."""
 
     def __init__(self, api_client: APIClient = None):
-        super().__init__()
         self._api = api_client or APIClient()
         self._truth = TruthAPIClient(self._api)
         self._obs = ObservabilityAPIClient(self._api)
         self._intel = IntelligenceAPIClient(self._api)
         self._router = get_router()
-        self._build_ui()
+        super().__init__()
+        self._setup_screen()
 
-    def _build_ui(self):
+    def _setup_screen(self):
+        super()._setup_screen()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
@@ -47,7 +48,7 @@ class EventInvestigationScreen(QWidget):
         search_layout = QHBoxLayout()
         self.event_id_input = QLineEdit()
         self.event_id_input.setPlaceholderText("Event ID...")
-        self.event_id_input.setStyleSheet("""
+        self.event_id_input.setStyleSheet(f"""
             QLineEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; }}
         """)
@@ -68,7 +69,7 @@ class EventInvestigationScreen(QWidget):
         self.event_detail = QTextEdit()
         self.event_detail.setReadOnly(True)
         self.event_detail.setPlaceholderText("Event detail will appear here...")
-        self.event_detail.setStyleSheet("""
+        self.event_detail.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
@@ -82,7 +83,7 @@ class EventInvestigationScreen(QWidget):
         self.trace_view = QTextEdit()
         self.trace_view.setReadOnly(True)
         self.trace_view.setPlaceholderText("Trace chain will appear here...")
-        self.trace_view.setStyleSheet("""
+        self.trace_view.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
@@ -107,6 +108,9 @@ class EventInvestigationScreen(QWidget):
             actions.addWidget(btn)
 
         layout.addLayout(actions)
+
+    def _on_screen_shown(self):
+        pass
 
     def _investigate(self):
         eid = self.event_id_input.text().strip()

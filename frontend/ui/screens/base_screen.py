@@ -3,9 +3,10 @@ Base screen class for all application screens.
 Provides consistent screen lifecycle, navigation, and state management.
 
 Phase D.4: Enterprise hardening — dirty state, navigation guard, submission safety.
+Phase P1: Theme compliance — auto-registration with ThemeEngine for global theme switching.
 """
 
-from PySide6.QtWidgets import QWidget, QMessageBox
+from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Signal, Qt, QTimer
 from typing import Optional, Dict, Any, Callable
 import logging
@@ -51,13 +52,40 @@ class BaseScreen(QWidget):
         self._dirty_check_enabled: bool = True
         self._submission_in_progress: bool = False
         self._on_dirty_callback: Optional[Callable] = None
-        
+        self._theme_token: Optional[int] = None
+
         self._setup_screen()
+        self._register_theme()
         
     def _setup_screen(self):
         """Setup screen structure."""
         self.setAttribute(Qt.WA_StyledBackground)
         self.setFocusPolicy(Qt.StrongFocus)
+
+    def _register_theme(self):
+        """Register with ThemeEngine for automatic theme switching."""
+        try:
+            from theme.theme_engine import ThemeEngine
+            self._theme_token = ThemeEngine.instance().register(self._on_theme_changed)
+        except Exception:
+            self._theme_token = None
+
+    def _on_theme_changed(self):
+        """Handle theme change. Subclasses can override refresh_theme() for custom styling."""
+        self.refresh_theme()
+
+    def refresh_theme(self):
+        """Refresh screen styles with current theme tokens.
+        Default implementation re-polishes the widget tree.
+        Subclasses with custom stylesheets should override this method.
+        """
+        try:
+            style = self.style()
+            if style:
+                style.unpolish(self)
+                style.polish(self)
+        except Exception:
+            pass
         
     @property
     def screen_id(self) -> str:
@@ -221,13 +249,12 @@ class BaseScreen(QWidget):
         """Prompt user to confirm discarding unsaved changes. Returns True to proceed."""
         if not self._dirty or not self._dirty_check_enabled:
             return True
-        result = QMessageBox.warning(
-            self, "Unsaved Changes",
+        from ui.components.dialogs import ConfirmDialog
+        return ConfirmDialog.confirm(
+            "Unsaved Changes",
             "You have unsaved changes. Discard them?",
-            QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
-            QMessageBox.StandardButton.Cancel,
+            self,
         )
-        return result == QMessageBox.StandardButton.Discard
 
     def navigate_to(self, screen_id: str, params: Optional[Dict] = None):
         """Navigate to another screen with dirty state guard."""

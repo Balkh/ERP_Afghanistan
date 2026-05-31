@@ -26,12 +26,19 @@ class FinancialIntegrityScreen(BaseScreen):
 
     def __init__(self, parent=None):
         super().__init__(parent, screen_id="financial_integrity")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.setup_ui()
         self._start_refresh_timer()
 
     def _on_screen_shown(self):
-        """Prevent BaseScreen from auto-loading on show."""
+        """Resume timer when screen is shown."""
+        if self._timer and not self._timer.isActive():
+            self._timer.start(300000)
+
+    def _on_screen_hidden(self):
+        """Pause timer when screen is hidden."""
+        if self._timer and self._timer.isActive():
+            self._timer.stop()
 
     def _start_refresh_timer(self):
         self._timer = QTimer(self)
@@ -74,7 +81,7 @@ class FinancialIntegrityScreen(BaseScreen):
 
         # Status bar
         self.status_bar = QLabel("Click 'Run Validation' to check financial integrity.")
-        self.status_bar.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL};")
+        self.status_bar.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt;")
         layout.addWidget(self.status_bar)
 
         # Scroll area
@@ -92,9 +99,9 @@ class FinancialIntegrityScreen(BaseScreen):
 
         # Issues table
         issues_group = QGroupBox("Issues Found")
-        issues_group.setStyleSheet("""
+        issues_group.setStyleSheet(f"""
             QGroupBox {{
-                font-size: {TEXT_SECTION_TITLE};
+                font-size: {TEXT_SECTION_TITLE}pt;
                 font-weight: bold;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
@@ -141,7 +148,7 @@ class FinancialIntegrityScreen(BaseScreen):
 
     def _create_card(self, title, value, color):
         card = QFrame()
-        card.setStyleSheet("""
+        card.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_BORDER};
@@ -153,7 +160,7 @@ class FinancialIntegrityScreen(BaseScreen):
         layout.setSpacing(SPACING_XS)
 
         title_label = QLabel(title)
-        title_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_LABEL};")
+        title_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_LABEL}pt;")
         layout.addWidget(title_label)
 
         value_label = QLabel(str(value))
@@ -170,7 +177,7 @@ class FinancialIntegrityScreen(BaseScreen):
         self.validate_btn.setEnabled(False)
 
         try:
-            response = self.api_client.get("sales/customer-payments/financial_integrity/")
+            response = self.api_client.get("/api/ops/financial-integrity/")
             if response and response.get("success", True):
                 data = response.get("data", response)
                 self._update_ui(data)
@@ -191,7 +198,7 @@ class FinancialIntegrityScreen(BaseScreen):
         self.fix_btn.setEnabled(False)
 
         try:
-            response = self.api_client.post("sales/customer-payments/fix_balances/", {})
+            response = self.api_client.post("/api/ops/financial-integrity/", {"auto_fix": True})
             if response and response.get("success", True):
                 data = response.get("data", response)
                 customers_fixed = data.get("customers", {}).get("fixed", 0)

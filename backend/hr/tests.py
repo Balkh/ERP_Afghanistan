@@ -254,7 +254,7 @@ class EmployeeAPITests(APITestCase):
     """Integration tests for HR API"""
     
     def setUp(self):
-        self.user = User.objects.create_user(username='apiuser', password='api123')
+        self.user = User.objects.create_superuser(username='apiuser', password='api123')
         self.department = Department.objects.create(
             name='API Dept',
             code='APID'

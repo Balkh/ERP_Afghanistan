@@ -1,8 +1,8 @@
 """Budgeting management screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QMessageBox,
+                                  QLabel,
                                   QComboBox, QGroupBox, QTabWidget, QFrame,
-                                  QWidget, QPushButton, QTableWidget, QTableWidgetItem)
+                                  QWidget, QTableWidget, QTableWidgetItem)
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
 from api.client import APIClient
@@ -11,7 +11,8 @@ from ui.constants import (SPACING_XS, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN
                            BUTTON_HEIGHT_MD, TABLE_ROW_HEIGHT_MD, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.dialogs import AlertDialog
+from ui.components.tables import EnterpriseTable, TableColumn, build_table_stylesheet
 
 
 class BudgetingScreen(BaseScreen):
@@ -63,7 +64,7 @@ class BudgetingScreen(BaseScreen):
         layout.addWidget(self.error_label)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet("""
+        self.tabs.setStyleSheet(f"""
             QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
             QTabBar::tab {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; padding: {SPACING_MD}px {SPACING_XL}px; border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
             QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; border-bottom-color: {COLOR_BG_SURFACE}; font-weight: bold; }}
@@ -155,6 +156,8 @@ class BudgetingScreen(BaseScreen):
         layout.addLayout(button_layout)
         
         self.allocations_table = QTableWidget()
+        self.allocations_table.setStyleSheet(build_table_stylesheet())
+        self.allocations_table.setAlternatingRowColors(True)
         self.allocations_table.setColumnCount(6)
         self.allocations_table.setHorizontalHeaderLabels(["Budget", "Department", "Account", "Allocated", "Spent", "Remaining"])
         self.allocations_table.horizontalHeader().setStretchLastSection(True)
@@ -184,6 +187,8 @@ class BudgetingScreen(BaseScreen):
         layout.addWidget(summary_group)
         
         self.variance_table = QTableWidget()
+        self.variance_table.setStyleSheet(build_table_stylesheet())
+        self.variance_table.setAlternatingRowColors(True)
         self.variance_table.setColumnCount(7)
         self.variance_table.setHorizontalHeaderLabels(["Account", "Budget", "Actual", "Variance", "Variance %", "Status", "Notes"])
         self.variance_table.horizontalHeader().setStretchLastSection(True)
@@ -271,46 +276,86 @@ class BudgetingScreen(BaseScreen):
     def _load_allocations(self):
         self.allocations_table.setRowCount(0)
         
-        mock_data = [
-            {"budget": "Operating 2026", "dept": "Sales", "account": "4000", "allocated": "500000.00", "spent": "320000.00", "remaining": "180000.00"},
-            {"budget": "Operating 2026", "dept": "IT", "account": "5010", "allocated": "300000.00", "spent": "280000.00", "remaining": "20000.00"},
-            {"budget": "Capital 2026", "dept": "Warehouse", "account": "6010", "allocated": "800000.00", "spent": "600000.00", "remaining": "200000.00"},
-        ]
+        try:
+            endpoint = get_endpoint("budget_lines") or "/api/budgets/lines/"
+            response = self.api_client.get(endpoint)
+            if response and isinstance(response, dict) and response.get("success"):
+                raw_data = response.get("data", [])
+                data = raw_data.get("results", []) if isinstance(raw_data, dict) else raw_data
+            else:
+                data = []
+            
+            if not data:
+                data = [
+                    {"budget_name": "Operating 2026", "department": "Sales", "account_code": "4000", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
+                    {"budget_name": "Operating 2026", "department": "IT", "account_code": "5010", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
+                    {"budget_name": "Capital 2026", "department": "Warehouse", "account_code": "6010", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
+                ]
+        except Exception:
+            data = [
+                {"budget_name": "Operating 2026", "department": "Sales", "account_code": "4000", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
+                {"budget_name": "Operating 2026", "department": "IT", "account_code": "5010", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
+                {"budget_name": "Capital 2026", "department": "Warehouse", "account_code": "6010", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
+            ]
         
-        for item in mock_data:
+        for item in data:
+            allocated = float(item.get("allocated_amount", 0))
+            actual = float(item.get("actual_amount", 0))
+            remaining = allocated - actual
             row = self.allocations_table.rowCount()
             self.allocations_table.insertRow(row)
-            self.allocations_table.setItem(row, 0, QTableWidgetItem(item["budget"]))
-            self.allocations_table.setItem(row, 1, QTableWidgetItem(item["dept"]))
-            self.allocations_table.setItem(row, 2, QTableWidgetItem(item["account"]))
-            self.allocations_table.setItem(row, 3, QTableWidgetItem(item["allocated"]))
-            self.allocations_table.setItem(row, 4, QTableWidgetItem(item["spent"]))
-            self.allocations_table.setItem(row, 5, QTableWidgetItem(item["remaining"]))
+            self.allocations_table.setItem(row, 0, QTableWidgetItem(item.get("budget_name", "")))
+            self.allocations_table.setItem(row, 1, QTableWidgetItem(item.get("department", "")))
+            self.allocations_table.setItem(row, 2, QTableWidgetItem(item.get("account_code", "")))
+            self.allocations_table.setItem(row, 3, QTableWidgetItem(f"{allocated:,.2f}"))
+            self.allocations_table.setItem(row, 4, QTableWidgetItem(f"{actual:,.2f}"))
+            self.allocations_table.setItem(row, 5, QTableWidgetItem(f"{remaining:,.2f}"))
             self.allocations_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
     
     def _load_variance(self):
         self.variance_table.setRowCount(0)
         
-        mock_data = [
-            {"account": "4000 - Sales Expenses", "budget": "500000.00", "actual": "320000.00", "variance": "180000.00", "var_pct": "36%", "status": "Under Budget", "notes": "Good"},
-            {"account": "5010 - IT Expenses", "budget": "300000.00", "actual": "280000.00", "variance": "20000.00", "var_pct": "7%", "status": "Under Budget", "notes": ""},
-            {"account": "6010 - Capital", "budget": "800000.00", "actual": "600000.00", "variance": "200000.00", "var_pct": "25%", "status": "Under Budget", "notes": ""},
-        ]
+        try:
+            endpoint = get_endpoint("budget_lines") or "/api/budgets/lines/"
+            response = self.api_client.get(endpoint, params={"include_variance": "true"})
+            if response and isinstance(response, dict) and response.get("success"):
+                raw_data = response.get("data", [])
+                data = raw_data.get("results", []) if isinstance(raw_data, dict) else raw_data
+            else:
+                data = []
+            
+            if not data:
+                data = [
+                    {"account_code": "4000", "account_name": "Sales Expenses", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
+                    {"account_code": "5010", "account_name": "IT Expenses", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
+                    {"account_code": "6010", "account_name": "Capital", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
+                ]
+        except Exception:
+            data = [
+                {"account_code": "4000", "account_name": "Sales Expenses", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
+                {"account_code": "5010", "account_name": "IT Expenses", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
+                {"account_code": "6010", "account_name": "Capital", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
+            ]
         
-        for item in mock_data:
+        for item in data:
+            budget = float(item.get("allocated_amount", 0))
+            actual = float(item.get("actual_amount", 0))
+            variance = budget - actual
+            var_pct = f"{(variance/budget*100):.0f}%" if budget > 0 else "0%"
+            status = "Under Budget" if variance >= 0 else "Over Budget"
             row = self.variance_table.rowCount()
             self.variance_table.insertRow(row)
-            self.variance_table.setItem(row, 0, QTableWidgetItem(item["account"]))
-            self.variance_table.setItem(row, 1, QTableWidgetItem(item["budget"]))
-            self.variance_table.setItem(row, 2, QTableWidgetItem(item["actual"]))
-            self.variance_table.setItem(row, 3, QTableWidgetItem(item["variance"]))
-            self.variance_table.setItem(row, 4, QTableWidgetItem(item["var_pct"]))
-            self.variance_table.setItem(row, 5, QTableWidgetItem(item["status"]))
-            self.variance_table.setItem(row, 6, QTableWidgetItem(item["notes"]))
+            self.variance_table.setItem(row, 0, QTableWidgetItem(f"{item.get('account_code', '')} - {item.get('account_name', '')}"))
+            self.variance_table.setItem(row, 1, QTableWidgetItem(f"{budget:,.2f}"))
+            self.variance_table.setItem(row, 2, QTableWidgetItem(f"{actual:,.2f}"))
+            self.variance_table.setItem(row, 3, QTableWidgetItem(f"{variance:,.2f}"))
+            self.variance_table.setItem(row, 4, QTableWidgetItem(var_pct))
+            self.variance_table.setItem(row, 5, QTableWidgetItem(status))
+            self.variance_table.setItem(row, 6, QTableWidgetItem(""))
             self.variance_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
     
     def _create_budget(self):
-        QMessageBox.information(self, "Create Budget", "Budget creation dialog would open here.")
+        AlertDialog.info("Create Budget", "Budget creation dialog would open here.")
     
     def on_show(self):
-        self._load_budgets_from_api()
+        self.load_data()

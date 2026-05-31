@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-05-25T23:59:00",
+  "total_test_files_scanned": 0,
+  "files_with_issues": 0,
+  "total_issues": 0,
+  "issues_by_type": {},
+  "details": {},
+  "note": "Full scan requires running TestQualityAnalyzer.generate_report() against the tests/ directory"
+}

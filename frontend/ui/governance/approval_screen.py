@@ -3,11 +3,13 @@ Phase 5B.6 — Approval Workflow Screen.
 PySide6 UI for viewing and managing governance approval workflows.
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QPushButton, QTableWidget, QTableWidgetItem,
-                                 QMessageBox, QTextEdit, QSplitter)
+                                 QTableWidget, QTableWidgetItem,
+                                 QTextEdit, QSplitter, QAbstractItemView)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.components.dialogs import AlertDialog
+from ui.screens.base_screen import BaseScreen
 
 from api.client import APIClient
 from api.governance_client import GovernanceAPIClient
@@ -18,17 +20,17 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY,
                            SPACING_SM, MARGIN_PAGE, TEXT_BODY, TEXT_CARD_TITLE, TEXT_PAGE_TITLE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, SPACING_XS)
 
 
-class ApprovalWorkflowScreen(QWidget):
+class ApprovalWorkflowScreen(BaseScreen):
     """Screen for viewing and managing governance approval workflows."""
 
     def __init__(self, api_client: APIClient = None):
-        super().__init__()
         self._api = GovernanceAPIClient(api_client or APIClient())
         self._current_workflow_id = None
-        self._build_ui()
-        self._refresh()
+        super().__init__()
+        self._setup_screen()
 
-    def _build_ui(self):
+    def _setup_screen(self):
+        super()._setup_screen()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
@@ -58,7 +60,7 @@ class ApprovalWorkflowScreen(QWidget):
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["ID", "Action", "Risk", "State", "Signatures"])
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setAlternatingRowColors(True)
         self.table.setStyleSheet(build_table_stylesheet())
         self.table.itemClicked.connect(self._on_workflow_selected)
@@ -75,7 +77,7 @@ class ApprovalWorkflowScreen(QWidget):
 
         self.detail_text = QTextEdit()
         self.detail_text.setReadOnly(True)
-        self.detail_text.setStyleSheet("""
+        self.detail_text.setStyleSheet(f"""
             QTextEdit {{ background-color: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
             border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; }}
         """)
@@ -101,6 +103,12 @@ class ApprovalWorkflowScreen(QWidget):
         splitter.addWidget(right_panel)
         splitter.setSizes([400, 400])
         layout.addWidget(splitter)
+
+    def _on_screen_shown(self):
+        pass
+
+    def load_data(self, params=None):
+        self._refresh()
 
     def _refresh(self):
         try:
@@ -147,11 +155,11 @@ class ApprovalWorkflowScreen(QWidget):
                 decision=decision,
                 justification="Approved via UI",
             )
-            QMessageBox.information(self, "Signature Submitted",
+            AlertDialog.info(self, "Signature Submitted",
                                     f"Decision: {decision}\nNew State: {result.get('data', {}).get('state', 'unknown')}")
             self._refresh()
         except Exception as e:
-            QMessageBox.warning(self, "Error", f"Signature failed: {e}")
+            AlertDialog.warning(self, "Error", f"Signature failed: {e}")
 
     def set_api_client(self, client: APIClient):
         self._api = GovernanceAPIClient(client)

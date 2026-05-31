@@ -1,12 +1,14 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit, QComboBox, QGroupBox,
                                   QFormLayout, QCheckBox, QColorDialog, 
-                                  QFileDialog, QMessageBox, QScrollArea, QFrame, QWidget)
+                                  QFileDialog, QScrollArea, QFrame, QWidget)
 from PySide6.QtCore import Qt
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (SPACING_MD, SPACING_LG, TEXT_PAGE_TITLE, BUTTON_HEIGHT_MD, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY,
-                           COLOR_SUCCESS)
+                           COLOR_SUCCESS, COLOR_TEXT_ON_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog
+from ui.components.forms import FormSection
 from utils.invoice_template_engine import InvoiceTemplateEngine
 from api.client import APIClient
 
@@ -37,7 +39,7 @@ class InvoiceTemplateManager(BaseScreen):
         
         self.save_btn = EnterpriseButton(text="Save Changes", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.save_btn.setMinimumHeight(BUTTON_HEIGHT_MD)
-        self.save_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; font-weight: bold;")
+        self.save_btn.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; font-weight: bold;")
         self.save_btn.clicked.connect(self._save_template)
         header_layout.addWidget(self.save_btn)
         
@@ -55,20 +57,18 @@ class InvoiceTemplateManager(BaseScreen):
         settings_layout = QVBoxLayout(settings_widget)
         
         # 1. Template Type
-        type_group = QGroupBox("General")
-        type_layout = QFormLayout(type_group)
+        type_section = FormSection("General")
         self.template_name = QLineEdit()
         self.template_name.setPlaceholderText("Template Name (e.g. My Pharmacy Standard)")
         self.layout_type = QComboBox()
         self.layout_type.addItems(["detailed", "compact"])
         
-        type_layout.addRow("Template Name:", self.template_name)
-        type_layout.addRow("Layout Type:", self.layout_type)
-        settings_layout.addWidget(type_group)
+        type_section.add_field(self.template_name, "Template Name:")
+        type_section.add_field(self.layout_type, "Layout Type:")
+        settings_layout.addWidget(type_section)
         
         # 2. Branding (Colors & Logo)
-        brand_group = QGroupBox("Branding")
-        brand_layout = QFormLayout(brand_group)
+        brand_section = FormSection("Branding")
         
         self.primary_color_btn = EnterpriseButton(text="Select Primary Color", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
         self.primary_color_btn.clicked.connect(lambda: self._pick_color("primary"))
@@ -85,33 +85,35 @@ class InvoiceTemplateManager(BaseScreen):
         logo_layout.addWidget(self.logo_path)
         logo_layout.addWidget(self.logo_btn)
         
-        brand_layout.addRow("Primary Color:", self.primary_color_btn)
-        brand_layout.addRow("Accent Color:", self.accent_color_btn)
-        brand_layout.addRow("Logo Override:", logo_layout)
-        settings_layout.addWidget(brand_group)
+        logo_container = QWidget()
+        logo_container.setLayout(logo_layout)
+        
+        brand_section.add_field(self.primary_color_btn, "Primary Color:")
+        brand_section.add_field(self.accent_color_btn, "Accent Color:")
+        brand_section.add_field(logo_container, "Logo Override:")
+        settings_layout.addWidget(brand_section)
         
         # 3. Content Settings
-        content_group = QGroupBox("Content & Visibility")
-        content_layout_form = QFormLayout(content_group)
+        content_section = FormSection("Content & Visibility")
         
         self.footer_text = QLineEdit()
         self.footer_text.setPlaceholderText("Footer message...")
         
         self.show_qr = QCheckBox("Show QR Code in Footer")
         
-        content_layout_form.addRow("Footer Text:", self.footer_text)
-        content_layout_form.addRow("Features:", self.show_qr)
+        content_section.add_field(self.footer_text, "Footer Text:")
+        content_section.add_field(self.show_qr, "Features:")
         
         # Visibility toggles
         self.vis_batch = QCheckBox("Show Batch Numbers")
         self.vis_discount = QCheckBox("Show Discounts")
         self.vis_tax = QCheckBox("Show Tax Column")
         
-        content_layout_form.addRow("Visibility:", self.vis_batch)
-        content_layout_form.addRow("", self.vis_discount)
-        content_layout_form.addRow("", self.vis_tax)
+        content_section.add_field(self.vis_batch, "Visibility:")
+        content_section.add_field(self.vis_discount, "")
+        content_section.add_field(self.vis_tax, "")
         
-        settings_layout.addWidget(content_group)
+        settings_layout.addWidget(content_section)
         settings_layout.addStretch()
         
         settings_scroll.setWidget(settings_widget)
@@ -135,7 +137,7 @@ class InvoiceTemplateManager(BaseScreen):
             self.current_config["color_theme"][key] = color.name()
             # Update button style to show color
             btn = self.primary_color_btn if key == "primary" else self.accent_color_btn
-            btn.setStyleSheet(f"background-color: {color.name()}; color: white;")
+            btn.setStyleSheet(f"background-color: {color.name()}; color: {COLOR_TEXT_ON_PRIMARY};")
 
     def _browse_logo(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "Select Logo", "", "Images (*.png *.jpg *.jpeg)")
@@ -168,9 +170,9 @@ class InvoiceTemplateManager(BaseScreen):
         # Colors
         colors = c.get("color_theme", {})
         if "primary" in colors:
-            self.primary_color_btn.setStyleSheet(f"background-color: {colors['primary']}; color: white;")
+            self.primary_color_btn.setStyleSheet(f"background-color: {colors['primary']}; color: {COLOR_TEXT_ON_PRIMARY};")
         if "accent" in colors:
-            self.accent_color_btn.setStyleSheet(f"background-color: {colors['accent']}; color: white;")
+            self.accent_color_btn.setStyleSheet(f"background-color: {colors['accent']}; color: {COLOR_TEXT_ON_PRIMARY};")
 
     def _save_template(self):
         # Update config from UI
@@ -199,7 +201,7 @@ class InvoiceTemplateManager(BaseScreen):
                 res = self._api_client.post("/api/core/invoice-templates/", data)
             
             if res:
-                QMessageBox.information(self, "Success", "Invoice template saved successfully!")
+                AlertDialog.info(self, "Success", "Invoice template saved successfully!")
                 self.current_template_id = res.get("id")
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save template: {e}")
+            AlertDialog.error(self, "Error", f"Failed to save template: {e}")

@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QLineEdit, QMessageBox,
-                                  QComboBox, QDateEdit, QGroupBox, QFormLayout,
-                                   QDialog, QTextEdit, QApplication)
+                                  QLabel, QLineEdit,
+                                  QComboBox, QDateEdit, QGroupBox,
+                                   QTextEdit, QApplication, QWidget)
 from PySide6.QtCore import Qt, QDate
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from ui.screens.base_screen import BaseScreen
 from ui.utils.debounce import Debouncer
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
@@ -11,6 +11,8 @@ from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, S
 from api.client import APIClient
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from ui.components.forms import FormSection
 
 class ExpenseScreen(BaseScreen):
     """Screen for managing pharmacy expenses."""
@@ -160,7 +162,7 @@ class ExpenseScreen(BaseScreen):
             else:
                 self._show_empty()
         except Exception as e:
-            print(f"Failed to load expenses: {e}")
+            self.error_label.setText(f"Failed to load expenses: {e}")
             self._show_empty(f"Error: {e}")
             self.error_label.setVisible(True)
 
@@ -183,45 +185,50 @@ class ExpenseScreen(BaseScreen):
         if dialog.exec():
             self.load_expenses()
 
-class AddExpenseDialog(QDialog):
+class AddExpenseDialog(EnterpriseDialog):
     """Dialog to record a new expense."""
     
     def __init__(self, parent=None, api_client=None):
-        super().__init__(parent)
         self.api_client = api_client
-        self.setWindowTitle("Record Pharmacy Expense")
+        super().__init__("Record Pharmacy Expense", DialogType.CUSTOM, parent)
         self.setMinimumWidth(450)
-        self.setup_ui()
+        self._build_content()
+        enter_shortcut = QShortcut(QKeySequence(Qt.Key_Return), self)
+        enter_shortcut.activated.connect(self.save_expense)
         self._load_accounts()
 
-    def setup_ui(self):
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        layout = QVBoxLayout(widget)
+        section = FormSection("Expense Details", primary=True)
         
         self.date = QDateEdit()
         self.date.setCalendarPopup(True)
         self.date.setDate(QDate.currentDate())
-        form.addRow("Date:", self.date)
+        section.add_field(self.date, "Date:")
         
         self.expense_account = QComboBox()
-        form.addRow("Expense Category:", self.expense_account)
+        section.add_field(self.expense_account, "Expense Category:")
         
         self.payment_account = QComboBox()
-        form.addRow("Paid From:", self.payment_account)
+        section.add_field(self.payment_account, "Paid From:")
         
         self.amount = QLineEdit()
         self.amount.setPlaceholderText("0.00")
-        form.addRow("Amount:", self.amount)
+        section.add_field(self.amount, "Amount:")
         
         self.payee = QLineEdit()
         self.payee.setPlaceholderText("e.g. Landlord, Electric Co.")
-        form.addRow("Payee:", self.payee)
+        section.add_field(self.payee, "Payee:")
         
         self.description = QTextEdit()
         self.description.setMaximumHeight(80)
-        form.addRow("Description:", self.description)
+        section.add_field(self.description, "Description:")
         
-        layout.addLayout(form)
+        layout.addWidget(section)
         
         btn_layout = QHBoxLayout()
         btn_layout.setSpacing(SPACING_SM)
@@ -233,6 +240,8 @@ class AddExpenseDialog(QDialog):
         btn_layout.addWidget(cancel_btn)
         btn_layout.addWidget(ok_btn)
         layout.addLayout(btn_layout)
+
+        self.set_content(widget)
 
     def _load_accounts(self):
         try:
@@ -252,6 +261,7 @@ class AddExpenseDialog(QDialog):
                 for acc in results:
                     self.payment_account.addItem(acc['name'], acc['id'])
         except Exception as e:
+            # TODO: Replace with user-facing error state (dialog has no error_label/empty_label)
             print(f"Failed to load accounts for expense: {e}")
 
     def save_expense(self):
@@ -273,8 +283,8 @@ class AddExpenseDialog(QDialog):
             if response and response.get('id'):
                 self.accept()
             else:
-                QMessageBox.critical(self, "Error", "Failed to save expense.")
+                AlertDialog.error("Error", "Failed to save expense.", self)
         except ValueError as e:
-            QMessageBox.warning(self, "Validation Error", str(e))
+            AlertDialog.warning("Validation Error", str(e), self)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save: {e}")
+            AlertDialog.error("Error", f"Failed to save: {e}", self)

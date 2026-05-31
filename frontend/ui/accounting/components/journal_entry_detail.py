@@ -1,12 +1,13 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
                                QLabel, QTableWidget, QTableWidgetItem, QHeaderView,
-                               QGroupBox, QFrame)
+                               QGroupBox, QFrame, QAbstractItemView, QWidget)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QColor
 from ui.constants import (
     SPACING_XS,
     SPACING_SM,
     SPACING_MD,
+    SPACING_LG,
     MARGIN_PAGE,
     BORDER_RADIUS_SM,
     BORDER_RADIUS_LG,
@@ -27,36 +28,42 @@ from ui.constants import (
 )
 
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.tables import build_table_stylesheet
+from ui.components.dialogs import EnterpriseDialog, DialogType
+from ui.components.forms import FormSection
 
-class JournalEntryDetailDialog(QDialog):
+class JournalEntryDetailDialog(EnterpriseDialog):
     """Dialog to view a journal entry detail with its lines."""
 
     def __init__(self, parent=None, entry_data=None, api_client=None):
-        super().__init__(parent)
-        self.setWindowTitle("Entry Details")
         self.api_client = api_client
         self.entry_data = entry_data or {}
         self.lines = []
-        self.setup_ui()
+        super().__init__("Entry Details", DialogType.CUSTOM, parent)
+        self._build_content()
         self.load_data()
 
-    def setup_ui(self):
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
         self.setMinimumWidth(850)
         self.setMinimumHeight(600)
-        self.setStyleSheet("""
-            QDialog {{ background-color: {COLOR_BG_MAIN}; }}
+        widget.setStyleSheet(f"""
+            QWidget {{ background-color: {COLOR_BG_MAIN}; }}
             QGroupBox {{ 
                 font-weight: bold; 
                 border: 1px solid {COLOR_BORDER}; 
                 border-radius: {BORDER_RADIUS_LG}; 
-                margin-top: 15px;
-                padding-top: 15px;
+                margin-top: {SPACING_LG}px;
+                padding-top: {SPACING_LG}px;
                 background-color: {COLOR_BG_SURFACE};
             }}
             QLabel {{ color: {COLOR_TEXT_PRIMARY}; }}
         """)
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -68,35 +75,32 @@ class JournalEntryDetailDialog(QDialog):
         layout.addWidget(title)
 
         # Entry Information
-        info_group = QGroupBox("General Information")
-        info_layout = QFormLayout(info_group)
-        info_layout.setLabelAlignment(Qt.AlignRight)
-        info_layout.setSpacing(SPACING_SM + SPACING_XS)
+        info_section = FormSection("General Information", primary=True)
 
         self.entry_number = QLabel("")
         self.entry_number.setStyleSheet(f"font-weight: bold; color: {COLOR_PRIMARY};")
-        info_layout.addRow("Entry #:", self.entry_number)
+        info_section.add_field(self.entry_number, "Entry #:")
 
         self.entry_date = QLabel("")
-        info_layout.addRow("Date:", self.entry_date)
+        info_section.add_field(self.entry_date, "Date:")
 
         self.entry_type = QLabel("")
-        info_layout.addRow("Type:", self.entry_type)
+        info_section.add_field(self.entry_type, "Type:")
 
         self.description = QLabel("")
         self.description.setWordWrap(True)
-        info_layout.addRow("Description:", self.description)
+        info_section.add_field(self.description, "Description:")
 
         self.reference = QLabel("")
-        info_layout.addRow("Reference:", self.reference)
+        info_section.add_field(self.reference, "Reference:")
 
         self.is_posted = QLabel("")
         status_font = QFont("Segoe UI", TEXT_LABEL)
         status_font.setWeight(QFont.Weight.Bold)
         self.is_posted.setFont(status_font)
-        info_layout.addRow("Status:", self.is_posted)
+        info_section.add_field(self.is_posted, "Status:")
 
-        layout.addWidget(info_group)
+        layout.addWidget(info_section)
 
         # Journal Lines
         lines_group = QGroupBox("Journal Lines (Articles)")
@@ -112,22 +116,9 @@ class JournalEntryDetailDialog(QDialog):
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         
-        self.lines_table.setStyleSheet("""
-            QTableWidget {{
-                gridline-color: {COLOR_TABLE_BORDER_LIGHT};
-                background-color: {COLOR_BG_SURFACE};
-                alternate-background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_LG};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                color: {COLOR_TEXT_PRIMARY};
-                font-weight: bold;
-                border: none;
-                padding: {SPACING_SM}px;
-            }}
-        """)
+        self.lines_table.setStyleSheet(build_table_stylesheet())
+        self.lines_table.setAlternatingRowColors(True)
+        self.lines_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         lines_layout.addWidget(self.lines_table)
 
         # Totals
@@ -164,6 +155,9 @@ class JournalEntryDetailDialog(QDialog):
         close_btn.clicked.connect(self.reject)
         buttons.addWidget(close_btn)
         layout.addLayout(buttons)
+
+        self.set_content(widget)
+        return widget
 
     def load_data(self):
         self.entry_number.setText(self.entry_data.get("entry_number", ""))

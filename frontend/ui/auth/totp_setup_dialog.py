@@ -2,12 +2,12 @@
 
 import base64
 
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QLineEdit,
-                                 QMessageBox)
+from PySide6.QtWidgets import (QVBoxLayout, QLabel, QLineEdit, QWidget)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QFont, QPixmap
 
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.constants import (
     SPACING_MD, SPACING_LG, SPACING_XXL, TEXT_SECTION_TITLE, TEXT_BODY,
     TEXT_CARD_TITLE, TEXT_LABEL, TEXT_HELPER, BORDER_RADIUS_LG, COLOR_BG_MAIN,
@@ -21,23 +21,27 @@ from utils.logger import get_logger
 log = get_logger('auth')
 
 
-class TOTPSetupDialog(QDialog):
+class TOTPSetupDialog(EnterpriseDialog):
     """Dialog to set up TOTP 2FA: show QR code, enter verification code."""
 
     setup_complete = Signal()
 
     def __init__(self, api_client=None, parent=None):
-        super().__init__(parent)
         self.api_client = api_client or APIClient()
-        self.setWindowTitle("Set Up Two-Factor Authentication")
+        super().__init__("Set Up Two-Factor Authentication", DialogType.CUSTOM, parent)
         self.setFixedSize(450, 550)
         self.setModal(True)
-        self.setup_ui()
+        content = self._build_content()
+        self.set_content(content)
         self._load_qr_code()
 
-    def setup_ui(self):
-        self.setStyleSheet("""
-            QDialog {{
+    def _create_button_area(self):
+        return None
+
+    def _build_content(self):
+        widget = QWidget()
+        widget.setStyleSheet(f"""
+            QWidget {{
                 background-color: {COLOR_BG_MAIN};
             }}
             QLabel {{
@@ -56,7 +60,7 @@ class TOTPSetupDialog(QDialog):
             }}
         """)
 
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(widget)
         layout.setContentsMargins(SPACING_XXL, SPACING_XXL, SPACING_XXL, SPACING_XXL)
         layout.setSpacing(SPACING_LG)
 
@@ -122,6 +126,8 @@ class TOTPSetupDialog(QDialog):
         cancel_btn.clicked.connect(self.reject)
         layout.addWidget(cancel_btn)
 
+        return widget
+
     def _load_qr_code(self):
         """Fetch TOTP setup data from backend."""
         try:
@@ -160,7 +166,7 @@ class TOTPSetupDialog(QDialog):
             self.verify_btn.setText("Verify & Enable")
 
             if result.get("success"):
-                QMessageBox.information(self, "Success", "Two-factor authentication is now enabled!")
+                AlertDialog.info("Success", "Two-factor authentication is now enabled!", self)
                 self.setup_complete.emit()
                 self.accept()
             else:

@@ -42,22 +42,22 @@ class NavigationHeader(QWidget):
         """Setup the navigation header UI."""
         self.setStyleSheet(f"""
             QWidget {{ background-color: transparent; }}
-            QPushButton {{
+            EnterpriseButton {{
                 background-color: transparent;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_SM};
-                padding: {SPACING_6}px 10px;
+                padding: {SPACING_6}px {SPACING_SM}px;
                 font-size: {TEXT_SECTION_TITLE}px;
             }}
-            QPushButton:hover {{
+            EnterpriseButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};
                 border: 1px solid {COLOR_PRIMARY};
             }}
-            QPushButton:pressed {{
+            EnterpriseButton:pressed {{
                 background-color: {COLOR_BORDER};
             }}
-            QPushButton:disabled {{
+            EnterpriseButton:disabled {{
                 color: {COLOR_BORDER_LIGHT};
                 border: 1px solid {COLOR_BG_ELEVATED};
             }}

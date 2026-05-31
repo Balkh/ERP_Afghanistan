@@ -3,19 +3,11 @@ UI Components package.
 Reusable enterprise-grade UI components.
 """
 
-from .base_widgets import (
-    BaseWidget,
-    BaseContainerWidget, 
-    BaseFormWidget,
-    BaseListWidget,
-)
-
 from .buttons import (
     EnterpriseButton,
     ButtonVariant,
     ButtonSize,
     IconButton,
-    SplitButton
 )
 
 from .tables import (
@@ -61,17 +53,11 @@ from .notifications import (
 from .state_helper import StateHelper
 
 __all__ = [
-    # Base
-    'BaseWidget',
-    'BaseContainerWidget', 
-    'BaseFormWidget',
-    'BaseListWidget',
     # Buttons
     'EnterpriseButton',
     'ButtonVariant',
     'ButtonSize',
     'IconButton',
-    'SplitButton',
     # Tables
     'EnterpriseTable',
     'TableColumn',

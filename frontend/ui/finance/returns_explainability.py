@@ -9,7 +9,7 @@ from PySide6.QtGui import QFont
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (
-    SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
+    SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
     TEXT_LABEL, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
     COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
     COLOR_BG_SURFACE, COLOR_BORDER, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
@@ -101,13 +101,13 @@ class ReturnsExplainabilityScreen(BaseScreen):
         self.explanation_group.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.explanation_group.setStyleSheet(
             f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
-            f"margin-top: 10px; padding-top: 10px; color: {COLOR_TEXT_PRIMARY}; }}"
+            f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         explanation_layout = QVBoxLayout(self.explanation_group)
 
         self.explanation_text = QTextEdit()
         self.explanation_text.setReadOnly(True)
-        self.explanation_text.setStyleSheet("""
+        self.explanation_text.setStyleSheet(f"""
             QTextEdit {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER};

@@ -572,7 +572,6 @@ class EnterpriseForm(QWidget):
         
         # Apply standardized input height
         if field._input_widget and hasattr(field._input_widget, 'setMinimumHeight'):
-            from ui.constants import INPUT_HEIGHT_MD
             field._input_widget.setMinimumHeight(INPUT_HEIGHT_MD)
         
         self._fields[name] = field
@@ -673,7 +672,6 @@ class EnterpriseForm(QWidget):
                            save_callback=None, cancel_callback=None):
         """Add standardized action button bar to form."""
         from PySide6.QtWidgets import QHBoxLayout, QFrame
-        from ui.constants import SPACING_SM, SPACING_MD
         from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
         
         button_bar = QFrame()

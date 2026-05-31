@@ -1,8 +1,8 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QFormLayout,
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
                                 QTableWidget, QTableWidgetItem,
                                 QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
-                                QDateEdit, QMessageBox, QHeaderView, QAbstractItemView,
-                                QFrame, QMenu, QCheckBox)
+                                QDateEdit, QHeaderView, QAbstractItemView,
+                                QFrame, QMenu, QCheckBox, QTextEdit)
 from PySide6.QtCore import Qt, QDate, Signal
 from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
@@ -15,12 +15,15 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_BORDER, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING,
-                           COLOR_DANGER, COLOR_INFO, DENSITY_COMPACT_ROW)
+                           COLOR_DANGER, COLOR_INFO, DENSITY_COMPACT_ROW,
+                           COLOR_TEXT_ON_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.dialogs import AlertDialog, ConfirmDialog
 from ui.components.operator_safety import DestructiveActionGuard
+from ui.screens.base_screen import BaseScreen
 
 
-class PurchaseInvoiceScreen(QWidget):
+class PurchaseInvoiceScreen(BaseScreen):
     """Screen for creating and managing purchase invoices.
 
     Phase 15C: 3-zone architecture
@@ -33,19 +36,18 @@ class PurchaseInvoiceScreen(QWidget):
     invoice_updated = Signal(dict)
 
     def __init__(self, parent=None, api_client=None, auth_manager=None):
-        super().__init__(parent)
         self.api_client = api_client
         self.auth_manager = auth_manager
+        self._api_client_init = api_client
+        self._auth_manager_init = auth_manager
         self.invoice_items = []
         self.current_invoice_id = None
         self.suppliers = []
         self.products = []
         self._date_format = self._load_date_format()
-
-        self.setup_ui()
+        super().__init__(parent)
         self._apply_date_format()
         self.setup_shortcuts()
-        self.load_suppliers()
 
     def _load_date_format(self):
         """Load date format preference from theme config."""
@@ -69,6 +71,13 @@ class PurchaseInvoiceScreen(QWidget):
             else:
                 w.setDisplayFormat("yyyy-MM-dd")
 
+    def _on_screen_shown(self):
+        pass
+
+    def load_data(self, params=None):
+        self.load_suppliers()
+        super().load_data(params)
+
     def _check_action(self, action: str) -> bool:
         """Check if user has permission for a purchase action."""
         if self.auth_manager and not self.auth_manager.has_action("purchases", action):
@@ -77,7 +86,8 @@ class PurchaseInvoiceScreen(QWidget):
             return False
         return True
 
-    def setup_ui(self):
+    def _setup_screen(self):
+        super()._setup_screen()
         layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
@@ -91,9 +101,9 @@ class PurchaseInvoiceScreen(QWidget):
         header_layout.addStretch()
 
         self.status_label = QLabel("DRAFT")
-        self.status_label.setStyleSheet("""
+        self.status_label.setStyleSheet(f"""
             background-color: {COLOR_TEXT_MUTED};
-            color: white;
+            color: {COLOR_TEXT_PRIMARY};
             padding: {SPACING_XS}px {SPACING_MD}px;
             border-radius: {BORDER_RADIUS_SM};
             font-weight: bold;
@@ -258,6 +268,12 @@ class PurchaseInvoiceScreen(QWidget):
         self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}px; font-weight: bold;")
         details_form.addRow("Balance:", self.balance_label)
 
+        self.supplier_address = QTextEdit()
+        self.supplier_address.setReadOnly(True)
+        self.supplier_address.setMaximumHeight(40)
+        self.supplier_address.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px; border: none; background: transparent;")
+        details_form.addRow("Address:", self.supplier_address)
+
         zone3_layout.addLayout(details_form)
         zone3_layout.addSpacing(SPACING_LG)
 
@@ -306,6 +322,13 @@ class PurchaseInvoiceScreen(QWidget):
         self.paid_input.setMaximumWidth(120)
         self.paid_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Paid:", self.paid_input)
+
+        self.notes_input = QTextEdit()
+        self.notes_input.setPlaceholderText("Notes...")
+        self.notes_input.setMaximumHeight(40)
+        self.notes_input.setMaximumWidth(120)
+        self.notes_input.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_TABLE}px;")
+        totals_layout.addRow("Notes:", self.notes_input)
 
         zone3_layout.addLayout(totals_layout)
         zone3_layout.addSpacing(SPACING_LG)
@@ -530,6 +553,7 @@ class PurchaseInvoiceScreen(QWidget):
 
     def recalculate_totals(self):
         """Recalculate invoice totals."""
+        self.items_table.blockSignals(True)
         subtotal = Decimal("0")
 
         for row in range(self.items_table.rowCount()):
@@ -557,6 +581,7 @@ class PurchaseInvoiceScreen(QWidget):
         self.tax_amount_label.setText(f"{tax_amount:.2f}")
         self.total_label.setText(f"{total:.2f}")
         self.balance_label.setText(f"{balance:.2f}")
+        self.items_table.blockSignals(False)
 
     def get_invoice_data(self):
         """Collect all invoice data."""
@@ -597,27 +622,17 @@ class PurchaseInvoiceScreen(QWidget):
     def update_button_states(self, status):
         """Update action button states based on purchase status."""
         is_draft = status == "DRAFT"
-        is_confirmed = status == "CONFIRMED"
         is_received = status == "RECEIVED"
-        
-        self.save_draft_btn.setEnabled(is_draft)
+
+        self.save_btn.setEnabled(is_draft)
         self.confirm_btn.setEnabled(is_draft)
-        self.receive_btn.setEnabled(is_confirmed)
-        self.print_btn.setEnabled(is_received or is_confirmed)
         self.return_btn.setVisible(is_received)
-        
-        if is_received:
-            self.receive_btn.setText("RECEIVED")
-            self.receive_btn.set_variant(ButtonVariant.SECONDARY)
-        else:
-            self.receive_btn.setText("Receive & Add Stock (Ctrl+R)")
-            self.receive_btn.set_variant(ButtonVariant.SUCCESS)
 
     def save_draft(self):
         """Save purchase invoice as draft — stores invoice ID for subsequent actions."""
         data = self.get_invoice_data()
         if not data["items"]:
-            QMessageBox.warning(self, "Validation Error", "Please add at least one product.")
+            AlertDialog.warning("Validation Error", "Please add at least one product.", self)
             return
             
         try:
@@ -628,18 +643,18 @@ class PurchaseInvoiceScreen(QWidget):
                 self.current_invoice_id = res_data.get('id')
                 self.invoice_number.setText(res_data.get("invoice_number", "DRAFT"))
                 self.update_button_states("DRAFT")
-                QMessageBox.information(self, "Success", "Purchase draft saved.")
+                AlertDialog.info("Success", "Purchase draft saved.", self)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to save draft: {e}")
+            AlertDialog.error("Error", f"Failed to save draft: {e}", self)
 
     def confirm_invoice(self):
         """Confirm the purchase invoice — persists to backend."""
         data = self.get_invoice_data()
         if not data["supplier_id"]:
-            QMessageBox.warning(self, "Validation Error", "Please select a supplier.")
+            AlertDialog.warning("Validation Error", "Please select a supplier.", self)
             return
         if not self.current_invoice_id:
-            QMessageBox.warning(self, "Error", "Save the invoice as draft first.")
+            AlertDialog.warning("Error", "Save the invoice as draft first.", self)
             return
 
         if not DestructiveActionGuard.confirm_irreversible(
@@ -647,34 +662,35 @@ class PurchaseInvoiceScreen(QWidget):
             f"Are you sure you want to confirm this purchase invoice?\n\nTotal: {data['total_amount']:.2f} {data['currency']}"
         ):
             return
-            try:
-                endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/confirm/"
-                res = self.api_client.post(endpoint, {})
-                if res:
-                    self.status_label.setText("CONFIRMED")
-                    self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: white; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
-                    self.update_button_states("CONFIRMED")
-                    QMessageBox.information(self, "Success", "Purchase invoice confirmed successfully.")
-                else:
-                    QMessageBox.critical(self, "Error", "Failed to confirm on server.")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to confirm: {e}")
+
+        try:
+            endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/confirm/"
+            res = self.api_client.post(endpoint, {})
+            if res:
+                self.status_label.setText("CONFIRMED")
+                self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+                self.update_button_states("CONFIRMED")
+                AlertDialog.info("Success", "Purchase invoice confirmed successfully.", self)
+            else:
+                AlertDialog.error("Error", "Failed to confirm on server.", self)
+        except Exception as e:
+            AlertDialog.error("Error", f"Failed to confirm: {e}", self)
 
     def receive_invoice(self):
         """Receive purchase and add stock — persists to backend."""
         __data = self.get_invoice_data()
         if not self.current_invoice_id:
-            QMessageBox.warning(self, "Error", "Save the invoice as draft first.")
+            AlertDialog.warning("Error", "Save the invoice as draft first.", self)
             return
         if self.status_label.text() != "CONFIRMED":
-            QMessageBox.warning(self, "Error", "Invoice must be confirmed before receiving.")
+            AlertDialog.warning("Error", "Invoice must be confirmed before receiving.", self)
             return
 
         # Validate batch numbers and expiry dates
         for row in range(self.items_table.rowCount()):
             batch = self.items_table.item(row, 1).text()
             if not batch:
-                QMessageBox.warning(self, "Validation Error", f"Please enter batch number for row {row + 1}.")
+                AlertDialog.warning("Validation Error", f"Please enter batch number for row {row + 1}.", self)
                 return
 
         if not DestructiveActionGuard.confirm_irreversible(
@@ -682,18 +698,19 @@ class PurchaseInvoiceScreen(QWidget):
             "This will add stock to inventory.\n\nContinue?"
         ):
             return
-            try:
-                endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/receive/"
-                res = self.api_client.post(endpoint, {})
-                if res:
-                    self.status_label.setText("RECEIVED")
-                    self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: white; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
-                    self.update_button_states("RECEIVED")
-                    QMessageBox.information(self, "Success", "Purchase received and stock added to inventory.")
-                else:
-                    QMessageBox.critical(self, "Error", "Failed to receive on server.")
-            except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to receive: {e}")
+
+        try:
+            endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/receive/"
+            res = self.api_client.post(endpoint, {})
+            if res:
+                self.status_label.setText("RECEIVED")
+                self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+                self.update_button_states("RECEIVED")
+                AlertDialog.info("Success", "Purchase received and stock added to inventory.", self)
+            else:
+                AlertDialog.error("Error", "Failed to receive on server.", self)
+        except Exception as e:
+            AlertDialog.error("Error", f"Failed to receive: {e}", self)
 
     def print_invoice(self):
         """Print the invoice."""
@@ -732,7 +749,7 @@ class PurchaseInvoiceScreen(QWidget):
     def create_return(self):
         """Open return dialog pre-filled with current purchase invoice data."""
         if not self.current_invoice_id:
-            QMessageBox.warning(self, "No Invoice", "Please save the invoice first.")
+            AlertDialog.warning("No Invoice", "Please save the invoice first.", self)
             return
         
         try:
@@ -741,9 +758,9 @@ class PurchaseInvoiceScreen(QWidget):
             dialog.set_invoice_type("PURCHASE_RETURN")
             dialog.prefill_from_invoice(self.current_invoice_id)
             if dialog.exec():
-                QMessageBox.information(self, "Return Created", "Return order created successfully.")
+                AlertDialog.info("Return Created", "Return order created successfully.", self)
         except ImportError:
-            QMessageBox.warning(self, "Error", "Returns module not available.")
+            AlertDialog.warning("Error", "Returns module not available.", self)
 
     def remove_selected_item(self):
         """Remove selected row from items table."""
@@ -767,14 +784,14 @@ class PurchaseInvoiceScreen(QWidget):
         self.items_table.setRowCount(0)
         self.recalculate_totals()
         self.status_label.setText("DRAFT")
-        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: white; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
         self.current_invoice_id = None
         self.workflow_status_label.setText("")
         self.submit_wf_btn.setVisible(True)
         self.approve_wf_btn.setVisible(False)
         self.reject_wf_btn.setVisible(False)
         self.post_wf_btn.setVisible(False)
-        QMessageBox.information(self, "Cleared", "Form cleared successfully.")
+        AlertDialog.info("Cleared", "Form cleared successfully.", self)
     
     def load_workflow_status(self, invoice_id: int):
         """Load workflow status for current invoice."""
@@ -814,18 +831,18 @@ class PurchaseInvoiceScreen(QWidget):
     def perform_workflow_action(self, action: str):
         """Perform workflow action on current invoice."""
         if not self.current_invoice_id:
-            QMessageBox.warning(self, "Error", "No invoice selected.")
+            AlertDialog.warning("Error", "No invoice selected.", self)
             return
         
         try:
             status_result = self.api_client.get_workflow_status('PURCHASE_INVOICE', self.current_invoice_id)
             if not status_result.get('success') or not status_result.get('data', {}).get('has_workflow'):
-                QMessageBox.warning(self, "Error", "No workflow found for this invoice.")
+                AlertDialog.warning("Error", "No workflow found for this invoice.", self)
                 return
             
             workflow_id = status_result['data'].get('id')
             if not workflow_id:
-                QMessageBox.warning(self, "Error", "Could not find workflow ID.")
+                AlertDialog.warning("Error", "Could not find workflow ID.", self)
                 return
             
             comment = ''
@@ -838,13 +855,13 @@ class PurchaseInvoiceScreen(QWidget):
             result = self.api_client.workflow_action(workflow_id, action, comment)
             
             if result.get('success'):
-                QMessageBox.information(self, "Success", f"Invoice {action}ed successfully.")
+                AlertDialog.info("Success", f"Invoice {action}ed successfully.", self)
                 self.load_workflow_status(self.current_invoice_id)
             else:
                 error = result.get('error', {}).get('message', 'Unknown error')
-                QMessageBox.warning(self, "Error", f"Failed to {action}: {error}")
+                AlertDialog.warning("Error", f"Failed to {action}: {error}", self)
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Error performing workflow action: {str(e)}")
+            AlertDialog.error("Error", f"Error performing workflow action: {str(e)}", self)
 
 
 def QInputDialog_getItem(parent, title, label, items):
