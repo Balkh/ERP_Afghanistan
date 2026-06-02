@@ -1,0 +1,98 @@
+{
+  "backend\\backup\\extracts\\create_backup_workflow.py": {
+    "orphan": false,
+    "ref_count": 2,
+    "ref_sources": [
+      "backend\\backup\\backup_system.py",
+      "docs\\PHASE6_3\\evidence\\backup_system_BEFORE.py"
+    ]
+  },
+  "backend\\backup\\extracts\\restore_backup_workflow.py": {
+    "orphan": false,
+    "ref_count": 2,
+    "ref_sources": [
+      "backend\\backup\\backup_system.py",
+      "docs\\PHASE6_3\\evidence\\backup_system_BEFORE.py"
+    ]
+  },
+  "backend\\backup\\extracts\\__init__.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_2\\evidence\\backup_system_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_2\\evidence\\gate_validator_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_2\\evidence\\hardening_validator_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_2\\evidence\\migration_validator_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_3\\evidence\\backup_system_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_3\\evidence\\main_window_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_3\\evidence\\payments_services_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_3\\evidence\\pos_screen_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_3\\evidence\\purchase_invoice_screen_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_3\\evidence\\sales_invoice_screen_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_3\\evidence\\stock_integration_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_4\\evidence\\purchase_invoice_screen_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_4\\evidence\\sales_invoice_screen_BEFORE.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_5\\phase6_5_dep_coupling.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  },
+  "docs\\PHASE6_5\\phase6_5_scan.py": {
+    "orphan": true,
+    "ref_count": 0,
+    "ref_sources": []
+  }
+}
