@@ -94,15 +94,7 @@ class SalesInvoiceScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
 
-        self._build_header()
-        self._build_filters()
-        self._build_toolbar()
-        self._build_table()
-        self._build_footer()
-        self._wire_signals()
-
-    def _build_header(self):
-        layout = self.layout()
+        # ── PAGE HEADER ──
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, SPACING_SM)
         title_label = QLabel("Sales Invoice")
@@ -127,8 +119,9 @@ class SalesInvoiceScreen(BaseScreen):
 
         layout.addLayout(header_layout)
 
-    def _build_filters(self):
-        layout = self.layout()
+        # ═══════════════════════════════════════════════════════
+        # ZONE 1 — HEADER CONTEXT (compact metadata bar)
+        # ═══════════════════════════════════════════════════════
         zone1 = QFrame()
         zone1.setObjectName("zoneHeader")
         zone1.setStyleSheet(f"QFrame#zoneHeader {{ background: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
@@ -207,26 +200,31 @@ class SalesInvoiceScreen(BaseScreen):
 
         layout.addWidget(zone1)
 
-    def _build_toolbar(self):
-        # Zone 2 vertical container shared with _build_table
-        self._zone2_layout = QVBoxLayout()
-        self._zone2_layout.setSpacing(SPACING_SM)
+        # ═══════════════════════════════════════════════════════
+        # ZONE 2 — LINE ITEM ENGINE (unified table + search)
+        # ═══════════════════════════════════════════════════════
+        zone2_layout = QVBoxLayout()
+        zone2_layout.setSpacing(SPACING_SM)
 
+        # Search bar
         search_layout = QHBoxLayout()
         search_layout.setSpacing(SPACING_SM)
         self.barcode_search = BarcodeSearchLineEdit(api_client=self.api_client)
+        self.barcode_search.barcode_scanned.connect(self.on_barcode_scanned)
+        self.barcode_search.product_selected.connect(self.on_product_selected)
         self.barcode_search.setMinimumHeight(INPUT_HEIGHT_MD)
         search_layout.addWidget(self.barcode_search, 1)
 
         self.add_product_btn = EnterpriseButton(text="+ Add Product", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.add_product_btn.clicked.connect(self.show_product_selector)
         search_layout.addWidget(self.add_product_btn)
 
         self.remove_item_btn = EnterpriseButton(text="Remove", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.remove_item_btn.clicked.connect(self.remove_selected_item)
         search_layout.addWidget(self.remove_item_btn)
 
-        self._zone2_layout.addLayout(search_layout)
+        zone2_layout.addLayout(search_layout)
 
-    def _build_table(self):
         # Items table (EnterpriseTable density = compact)
         self.items_table = QTableWidget()
         self.items_table.setColumnCount(8)
@@ -236,17 +234,19 @@ class SalesInvoiceScreen(BaseScreen):
         self.items_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.items_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.items_table.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.items_table.itemChanged.connect(self.on_item_changed)
         self.items_table.setMinimumHeight(TABLE_ROW_HEIGHT_LG * 8)
         self.items_table.verticalHeader().setDefaultSectionSize(DENSITY_COMPACT_ROW)
         self.items_table.setAlternatingRowColors(True)
         from ui.components.tables import build_table_stylesheet
         self.items_table.setStyleSheet(build_table_stylesheet())
 
-        self._zone2_layout.addWidget(self.items_table)
-        self.layout().addLayout(self._zone2_layout, stretch=1)
+        zone2_layout.addWidget(self.items_table)
+        layout.addLayout(zone2_layout, stretch=1)
 
-    def _build_footer(self):
-        layout = self.layout()
+        # ═══════════════════════════════════════════════════════
+        # ZONE 3 — FINANCIAL SUMMARY PANEL (totals + primary action)
+        # ═══════════════════════════════════════════════════════
         zone3 = QFrame()
         zone3.setObjectName("zoneSummary")
         zone3.setStyleSheet(f"QFrame#zoneSummary {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
@@ -295,10 +295,12 @@ class SalesInvoiceScreen(BaseScreen):
         self.discount_input.setRange(0, 999999)
         self.discount_input.setValue(0)
         self.discount_input.setMaximumWidth(120)
+        self.discount_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Discount:", self.discount_input)
 
         self.tax_enabled_cb = QCheckBox()
         self.tax_enabled_cb.setChecked(False)
+        self.tax_enabled_cb.stateChanged.connect(self.on_tax_enabled_changed)
         totals_layout.addRow("Enable Tax:", self.tax_enabled_cb)
 
         self.tax_input = QDoubleSpinBox()
@@ -307,6 +309,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.tax_input.setSuffix("%")
         self.tax_input.setMaximumWidth(120)
         self.tax_input.setEnabled(False)
+        self.tax_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Tax Rate:", self.tax_input)
 
         self.tax_amount_label = QLabel("0.00")
@@ -321,6 +324,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.paid_input.setRange(0, 999999)
         self.paid_input.setValue(0)
         self.paid_input.setMaximumWidth(120)
+        self.paid_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Paid:", self.paid_input)
 
         self.notes_input = QTextEdit()
@@ -339,9 +343,11 @@ class SalesInvoiceScreen(BaseScreen):
         action_layout.setContentsMargins(0, 0, 0, 0)
 
         self.save_btn = EnterpriseButton(text="Save Invoice", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.save_btn.clicked.connect(self.save_draft)
         action_layout.addWidget(self.save_btn)
 
         self.confirm_btn = EnterpriseButton(text="Confirm & Dispatch", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.confirm_btn.clicked.connect(self.confirm_invoice)
         action_layout.addWidget(self.confirm_btn)
 
         # Secondary actions menu
@@ -356,23 +362,28 @@ class SalesInvoiceScreen(BaseScreen):
 
         # Return action (visible only for dispatched invoices)
         self.return_btn = EnterpriseButton(text="Create Return", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)
+        self.return_btn.clicked.connect(self.create_return)
         self.return_btn.setVisible(False)
         action_layout.addWidget(self.return_btn)
 
         # Workflow actions (hidden by default)
         self.submit_wf_btn = EnterpriseButton(text="Submit for Approval", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.submit_wf_btn.clicked.connect(lambda: self.perform_workflow_action('submit'))
         self.submit_wf_btn.setVisible(False)
         action_layout.addWidget(self.submit_wf_btn)
 
         self.approve_wf_btn = EnterpriseButton(text="Approve", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
         self.approve_wf_btn.setVisible(False)
         action_layout.addWidget(self.approve_wf_btn)
 
         self.reject_wf_btn = EnterpriseButton(text="Reject", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
         self.reject_wf_btn.setVisible(False)
         action_layout.addWidget(self.reject_wf_btn)
 
         self.post_wf_btn = EnterpriseButton(text="Post", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
         self.post_wf_btn.setVisible(False)
         action_layout.addWidget(self.post_wf_btn)
 
@@ -380,33 +391,6 @@ class SalesInvoiceScreen(BaseScreen):
         zone3_layout.addLayout(action_layout)
 
         layout.addWidget(zone3)
-
-    def _wire_signals(self):
-        # Toolbar (search + add/remove)
-        self.barcode_search.barcode_scanned.connect(self.on_barcode_scanned)
-        self.barcode_search.product_selected.connect(self.on_product_selected)
-        self.add_product_btn.clicked.connect(self.show_product_selector)
-        self.remove_item_btn.clicked.connect(self.remove_selected_item)
-
-        # Table
-        self.items_table.itemChanged.connect(self.on_item_changed)
-
-        # Totals
-        self.discount_input.valueChanged.connect(self.recalculate_totals)
-        self.tax_enabled_cb.stateChanged.connect(self.on_tax_enabled_changed)
-        self.tax_input.valueChanged.connect(self.recalculate_totals)
-        self.paid_input.valueChanged.connect(self.recalculate_totals)
-
-        # Primary actions
-        self.save_btn.clicked.connect(self.save_draft)
-        self.confirm_btn.clicked.connect(self.confirm_invoice)
-        self.return_btn.clicked.connect(self.create_return)
-
-        # Workflow actions
-        self.submit_wf_btn.clicked.connect(lambda: self.perform_workflow_action('submit'))
-        self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
-        self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
-        self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
 
     def setup_shortcuts(self):
         """Setup keyboard shortcuts."""

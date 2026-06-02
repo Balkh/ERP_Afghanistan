@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
-                                QTableWidget, QTableWidgetItem,
                                 QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
                                 QDateEdit, QHeaderView, QAbstractItemView,
                                 QFrame, QMenu, QCheckBox, QTextEdit)
@@ -7,8 +6,6 @@ from PySide6.QtCore import Qt, QDate, Signal
 from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
 
-from ui.common.batch_selection import BatchSelectionDialog
-from ui.common.barcode_search import BarcodeSearchLineEdit
 from ui.common.printable_invoice import PrintableInvoiceDialog
 from api.endpoints import get_endpoint
 from i18n import DateFormatter, DateFormat
@@ -22,14 +19,15 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog, ConfirmDialog
 from ui.components.operator_safety import DestructiveActionGuard
+from ui.components.tables import DataEntryGrid
 from ui.screens.base_screen import BaseScreen
 
 
-class SalesInvoiceScreen(BaseScreen):
-    """Screen for creating and managing sales invoices.
+class PurchaseInvoiceScreen(BaseScreen):
+    """Screen for creating and managing purchase invoices.
 
     Phase 15C: 3-zone architecture
-    ZONE 1 — Header Context (customer, metadata, status)
+    ZONE 1 — Header Context (supplier, metadata, status)
     ZONE 2 — Line Item Engine (unified table, inline editing)
     ZONE 3 — Financial Summary Panel (totals, primary action)
     """
@@ -44,7 +42,7 @@ class SalesInvoiceScreen(BaseScreen):
         self._auth_manager_init = auth_manager
         self.invoice_items = []
         self.current_invoice_id = None
-        self.customers = []
+        self.suppliers = []
         self.products = []
         self._date_format = self._load_date_format()
         super().__init__(parent)
@@ -77,14 +75,14 @@ class SalesInvoiceScreen(BaseScreen):
         pass
 
     def load_data(self, params=None):
-        self.load_customers()
+        self.load_suppliers()
         super().load_data(params)
 
     def _check_action(self, action: str) -> bool:
-        """Check if user has permission for a sales action. Shows notification if denied."""
-        if self.auth_manager and not self.auth_manager.has_action("sales", action):
+        """Check if user has permission for a purchase action."""
+        if self.auth_manager and not self.auth_manager.has_action("purchases", action):
             from ui.components.notifications import show_warning
-            show_warning(f"Access denied: you don't have permission to {action} sales invoices")
+            show_warning(f"Access denied: you don't have permission to {action} purchase invoices")
             return False
         return True
 
@@ -94,18 +92,10 @@ class SalesInvoiceScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
 
-        self._build_header()
-        self._build_filters()
-        self._build_toolbar()
-        self._build_table()
-        self._build_footer()
-        self._wire_signals()
-
-    def _build_header(self):
-        layout = self.layout()
+        # ── PAGE HEADER ──
         header_layout = QHBoxLayout()
         header_layout.setContentsMargins(0, 0, 0, SPACING_SM)
-        title_label = QLabel("Sales Invoice")
+        title_label = QLabel("Purchase Invoice")
         title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         header_layout.addWidget(title_label)
         header_layout.addStretch()
@@ -127,8 +117,9 @@ class SalesInvoiceScreen(BaseScreen):
 
         layout.addLayout(header_layout)
 
-    def _build_filters(self):
-        layout = self.layout()
+        # ═══════════════════════════════════════════════════════
+        # ZONE 1 — HEADER CONTEXT (compact metadata bar)
+        # ═══════════════════════════════════════════════════════
         zone1 = QFrame()
         zone1.setObjectName("zoneHeader")
         zone1.setStyleSheet(f"QFrame#zoneHeader {{ background: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
@@ -136,22 +127,21 @@ class SalesInvoiceScreen(BaseScreen):
         zone1_layout.setContentsMargins(SPACING_LG, SPACING_MD, SPACING_LG, SPACING_MD)
         zone1_layout.setSpacing(SPACING_LG)
 
-        # Left: Customer + Invoice #
+        # Left: Supplier + Invoice #
         left_form = QFormLayout()
         left_form.setSpacing(SPACING_SM)
         left_form.setContentsMargins(0, 0, 0, 0)
         left_form.setLabelAlignment(Qt.AlignRight)
         left_form.setFormAlignment(Qt.AlignLeft)
 
-        self.customer_combo = QComboBox()
-        self.customer_combo.setPlaceholderText("Select customer...")
-        self.customer_combo.setMinimumHeight(INPUT_HEIGHT_MD)
-        self.customer_combo.setMinimumWidth(220)
-        left_form.addRow("Customer:", self.customer_combo)
+        self.supplier_combo = QComboBox()
+        self.supplier_combo.setPlaceholderText("Select supplier...")
+        self.supplier_combo.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.supplier_combo.setMinimumWidth(220)
+        left_form.addRow("Supplier:", self.supplier_combo)
 
         self.invoice_number = QLineEdit()
-        self.invoice_number.setPlaceholderText("Auto-generated")
-        self.invoice_number.setReadOnly(True)
+        self.invoice_number.setPlaceholderText("Enter supplier invoice #")
         self.invoice_number.setMinimumHeight(INPUT_HEIGHT_MD)
         self.invoice_number.setMaximumWidth(160)
         left_form.addRow("Invoice #:", self.invoice_number)
@@ -207,46 +197,47 @@ class SalesInvoiceScreen(BaseScreen):
 
         layout.addWidget(zone1)
 
-    def _build_toolbar(self):
-        # Zone 2 vertical container shared with _build_table
-        self._zone2_layout = QVBoxLayout()
-        self._zone2_layout.setSpacing(SPACING_SM)
+        # ═══════════════════════════════════════════════════════
+        # ZONE 2 — LINE ITEM ENGINE (unified table + search)
+        # ═══════════════════════════════════════════════════════
+        zone2_layout = QVBoxLayout()
+        zone2_layout.setSpacing(SPACING_SM)
 
+        # Search bar
         search_layout = QHBoxLayout()
         search_layout.setSpacing(SPACING_SM)
-        self.barcode_search = BarcodeSearchLineEdit(api_client=self.api_client)
-        self.barcode_search.setMinimumHeight(INPUT_HEIGHT_MD)
-        search_layout.addWidget(self.barcode_search, 1)
+        self.product_search = QLineEdit()
+        self.product_search.setPlaceholderText("Search product by name, barcode...")
+        self.product_search.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.product_search.returnPressed.connect(self._on_product_search_submit)
+        self.product_search.textChanged.connect(self._on_product_search_changed)
+        search_layout.addWidget(self.product_search, 1)
 
         self.add_product_btn = EnterpriseButton(text="+ Add Product", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.add_product_btn.clicked.connect(self.show_product_selector)
         search_layout.addWidget(self.add_product_btn)
 
         self.remove_item_btn = EnterpriseButton(text="Remove", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.remove_item_btn.clicked.connect(self.remove_selected_item)
         search_layout.addWidget(self.remove_item_btn)
 
-        self._zone2_layout.addLayout(search_layout)
+        zone2_layout.addLayout(search_layout)
 
-    def _build_table(self):
-        # Items table (EnterpriseTable density = compact)
-        self.items_table = QTableWidget()
-        self.items_table.setColumnCount(8)
-        self.items_table.setHorizontalHeaderLabels([
-            "Product", "Batch", "Qty", "Unit Price", "Discount %", "Tax %", "Total", ""
+        # Items table (compact density)
+        self.items_table = DataEntryGrid([
+            "Product", "Batch #", "Mfg Date", "Expiry", "Qty", "Unit Price", "Discount %", "Tax %", "Total", ""
         ])
         self.items_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.items_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.items_table.setEditTriggers(QAbstractItemView.DoubleClicked)
+        self.items_table.cell_value_changed.connect(self.on_item_changed)
         self.items_table.setMinimumHeight(TABLE_ROW_HEIGHT_LG * 8)
         self.items_table.verticalHeader().setDefaultSectionSize(DENSITY_COMPACT_ROW)
-        self.items_table.setAlternatingRowColors(True)
-        from ui.components.tables import build_table_stylesheet
-        self.items_table.setStyleSheet(build_table_stylesheet())
 
-        self._zone2_layout.addWidget(self.items_table)
-        self.layout().addLayout(self._zone2_layout, stretch=1)
+        zone2_layout.addWidget(self.items_table)
+        layout.addLayout(zone2_layout, stretch=1)
 
-    def _build_footer(self):
-        layout = self.layout()
+        # ═══════════════════════════════════════════════════════
+        # ZONE 3 — FINANCIAL SUMMARY PANEL (totals + primary action)
+        # ═══════════════════════════════════════════════════════
         zone3 = QFrame()
         zone3.setObjectName("zoneSummary")
         zone3.setStyleSheet(f"QFrame#zoneSummary {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
@@ -254,15 +245,15 @@ class SalesInvoiceScreen(BaseScreen):
         zone3_layout.setContentsMargins(SPACING_LG, SPACING_MD, SPACING_LG, SPACING_MD)
         zone3_layout.setSpacing(SPACING_XXL)
 
-        # Left: Customer details (compact)
+        # Left: Supplier details (compact)
         details_form = QFormLayout()
         details_form.setSpacing(SPACING_XS)
         details_form.setContentsMargins(0, 0, 0, 0)
         details_form.setLabelAlignment(Qt.AlignRight)
 
-        self.customer_phone = QLabel("—")
-        self.customer_phone.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
-        details_form.addRow("Phone:", self.customer_phone)
+        self.supplier_phone = QLabel("—")
+        self.supplier_phone.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        details_form.addRow("Phone:", self.supplier_phone)
 
         self.credit_limit_label = QLabel("—")
         self.credit_limit_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
@@ -272,11 +263,11 @@ class SalesInvoiceScreen(BaseScreen):
         self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}px; font-weight: bold;")
         details_form.addRow("Balance:", self.balance_label)
 
-        self.customer_address = QTextEdit()
-        self.customer_address.setReadOnly(True)
-        self.customer_address.setMaximumHeight(40)
-        self.customer_address.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px; border: none; background: transparent;")
-        details_form.addRow("Address:", self.customer_address)
+        self.supplier_address = QTextEdit()
+        self.supplier_address.setReadOnly(True)
+        self.supplier_address.setMaximumHeight(40)
+        self.supplier_address.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px; border: none; background: transparent;")
+        details_form.addRow("Address:", self.supplier_address)
 
         zone3_layout.addLayout(details_form)
         zone3_layout.addSpacing(SPACING_LG)
@@ -295,10 +286,12 @@ class SalesInvoiceScreen(BaseScreen):
         self.discount_input.setRange(0, 999999)
         self.discount_input.setValue(0)
         self.discount_input.setMaximumWidth(120)
+        self.discount_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Discount:", self.discount_input)
 
         self.tax_enabled_cb = QCheckBox()
         self.tax_enabled_cb.setChecked(False)
+        self.tax_enabled_cb.stateChanged.connect(self.on_tax_enabled_changed)
         totals_layout.addRow("Enable Tax:", self.tax_enabled_cb)
 
         self.tax_input = QDoubleSpinBox()
@@ -307,6 +300,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.tax_input.setSuffix("%")
         self.tax_input.setMaximumWidth(120)
         self.tax_input.setEnabled(False)
+        self.tax_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Tax Rate:", self.tax_input)
 
         self.tax_amount_label = QLabel("0.00")
@@ -321,6 +315,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.paid_input.setRange(0, 999999)
         self.paid_input.setValue(0)
         self.paid_input.setMaximumWidth(120)
+        self.paid_input.valueChanged.connect(self.recalculate_totals)
         totals_layout.addRow("Paid:", self.paid_input)
 
         self.notes_input = QTextEdit()
@@ -339,9 +334,11 @@ class SalesInvoiceScreen(BaseScreen):
         action_layout.setContentsMargins(0, 0, 0, 0)
 
         self.save_btn = EnterpriseButton(text="Save Invoice", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.save_btn.clicked.connect(self.save_draft)
         action_layout.addWidget(self.save_btn)
 
-        self.confirm_btn = EnterpriseButton(text="Confirm & Dispatch", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.confirm_btn = EnterpriseButton(text="Confirm & Receive", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.confirm_btn.clicked.connect(self.receive_invoice)
         action_layout.addWidget(self.confirm_btn)
 
         # Secondary actions menu
@@ -354,25 +351,30 @@ class SalesInvoiceScreen(BaseScreen):
         self.more_btn.setMenu(self.more_menu)
         action_layout.addWidget(self.more_btn)
 
-        # Return action (visible only for dispatched invoices)
+        # Return action (visible only for received invoices)
         self.return_btn = EnterpriseButton(text="Create Return", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)
+        self.return_btn.clicked.connect(self.create_return)
         self.return_btn.setVisible(False)
         action_layout.addWidget(self.return_btn)
 
         # Workflow actions (hidden by default)
         self.submit_wf_btn = EnterpriseButton(text="Submit for Approval", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.submit_wf_btn.clicked.connect(lambda: self.perform_workflow_action('submit'))
         self.submit_wf_btn.setVisible(False)
         action_layout.addWidget(self.submit_wf_btn)
 
         self.approve_wf_btn = EnterpriseButton(text="Approve", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
         self.approve_wf_btn.setVisible(False)
         action_layout.addWidget(self.approve_wf_btn)
 
         self.reject_wf_btn = EnterpriseButton(text="Reject", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
+        self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
         self.reject_wf_btn.setVisible(False)
         action_layout.addWidget(self.reject_wf_btn)
 
         self.post_wf_btn = EnterpriseButton(text="Post", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
         self.post_wf_btn.setVisible(False)
         action_layout.addWidget(self.post_wf_btn)
 
@@ -381,222 +383,186 @@ class SalesInvoiceScreen(BaseScreen):
 
         layout.addWidget(zone3)
 
-    def _wire_signals(self):
-        # Toolbar (search + add/remove)
-        self.barcode_search.barcode_scanned.connect(self.on_barcode_scanned)
-        self.barcode_search.product_selected.connect(self.on_product_selected)
-        self.add_product_btn.clicked.connect(self.show_product_selector)
-        self.remove_item_btn.clicked.connect(self.remove_selected_item)
-
-        # Table
-        self.items_table.itemChanged.connect(self.on_item_changed)
-
-        # Totals
-        self.discount_input.valueChanged.connect(self.recalculate_totals)
-        self.tax_enabled_cb.stateChanged.connect(self.on_tax_enabled_changed)
-        self.tax_input.valueChanged.connect(self.recalculate_totals)
-        self.paid_input.valueChanged.connect(self.recalculate_totals)
-
-        # Primary actions
-        self.save_btn.clicked.connect(self.save_draft)
-        self.confirm_btn.clicked.connect(self.confirm_invoice)
-        self.return_btn.clicked.connect(self.create_return)
-
-        # Workflow actions
-        self.submit_wf_btn.clicked.connect(lambda: self.perform_workflow_action('submit'))
-        self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
-        self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
-        self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
-
     def setup_shortcuts(self):
         """Setup keyboard shortcuts."""
         QShortcut(QKeySequence("Ctrl+S"), self).activated.connect(self.save_draft)
         QShortcut(QKeySequence("Ctrl+Enter"), self).activated.connect(self.confirm_invoice)
-        QShortcut(QKeySequence("Ctrl+D"), self).activated.connect(self.dispatch_invoice)
+        QShortcut(QKeySequence("Ctrl+R"), self).activated.connect(self.receive_invoice)
         QShortcut(QKeySequence("Ctrl+P"), self).activated.connect(self.print_invoice)
         QShortcut(QKeySequence("Ctrl+L"), self).activated.connect(self.clear_form)
         QShortcut(QKeySequence("Ctrl+N"), self).activated.connect(self.clear_form)
-        QShortcut(QKeySequence("Ctrl+F"), self).activated.connect(self.barcode_search.setFocus)
+        QShortcut(QKeySequence("Ctrl+F"), self).activated.connect(self.product_search.setFocus)
         QShortcut(QKeySequence("F2"), self).activated.connect(self.show_product_selector)
         QShortcut(QKeySequence("Delete"), self).activated.connect(self.remove_selected_item)
 
-    def load_customers(self):
-        """Load customers from API."""
-        # Default customers
-        self.customers = [
-            {"id": "cust-1", "name": "Ahmad Pharmacy", "phone": "+93 70 111 1111", "address": "Kabul", "credit_limit": 50000, "balance": 12000},
-            {"id": "cust-2", "name": "Kabul Hospital", "phone": "+93 70 222 2222", "address": "Kabul", "credit_limit": 200000, "balance": 85000},
-            {"id": "cust-3", "name": "Walk-in Customer", "phone": "N/A", "address": "N/A", "credit_limit": 0, "balance": 0},
+    def load_suppliers(self):
+        """Load suppliers from API."""
+        self.suppliers = [
+            {"id": "sup-1", "name": "Pharma Corp", "phone": "+93 70 333 3333", "address": "Kabul Industrial", "credit_limit": 500000, "balance": 125000},
+            {"id": "sup-2", "name": "MedSupply International", "phone": "+93 70 444 4444", "address": "Herat", "credit_limit": 1000000, "balance": 450000},
+            {"id": "sup-3", "name": "Local Distributor", "phone": "+93 70 555 5555", "address": "Mazar", "credit_limit": 200000, "balance": 80000},
         ]
 
         # Try to load from API
         if self.api_client:
             try:
-                endpoint = get_endpoint("customers")
+                endpoint = get_endpoint("suppliers")
                 response = self.api_client.get(endpoint)
-                api_customers = []
+                api_suppliers = []
                 if isinstance(response, list):
-                    api_customers = [c for c in response if isinstance(c, dict)]
+                    api_suppliers = [s for s in response if isinstance(s, dict)]
                 elif isinstance(response, dict) and response.get('success'):
                     data = response.get('data', [])
                     if isinstance(data, list):
-                        api_customers = [c for c in data if isinstance(c, dict)]
+                        api_suppliers = [s for s in data if isinstance(s, dict)]
                     elif isinstance(data, dict):
                         if 'results' in data:
-                            api_customers = [c for c in data.get('results', []) if isinstance(c, dict)]
+                            api_suppliers = [s for s in data.get('results', []) if isinstance(s, dict)]
                         elif 'id' in data:
-                            api_customers = [data]
-                if api_customers:
-                    self.customers = api_customers
+                            api_suppliers = [data]
+                if api_suppliers:
+                    self.suppliers = api_suppliers
             except Exception as e:
-                print(f"Failed to load customers: {e}")
+                print(f"Failed to load suppliers: {e}")
 
-        self.customer_combo.clear()
-        self.customer_combo.addItem("Select Customer...", None)
-        for customer in self.customers:
-            if isinstance(customer, dict):
-                self.customer_combo.addItem(customer.get("name", "Unknown"), customer.get("id", ""))
+        self.supplier_combo.clear()
+        self.supplier_combo.addItem("Select Supplier...", None)
+        for supplier in self.suppliers:
+            if isinstance(supplier, dict):
+                self.supplier_combo.addItem(supplier.get("name", "Unknown"), supplier.get("id", ""))
 
-        self.customer_combo.currentIndexChanged.connect(self.on_customer_selected)
+        self.supplier_combo.currentIndexChanged.connect(self.on_supplier_selected)
 
-    def on_customer_selected(self, index):
-        """Handle customer selection."""
-        customer_id = self.customer_combo.currentData()
-        if not customer_id:
-            self.customer_phone.clear()
-            self.customer_address.clear()
+    def on_supplier_selected(self, index):
+        """Handle supplier selection."""
+        supplier_id = self.supplier_combo.currentData()
+        if not supplier_id:
+            self.supplier_phone.clear()
+            self.supplier_address.clear()
             self.credit_limit_label.setText("N/A")
             self.balance_label.setText("N/A")
             return
 
-        customer = None
-        for c in self.customers:
-            if isinstance(c, dict) and c.get("id") == customer_id:
-                customer = c
-                break
-        
-        if customer:
-            self.customer_phone.setText(customer.get("phone") or "")
-            self.customer_address.setText(customer.get("address") or "")
-            credit_limit = customer.get("credit_limit") or 0
-            balance = customer.get("balance") or 0
-            self.credit_limit_label.setText(f"${float(credit_limit):,.2f}")
-            self.balance_label.setText(f"${float(balance):,.2f}")
+        supplier = next((s for s in self.suppliers if s["id"] == supplier_id), None)
+        if supplier:
+            self.supplier_phone.setText(supplier.get("phone", ""))
+            self.supplier_address.setText(supplier.get("address", ""))
+            self.credit_limit_label.setText(f"${supplier.get('credit_limit', 0):,.2f}")
+            self.balance_label.setText(f"${supplier.get('balance', 0):,.2f}")
 
-            if customer.get("balance", 0) > customer.get("credit_limit", 0):
+            if supplier.get("balance", 0) > supplier.get("credit_limit", 0):
                 self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold;")
             else:
                 self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
 
-    def on_barcode_scanned(self, barcode):
-        """Handle barcode scan - product selection is already handled by BarcodeSearchLineEdit."""
-
-    def on_product_selected(self, product):
-        """Handle product selection from search or barcode."""
-        if not product:
-            return
-            
-        # Check if product already in table, if so just increase qty
-        for row in range(self.items_table.rowCount()):
-            name_item = self.items_table.item(row, 0)
-            if name_item and name_item.data(Qt.UserRole) == product.get("id"):
-                qty_item = self.items_table.item(row, 2)
-                current_qty = int(qty_item.text() or 0)
-                qty_item.setText(str(current_qty + 1))
-                self.barcode_search.clear()
-                return
-
-        self.add_item_to_table(product)
-        self.barcode_search.clear()
-
     def show_product_selector(self):
-        """Show professional product selection dialog."""
-        from ui.common.product_selection_dialog import ProductSelectionDialog
-        dialog = ProductSelectionDialog(self, api_client=self.api_client)
-        if dialog.exec():
-            if dialog.selected_product:
-                self.on_product_selected(dialog.selected_product)
+        """Show product selection dialog for purchase."""
+        products = self._fetch_products("")
+
+        if not products:
+            from ui.components.dialogs import AlertDialog
+            AlertDialog.info(self, "No Products", "No products available. Add products first.")
+            return
+
+        product_name, ok = QInputDialog_getItem(
+            self, "Select Product", "Choose product:",
+            [p.get("name", "Unknown") for p in products]
+        )
+
+        if ok and product_name:
+            product = next((p for p in products if p.get("name") == product_name), None)
+            if product:
+                self.add_item_to_table(product)
+
+    def _fetch_products(self, query):
+        """Fetch products from backend; falls back to a small list on failure."""
+        try:
+            response = self.api_client.search_products(query) if query else self.api_client.get("/api/inventory/products/")
+            if isinstance(response, dict):
+                data = response.get("data", response)
+                if isinstance(data, dict):
+                    return data.get("results", [])
+                if isinstance(data, list):
+                    return data
+            elif isinstance(response, list):
+                return response
+        except Exception:
+            pass
+        # Fallback: small dev list (Phase Recovery — replaced by real fetch in production)
+        return [
+            {"id": "prod-1", "name": "Paracetamol 500mg", "unit": "pcs"},
+            {"id": "prod-2", "name": "Amoxicillin 250mg", "unit": "pcs"},
+            {"id": "prod-3", "name": "Omeprazole 20mg", "unit": "pcs"},
+            {"id": "prod-4", "name": "Metformin 500mg", "unit": "pcs"},
+            {"id": "prod-5", "name": "Atorvastatin 10mg", "unit": "pcs"},
+        ]
+
+    def _on_product_search_changed(self, text):
+        """Debounced live-search handler (Phase Recovery)."""
+        from PySide6.QtCore import QTimer
+        if not hasattr(self, "_search_timer"):
+            self._search_timer = QTimer(self)
+            self._search_timer.setSingleShot(True)
+            self._search_timer.setInterval(300)
+            self._search_timer.timeout.connect(self._run_product_search)
+        self._pending_query = text
+        self._search_timer.start()
+
+    def _on_product_search_submit(self):
+        """Submit handler — runs search immediately and adds first match to table."""
+        if hasattr(self, "_search_timer"):
+            self._search_timer.stop()
+        self._run_product_search(add_first_match=True)
+
+    def _run_product_search(self, add_first_match=False):
+        """Execute product search and optionally add first match to table."""
+        query = getattr(self, "_pending_query", "").strip()
+        if not query:
+            return
+        products = self._fetch_products(query)
+        if add_first_match and products:
+            self.add_item_to_table(products[0])
+        elif products:
+            self._show_search_results(products)
+
+    def _show_search_results(self, products):
+        """Display search results in a pick dialog (Phase Recovery)."""
+        from ui.components.dialogs import AlertDialog
+        names = "\n".join(f"  • {p.get('name', 'Unknown')}" for p in products[:20])
+        AlertDialog.info(self, f"{len(products)} Product(s) Found",
+                         f"Search results:\n\n{names}\n\nClick '+ Add Product' to pick one.")
 
     def add_item_to_table(self, product):
-        """Add product to items table."""
-        row = self.items_table.rowCount()
-        self.items_table.insertRow(row)
+        """Add product to items table with batch info."""
+        self.items_table.add_row([
+            product["name"],
+            "",
+            QDate.currentDate().toString("yyyy-MM-dd"),
+            QDate.currentDate().addYears(2).toString("yyyy-MM-dd"),
+            "0",
+            "0.00",
+            "0.00",
+            "0.00",
+            "0.00",
+            "",
+        ])
 
-        # Product name
-        name_item = QTableWidgetItem(product["name"])
-        name_item.setData(Qt.UserRole, product["id"])
-        self.items_table.setItem(row, 0, name_item)
+        row = self.items_table.rowCount() - 1
+        self.items_table.set_row_data(row, {"product_id": product["id"]})
 
-        # Batch (clickable)
-        batch_btn = EnterpriseButton("Select Batch", variant=ButtonVariant.SECONDARY)
-        batch_btn.clicked.connect(lambda checked, r=row: self.select_batch_for_row(r))
-        self.items_table.setCellWidget(row, 1, batch_btn)
-
-        # Quantity
-        qty_item = QTableWidgetItem("1")
-        qty_item.setTextAlignment(Qt.AlignCenter)
-        self.items_table.setItem(row, 2, qty_item)
-
-        # Unit price
-        price_item = QTableWidgetItem(f"{product.get('sale_price', 0):.2f}")
-        price_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.items_table.setItem(row, 3, price_item)
-
-        # Discount
-        discount_item = QTableWidgetItem("0.00")
-        discount_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.items_table.setItem(row, 4, discount_item)
-
-        # Tax
-        tax_item = QTableWidgetItem("0.00")
-        tax_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self.items_table.setItem(row, 5, tax_item)
-
-        # Total
-        total_item = QTableWidgetItem(f"{product.get('sale_price', 0):.2f}")
-        total_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        total_item.setForeground(QColor(COLOR_SUCCESS))
-        self.items_table.setItem(row, 6, total_item)
-
-        # Actions
         remove_btn = EnterpriseButton("Remove", variant=ButtonVariant.GHOST)
         remove_btn.setStyleSheet(f"color: {COLOR_DANGER};")
-        remove_btn.clicked.connect(lambda checked, r=row: self.items_table.removeRow(r))
-        self.items_table.setCellWidget(row, 7, remove_btn)
-
-        # Batch data storage
-        batch_data_item = QTableWidgetItem("")
-        batch_data_item.setData(Qt.UserRole, None)
-        self.items_table.setItem(row, 8, batch_data_item)
+        remove_btn.clicked.connect(lambda checked, r=row: self._on_remove_row(r))
+        self.items_table.set_cell_widget(row, 9, remove_btn)
 
         self.recalculate_totals()
 
-    def select_batch_for_row(self, row):
-        """Show batch selection dialog for a row."""
-        product_name = self.items_table.item(row, 0).text()
-        product_id = self.items_table.item(row, 0).data(Qt.UserRole)
-        qty = int(self.items_table.item(row, 2).text() or 1)
+    def _on_remove_row(self, row):
+        self.items_table.remove_row(row)
+        self.recalculate_totals()
 
-        dialog = BatchSelectionDialog(
-            self, product_id, product_name, qty, self.api_client
-        )
-        dialog.batch_selected.connect(lambda batch: self.set_batch_for_row(row, batch))
-        dialog.exec()
-
-    def set_batch_for_row(self, row, batch):
-        """Set batch for a table row."""
-        batch_widget = self.items_table.cellWidget(row, 1)
-        if batch_widget:
-            batch_widget.setText(batch["batch_number"])
-            batch_widget.setDisabled(True)
-
-        # Store batch data
-        batch_data_item = self.items_table.item(row, 8)
-        batch_data_item.setData(Qt.UserRole, batch)
-
-    def on_item_changed(self, item):
+    def on_item_changed(self, row, col, value):
         """Handle item change in table."""
-        __row = item.row()
         self.recalculate_totals()
 
     def on_tax_enabled_changed(self, state):
@@ -614,22 +580,16 @@ class SalesInvoiceScreen(BaseScreen):
 
         for row in range(self.items_table.rowCount()):
             try:
-                qty_item = self.items_table.item(row, 2)
-                price_item = self.items_table.item(row, 3)
-                discount_item = self.items_table.item(row, 4)
-                total_item = self.items_table.item(row, 6)
-                
-                if not all([qty_item, price_item, discount_item, total_item]):
-                    continue
-                    
-                qty = Decimal(qty_item.text() or "0")
-                price = Decimal(price_item.text() or "0")
-                discount = Decimal(discount_item.text() or "0")
+                values = self.items_table.get_row_values(row)
+                qty = Decimal(values[4] or "0")
+                price = Decimal(values[5] or "0")
+                discount = Decimal(values[6] or "0")
 
                 line_total = qty * price - discount
-                total_item.setText(f"{line_total:.2f}")
+                values[8] = f"{line_total:.2f}"
+                self.items_table.set_row_values(row, values)
                 subtotal += line_total
-            except (Exception, Decimal.InvalidOperation):
+            except (ValueError, TypeError, AttributeError):
                 pass
 
         discount = Decimal(str(self.discount_input.value()))
@@ -651,22 +611,26 @@ class SalesInvoiceScreen(BaseScreen):
         """Collect all invoice data."""
         items = []
         for row in range(self.items_table.rowCount()):
-            batch_data = self.items_table.item(row, 8).data(Qt.UserRole)
+            values = self.items_table.get_row_values(row)
+            row_data = self.items_table.get_row_data(row)
             items.append({
-                "product_id": self.items_table.item(row, 0).data(Qt.UserRole),
-                "product_name": self.items_table.item(row, 0).text(),
-                "batch_id": batch_data.get("id") if batch_data else None,
-                "batch_number": batch_data.get("batch_number", "") if batch_data else "",
-                "quantity": int(self.items_table.item(row, 2).text() or 0),
-                "unit_price": float(self.items_table.item(row, 3).text() or 0),
-                "discount": float(self.items_table.item(row, 4).text() or 0),
-                "tax": float(self.items_table.item(row, 5).text() or 0),
-                "total": float(self.items_table.item(row, 6).text() or 0),
+                "product_id": row_data.get("product_id"),
+                "product_name": values[0],
+                "batch_number": values[1],
+                "manufacturing_date": values[2],
+                "expiry_date": values[3],
+                "quantity": int(values[4] or 0),
+                "unit_price": float(values[5] or 0),
+                "discount": float(values[6] or 0),
+                "tax": float(values[7] or 0),
+                "total": float(values[8] or 0),
             })
 
         return {
-            "customer_id": self.customer_combo.currentData(),
-            "customer_name": self.customer_combo.currentText(),
+            "supplier_id": self.supplier_combo.currentData(),
+            "supplier_name": self.supplier_combo.currentText(),
+            "invoice_number": self.invoice_number.text(),
+            "order_date": self.invoice_date.date().toString("yyyy-MM-dd"),
             "invoice_date": self.invoice_date.date().toString("yyyy-MM-dd"),
             "due_date": self.due_date.date().toString("yyyy-MM-dd"),
             "currency": self.currency_combo.currentText(),
@@ -677,45 +641,43 @@ class SalesInvoiceScreen(BaseScreen):
             "tax": float(self.tax_amount_label.text()),
             "total_amount": float(self.total_label.text()),
             "paid_amount": float(self.paid_input.value()),
-            "notes": self.notes_input.toPlainText(),
+            "notes": "",
             "items": items,
         }
 
     def update_button_states(self, status):
-        """Update action button states based on invoice status."""
+        """Update action button states based on purchase status."""
         is_draft = status == "DRAFT"
-        is_dispatched = status == "DISPATCHED"
+        is_received = status == "RECEIVED"
 
         self.save_btn.setEnabled(is_draft)
         self.confirm_btn.setEnabled(is_draft)
-        self.return_btn.setVisible(is_dispatched)
+        self.return_btn.setVisible(is_received)
 
     def save_draft(self):
-        """Save invoice as draft."""
-        if not self._check_action("create"):
-            return
+        """Save purchase invoice as draft — stores invoice ID for subsequent actions."""
         data = self.get_invoice_data()
         if not data["items"]:
             AlertDialog.warning("Validation Error", "Please add at least one product.", self)
             return
             
         try:
-            endpoint = get_endpoint("sales_invoices")
+            endpoint = get_endpoint("purchase_invoices")
             res = self.api_client.post(endpoint, data)
             if res:
                 res_data = res.get('data', res) if isinstance(res, dict) else res
                 self.current_invoice_id = res_data.get('id')
                 self.invoice_number.setText(res_data.get("invoice_number", "DRAFT"))
                 self.update_button_states("DRAFT")
-                AlertDialog.info("Success", "Invoice saved as draft.", self)
+                AlertDialog.info("Success", "Purchase draft saved.", self)
         except Exception as e:
             AlertDialog.error("Error", f"Failed to save draft: {e}", self)
 
     def confirm_invoice(self):
-        """Confirm the invoice — persists to backend."""
+        """Confirm the purchase invoice — persists to backend."""
         data = self.get_invoice_data()
-        if not data["customer_id"]:
-            AlertDialog.warning("Validation Error", "Please select a customer.", self)
+        if not data["supplier_id"]:
+            AlertDialog.warning("Validation Error", "Please select a supplier.", self)
             return
         if not self.current_invoice_id:
             AlertDialog.warning("Error", "Save the invoice as draft first.", self)
@@ -723,65 +685,96 @@ class SalesInvoiceScreen(BaseScreen):
 
         if not DestructiveActionGuard.confirm_irreversible(
             self, "Confirm Invoice",
-            f"Are you sure you want to confirm this invoice?\n\nTotal: {data['total_amount']:.2f} {data['currency']}"
+            f"Are you sure you want to confirm this purchase invoice?\n\nTotal: {data['total_amount']:.2f} {data['currency']}"
         ):
             return
 
         try:
-            endpoint = f"/api/sales/invoices/{self.current_invoice_id}/confirm/"
+            endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/confirm/"
             res = self.api_client.post(endpoint, {})
             if res:
                 self.status_label.setText("CONFIRMED")
                 self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
                 self.update_button_states("CONFIRMED")
-                AlertDialog.info("Success", "Invoice confirmed successfully.", self)
+                AlertDialog.info("Success", "Purchase invoice confirmed successfully.", self)
             else:
-                AlertDialog.error("Error", "Failed to confirm invoice on server.", self)
+                AlertDialog.error("Error", "Failed to confirm on server.", self)
         except Exception as e:
             AlertDialog.error("Error", f"Failed to confirm: {e}", self)
 
-    def dispatch_invoice(self):
-        """Dispatch invoice and deduct stock — persists to backend."""
-        if not self._check_action("dispatch"):
-            return
+    def receive_invoice(self):
+        """Receive purchase and add stock — persists to backend."""
         __data = self.get_invoice_data()
         if not self.current_invoice_id:
             AlertDialog.warning("Error", "Save the invoice as draft first.", self)
             return
         if self.status_label.text() != "CONFIRMED":
-            AlertDialog.warning("Error", "Invoice must be confirmed before dispatch.", self)
+            AlertDialog.warning("Error", "Invoice must be confirmed before receiving.", self)
             return
 
+        # Validate batch numbers and expiry dates
+        for row in range(self.items_table.rowCount()):
+            batch = self.items_table.get_row_values(row)[1]
+            if not batch:
+                AlertDialog.warning("Validation Error", f"Please enter batch number for row {row + 1}.", self)
+                return
+
         if not DestructiveActionGuard.confirm_irreversible(
-            self, "Dispatch Invoice",
-            "This will deduct stock from inventory.\n\nContinue?"
+            self, "Receive Purchase",
+            "This will add stock to inventory.\n\nContinue?"
         ):
             return
 
         try:
-            endpoint = f"/api/sales/invoices/{self.current_invoice_id}/dispatch_invoice/"
+            endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/receive/"
             res = self.api_client.post(endpoint, {})
             if res:
-                self.status_label.setText("DISPATCHED")
+                self.status_label.setText("RECEIVED")
                 self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
-                self.update_button_states("DISPATCHED")
-                AlertDialog.info("Success", "Invoice dispatched and stock deducted.", self)
+                self.update_button_states("RECEIVED")
+                AlertDialog.info("Success", "Purchase received and stock added to inventory.", self)
             else:
-                AlertDialog.error("Error", "Failed to dispatch invoice on server.", self)
+                AlertDialog.error("Error", "Failed to receive on server.", self)
         except Exception as e:
-            AlertDialog.error("Error", f"Failed to dispatch: {e}", self)
+            AlertDialog.error("Error", f"Failed to receive: {e}", self)
 
     def print_invoice(self):
         """Print the invoice."""
-        data = self.get_invoice_data()
-        data["phone"] = self.customer_phone.text()
-        data["address"] = self.customer_address.toPlainText()
+        # Collect data for printing
+        data = {
+            "supplier_name": self.supplier_combo.currentText(),
+            "phone": self.supplier_phone.text(),
+            "address": self.supplier_address.toPlainText(),
+            "invoice_number": self.invoice_number.text() or "DRAFT",
+            "invoice_date": self.invoice_date.date().toString("yyyy-MM-dd"),
+            "due_date": self.due_date.date().toString("yyyy-MM-dd"),
+            "currency": self.currency_combo.currentText(),
+            "subtotal": float(self.subtotal_label.text()),
+            "discount": float(self.discount_input.value()),
+            "tax": float(self.tax_amount_label.text()),
+            "total_amount": float(self.total_label.text()),
+            "paid_amount": float(self.paid_input.value()),
+            "remaining_balance": float(self.balance_label.text()),
+            "items": []
+        }
+        
+        for row in range(self.items_table.rowCount()):
+            values = self.items_table.get_row_values(row)
+            data["items"].append({
+                "product_name": values[0],
+                "batch_number": values[1],
+                "quantity": int(values[4] or 0),
+                "unit_price": float(values[5] or 0),
+                "discount": float(values[6] or 0),
+                "tax": float(values[7] or 0),
+                "total": float(values[8] or 0),
+            })
 
-        dialog = PrintableInvoiceDialog(self, data, "sale", api_client=self.api_client)
+        dialog = PrintableInvoiceDialog(self, data, "purchase", api_client=self.api_client)
         dialog.exec()
 
     def create_return(self):
-        """Open return dialog pre-filled with current invoice data."""
+        """Open return dialog pre-filled with current purchase invoice data."""
         if not self.current_invoice_id:
             AlertDialog.warning("No Invoice", "Please save the invoice first.", self)
             return
@@ -789,7 +782,7 @@ class SalesInvoiceScreen(BaseScreen):
         try:
             from ui.returns.returns_screen import ReturnOrderDialog
             dialog = ReturnOrderDialog(self, api_client=self.api_client)
-            dialog.set_invoice_type("SALE_RETURN")
+            dialog.set_invoice_type("PURCHASE_RETURN")
             dialog.prefill_from_invoice(self.current_invoice_id)
             if dialog.exec():
                 AlertDialog.info("Return Created", "Return order created successfully.", self)
@@ -800,12 +793,12 @@ class SalesInvoiceScreen(BaseScreen):
         """Remove selected row from items table."""
         selected_rows = self.items_table.selectionModel().selectedRows()
         for index in sorted(selected_rows, reverse=True):
-            self.items_table.removeRow(index.row())
+            self.items_table.remove_row(index.row())
         self.recalculate_totals()
 
     def clear_form(self):
         """Clear the entire form."""
-        self.customer_combo.setCurrentIndex(0)
+        self.supplier_combo.setCurrentIndex(0)
         self.invoice_number.clear()
         self.invoice_date.setDate(QDate.currentDate())
         self.due_date.setDate(QDate.currentDate().addDays(30))
@@ -815,7 +808,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.tax_input.setValue(0)
         self.tax_input.setEnabled(False)
         self.paid_input.setValue(0)
-        self.items_table.setRowCount(0)
+        self.items_table.clear_all_rows()
         self.recalculate_totals()
         self.status_label.setText("DRAFT")
         self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
@@ -833,7 +826,7 @@ class SalesInvoiceScreen(BaseScreen):
             return
         
         try:
-            result = self.api_client.get_workflow_status('SALES_INVOICE', invoice_id)
+            result = self.api_client.get_workflow_status('PURCHASE_INVOICE', invoice_id)
             if result.get('success') and result.get('data'):
                 data = result['data']
                 if data.get('has_workflow') is False:
@@ -843,7 +836,6 @@ class SalesInvoiceScreen(BaseScreen):
                 state = data.get('state', 'DRAFT')
                 state_display = data.get('state_display', state)
                 
-                # Update workflow status label
                 color_map = {
                     'DRAFT': COLOR_TEXT_MUTED,
                     'PENDING_APPROVAL': COLOR_WARNING,
@@ -856,7 +848,6 @@ class SalesInvoiceScreen(BaseScreen):
                 self.workflow_status_label.setText(f"Workflow: {state_display}")
                 self.workflow_status_label.setStyleSheet(f"color: {color}; font-weight: bold; padding: {SPACING_SM}px;")
                 
-                # Show/hide action buttons based on permissions
                 self.submit_wf_btn.setVisible(data.get('can_submit', False))
                 self.approve_wf_btn.setVisible(data.get('can_approve', False))
                 self.reject_wf_btn.setVisible(data.get('can_approve', False))
@@ -870,9 +861,8 @@ class SalesInvoiceScreen(BaseScreen):
             AlertDialog.warning("Error", "No invoice selected.", self)
             return
         
-        # Get workflow for this invoice
         try:
-            status_result = self.api_client.get_workflow_status('SALES_INVOICE', self.current_invoice_id)
+            status_result = self.api_client.get_workflow_status('PURCHASE_INVOICE', self.current_invoice_id)
             if not status_result.get('success') or not status_result.get('data', {}).get('has_workflow'):
                 AlertDialog.warning("Error", "No workflow found for this invoice.", self)
                 return
@@ -882,7 +872,6 @@ class SalesInvoiceScreen(BaseScreen):
                 AlertDialog.warning("Error", "Could not find workflow ID.", self)
                 return
             
-            # Get comment if needed
             comment = ''
             if action in ['reject']:
                 from PySide6.QtWidgets import QInputDialog
@@ -890,12 +879,10 @@ class SalesInvoiceScreen(BaseScreen):
                 if not ok:
                     return
             
-            # Perform action
             result = self.api_client.workflow_action(workflow_id, action, comment)
             
             if result.get('success'):
                 AlertDialog.info("Success", f"Invoice {action}ed successfully.", self)
-                # Reload workflow status
                 self.load_workflow_status(self.current_invoice_id)
             else:
                 error = result.get('error', {}).get('message', 'Unknown error')
@@ -904,7 +891,6 @@ class SalesInvoiceScreen(BaseScreen):
             AlertDialog.error("Error", f"Error performing workflow action: {str(e)}", self)
 
 
-# Helper for QInputDialog (since we can't import it directly in some setups)
 def QInputDialog_getItem(parent, title, label, items):
     from PySide6.QtWidgets import QInputDialog
     return QInputDialog.getItem(parent, title, label, items)
