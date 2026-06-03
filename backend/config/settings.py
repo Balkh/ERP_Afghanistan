@@ -287,13 +287,12 @@ LOGGING = {
 logs_dir = BASE_DIR / 'logs'
 logs_dir.mkdir(exist_ok=True)
 
-# Startup validation: warn if SECRET_KEY is still the insecure default
+# Startup validation: BLOCK boot if SECRET_KEY is still the insecure default in production
 _default_secret = 'django-insecure-please-change-in-production'
 if SECRET_KEY == _default_secret and not DEBUG:
-    import warnings
-    warnings.warn(
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
         "SECRET_KEY is still set to the insecure default. "
-        "Set the SECRET_KEY environment variable in production.",
-        RuntimeWarning,
-        stacklevel=2
+        "Set the SECRET_KEY environment variable before starting in production. "
+        "This is a critical security requirement — application will not start."
     )

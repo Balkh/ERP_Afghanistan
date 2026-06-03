@@ -13,7 +13,15 @@ else:
     BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEBUG = False
-SECRET_KEY = os.environ.get('PHARMACY_ERP_SECRET_KEY', 'django-insecure-please-change-in-production')
+_secret_key = os.environ.get('PHARMACY_ERP_SECRET_KEY')
+if not _secret_key:
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured(
+        "PHARMACY_ERP_SECRET_KEY environment variable is not set. "
+        "A secure secret key is required for production. "
+        "Generate one with: python -c \"from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())\""
+    )
+SECRET_KEY = _secret_key
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
 
 DATABASE_DIR = BASE_DIR / 'data'

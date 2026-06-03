@@ -1,0 +1,52 @@
+{
+  "file": "backend/pre_production_hardening/hardening_validator.py",
+  "loc_total": 1460,
+  "class_name": "PreProductionHardeningValidator",
+  "methods": {
+    "validate_database_hardening": {
+      "lines": 114,
+      "is_public": true,
+      "extraction_class": "SAFE"
+    },
+    "validate_multi_user_operations": {
+      "lines": 250,
+      "is_public": true,
+      "extraction_class": "SAFE"
+    },
+    "validate_operator_resilience": {
+      "lines": 171,
+      "is_public": true,
+      "extraction_class": "SAFE"
+    },
+    "validate_session_security": {
+      "lines": 186,
+      "is_public": true,
+      "extraction_class": "SAFE"
+    },
+    "validate_export_reliability": {
+      "lines": 169,
+      "is_public": true,
+      "extraction_class": "SAFE"
+    },
+    "validate_deployment_recovery": {
+      "lines": 141,
+      "is_public": true,
+      "extraction_class": "SAFE"
+    },
+    "validate_performance": {
+      "lines": 195,
+      "is_public": true,
+      "extraction_class": "SAFE"
+    },
+    "generate_audit_report": {
+      "lines": 84,
+      "is_public": true,
+      "extraction_class": "CAUTION"
+    },
+    "run_all": {
+      "lines": 51,
+      "is_public": true,
+      "extraction_class": "PROTECTED"
+    }
+  }
+}

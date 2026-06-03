@@ -106,7 +106,7 @@ def main():
     for py_file in sorted(UI_DIR.rglob("*.py")):
         if "__pycache__" in str(py_file):
             continue
-        if py_file.name in ("__init__.py", "constants.py", "base_widgets.py"):
+        if py_file.name in ("__init__.py", "constants.py"):
             continue
         screens.append(py_file)
 

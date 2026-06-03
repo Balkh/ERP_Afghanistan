@@ -26,8 +26,9 @@ class BootstrapOrchestrator:
     Steps are idempotent and safe to re-run:
     1. Seed roles and permissions
     2. Assign Admin role to superusers missing roles
-    3. Seed payment methods and accounts
-    4. Validate seed completion
+    3. Seed Chart of Accounts (accounting)
+    4. Seed payment methods and accounts
+    5. Validate seed completion
     """
 
     def __init__(self):
@@ -45,6 +46,7 @@ class BootstrapOrchestrator:
 
         self._step("seed_roles", self._seed_roles)
         self._step("assign_admin_roles", self._assign_admin_roles)
+        self._step("seed_accounts", self._seed_accounts)
         self._step("seed_payments", self._seed_payments)
         self._step("validate_seeding", self._validate_seeding)
 
@@ -132,11 +134,27 @@ class BootstrapOrchestrator:
         logger.info(f"Payments seeded: {output[:200]}")
         return {"success": True, "detail": "Payment methods and accounts created"}
 
+    def _seed_accounts(self) -> Optional[dict]:
+        """Seed Chart of Accounts if not already present."""
+        from accounting.models import Account
+        if Account.objects.count() > 0:
+            return None  # Already seeded
+
+        from accounting.management.commands.seed_accounts import (
+            seed_canonical_chart_of_accounts,
+        )
+        created = seed_canonical_chart_of_accounts()
+        return {
+            "success": True,
+            "detail": f"Created {created} Chart of Accounts entries",
+        }
+
     def _validate_seeding(self) -> dict:
         """Validate that all required seed data exists."""
         from django.contrib.auth.models import User
         from security.models import Role, Permission, UserRole
         from payments.models import PaymentMethod, PaymentAccount
+        from accounting.models import Account
 
         issues = []
 
@@ -158,6 +176,10 @@ class BootstrapOrchestrator:
             if roleless > 0:
                 issues.append(f"{roleless} superuser(s) still lack Admin role")
 
+        acct_count = Account.objects.count()
+        if acct_count == 0:
+            issues.append("No Chart of Accounts seeded")
+
         pm_count = PaymentMethod.objects.count()
         if pm_count == 0:
             issues.append("No payment methods seeded")
@@ -171,7 +193,7 @@ class BootstrapOrchestrator:
         return {
             "success": True,
             "detail": f"{role_count} roles, {perm_count} perms, "
-                      f"{pm_count} payment methods, {pa_count} accounts"
+                      f"{acct_count} accounts, {pm_count} payment methods, {pa_count} accounts"
         }
 
 

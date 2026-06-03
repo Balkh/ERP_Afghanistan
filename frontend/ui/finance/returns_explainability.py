@@ -14,9 +14,11 @@ from ui.constants import (
     COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER,
     COLOR_BG_SURFACE, COLOR_BORDER, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
 )
+from utils.format import safe_float
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.components.state_helper import StateHelper
 from ui.screens.base_screen import BaseScreen
 
 
@@ -52,14 +54,8 @@ class ReturnsExplainabilityScreen(BaseScreen):
 
         layout.addLayout(header_layout)
 
-        # Loading label
-        self.loading_label = QLabel("Loading returns...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         # Content
         self.content_widget = QWidget()
@@ -127,23 +123,30 @@ class ReturnsExplainabilityScreen(BaseScreen):
 
     def _show_loading(self, show=True):
         self._is_loading = show
-        self.loading_label.setVisible(show)
-        self.content_widget.setVisible(not show)
-        self.btn_refresh.setEnabled(not show)
+        if show:
+            self.state_helper.show_loading("Loading returns...")
+            self.content_widget.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.content_widget.setVisible(True)
+            self.btn_refresh.setEnabled(True)
+
+    def _show_empty(self, message="No data to display"):
+        self._is_loading = False
+        self.state_helper.show_empty(title=message)
+        self.content_widget.setVisible(False)
+        self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         self._is_loading = False
-        self.loading_label.setVisible(False)
+        self.state_helper.hide()
         self.content_widget.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
     def _show_error(self, message):
         self._is_loading = False
-        self.loading_label.setText(message)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(True)
+        self.state_helper.show_error(message, on_retry=self.load_returns)
         self.content_widget.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
@@ -162,7 +165,7 @@ class ReturnsExplainabilityScreen(BaseScreen):
 
     def _update_display(self):
         """Update display with returns data."""
-        total_value = sum(self._safe_float(r.get("total_amount", 0)) for r in self.returns)
+        total_value = sum(safe_float(r.get("total_amount", 0)) for r in self.returns)
         self.kpi_total_returns.update_value(str(len(self.returns)))
         self.kpi_total_value.update_value(f"{total_value:,.2f}")
         self.kpi_explained.update_value(str(len([r for r in self.returns if r.get("reason")])))
@@ -174,7 +177,7 @@ class ReturnsExplainabilityScreen(BaseScreen):
                 "date": str(r.get("return_date", ""))[:10],
                 "customer": r.get("customer_name", ""),
                 "reason": r.get("reason", "")[:30] + "..." if len(r.get("reason", "")) > 30 else r.get("reason", ""),
-                "amount": f"{self._safe_float(r.get('total_amount', 0)):,.2f}",
+                "amount": f"{safe_float(r.get('total_amount', 0)):,.2f}",
                 "status": r.get("status", ""),
                 "journal_reversed": "Yes" if r.get("journal_entry_reversed") else "No",
             })
@@ -189,15 +192,9 @@ class ReturnsExplainabilityScreen(BaseScreen):
                 f"Date: {ret.get('return_date', '')}\n"
                 f"Customer: {ret.get('customer_name', '')}\n"
                 f"Reason: {ret.get('reason', 'N/A')}\n"
-                f"Amount: {self._safe_float(ret.get('total_amount', 0)):,.2f}\n"
+                f"Amount: {safe_float(ret.get('total_amount', 0)):,.2f}\n"
                 f"Status: {ret.get('status', '')}\n"
                 f"Journal Reversed: {'Yes' if ret.get('journal_entry_reversed') else 'No'}\n"
                 f"\nNotes: {ret.get('notes', 'No additional notes.')}"
             )
             self.explanation_text.setPlainText(explanation)
-
-    def _safe_float(self, value, default=0.0):
-        try:
-            return float(value) if value is not None else default
-        except (ValueError, TypeError):
-            return default

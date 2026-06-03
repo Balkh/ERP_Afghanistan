@@ -1,0 +1,119 @@
+{
+  "final_score": 86,
+  "all_pass": true,
+  "decision": "YES",
+  "summary": [
+    {
+      "ws": "A",
+      "weight": 10,
+      "score": 90,
+      "max": 100,
+      "contribution": 9.0
+    },
+    {
+      "ws": "B",
+      "weight": 20,
+      "score": 100,
+      "max": 100,
+      "contribution": 20.0
+    },
+    {
+      "ws": "C",
+      "weight": 15,
+      "score": 80,
+      "max": 100,
+      "contribution": 12.0
+    },
+    {
+      "ws": "D",
+      "weight": 15,
+      "score": 60,
+      "max": 100,
+      "contribution": 9.0
+    },
+    {
+      "ws": "E",
+      "weight": 10,
+      "score": 100,
+      "max": 100,
+      "contribution": 10.0
+    },
+    {
+      "ws": "F",
+      "weight": 10,
+      "score": 100,
+      "max": 100,
+      "contribution": 10.0
+    },
+    {
+      "ws": "G",
+      "weight": 10,
+      "score": 80,
+      "max": 100,
+      "contribution": 8.0
+    },
+    {
+      "ws": "H",
+      "weight": 5,
+      "score": 60,
+      "max": 100,
+      "contribution": 3.0
+    },
+    {
+      "ws": "I",
+      "weight": 5,
+      "score": 100,
+      "max": 100,
+      "contribution": 5.0
+    }
+  ],
+  "weights": {
+    "A": 10,
+    "B": 20,
+    "C": 15,
+    "D": 15,
+    "E": 10,
+    "F": 10,
+    "G": 10,
+    "H": 5,
+    "I": 5
+  },
+  "results": {
+    "A": {
+      "score": 90,
+      "max": 100
+    },
+    "B": {
+      "score": 100,
+      "max": 100
+    },
+    "C": {
+      "score": 80,
+      "max": 100
+    },
+    "D": {
+      "score": 60,
+      "max": 100
+    },
+    "E": {
+      "score": 100,
+      "max": 100
+    },
+    "F": {
+      "score": 100,
+      "max": 100
+    },
+    "G": {
+      "score": 80,
+      "max": 100
+    },
+    "H": {
+      "score": 60,
+      "max": 100
+    },
+    "I": {
+      "score": 100,
+      "max": 100
+    }
+  }
+}

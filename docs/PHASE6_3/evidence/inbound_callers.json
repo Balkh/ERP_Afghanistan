@@ -1,0 +1,452 @@
+{
+  "focus_inbound_callers": {
+    "backup.backup_system": [
+      {
+        "importer": "backend/phase6_2_step4_capture_api.py",
+        "imported": "backup.backup_system.BackupConfig",
+        "lineno": 13
+      },
+      {
+        "importer": "backend/phase6_2_step4_capture_api.py",
+        "imported": "backup.backup_system.BackupValidator",
+        "lineno": 13
+      },
+      {
+        "importer": "backend/phase6_2_step4_capture_api.py",
+        "imported": "backup.backup_system.BackupEncryptor",
+        "lineno": 13
+      },
+      {
+        "importer": "backend/phase6_2_step4_capture_api.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 13
+      },
+      {
+        "importer": "backend/phase6_2_step4_capture_api.py",
+        "imported": "backup.backup_system.BackupScheduler",
+        "lineno": 13
+      },
+      {
+        "importer": "backend/phase6_2_step4_verify.py",
+        "imported": "backup.backup_system.BackupConfig",
+        "lineno": 19
+      },
+      {
+        "importer": "backend/phase6_2_step4_verify.py",
+        "imported": "backup.backup_system.BackupValidator",
+        "lineno": 19
+      },
+      {
+        "importer": "backend/phase6_2_step4_verify.py",
+        "imported": "backup.backup_system.BackupEncryptor",
+        "lineno": 19
+      },
+      {
+        "importer": "backend/phase6_2_step4_verify.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 19
+      },
+      {
+        "importer": "backend/phase6_2_step4_verify.py",
+        "imported": "backup.backup_system.BackupScheduler",
+        "lineno": 19
+      },
+      {
+        "importer": "backend/backup/views.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 15
+      },
+      {
+        "importer": "backend/backup/views.py",
+        "imported": "backup.backup_system.BackupValidator",
+        "lineno": 156
+      },
+      {
+        "importer": "backend/config/tasks.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 74
+      },
+      {
+        "importer": "backend/tests/test_backup_hardening.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 55
+      },
+      {
+        "importer": "backend/tests/test_backup_hardening.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 150
+      },
+      {
+        "importer": "backend/tests/test_backup_hardening.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 163
+      },
+      {
+        "importer": "backend/tests/test_backup_hardening.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 172
+      },
+      {
+        "importer": "backend/backup/services/control_plane.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 182
+      },
+      {
+        "importer": "backend/backup/services/failure_injection.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 418
+      },
+      {
+        "importer": "backend/backup/services/failure_injection.py",
+        "imported": "backup.backup_system.BackupEncryptor",
+        "lineno": 275
+      },
+      {
+        "importer": "backend/backup/services/health_monitor.py",
+        "imported": "backup.backup_system.BackupValidator",
+        "lineno": 168
+      },
+      {
+        "importer": "backend/backup/services/health_monitor.py",
+        "imported": "backup.backup_system.BackupValidator",
+        "lineno": 225
+      },
+      {
+        "importer": "backend/backup/services/health_monitor.py",
+        "imported": "backup.backup_system.BackupValidator",
+        "lineno": 329
+      },
+      {
+        "importer": "backend/backup/services/restore_service.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 76
+      },
+      {
+        "importer": "backend/backup/services/restore_testing.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 169
+      },
+      {
+        "importer": "backend/backup/services/restore_testing.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 139
+      },
+      {
+        "importer": "backend/backup/management/commands/cleanup_backups.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 2
+      },
+      {
+        "importer": "backend/backup/management/commands/create_backup.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 2
+      },
+      {
+        "importer": "backend/backup/management/commands/restore_backup.py",
+        "imported": "backup.backup_system.BackupManager",
+        "lineno": 2
+      }
+    ],
+    "payments.services": [
+      {
+        "importer": "backend/payments/views.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 19
+      },
+      {
+        "importer": "backend/purchases/models.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 544
+      },
+      {
+        "importer": "backend/sales/models.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 559
+      },
+      {
+        "importer": "backend/tests/test_coverage_final.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 68
+      },
+      {
+        "importer": "backend/tests/test_financial_hardening.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 722
+      },
+      {
+        "importer": "backend/tests/test_financial_hardening.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 754
+      },
+      {
+        "importer": "backend/tests/test_financial_hardening.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 786
+      },
+      {
+        "importer": "backend/tests/test_financial_hardening.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 817
+      },
+      {
+        "importer": "backend/tests/test_integration_comprehensive.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 169
+      },
+      {
+        "importer": "backend/tests/test_more_coverage.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 146
+      },
+      {
+        "importer": "backend/tests/test_payments.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 164
+      },
+      {
+        "importer": "backend/tests/test_payments.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 179
+      },
+      {
+        "importer": "backend/tests/test_payments.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 193
+      },
+      {
+        "importer": "backend/tests/test_payments.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 205
+      },
+      {
+        "importer": "backend/returns/services/refund_service.py",
+        "imported": "payments.services.PaymentEngine",
+        "lineno": 108
+      }
+    ],
+    "inventory.service.stock_integration": [
+      {
+        "importer": "backend/tests/test_coverage_final.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 41
+      },
+      {
+        "importer": "backend/tests/test_enterprise_lifecycle_advanced.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 15
+      },
+      {
+        "importer": "backend/tests/test_integration_comprehensive.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 58
+      },
+      {
+        "importer": "backend/tests/test_integration_comprehensive.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 235
+      },
+      {
+        "importer": "backend/tests/test_lifecycle_integration_enterprise.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 15
+      },
+      {
+        "importer": "backend/tests/test_more_coverage.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 131
+      },
+      {
+        "importer": "backend/tests/test_phase40_correctness.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 139
+      },
+      {
+        "importer": "backend/tests/test_phase40_correctness.py",
+        "imported": "inventory.service.stock_integration.StockSelectionMode",
+        "lineno": 139
+      },
+      {
+        "importer": "backend/tests/test_phase41_resilience.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 9
+      },
+      {
+        "importer": "backend/tests/test_reality_simulation.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 393
+      },
+      {
+        "importer": "backend/tests/test_reality_simulation.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 466
+      },
+      {
+        "importer": "backend/tests/test_rollback_safety.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 15
+      },
+      {
+        "importer": "backend/tests/test_services_extra.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 11
+      },
+      {
+        "importer": "backend/tests/test_stock_integration.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 13
+      },
+      {
+        "importer": "backend/tests/test_stock_integration_behavior.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 13
+      },
+      {
+        "importer": "backend/tests/test_stock_integration_enterprise.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 12
+      },
+      {
+        "importer": "backend/inventory/service/stock_transfer.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 6
+      },
+      {
+        "importer": "backend/inventory/service/__init__.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 2
+      },
+      {
+        "importer": "backend/inventory/services/costing_service.py",
+        "imported": "inventory.service.stock_integration.StockIntegrationService",
+        "lineno": 117
+      }
+    ],
+    "frontend.ui.main_window": [],
+    "frontend.ui.pos.pos_screen": [],
+    "frontend.ui.sales.sales_invoice_screen": [],
+    "frontend.ui.purchases.purchase_invoice_screen": []
+  },
+  "focus_instantiations": {
+    "backup.backup_system": {
+      "class_name": "BackupManager",
+      "files": [
+        {
+          "file": "backend/phase6_1_reports_part2.py",
+          "count": 1
+        },
+        {
+          "file": "backend/phase6_1_reports_part3.py",
+          "count": 1
+        },
+        {
+          "file": "backend/phase6_2_step4_verify.py",
+          "count": 2
+        },
+        {
+          "file": "backend/backup/backup_system.py",
+          "count": 1
+        },
+        {
+          "file": "backend/backup/views.py",
+          "count": 4
+        },
+        {
+          "file": "backend/config/tasks.py",
+          "count": 1
+        },
+        {
+          "file": "backend/tests/test_backup_hardening.py",
+          "count": 4
+        },
+        {
+          "file": "backend/backup/services/control_plane.py",
+          "count": 1
+        },
+        {
+          "file": "backend/backup/services/failure_injection.py",
+          "count": 1
+        },
+        {
+          "file": "backend/backup/services/restore_service.py",
+          "count": 1
+        },
+        {
+          "file": "backend/backup/services/restore_testing.py",
+          "count": 2
+        },
+        {
+          "file": "backend/backup/management/commands/cleanup_backups.py",
+          "count": 1
+        },
+        {
+          "file": "backend/backup/management/commands/create_backup.py",
+          "count": 1
+        },
+        {
+          "file": "backend/backup/management/commands/restore_backup.py",
+          "count": 1
+        }
+      ]
+    },
+    "payments.services": {
+      "class_name": "PaymentEngine",
+      "files": []
+    },
+    "inventory.service.stock_integration": {
+      "class_name": "StockIntegrationService",
+      "files": []
+    },
+    "frontend.ui.main_window": {
+      "class_name": "MainWindow",
+      "files": [
+        {
+          "file": "backend/phase6_3_callers.py",
+          "count": 1
+        },
+        {
+          "file": "frontend/main.py",
+          "count": 1
+        },
+        {
+          "file": "frontend/tests/conftest.py",
+          "count": 1
+        },
+        {
+          "file": "frontend/tests/ui/test_main_window.py",
+          "count": 13
+        }
+      ]
+    },
+    "frontend.ui.pos.pos_screen": {
+      "class_name": "POSScreen",
+      "files": [
+        {
+          "file": "backend/phase6_3_callers.py",
+          "count": 2
+        }
+      ]
+    },
+    "frontend.ui.sales.sales_invoice_screen": {
+      "class_name": "SalesInvoiceScreen",
+      "files": [
+        {
+          "file": "frontend/tests/ui/test_screens.py",
+          "count": 1
+        },
+        {
+          "file": "frontend/tests/ui/test_smoke.py",
+          "count": 2
+        }
+      ]
+    },
+    "frontend.ui.purchases.purchase_invoice_screen": {
+      "class_name": "PurchaseInvoiceScreen",
+      "files": [
+        {
+          "file": "frontend/tests/ui/test_screens.py",
+          "count": 1
+        }
+      ]
+    }
+  }
+}

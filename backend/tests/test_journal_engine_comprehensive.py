@@ -15,13 +15,13 @@ class JournalEngineBasicTests(TestCase):
     
     @classmethod
     def setUpTestData(cls):
-        cls.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        cls.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        cls.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        cls.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
-        
+
     def test_generate_entry_number_default(self):
         """Test generate_entry_number without type."""
         num = JournalEngine.generate_entry_number()
@@ -70,11 +70,11 @@ class JournalEngineCreateEntryTests(TestCase):
     
     @classmethod
     def setUpTestData(cls):
-        cls.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        cls.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        cls.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        cls.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
         
     def test_create_entry_exists(self):
@@ -102,10 +102,10 @@ class JournalEnginePostTests(TestCase):
     
     @classmethod
     def setUpTestData(cls):
-        cls.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        cls.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        
+
     def test_post_entry_exists(self):
         """Test post_entry method exists."""
         self.assertTrue(hasattr(JournalEngine, 'post_entry'))

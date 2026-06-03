@@ -1,0 +1,60 @@
+[
+  {
+    "category": "data_integrity",
+    "description": "FK constraints, journal balancing",
+    "risk_score": 8
+  },
+  {
+    "category": "concurrent_access",
+    "description": "Locks, deadlocks, races",
+    "risk_score": 12
+  },
+  {
+    "category": "performance",
+    "description": "Query plan, indexes",
+    "risk_score": 6
+  },
+  {
+    "category": "security",
+    "description": "Auth, injection, passwords",
+    "risk_score": 5
+  },
+  {
+    "category": "scalability",
+    "description": "Horizontal/vertical scaling",
+    "risk_score": 15
+  },
+  {
+    "category": "reliability",
+    "description": "Crash recovery, replication",
+    "risk_score": 10
+  },
+  {
+    "category": "operability",
+    "description": "Monitoring, logging",
+    "risk_score": 7
+  },
+  {
+    "category": "compatibility",
+    "description": "PG version, OS",
+    "risk_score": 4
+  },
+  {
+    "category": "observability",
+    "description": "Metrics, traces",
+    "risk_score": 8
+  },
+  {
+    "category": "compliance",
+    "description": "Audit trail, reports",
+    "risk_score": 6
+  },
+  {
+    "check": "total_risk",
+    "value": 81
+  },
+  {
+    "check": "score",
+    "value": 60
+  }
+]

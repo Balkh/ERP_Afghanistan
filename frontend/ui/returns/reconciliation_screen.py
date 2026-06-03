@@ -8,6 +8,7 @@ from ui.screens.base_screen import BaseScreen
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog
+from ui.components.state_helper import StateHelper
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE,
                            TEXT_PAGE_TITLE, TEXT_LABEL, TEXT_BODY, TEXT_BODY_SMALL,
                            COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
@@ -69,19 +70,8 @@ class ReconciliationScreen(BaseScreen):
         action_layout.addStretch()
         layout.addLayout(action_layout)
 
-        # Loading and empty states
-        self.loading_label = QLabel("Loading reconciliation entries...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
-
-        self.empty_label = QLabel("No reconciliation entries found\n\nReconciliation matches return orders against invoices to identify discrepancies.\nUse the filters above to narrow results, or click 'Show Mismatches Only' to view unresolved entries.")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px; line-height: 1.6;")
-        self.empty_label.setWordWrap(True)
-        self.empty_label.setVisible(False)
-        layout.addWidget(self.empty_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         # Table
         columns = [
@@ -164,9 +154,8 @@ class ReconciliationScreen(BaseScreen):
 
     def _load_entries(self):
         """Load reconciliation entries from API."""
-        self.loading_label.setVisible(True)
+        self.state_helper.show_loading("Loading reconciliation entries...")
         self.table.setVisible(False)
-        self.empty_label.setVisible(False)
 
         if self._api_client:
             try:
@@ -191,19 +180,20 @@ class ReconciliationScreen(BaseScreen):
                     self.entries_data = []
 
                 if not self.entries_data:
-                    self.empty_label.setVisible(True)
+                    self.state_helper.show_empty(
+                        title="No reconciliation entries found",
+                        subtitle="Reconciliation matches return orders against invoices to identify discrepancies.\nUse the filters above to narrow results, or click 'Show Mismatches Only' to view unresolved entries.",
+                    )
                     self.table.setVisible(False)
                 else:
+                    self.state_helper.hide()
                     self._populate_table()
                     self._load_summary()
             except Exception as e:
                 print(f"Error loading reconciliation: {e}")
-                self.empty_label.setText(f"Error loading data: {e}")
-                self.empty_label.setVisible(True)
+                self.state_helper.show_error(f"Error loading data: {e}", on_retry=self._load_entries)
         else:
-            self.empty_label.setVisible(True)
-
-        self.loading_label.setVisible(False)
+            self.state_helper.show_empty("No reconciliation entries found")
 
     def _show_mismatches_only(self):
         """Show only mismatched entries."""
@@ -228,12 +218,12 @@ class ReconciliationScreen(BaseScreen):
         self.table.setRowCount(0)
 
         if not self.entries_data:
-            self.empty_label.setVisible(True)
+            self.state_helper.show_empty("No reconciliation entries found")
             self.table.setVisible(False)
             return
 
+        self.state_helper.hide()
         self.table.setVisible(True)
-        self.empty_label.setVisible(False)
 
         data = []
         for item in self.entries_data:

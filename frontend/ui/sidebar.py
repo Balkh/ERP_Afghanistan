@@ -5,7 +5,7 @@ from PySide6.QtGui import QFont
 from theme.theme_engine import ThemeEngine
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from ui.role_manager import UserRole, get_visible_navigation_items, is_navigation_item_visible
-from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_HOVER, COLOR_BG_FOCUS, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_DANGER, COLOR_DANGER_HOVER, COLOR_DANGER_ACTIVE)
+from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_HOVER, COLOR_BG_FOCUS, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_DANGER, COLOR_DANGER_HOVER, COLOR_DANGER_ACTIVE, COLOR_SIDEBAR_ACTIVE_BG, COLOR_SIDEBAR_ACTIVE_BORDER)
 
 
 class Sidebar(QWidget):
@@ -368,6 +368,7 @@ class Sidebar(QWidget):
             }}
             EnterpriseButton:hover {{
                 background-color: {COLOR_BG_HOVER};
+                color: {COLOR_PRIMARY_HOVER} /* Phase Recovery: hover deepens the color */
             }}
         """
 
@@ -471,16 +472,17 @@ class Sidebar(QWidget):
         if active:
             btn.setStyleSheet(f"""
                 EnterpriseButton {{
-                    background-color: {COLOR_BG_FOCUS};
+                    background-color: {COLOR_SIDEBAR_ACTIVE_BG};
                     color: {COLOR_TEXT_PRIMARY};
                     border: none;
+                    border-left: 3px solid {COLOR_SIDEBAR_ACTIVE_BORDER};
                     border-radius: {BORDER_RADIUS_MD};
                     text-align: left;
-                    padding-left: {SPACING_LG}px;
+                    padding-left: {SPACING_LG - 3}px;
                     font-weight: 600;
                 }}
                 EnterpriseButton:hover {{
-                    background-color: {COLOR_BG_HOVER};
+                    background-color: {COLOR_SIDEBAR_ACTIVE_BG};
                     color: {COLOR_TEXT_PRIMARY};
                 }}
             """)
@@ -518,7 +520,22 @@ class Sidebar(QWidget):
                 # Activate new item
                 self._active_page_id = page_id
                 self._set_button_active(btn, True)
+                # Auto-expand the group containing the active item (Phase Recovery)
+                self._expand_group_for_item(btn)
                 break
+
+    def _expand_group_for_item(self, btn):
+        """Auto-expand the parent group of the given item if collapsed."""
+        for group_name, group_widget in self._group_widgets.items():
+            if not self._expanded_groups.get(group_name, False):
+                layout = group_widget.layout()
+                if layout:
+                    for i in range(layout.count()):
+                        item = layout.itemAt(i)
+                        if item and item.widget() and btn in item.widget().findChildren(type(btn)):
+                            self._expanded_groups[group_name] = True
+                            self._toggle_group(group_name)
+                            return
 
     def update_theme(self, theme_name):
         """Update sidebar styling based on theme."""

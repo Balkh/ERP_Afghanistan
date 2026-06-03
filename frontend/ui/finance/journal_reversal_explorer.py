@@ -15,6 +15,8 @@ from ui.constants import (
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.components.state_helper import StateHelper
+from utils.format import safe_float
 from ui.screens.base_screen import BaseScreen
 
 
@@ -50,14 +52,8 @@ class JournalReversalExplorer(BaseScreen):
 
         layout.addLayout(header_layout)
 
-        # Loading label
-        self.loading_label = QLabel("Loading journal entries...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         # Content
         self.content_widget = QWidget()
@@ -99,23 +95,30 @@ class JournalReversalExplorer(BaseScreen):
 
     def _show_loading(self, show=True):
         self._is_loading = show
-        self.loading_label.setVisible(show)
-        self.content_widget.setVisible(not show)
-        self.btn_refresh.setEnabled(not show)
+        if show:
+            self.state_helper.show_loading("Loading journal entries...")
+            self.content_widget.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.content_widget.setVisible(True)
+            self.btn_refresh.setEnabled(True)
+
+    def _show_empty(self, message="No data to display"):
+        self._is_loading = False
+        self.state_helper.show_empty(title=message)
+        self.content_widget.setVisible(False)
+        self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         self._is_loading = False
-        self.loading_label.setVisible(False)
+        self.state_helper.hide()
         self.content_widget.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
     def _show_error(self, message):
         self._is_loading = False
-        self.loading_label.setText(message)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(True)
+        self.state_helper.show_error(message, on_retry=self.load_reversals)
         self.content_widget.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
@@ -145,16 +148,10 @@ class JournalReversalExplorer(BaseScreen):
                 "entry_number": j.get("entry_number", ""),
                 "date": str(j.get("entry_date", ""))[:10],
                 "description": (j.get("description", "") or "")[:50],
-                "total_debit": f"{self._safe_float(j.get('total_debit', 0)):,.2f}",
-                "total_credit": f"{self._safe_float(j.get('total_credit', 0)):,.2f}",
+                "total_debit": f"{safe_float(j.get('total_debit', 0)):,.2f}",
+                "total_credit": f"{safe_float(j.get('total_credit', 0)):,.2f}",
                 "status": j.get("status", ""),
                 "reversed": "Yes" if j.get("is_reversed") else "No",
                 "reversal_reason": (j.get("reversal_reason", "") or "")[:50],
             })
         self.journal_table.set_data(table_data)
-
-    def _safe_float(self, value, default=0.0):
-        try:
-            return float(value) if value is not None else default
-        except (ValueError, TypeError):
-            return default

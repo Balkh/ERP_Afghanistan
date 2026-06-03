@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt, QDate
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from utils.company_config import get_cached_config
+from utils.format import safe_float
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE, TEXT_BODY, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
@@ -135,12 +136,6 @@ class AccountLedgerScreen(BaseScreen):
         self.table.setVisible(True)
         self.btn_load.setEnabled(True)
 
-    def _safe_float(self, value, default=0.0):
-        """Safely convert value to float."""
-        try:
-            return float(value) if value is not None else default
-        except (ValueError, TypeError):
-            return default
 
     def _create_table(self):
         columns = [
@@ -159,7 +154,7 @@ class AccountLedgerScreen(BaseScreen):
         try:
             endpoint = get_endpoint("leaf_accounts")
             response = self.api_client.get(endpoint)
-            self.accounts = [a for a in extract_list(response) if isinstance(a, dict)]
+            self.accounts = extract_list(response)
             self.account_combo.clear()
             self.account_combo.addItem("Select an account...", None)
             for acc in sorted(self.accounts, key=lambda x: x.get("code") or ""):
@@ -214,8 +209,8 @@ class AccountLedgerScreen(BaseScreen):
         self.info_name.setText(f"Name: {data.get('account_name') or ''}")
         self.info_type.setText(f"Type: {data.get('account_type') or ''}")
 
-        opening = self._safe_float(data.get("opening_balance"))
-        closing = self._safe_float(data.get("closing_balance"))
+        opening = safe_float(data.get("opening_balance"))
+        closing = safe_float(data.get("closing_balance"))
         self.info_opening.setText(f"Opening: {opening:,.2f}")
         self.info_closing.setText(f"Closing: {closing:,.2f}")
 
@@ -232,9 +227,9 @@ class AccountLedgerScreen(BaseScreen):
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
-            debit = self._safe_float(entry.get("debit"))
-            credit = self._safe_float(entry.get("credit"))
-            balance = self._safe_float(entry.get("running_balance"))
+            debit = safe_float(entry.get("debit"))
+            credit = safe_float(entry.get("credit"))
+            balance = safe_float(entry.get("running_balance"))
             ledger_data.append({
                 "entry_number": entry.get("entry_number") or "",
                 "entry_date": entry.get("entry_date") or "",

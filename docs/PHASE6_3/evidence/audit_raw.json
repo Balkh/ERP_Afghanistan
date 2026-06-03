@@ -1,0 +1,1304 @@
+{
+  "scan_timestamp": "2026-06-02T19:20:51.848382",
+  "total_py_files_scanned": 1532,
+  "total_loc": 307541,
+  "syntax_errors": [],
+  "top_50_files_by_loc": [
+    {
+      "file": "backend/simulation/tests/test_human_approval_gateway/test_human_approval_gateway.py",
+      "loc": 2173
+    },
+    {
+      "file": "backend/phase5_8_full.py",
+      "loc": 1991
+    },
+    {
+      "file": "backend/genesis_init.py",
+      "loc": 1603
+    },
+    {
+      "file": "backend/phase5_9_full.py",
+      "loc": 1518
+    },
+    {
+      "file": "backend/tests/test_reality_simulation.py",
+      "loc": 1451
+    },
+    {
+      "file": "backend/simulation/tests/test_truth_verification/test_truth_verification.py",
+      "loc": 1385
+    },
+    {
+      "file": "backend/core/governance/industrial_test_suite.py",
+      "loc": 1352
+    },
+    {
+      "file": "backend/scripts/drift_check.py",
+      "loc": 1302
+    },
+    {
+      "file": "backend/core/operations/operational_intelligence.py",
+      "loc": 1254
+    },
+    {
+      "file": "backend/tests/test_adversarial_hardening.py",
+      "loc": 1195
+    },
+    {
+      "file": "frontend/utils/logger.py",
+      "loc": 1157
+    },
+    {
+      "file": "frontend/ui/main_window.py",
+      "loc": 1153
+    },
+    {
+      "file": "backend/tests/test_financial_reports.py",
+      "loc": 1145
+    },
+    {
+      "file": "backend/tests/test_validation_harness.py",
+      "loc": 1120
+    },
+    {
+      "file": "backend/core/api/v1/payment_operations.py",
+      "loc": 1112
+    },
+    {
+      "file": "backend/simulation/tests/test_predictive.py",
+      "loc": 1092
+    },
+    {
+      "file": "backend/security/views.py",
+      "loc": 1035
+    },
+    {
+      "file": "backend/tests/factories.py",
+      "loc": 969
+    },
+    {
+      "file": "backend/security/tests.py",
+      "loc": 955
+    },
+    {
+      "file": "frontend/ui/constants.py",
+      "loc": 903
+    },
+    {
+      "file": "backend/tests/lifecycle_engine/scenarios.py",
+      "loc": 899
+    },
+    {
+      "file": "frontend/ui/pos/pos_screen.py",
+      "loc": 897
+    },
+    {
+      "file": "frontend/ui/purchases/purchase_invoice_screen.py",
+      "loc": 897
+    },
+    {
+      "file": "frontend/ui/sales/sales_invoice_screen.py",
+      "loc": 895
+    },
+    {
+      "file": "backend/core/governance/views.py",
+      "loc": 893
+    },
+    {
+      "file": "backend/accounting/models.py",
+      "loc": 891
+    },
+    {
+      "file": "backend/backup/views.py",
+      "loc": 887
+    },
+    {
+      "file": "backend/core/pdf_generator.py",
+      "loc": 877
+    },
+    {
+      "file": "frontend/ui/returns/returns_screen.py",
+      "loc": 869
+    },
+    {
+      "file": "frontend/ui/components/forms.py",
+      "loc": 863
+    },
+    {
+      "file": "frontend/ui/observability/dashboards.py",
+      "loc": 861
+    },
+    {
+      "file": "backend/sales/views.py",
+      "loc": 858
+    },
+    {
+      "file": "backend/tests/test_financial_hardening.py",
+      "loc": 856
+    },
+    {
+      "file": "backend/returns/models.py",
+      "loc": 847
+    },
+    {
+      "file": "backend/tests/test_drift_prevention.py",
+      "loc": 847
+    },
+    {
+      "file": "backend/tests/test_final_hardening.py",
+      "loc": 842
+    },
+    {
+      "file": "frontend/ui/system/backup_screen.py",
+      "loc": 842
+    },
+    {
+      "file": "backend/tests/test_operational_intelligence.py",
+      "loc": 840
+    },
+    {
+      "file": "backend/inventory/service/stock_integration.py",
+      "loc": 839
+    },
+    {
+      "file": "backend/tests/test_phase33_workflows.py",
+      "loc": 833
+    },
+    {
+      "file": "backend/tests/test_production_readiness.py",
+      "loc": 826
+    },
+    {
+      "file": "backend/core/governance/certification_tests.py",
+      "loc": 826
+    },
+    {
+      "file": "backend/phase6_1_reports_part2.py",
+      "loc": 821
+    },
+    {
+      "file": "backend/payments/services.py",
+      "loc": 810
+    },
+    {
+      "file": "backend/tests/test_accounting_integration.py",
+      "loc": 792
+    },
+    {
+      "file": "backend/tests/test_sales_workflow.py",
+      "loc": 792
+    },
+    {
+      "file": "backend/tests/test_fcue_phase16.py",
+      "loc": 788
+    },
+    {
+      "file": "backend/simulation/tests/test_observability/test_observability.py",
+      "loc": 788
+    },
+    {
+      "file": "backend/tests/test_returns_comprehensive.py",
+      "loc": 782
+    },
+    {
+      "file": "backend/tests/test_ficl_phase17.py",
+      "loc": 777
+    }
+  ],
+  "top_30_classes_by_loc": [
+    {
+      "file": "backend/tests/test_reality_simulation.py",
+      "name": "MonthRealitySimulation",
+      "loc": 1264,
+      "methods": 52,
+      "lineno": 142
+    },
+    {
+      "file": "backend/genesis_init.py",
+      "name": "GenesisInitializer",
+      "loc": 1213,
+      "methods": 32,
+      "lineno": 319
+    },
+    {
+      "file": "frontend/ui/main_window.py",
+      "name": "MainWindow",
+      "loc": 1124,
+      "methods": 45,
+      "lineno": 29
+    },
+    {
+      "file": "backend/core/api/v1/payment_operations.py",
+      "name": "PaymentOperationsViewSet",
+      "loc": 1077,
+      "methods": 17,
+      "lineno": 35
+    },
+    {
+      "file": "frontend/ui/purchases/purchase_invoice_screen.py",
+      "name": "PurchaseInvoiceScreen",
+      "loc": 866,
+      "methods": 32,
+      "lineno": 26
+    },
+    {
+      "file": "frontend/ui/sales/sales_invoice_screen.py",
+      "name": "SalesInvoiceScreen",
+      "loc": 861,
+      "methods": 30,
+      "lineno": 28
+    },
+    {
+      "file": "frontend/ui/pos/pos_screen.py",
+      "name": "POSScreen",
+      "loc": 859,
+      "methods": 40,
+      "lineno": 38
+    },
+    {
+      "file": "backend/tests/test_validation_harness.py",
+      "name": "RealExecutionTestHarness",
+      "loc": 841,
+      "methods": 17,
+      "lineno": 170
+    },
+    {
+      "file": "backend/inventory/service/stock_integration.py",
+      "name": "StockIntegrationService",
+      "loc": 827,
+      "methods": 13,
+      "lineno": 12
+    },
+    {
+      "file": "backend/payments/services.py",
+      "name": "PaymentEngine",
+      "loc": 788,
+      "methods": 10,
+      "lineno": 22
+    },
+    {
+      "file": "backend/accounting/services/financial_reports.py",
+      "name": "FinancialReportEngine",
+      "loc": 743,
+      "methods": 10,
+      "lineno": 10
+    },
+    {
+      "file": "frontend/api/client.py",
+      "name": "APIClient",
+      "loc": 667,
+      "methods": 57,
+      "lineno": 23
+    },
+    {
+      "file": "frontend/ui/sidebar.py",
+      "name": "Sidebar",
+      "loc": 648,
+      "methods": 18,
+      "lineno": 11
+    },
+    {
+      "file": "frontend/ui/system/backup_screen.py",
+      "name": "BackupControlScreen",
+      "loc": 633,
+      "methods": 24,
+      "lineno": 209
+    },
+    {
+      "file": "backend/core/services/financial_explainability.py",
+      "name": "FinancialExplainability",
+      "loc": 603,
+      "methods": 7,
+      "lineno": 15
+    },
+    {
+      "file": "frontend/ui/returns/returns_screen.py",
+      "name": "ReturnsScreen",
+      "loc": 552,
+      "methods": 20,
+      "lineno": 23
+    },
+    {
+      "file": "backend/simulation/control_center/orchestrator/control_center_engine.py",
+      "name": "ControlCenterEngine",
+      "loc": 534,
+      "methods": 31,
+      "lineno": 99
+    },
+    {
+      "file": "backend/tests/test_tenant_isolation.py",
+      "name": "Phase17ValidationTest",
+      "loc": 529,
+      "methods": 46,
+      "lineno": 25
+    },
+    {
+      "file": "backend/returns/models.py",
+      "name": "ReturnOrder",
+      "loc": 519,
+      "methods": 10,
+      "lineno": 14
+    },
+    {
+      "file": "backend/accounting/services/advanced_reports.py",
+      "name": "AdvancedReportsService",
+      "loc": 506,
+      "methods": 12,
+      "lineno": 13
+    },
+    {
+      "file": "frontend/theme/style_builder.py",
+      "name": "UIStyleBuilder",
+      "loc": 489,
+      "methods": 15,
+      "lineno": 8
+    },
+    {
+      "file": "backend/accounting/services/inventory_accounting.py",
+      "name": "InventoryAccountingService",
+      "loc": 469,
+      "methods": 10,
+      "lineno": 40
+    },
+    {
+      "file": "frontend/ui/dashboard.py",
+      "name": "Dashboard",
+      "loc": 466,
+      "methods": 22,
+      "lineno": 14
+    },
+    {
+      "file": "backend/backup/services/restore_service.py",
+      "name": "RestoreService",
+      "loc": 458,
+      "methods": 12,
+      "lineno": 27
+    },
+    {
+      "file": "backend/accounting/services/journal_engine.py",
+      "name": "JournalEngine",
+      "loc": 457,
+      "methods": 11,
+      "lineno": 17
+    },
+    {
+      "file": "frontend/ui/system/intelligence_hub_screen.py",
+      "name": "IntelligenceHubScreen",
+      "loc": 446,
+      "methods": 13,
+      "lineno": 23
+    },
+    {
+      "file": "frontend/ui/accounting/report_browser.py",
+      "name": "ReportBrowser",
+      "loc": 442,
+      "methods": 17,
+      "lineno": 198
+    },
+    {
+      "file": "backend/core/services/financial_diagnostics.py",
+      "name": "FinancialDiagnostics",
+      "loc": 434,
+      "methods": 6,
+      "lineno": 19
+    },
+    {
+      "file": "backend/backup/services/failure_injection.py",
+      "name": "FailureInjectionTester",
+      "loc": 423,
+      "methods": 16,
+      "lineno": 26
+    },
+    {
+      "file": "backend/tests/test_lifecycle.py",
+      "name": "FullLifecycleTests",
+      "loc": 422,
+      "methods": 6,
+      "lineno": 39
+    }
+  ],
+  "top_30_methods_by_loc": [
+    {
+      "file": "backend/phase5_8_full.py",
+      "class": null,
+      "name": "workstream_b",
+      "loc": 503,
+      "lineno": 371
+    },
+    {
+      "file": "backend/phase5_9_full.py",
+      "class": null,
+      "name": "ws_b_enterprise_dataset",
+      "loc": 390,
+      "lineno": 371
+    },
+    {
+      "file": "backend/simulation/control_center/orchestrator/operational_command_orchestrator.py",
+      "class": "OperationalCommandOrchestrator",
+      "name": "execute_command",
+      "loc": 314,
+      "lineno": 42
+    },
+    {
+      "file": "frontend/ui/sales/sales_invoice_screen.py",
+      "class": "SalesInvoiceScreen",
+      "name": "_setup_screen",
+      "loc": 303,
+      "lineno": 91
+    },
+    {
+      "file": "backend/simulation/control_center/orchestrator/control_center_router.py",
+      "class": "ControlCenterRouter",
+      "name": "route_query",
+      "loc": 301,
+      "lineno": 73
+    },
+    {
+      "file": "frontend/ui/purchases/purchase_invoice_screen.py",
+      "class": "PurchaseInvoiceScreen",
+      "name": "_setup_screen",
+      "loc": 296,
+      "lineno": 89
+    },
+    {
+      "file": "backend/core/seeders/accounting.py",
+      "class": "AccountingSeeder",
+      "name": "seed",
+      "loc": 271,
+      "lineno": 22
+    },
+    {
+      "file": "backend/pre_production_hardening/sections/multi_user.py",
+      "class": null,
+      "name": "run",
+      "loc": 248,
+      "lineno": 16
+    },
+    {
+      "file": "backend/phase5_8_full.py",
+      "class": null,
+      "name": "workstream_c",
+      "loc": 246,
+      "lineno": 879
+    },
+    {
+      "file": "backend/core/operations/decision_engine.py",
+      "class": "DecisionEngine",
+      "name": "evaluate_all",
+      "loc": 240,
+      "lineno": 193
+    },
+    {
+      "file": "backend/tests/test_reality_simulation.py",
+      "class": "MonthRealitySimulation",
+      "name": "setup_base_data",
+      "loc": 218,
+      "lineno": 156
+    },
+    {
+      "file": "backend/core/seeders/inventory.py",
+      "class": "InventorySeeder",
+      "name": "seed",
+      "loc": 211,
+      "lineno": 19
+    },
+    {
+      "file": "backend/phase5_9_full.py",
+      "class": null,
+      "name": "ws_d_concurrency",
+      "loc": 208,
+      "lineno": 849
+    },
+    {
+      "file": "frontend/ui/purchases/supplier_screen.py",
+      "class": "SupplierDialog",
+      "name": "_build_content",
+      "loc": 204,
+      "lineno": 248
+    },
+    {
+      "file": "backend/pre_production_hardening/sections/performance.py",
+      "class": null,
+      "name": "run",
+      "loc": 193,
+      "lineno": 14
+    },
+    {
+      "file": "backend/phase5_8_full.py",
+      "class": null,
+      "name": "workstream_a",
+      "loc": 190,
+      "lineno": 176
+    },
+    {
+      "file": "backend/pre_production_hardening/sections/session.py",
+      "class": null,
+      "name": "run",
+      "loc": 184,
+      "lineno": 14
+    },
+    {
+      "file": "backend/tests/test_lifecycle.py",
+      "class": "FullLifecycleTests",
+      "name": "test_complete_purchase_to_sale_lifecycle",
+      "loc": 181,
+      "lineno": 57
+    },
+    {
+      "file": "backend/phase5_8_full.py",
+      "class": null,
+      "name": "workstream_h",
+      "loc": 180,
+      "lineno": 1618
+    },
+    {
+      "file": "frontend/ui/sidebar.py",
+      "class": "Sidebar",
+      "name": "setup_ui",
+      "loc": 180,
+      "lineno": 129
+    },
+    {
+      "file": "frontend/ui/auth/login_screen.py",
+      "class": "LoginDialog",
+      "name": "_build_content",
+      "loc": 177,
+      "lineno": 42
+    },
+    {
+      "file": "backend/security/management/commands/seed_roles.py",
+      "class": "Command",
+      "name": "handle",
+      "loc": 176,
+      "lineno": 13
+    },
+    {
+      "file": "frontend/utils/logger.py",
+      "class": null,
+      "name": "evaluate_decisions",
+      "loc": 174,
+      "lineno": 979
+    },
+    {
+      "file": "backend/core/seeders/sales.py",
+      "class": "SalesSeeder",
+      "name": "seed",
+      "loc": 173,
+      "lineno": 22
+    },
+    {
+      "file": "backend/phase5_9_full.py",
+      "class": null,
+      "name": "ws_a_pg_certification",
+      "loc": 171,
+      "lineno": 195
+    },
+    {
+      "file": "backend/core/governance/chaos/classifications.py",
+      "class": null,
+      "name": "classify_failure",
+      "loc": 171,
+      "lineno": 69
+    },
+    {
+      "file": "backend/pre_production_hardening/sections/operator.py",
+      "class": null,
+      "name": "run",
+      "loc": 170,
+      "lineno": 15
+    },
+    {
+      "file": "backend/pre_production_hardening/sections/export.py",
+      "class": null,
+      "name": "run",
+      "loc": 168,
+      "lineno": 13
+    },
+    {
+      "file": "frontend/main.py",
+      "class": null,
+      "name": "main",
+      "loc": 167,
+      "lineno": 70
+    },
+    {
+      "file": "frontend/ui/sales/customer_screen.py",
+      "class": "CustomerDialog",
+      "name": "_build_content",
+      "loc": 167,
+      "lineno": 244
+    }
+  ],
+  "top_50_most_imported_modules": [
+    {
+      "module": "inventory.models",
+      "inbound_count": 678
+    },
+    {
+      "module": "accounting.models",
+      "inbound_count": 656
+    },
+    {
+      "module": "sales.models",
+      "inbound_count": 368
+    },
+    {
+      "module": "purchases.models",
+      "inbound_count": 290
+    },
+    {
+      "module": "tests.factories",
+      "inbound_count": 258
+    },
+    {
+      "module": "accounting.models.Account",
+      "inbound_count": 211
+    },
+    {
+      "module": "accounting.models.JournalEntry",
+      "inbound_count": 183
+    },
+    {
+      "module": "simulation.control_center.models",
+      "inbound_count": 167
+    },
+    {
+      "module": "accounting.models.JournalEntryLine",
+      "inbound_count": 166
+    },
+    {
+      "module": "inventory.models.Product",
+      "inbound_count": 147
+    },
+    {
+      "module": "inventory.models.Batch",
+      "inbound_count": 136
+    },
+    {
+      "module": "sales.models.SalesInvoice",
+      "inbound_count": 131
+    },
+    {
+      "module": "payments.models",
+      "inbound_count": 129
+    },
+    {
+      "module": "inventory.models.StockMovement",
+      "inbound_count": 115
+    },
+    {
+      "module": "sales.models.Customer",
+      "inbound_count": 106
+    },
+    {
+      "module": "purchases.models.PurchaseInvoice",
+      "inbound_count": 103
+    },
+    {
+      "module": "core.operations.truth.models",
+      "inbound_count": 95
+    },
+    {
+      "module": "inventory.models.Warehouse",
+      "inbound_count": 94
+    },
+    {
+      "module": "inventory.models.Category",
+      "inbound_count": 93
+    },
+    {
+      "module": "purchases.models.Supplier",
+      "inbound_count": 89
+    },
+    {
+      "module": "inventory.models.Unit",
+      "inbound_count": 86
+    },
+    {
+      "module": "security.models",
+      "inbound_count": 75
+    },
+    {
+      "module": "simulation.recovery.models",
+      "inbound_count": 75
+    },
+    {
+      "module": "core.operations.approval.models",
+      "inbound_count": 73
+    },
+    {
+      "module": "core.operations.truth.event_store",
+      "inbound_count": 73
+    },
+    {
+      "module": "accounting.services.journal_engine.JournalEngine",
+      "inbound_count": 67
+    },
+    {
+      "module": "accounting.services.journal_engine",
+      "inbound_count": 67
+    },
+    {
+      "module": "hr.models",
+      "inbound_count": 59
+    },
+    {
+      "module": "sales.models.CustomerPayment",
+      "inbound_count": 58
+    },
+    {
+      "module": "simulation.replay.models",
+      "inbound_count": 56
+    },
+    {
+      "module": "core.governance.kernel",
+      "inbound_count": 55
+    },
+    {
+      "module": "returns.models",
+      "inbound_count": 55
+    },
+    {
+      "module": "core.models",
+      "inbound_count": 51
+    },
+    {
+      "module": "core.operations.intelligence.models",
+      "inbound_count": 48
+    },
+    {
+      "module": "accounting.services.financial_reports",
+      "inbound_count": 47
+    },
+    {
+      "module": "simulation.predictive.models",
+      "inbound_count": 47
+    },
+    {
+      "module": "sales.models.SalesItem",
+      "inbound_count": 46
+    },
+    {
+      "module": "core.governance.industrial_test_suite",
+      "inbound_count": 44
+    },
+    {
+      "module": "simulation.truth_engine.root_cause.models",
+      "inbound_count": 44
+    },
+    {
+      "module": "accounting.services.financial_reports.FinancialReportEngine",
+      "inbound_count": 43
+    },
+    {
+      "module": "payroll.models",
+      "inbound_count": 43
+    },
+    {
+      "module": "core.audit.models",
+      "inbound_count": 43
+    },
+    {
+      "module": "purchases.models.SupplierPayment",
+      "inbound_count": 42
+    },
+    {
+      "module": "payments.models.PaymentAccount",
+      "inbound_count": 41
+    },
+    {
+      "module": "purchases.models.PurchaseItem",
+      "inbound_count": 40
+    },
+    {
+      "module": "simulation.control_center.models.IntelligenceSeverity",
+      "inbound_count": 39
+    },
+    {
+      "module": "payments.models.FinancialTransaction",
+      "inbound_count": 38
+    },
+    {
+      "module": "accounting.models.Currency",
+      "inbound_count": 37
+    },
+    {
+      "module": "workflows.models",
+      "inbound_count": 36
+    },
+    {
+      "module": "core.operations.observability.models",
+      "inbound_count": 36
+    }
+  ],
+  "focus_files": {
+    "backend/backup/backup_system.py": {
+      "description": "Phase 6.2 Step 4 target (already refactored)",
+      "loc": 742,
+      "classes": 5,
+      "total_methods": 36,
+      "public_methods": 20,
+      "functions_module_level": 1,
+      "inbound_imports": 13,
+      "inbound_modules": [
+        [
+          "backup.backup_system",
+          13
+        ]
+      ],
+      "inbound_files_count": 13,
+      "outbound_imports": 27,
+      "outbound_modules": [
+        "argparse",
+        "backup.extracts.create_backup_workflow.run",
+        "backup.extracts.restore_backup_workflow.run",
+        "backup.models.BackupLog",
+        "base64",
+        "cryptography.fernet.Fernet",
+        "cryptography.hazmat.primitives.hashes",
+        "cryptography.hazmat.primitives.kdf.pbkdf2.PBKDF2HMAC",
+        "datetime.datetime",
+        "datetime.timedelta",
+        "django.conf.settings",
+        "hashlib",
+        "json",
+        "logging",
+        "os",
+        "pathlib.Path",
+        "shutil",
+        "sqlite3",
+        "sys",
+        "tarfile",
+        "tempfile",
+        "threading",
+        "time",
+        "typing.Dict",
+        "typing.List",
+        "typing.Optional",
+        "typing.Tuple"
+      ],
+      "coupling_score": 40,
+      "change_risk_score": 4.84
+    },
+    "backend/payments/services.py": {
+      "description": "Payment engine hub",
+      "loc": 810,
+      "classes": 1,
+      "total_methods": 10,
+      "public_methods": 6,
+      "functions_module_level": 0,
+      "inbound_imports": 9,
+      "inbound_modules": [
+        [
+          "payments.services",
+          9
+        ]
+      ],
+      "inbound_files_count": 9,
+      "outbound_imports": 16,
+      "outbound_modules": [
+        "accounting.models.Account",
+        "core.drift_prevention.migration_router.MigrationRouter",
+        "datetime.date",
+        "decimal.Decimal",
+        "django.core.exceptions.ValidationError",
+        "django.db.models",
+        "django.db.transaction",
+        "django.utils.timezone",
+        "django.utils.translation.gettext_lazy",
+        "logging",
+        "payments.models.FinancialTransaction",
+        "payments.models.PaymentAccount",
+        "payments.models.PaymentMethod",
+        "payments.models.SettlementTransaction",
+        "payments.models.TransactionSettlement",
+        "typing.Optional"
+      ],
+      "coupling_score": 25,
+      "change_risk_score": 3.38
+    },
+    "backend/inventory/service/stock_integration.py": {
+      "description": "Stock integration hub",
+      "loc": 839,
+      "classes": 1,
+      "total_methods": 13,
+      "public_methods": 13,
+      "functions_module_level": 0,
+      "inbound_imports": 16,
+      "inbound_modules": [
+        [
+          "inventory.service.stock_integration",
+          16
+        ]
+      ],
+      "inbound_files_count": 16,
+      "outbound_imports": 17,
+      "outbound_modules": [
+        "datetime.date",
+        "datetime.timezone",
+        "decimal.Decimal",
+        "django.core.exceptions.ValidationError",
+        "django.db.models",
+        "django.db.transaction",
+        "django.utils.timezone",
+        "inventory.models.Batch",
+        "inventory.models.Product",
+        "inventory.models.StockMovement",
+        "inventory.models.Warehouse",
+        "inventory.models.WarehouseTransfer",
+        "inventory.service.StockAllocation",
+        "inventory.service.StockOperationResult",
+        "inventory.service.StockSelectionMode",
+        "typing.Optional",
+        "typing.Union"
+      ],
+      "coupling_score": 33,
+      "change_risk_score": 4.48
+    },
+    "frontend/ui/main_window.py": {
+      "description": "Main window hub",
+      "loc": 1153,
+      "classes": 1,
+      "total_methods": 45,
+      "public_methods": 23,
+      "functions_module_level": 0,
+      "inbound_imports": 0,
+      "inbound_modules": [],
+      "inbound_files_count": 0,
+      "outbound_imports": 80,
+      "outbound_modules": [
+        "PySide6.QtCore.QTimer",
+        "PySide6.QtCore.Qt",
+        "PySide6.QtGui.QAction",
+        "PySide6.QtGui.QFont",
+        "PySide6.QtWidgets.QApplication",
+        "PySide6.QtWidgets.QFrame",
+        "PySide6.QtWidgets.QHBoxLayout",
+        "PySide6.QtWidgets.QLabel",
+        "PySide6.QtWidgets.QMainWindow",
+        "PySide6.QtWidgets.QSizePolicy",
+        "PySide6.QtWidgets.QStackedWidget",
+        "PySide6.QtWidgets.QStatusBar",
+        "PySide6.QtWidgets.QVBoxLayout",
+        "PySide6.QtWidgets.QWidget",
+        "datetime.datetime",
+        "os",
+        "runtime.timer_registry.shutdown_all_timers",
+        "runtime.ux_telemetry.record_exit_point",
+        "runtime.ux_telemetry.record_navigation",
+        "runtime.ux_telemetry.shutdown_telemetry",
+        "runtime.workflow_intelligence.record_navigation",
+        "security.auth_manager.AuthManager",
+        "shiboken6.isValid",
+        "subprocess",
+        "sys",
+        "theme.theme_engine.ThemeEngine",
+        "time",
+        "ui.components.dialogs.AlertDialog",
+        "ui.components.dialogs.ConfirmDialog",
+        "ui.components.loading_spinner.LoadingOverlay",
+        "ui.components.navigation_header.NavigationHeader",
+        "ui.components.notifications.show_warning",
+        "ui.constants",
+        "ui.constants.BORDER_RADIUS_LG",
+        "ui.constants.BORDER_RADIUS_MD",
+        "ui.constants.BORDER_RADIUS_SM",
+        "ui.constants.COLOR_BG_ELEVATED",
+        "ui.constants.COLOR_BG_MAIN",
+        "ui.constants.COLOR_BG_SURFACE",
+        "ui.constants.COLOR_BORDER",
+        "ui.constants.COLOR_BORDER_FOCUS",
+        "ui.constants.COLOR_BORDER_LIGHT",
+        "ui.constants.COLOR_DANGER",
+        "ui.constants.COLOR_PRIMARY",
+        "ui.constants.COLOR_PRIMARY_HOVER",
+        "ui.constants.COLOR_SUCCESS",
+        "ui.constants.COLOR_TEXT_ON_PRIMARY",
+        "ui.constants.COLOR_TEXT_PRIMARY",
+        "ui.constants.COLOR_TEXT_SECONDARY",
+        "ui.constants.COLOR_WARNING",
+        "ui.constants.MARGIN_PAGE",
+        "ui.constants.SPACING_6",
+        "ui.constants.SPACING_LG",
+        "ui.constants.SPACING_MD",
+        "ui.constants.SPACING_NONE",
+        "ui.constants.SPACING_SM",
+        "ui.constants.SPACING_XL",
+        "ui.constants.SPACING_XS",
+        "ui.constants.TEXT_BODY",
+        "ui.constants.TEXT_LABEL",
+        "ui.constants.TEXT_PAGE_TITLE",
+        "ui.constants.TEXT_TABLE",
+        "ui.dashboard.Dashboard",
+        "ui.licensing.license_manager_dialog.LicenseManagerDialog",
+        "ui.navigation_history.NavigationHistory",
+        "ui.role_manager.get_role_from_user_data",
+        "ui.role_renderer.RoleRenderer",
+        "ui.screen_registry.register_all_screens",
+        "ui.sidebar.Sidebar",
+        "ui.utils.lazy_loader.LazyScreenManager",
+        "utils.logger.SafeBoundary",
+        "utils.logger.capture_health_snapshot",
+        "utils.logger.emit_event",
+        "utils.logger.generate_correlation_id",
+        "utils.logger.get_active_screen",
+        "utils.logger.get_logger",
+        "utils.logger.record_error",
+        "utils.logger.record_screen_load",
+        "utils.logger.safe_execute",
+        "utils.logger.set_active_screen"
+      ],
+      "coupling_score": 80,
+      "change_risk_score": 6.4
+    },
+    "frontend/ui/pos/pos_screen.py": {
+      "description": "POS screen hub",
+      "loc": 897,
+      "classes": 1,
+      "total_methods": 40,
+      "public_methods": 6,
+      "functions_module_level": 0,
+      "inbound_imports": 0,
+      "inbound_modules": [],
+      "inbound_files_count": 0,
+      "outbound_imports": 65,
+      "outbound_modules": [
+        "PySide6.QtCore.QTimer",
+        "PySide6.QtCore.Qt",
+        "PySide6.QtGui.QFont",
+        "PySide6.QtGui.QKeySequence",
+        "PySide6.QtGui.QShortcut",
+        "PySide6.QtWidgets.QAbstractItemView",
+        "PySide6.QtWidgets.QComboBox",
+        "PySide6.QtWidgets.QFrame",
+        "PySide6.QtWidgets.QGridLayout",
+        "PySide6.QtWidgets.QGroupBox",
+        "PySide6.QtWidgets.QHBoxLayout",
+        "PySide6.QtWidgets.QHeaderView",
+        "PySide6.QtWidgets.QLabel",
+        "PySide6.QtWidgets.QLineEdit",
+        "PySide6.QtWidgets.QSplitter",
+        "PySide6.QtWidgets.QTableWidget",
+        "PySide6.QtWidgets.QTableWidgetItem",
+        "PySide6.QtWidgets.QVBoxLayout",
+        "PySide6.QtWidgets.QWidget",
+        "api.endpoints.get_endpoint",
+        "datetime.date",
+        "decimal.Decimal",
+        "ui.common.barcode_search.BarcodeSearchLineEdit",
+        "ui.common.batch_selection.BatchSelectionDialog",
+        "ui.common.printable_invoice.PrintableInvoiceDialog",
+        "ui.components.buttons.ButtonVariant",
+        "ui.components.buttons.EnterpriseButton",
+        "ui.components.dialogs.AlertDialog",
+        "ui.components.tables.build_table_stylesheet",
+        "ui.constants.BORDER_RADIUS_LG",
+        "ui.constants.BORDER_RADIUS_MD",
+        "ui.constants.BORDER_RADIUS_SM",
+        "ui.constants.BORDER_WIDTH_HAIRLINE",
+        "ui.constants.BORDER_WIDTH_MEDIUM",
+        "ui.constants.BUTTON_HEIGHT_LG",
+        "ui.constants.BUTTON_HEIGHT_MD",
+        "ui.constants.BUTTON_HEIGHT_XL",
+        "ui.constants.COLOR_BG_ELEVATED",
+        "ui.constants.COLOR_BG_INPUT",
+        "ui.constants.COLOR_BORDER",
+        "ui.constants.COLOR_DANGER",
+        "ui.constants.COLOR_INFO",
+        "ui.constants.COLOR_PRIMARY",
+        "ui.constants.COLOR_SUCCESS",
+        "ui.constants.COLOR_TEXT_MUTED",
+        "ui.constants.COLOR_TEXT_ON_PRIMARY",
+        "ui.constants.COLOR_TEXT_ON_SUCCESS",
+        "ui.constants.COLOR_TEXT_ON_WARNING",
+        "ui.constants.COLOR_TEXT_PRIMARY",
+        "ui.constants.COLOR_TEXT_SECONDARY",
+        "ui.constants.COLOR_WARNING",
+        "ui.constants.FONT_WEIGHT_BOLD",
+        "ui.constants.INPUT_HEIGHT_LG",
+        "ui.constants.INPUT_HEIGHT_MD",
+        "ui.constants.SPACING_LG",
+        "ui.constants.SPACING_MD",
+        "ui.constants.SPACING_SM",
+        "ui.constants.SPACING_XL",
+        "ui.constants.SPACING_XS",
+        "ui.constants.TEXT_CARD_TITLE",
+        "ui.constants.TEXT_HELPER",
+        "ui.constants.TEXT_PAGE_TITLE",
+        "ui.constants.TEXT_SECTION_TITLE",
+        "ui.constants.TEXT_TABLE",
+        "ui.screens.base_screen.BaseScreen"
+      ],
+      "coupling_score": 65,
+      "change_risk_score": 4.04
+    },
+    "frontend/ui/sales/sales_invoice_screen.py": {
+      "description": "Sales invoice screen hub",
+      "loc": 895,
+      "classes": 1,
+      "total_methods": 31,
+      "public_methods": 24,
+      "functions_module_level": 1,
+      "inbound_imports": 0,
+      "inbound_modules": [],
+      "inbound_files_count": 0,
+      "outbound_imports": 70,
+      "outbound_modules": [
+        "PySide6.QtCore.QDate",
+        "PySide6.QtCore.Qt",
+        "PySide6.QtCore.Signal",
+        "PySide6.QtGui.QColor",
+        "PySide6.QtGui.QKeySequence",
+        "PySide6.QtGui.QShortcut",
+        "PySide6.QtWidgets.QAbstractItemView",
+        "PySide6.QtWidgets.QCheckBox",
+        "PySide6.QtWidgets.QComboBox",
+        "PySide6.QtWidgets.QDateEdit",
+        "PySide6.QtWidgets.QDoubleSpinBox",
+        "PySide6.QtWidgets.QFormLayout",
+        "PySide6.QtWidgets.QFrame",
+        "PySide6.QtWidgets.QHBoxLayout",
+        "PySide6.QtWidgets.QHeaderView",
+        "PySide6.QtWidgets.QInputDialog",
+        "PySide6.QtWidgets.QLabel",
+        "PySide6.QtWidgets.QLineEdit",
+        "PySide6.QtWidgets.QMenu",
+        "PySide6.QtWidgets.QTableWidget",
+        "PySide6.QtWidgets.QTableWidgetItem",
+        "PySide6.QtWidgets.QTextEdit",
+        "PySide6.QtWidgets.QVBoxLayout",
+        "api.endpoints.get_endpoint",
+        "decimal.Decimal",
+        "i18n.DateFormat",
+        "i18n.DateFormatter",
+        "json",
+        "os",
+        "ui.common.barcode_search.BarcodeSearchLineEdit",
+        "ui.common.batch_selection.BatchSelectionDialog",
+        "ui.common.printable_invoice.PrintableInvoiceDialog",
+        "ui.common.product_selection_dialog.ProductSelectionDialog",
+        "ui.components.buttons.ButtonSize",
+        "ui.components.buttons.ButtonVariant",
+        "ui.components.buttons.EnterpriseButton",
+        "ui.components.dialogs.AlertDialog",
+        "ui.components.dialogs.ConfirmDialog",
+        "ui.components.notifications.show_warning",
+        "ui.components.operator_safety.DestructiveActionGuard",
+        "ui.components.tables.build_table_stylesheet",
+        "ui.constants.BORDER_RADIUS_LG",
+        "ui.constants.BORDER_RADIUS_SM",
+        "ui.constants.COLOR_BG_ELEVATED",
+        "ui.constants.COLOR_BG_SURFACE",
+        "ui.constants.COLOR_BORDER",
+        "ui.constants.COLOR_DANGER",
+        "ui.constants.COLOR_INFO",
+        "ui.constants.COLOR_PRIMARY",
+        "ui.constants.COLOR_SUCCESS",
+        "ui.constants.COLOR_TEXT_MUTED",
+        "ui.constants.COLOR_TEXT_ON_PRIMARY",
+        "ui.constants.COLOR_TEXT_PRIMARY",
+        "ui.constants.COLOR_TEXT_SECONDARY",
+        "ui.constants.COLOR_WARNING",
+        "ui.constants.DENSITY_COMPACT_ROW",
+        "ui.constants.INPUT_HEIGHT_MD",
+        "ui.constants.MARGIN_PAGE",
+        "ui.constants.SPACING_LG",
+        "ui.constants.SPACING_MD",
+        "ui.constants.SPACING_SM",
+        "ui.constants.SPACING_XS",
+        "ui.constants.SPACING_XXL",
+        "ui.constants.TABLE_ROW_HEIGHT_LG",
+        "ui.constants.TEXT_BODY",
+        "ui.constants.TEXT_CARD_TITLE",
+        "ui.constants.TEXT_PAGE_TITLE",
+        "ui.constants.TEXT_TABLE",
+        "ui.returns.returns_screen.ReturnOrderDialog",
+        "ui.screens.base_screen.BaseScreen"
+      ],
+      "coupling_score": 70,
+      "change_risk_score": 5.64
+    },
+    "frontend/ui/purchases/purchase_invoice_screen.py": {
+      "description": "Purchase invoice screen hub",
+      "loc": 897,
+      "classes": 1,
+      "total_methods": 33,
+      "public_methods": 20,
+      "functions_module_level": 1,
+      "inbound_imports": 0,
+      "inbound_modules": [],
+      "inbound_files_count": 0,
+      "outbound_imports": 66,
+      "outbound_modules": [
+        "PySide6.QtCore.QDate",
+        "PySide6.QtCore.QTimer",
+        "PySide6.QtCore.Qt",
+        "PySide6.QtCore.Signal",
+        "PySide6.QtGui.QColor",
+        "PySide6.QtGui.QKeySequence",
+        "PySide6.QtGui.QShortcut",
+        "PySide6.QtWidgets.QAbstractItemView",
+        "PySide6.QtWidgets.QCheckBox",
+        "PySide6.QtWidgets.QComboBox",
+        "PySide6.QtWidgets.QDateEdit",
+        "PySide6.QtWidgets.QDoubleSpinBox",
+        "PySide6.QtWidgets.QFormLayout",
+        "PySide6.QtWidgets.QFrame",
+        "PySide6.QtWidgets.QHBoxLayout",
+        "PySide6.QtWidgets.QHeaderView",
+        "PySide6.QtWidgets.QInputDialog",
+        "PySide6.QtWidgets.QLabel",
+        "PySide6.QtWidgets.QLineEdit",
+        "PySide6.QtWidgets.QMenu",
+        "PySide6.QtWidgets.QTextEdit",
+        "PySide6.QtWidgets.QVBoxLayout",
+        "api.endpoints.get_endpoint",
+        "decimal.Decimal",
+        "i18n.DateFormat",
+        "i18n.DateFormatter",
+        "json",
+        "os",
+        "ui.common.printable_invoice.PrintableInvoiceDialog",
+        "ui.components.buttons.ButtonSize",
+        "ui.components.buttons.ButtonVariant",
+        "ui.components.buttons.EnterpriseButton",
+        "ui.components.dialogs.AlertDialog",
+        "ui.components.dialogs.ConfirmDialog",
+        "ui.components.notifications.show_warning",
+        "ui.components.operator_safety.DestructiveActionGuard",
+        "ui.components.tables.DataEntryGrid",
+        "ui.constants.BORDER_RADIUS_LG",
+        "ui.constants.BORDER_RADIUS_SM",
+        "ui.constants.COLOR_BG_ELEVATED",
+        "ui.constants.COLOR_BG_SURFACE",
+        "ui.constants.COLOR_BORDER",
+        "ui.constants.COLOR_DANGER",
+        "ui.constants.COLOR_INFO",
+        "ui.constants.COLOR_PRIMARY",
+        "ui.constants.COLOR_SUCCESS",
+        "ui.constants.COLOR_TEXT_MUTED",
+        "ui.constants.COLOR_TEXT_ON_PRIMARY",
+        "ui.constants.COLOR_TEXT_PRIMARY",
+        "ui.constants.COLOR_TEXT_SECONDARY",
+        "ui.constants.COLOR_WARNING",
+        "ui.constants.DENSITY_COMPACT_ROW",
+        "ui.constants.INPUT_HEIGHT_MD",
+        "ui.constants.MARGIN_PAGE",
+        "ui.constants.SPACING_LG",
+        "ui.constants.SPACING_MD",
+        "ui.constants.SPACING_SM",
+        "ui.constants.SPACING_XS",
+        "ui.constants.SPACING_XXL",
+        "ui.constants.TABLE_ROW_HEIGHT_LG",
+        "ui.constants.TEXT_BODY",
+        "ui.constants.TEXT_CARD_TITLE",
+        "ui.constants.TEXT_PAGE_TITLE",
+        "ui.constants.TEXT_TABLE",
+        "ui.returns.returns_screen.ReturnOrderDialog",
+        "ui.screens.base_screen.BaseScreen"
+      ],
+      "coupling_score": 66,
+      "change_risk_score": 5.23
+    }
+  }
+}

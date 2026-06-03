@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                  QDateEdit)
 from PySide6.QtCore import Qt, QDate
 from api.client import APIClient
-from api.endpoints import get_endpoint
+from api.endpoints import get_endpoint, extract_list
 from ui.screens.base_screen import BaseScreen, ScreenState
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_PAGE_TITLE,
                            TEXT_BODY, TEXT_LABEL, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
@@ -106,7 +106,7 @@ class AttendanceScreen(BaseScreen):
                 endpoint = "/api/hr/reports/attendance-summary/"
              
             response = self.api_client.get(endpoint)
-            self.records = self._parse_response(response)
+            self.records = extract_list(response)
             
             # Update state based on data
             if len(self.records) == 0:
@@ -119,17 +119,6 @@ class AttendanceScreen(BaseScreen):
             self.set_state(ScreenState.ERROR)
         
         self.update_table()
-    
-    def _parse_response(self, response):
-        """Parse API response."""
-        if isinstance(response, list):
-            return [r for r in response if isinstance(r, dict)]
-        elif isinstance(response, dict):
-            if response.get('success'):
-                data = response.get('data', [])
-                if isinstance(data, list):
-                    return [r for r in data if isinstance(r, dict)]
-        return []
     
     def update_table(self):
         """Update table with attendance data and show appropriate state indicators."""

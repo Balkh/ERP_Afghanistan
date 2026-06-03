@@ -12,6 +12,7 @@ from ui.constants import (SPACING_XS, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN
                            COLOR_SUCCESS, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.state_helper import StateHelper
 
 
 class CashflowScreen(BaseScreen):
@@ -57,18 +58,8 @@ class CashflowScreen(BaseScreen):
         summary_layout.addWidget(self.net_card)
         layout.addLayout(summary_layout)
 
-        # Loading and Empty labels
-        self.loading_label = QLabel("Loading cash flow data...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_XL}px;")
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
-
-        self.empty_label = QLabel("No cash flow data available")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_XL}px;")
-        self.empty_label.setVisible(False)
-        layout.addWidget(self.empty_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(f"""
@@ -133,24 +124,30 @@ class CashflowScreen(BaseScreen):
 
     def _show_loading(self, show=True):
         """Show/hide loading state."""
-        self.loading_label.setVisible(show)
-        self.tabs.setVisible(not show)
-        self.btn_refresh.setEnabled(not show)
         if show:
-            QApplication.processEvents()
+            self.state_helper.show_loading("Loading cash flow data...")
+            self.tabs.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.tabs.setVisible(True)
+            self.btn_refresh.setEnabled(True)
 
     def _show_empty(self, message="No cash flow data available"):
         """Show empty state."""
-        self.loading_label.setVisible(False)
-        self.empty_label.setText(message)
-        self.empty_label.setVisible(True)
+        self.state_helper.show_empty(title=message)
+        self.tabs.setVisible(False)
+        self.btn_refresh.setEnabled(True)
+
+    def _show_error(self, message="Error loading cash flow data"):
+        """Show error state."""
+        self.state_helper.show_error(message, on_retry=self.load_data)
         self.tabs.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         """Show data tabs."""
-        self.loading_label.setVisible(False)
-        self.empty_label.setVisible(False)
+        self.state_helper.hide()
         self.tabs.setVisible(True)
         self.btn_refresh.setEnabled(True)
 

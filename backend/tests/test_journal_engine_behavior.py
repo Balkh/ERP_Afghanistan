@@ -14,14 +14,14 @@ class JournalEngineValidateLinesBehaviorTest(TransactionTestCase):
     """Test validate_lines actual behavior."""
 
     def setUp(self):
-        self.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        self.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
-        self.inactive_account = Account.objects.create(
-            code='9999', name='Inactive', account_type='ASSET', is_active=False
+        self.inactive_account, _ = Account.objects.get_or_create(
+            code='9999', defaults={'name': 'Inactive', 'account_type': 'ASSET', 'is_active': False}
         )
 
     def test_validate_lines_rejects_unbalanced_entry(self):
@@ -82,11 +82,11 @@ class JournalEngineCreateEntryBehaviorTest(TransactionTestCase):
     """Test create_entry actual behavior."""
 
     def setUp(self):
-        self.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        self.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
 
     def test_create_entry_creates_journal_entry(self):
@@ -151,11 +151,11 @@ class JournalEnginePostEntryBehaviorTest(TransactionTestCase):
     """Test post_entry actual behavior."""
 
     def setUp(self):
-        self.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        self.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
 
     def test_post_entry_marks_entry_as_posted(self):
@@ -223,11 +223,11 @@ class JournalEngineUnpostEntryBehaviorTest(TransactionTestCase):
     """Test unpost_entry actual behavior."""
 
     def setUp(self):
-        self.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        self.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
 
     def test_unpost_entry_marks_entry_as_unposted(self):
@@ -288,11 +288,11 @@ class JournalEngineReverseEntryBehaviorTest(TransactionTestCase):
     """Test reverse_entry actual behavior."""
 
     def setUp(self):
-        self.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        self.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
 
     def test_reverse_entry_creates_reversal_entry(self):
@@ -355,11 +355,11 @@ class JournalEngineRecalculateBalancesTest(TransactionTestCase):
     """Test recalculate_all_balances behavior."""
 
     def setUp(self):
-        self.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        self.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
 
     def test_recalculate_all_balances_updates_all_accounts(self):
@@ -385,11 +385,11 @@ class JournalEngineGetAccountLedgerTest(TransactionTestCase):
     """Test get_account_ledger behavior."""
 
     def setUp(self):
-        self.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        self.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
 
     def test_get_account_ledger_returns_ledger_data(self):
@@ -462,14 +462,14 @@ class JournalEngineDoubleEntryIntegrityTest(TransactionTestCase):
     """Test double-entry integrity - debits must equal credits."""
 
     def setUp(self):
-        self.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+        self.cash, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.bank = Account.objects.create(
-            code='1010', name='Bank', account_type='ASSET', is_active=True
+        self.bank, _ = Account.objects.get_or_create(
+            code='1010', defaults={'name': 'Bank', 'account_type': 'ASSET', 'is_active': True}
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True}
         )
 
     def test_posted_entry_maintains_balance(self):

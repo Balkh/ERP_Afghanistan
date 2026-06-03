@@ -47,9 +47,9 @@ class UIStyleBuilder:
                 border: 2px solid {_tokens.COLOR_PRIMARY};
             }}
             QPushButton:disabled {{
-                background-color: {_tokens.COLOR_BORDER_LIGHT};
+                background-color: {_tokens.COLOR_BG_DISABLED};
                 border: 1px solid {_tokens.COLOR_BORDER_LIGHT};
-                color: {_tokens.COLOR_TEXT_MUTED};
+                color: {_tokens.COLOR_TEXT_DISABLED};
             }}
         """
         
@@ -117,8 +117,8 @@ class UIStyleBuilder:
                 background-color: {COLOR_BG_SURFACE};
             }}
             QLineEdit:disabled {{
-                background-color: {COLOR_BG_MAIN};
-                color: {COLOR_TEXT_MUTED};
+                background-color: {COLOR_BG_DISABLED};
+                color: {COLOR_TEXT_DISABLED};
                 border: 1px solid {COLOR_BORDER_LIGHT};
             }}
             QComboBox::drop-down {{
@@ -265,7 +265,7 @@ class UIStyleBuilder:
                 width: 0;
             }}
             QTableWidget:focus {{
-                border: 1px solid {COLOR_BORDER_FOCUS};
+                border: 2px solid {COLOR_BORDER_FOCUS};
             }}
         """
 
@@ -404,7 +404,7 @@ class UIStyleBuilder:
             "error": f"color: {_tokens.COLOR_VALID_ERROR}; font-size: {_tokens.TEXT_HELPER}pt; font-weight: 500;",
             "success": f"color: {_tokens.COLOR_VALID_SUCCESS}; font-size: {_tokens.TEXT_HELPER}pt; font-weight: 500;",
             "warning": f"color: {_tokens.COLOR_VALID_WARNING}; font-size: {_tokens.TEXT_HELPER}pt; font-weight: 500;",
-            "helper": f"color: {_tokens.COLOR_HELPER_TEXT}; font-size: {_tokens.TEXT_HELPER}pt; border: none; background: transparent; padding: 0; margin: 0;",
+            "helper": f"color: {_tokens.COLOR_HELPER_TEXT_DARK}; font-size: {_tokens.TEXT_HELPER}pt; border: none; background: transparent; padding: 0; margin: 0;",
             "label_small": f"color: {_tokens.COLOR_TEXT_SECONDARY}; font-size: {_tokens.TEXT_LABEL_SMALL}pt; border: none; background: transparent; padding: 0; margin: 0; font-weight: 500;",
         }
         return roles.get(role, roles["body"])

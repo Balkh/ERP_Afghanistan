@@ -14,7 +14,9 @@ from ui.constants import (
     BORDER_RADIUS_LG,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from utils.format import safe_float
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.components.state_helper import StateHelper
 from ui.screens.base_screen import BaseScreen
 
 
@@ -49,14 +51,8 @@ class FinancialOperationsConsole(BaseScreen):
 
         main_layout.addLayout(header_layout)
 
-        # Loading label
-        self.loading_label = QLabel("Loading dashboard...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(False)
-        main_layout.addWidget(self.loading_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(main_layout)
 
         # Scrollable content
         scroll = QScrollArea()
@@ -181,23 +177,30 @@ class FinancialOperationsConsole(BaseScreen):
 
     def _show_loading(self, show=True):
         self._is_loading = show
-        self.loading_label.setVisible(show)
-        self.content_widget.setVisible(not show)
-        self.btn_refresh.setEnabled(not show)
+        if show:
+            self.state_helper.show_loading("Loading dashboard...")
+            self.content_widget.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.content_widget.setVisible(True)
+            self.btn_refresh.setEnabled(True)
+
+    def _show_empty(self, message="No data to display"):
+        self._is_loading = False
+        self.state_helper.show_empty(title=message)
+        self.content_widget.setVisible(False)
+        self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         self._is_loading = False
-        self.loading_label.setVisible(False)
+        self.state_helper.hide()
         self.content_widget.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
     def _show_error(self, message):
         self._is_loading = False
-        self.loading_label.setText(message)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(True)
+        self.state_helper.show_error(message, on_retry=self.load_dashboard)
         self.content_widget.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
@@ -223,7 +226,7 @@ class FinancialOperationsConsole(BaseScreen):
             self.pay_kpi_1.update_value(str(len([p for p in payments if p.get("transaction_type") == "RECEIPT"])))
             self.pay_kpi_2.update_value(str(len([p for p in payments if p.get("transaction_type") == "PAYMENT"])))
             self.pay_kpi_3.update_value(str(len([p for p in payments if p.get("status") == "PENDING"])))
-            total = sum(self._safe_float(p.get("amount", 0)) for p in payments)
+            total = sum(safe_float(p.get("amount", 0)) for p in payments)
             self.pay_kpi_4.update_value(f"{total:,.2f}")
         except Exception as e:
             print(f"Error loading payment data: {e}")
@@ -243,7 +246,7 @@ class FinancialOperationsConsole(BaseScreen):
             response = self.api_client.get(endpoint, params={"page_size": 100})
             returns = extract_list(response)
             self.ret_kpi_1.update_value(str(len(returns)))
-            total = sum(self._safe_float(r.get("total_amount", 0)) for r in returns)
+            total = sum(safe_float(r.get("total_amount", 0)) for r in returns)
             self.ret_kpi_2.update_value(f"{total:,.2f}")
             self.ret_kpi_3.update_value(str(len([r for r in returns if r.get("journal_entry_reversed")])))
             self.ret_kpi_4.update_value(str(len([r for r in returns if r.get("status") == "PENDING"])))
@@ -257,9 +260,3 @@ class FinancialOperationsConsole(BaseScreen):
         self.health_kpi_2.update_value("0.00")
         self.health_kpi_3.update_value("0.00")
         self.health_kpi_4.update_value("0.00")
-
-    def _safe_float(self, value, default=0.0):
-        try:
-            return float(value) if value is not None else default
-        except (ValueError, TypeError):
-            return default

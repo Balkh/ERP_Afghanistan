@@ -644,55 +644,77 @@ class PaymentEngineFallbackAccountTest(TestCase):
 
     def setUp(self):
         self.today = date.today()
-        # Create required accounts
-        Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET',
-            account_category='CURRENT_ASSET', is_active=True,
+        # Required accounts (idempotent — get_or_create is required
+        # because the conftest autouse fixture pre-seeds the canonical
+        # Chart of Accounts).
+        self.cash_acct, _ = Account.objects.get_or_create(
+            code='1000', defaults={'name': 'Cash', 'account_type': 'ASSET',
+                                    'account_category': 'CURRENT_ASSET',
+                                    'is_active': True},
         )
-        Account.objects.create(
-            code='1010', name='Main Cash AFN', account_type='ASSET',
-            account_category='CURRENT_ASSET', is_active=True,
+        self.main_cash, _ = Account.objects.get_or_create(
+            code='1010', defaults={'name': 'Main Cash AFN',
+                                    'account_type': 'ASSET',
+                                    'account_category': 'CURRENT_ASSET',
+                                    'is_active': True},
         )
-        Account.objects.create(
-            code='1200', name='Accounts Receivable', account_type='ASSET',
-            account_category='CURRENT_ASSET', is_active=True,
+        self.ar_acct, _ = Account.objects.get_or_create(
+            code='1200', defaults={'name': 'Accounts Receivable',
+                                    'account_type': 'ASSET',
+                                    'account_category': 'CURRENT_ASSET',
+                                    'is_active': True},
         )
-        Account.objects.create(
-            code='1300', name='Inventory', account_type='ASSET',
-            account_category='CURRENT_ASSET', is_active=True,
+        self.inventory_acct, _ = Account.objects.get_or_create(
+            code='1300', defaults={'name': 'Inventory',
+                                    'account_type': 'ASSET',
+                                    'account_category': 'CURRENT_ASSET',
+                                    'is_active': True},
         )
-        Account.objects.create(
-            code='2100', name='Accounts Payable', account_type='LIABILITY',
-            account_category='CURRENT_LIABILITY', is_active=True,
+        self.ap_acct, _ = Account.objects.get_or_create(
+            code='2100', defaults={'name': 'Accounts Payable',
+                                    'account_type': 'LIABILITY',
+                                    'account_category': 'CURRENT_LIABILITY',
+                                    'is_active': True},
         )
-        Account.objects.create(
-            code='2200', name='Unearned Revenue', account_type='LIABILITY',
-            account_category='CURRENT_LIABILITY', is_active=True,
+        self.suspense_acct, _ = Account.objects.get_or_create(
+            code='2200', defaults={'name': 'Unearned Revenue',
+                                    'account_type': 'LIABILITY',
+                                    'account_category': 'CURRENT_LIABILITY',
+                                    'is_active': True},
         )
-        Account.objects.create(
-            code='4100', name='Sales Revenue', account_type='REVENUE',
-            account_category='OPERATING_REVENUE', is_active=True,
+        self.revenue_acct, _ = Account.objects.get_or_create(
+            code='4100', defaults={'name': 'Sales Revenue',
+                                    'account_type': 'REVENUE',
+                                    'account_category': 'OPERATING_REVENUE',
+                                    'is_active': True},
         )
-        Account.objects.create(
-            code='5100', name='COGS', account_type='EXPENSE',
-            account_category='OPERATING_EXPENSE', is_active=True,
+        self.cogs_acct, _ = Account.objects.get_or_create(
+            code='5100', defaults={'name': 'COGS', 'account_type': 'EXPENSE',
+                                    'account_category': 'OPERATING_EXPENSE',
+                                    'is_active': True},
         )
-        Account.objects.create(
-            code='6100', name='Operating Expenses', account_type='EXPENSE',
-            account_category='OPERATING_EXPENSE', is_active=True,
+        self.opex_acct, _ = Account.objects.get_or_create(
+            code='6100', defaults={'name': 'Operating Expenses',
+                                    'account_type': 'EXPENSE',
+                                    'account_category': 'OPERATING_EXPENSE',
+                                    'is_active': True},
         )
-        # Create payment method and account
+        # Create payment method and account (idempotent)
         from payments.models import PaymentMethod, PaymentAccount
-        self.cash_method = PaymentMethod.objects.create(
-            name='Cash', code='CASH', method_type='CASH',
-            is_default=True, is_active=True, fee_percentage=Decimal('0'),
+        self.cash_method, _ = PaymentMethod.objects.get_or_create(
+            code='CASH', defaults={
+                'name': 'Cash', 'method_type': 'CASH',
+                'is_default': True, 'is_active': True,
+                'fee_percentage': Decimal('0'),
+            },
         )
-        self.cash_account = PaymentAccount.objects.create(
-            name='Main Cash', code='CASH-001',
-            account_type='CASH', currency='AFN',
-            current_balance=Decimal('10000.00'),
-            accounting_account=Account.objects.get(code='1010'),
-            is_active=True,
+        self.cash_account, _ = PaymentAccount.objects.get_or_create(
+            code='CASH-001', defaults={
+                'name': 'Main Cash', 'account_type': 'CASH', 'currency': 'AFN',
+                'current_balance': Decimal('10000.00'),
+                'accounting_account': self.main_cash,
+                'is_active': True,
+            },
         )
 
     def test_receipt_customer_payment_uses_ar_account(self):

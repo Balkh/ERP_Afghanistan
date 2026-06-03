@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                  QLabel, QLineEdit)
 from PySide6.QtCore import Qt
 from api.client import APIClient
-from api.endpoints import get_endpoint
+from api.endpoints import get_endpoint, extract_list
 from ui.screens.base_screen import BaseScreen, ScreenState
 from ui.constants import (SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TABLE_ROW_HEIGHT_MD, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
                            COLOR_DANGER)
@@ -90,7 +90,7 @@ class LeaveScreen(BaseScreen):
                 endpoint = "/api/hr/reports/leave-summary/"
              
             response = self.api_client.get(endpoint)
-            self.leave_records = self._parse_response(response)
+            self.leave_records = extract_list(response)
             
             # Update state based on data
             if len(self.leave_records) == 0:
@@ -103,17 +103,6 @@ class LeaveScreen(BaseScreen):
             self.set_state(ScreenState.ERROR)
         
         self.update_table()
-    
-    def _parse_response(self, response):
-        """Parse API response."""
-        if isinstance(response, list):
-            return [r for r in response if isinstance(r, dict)]
-        elif isinstance(response, dict):
-            if response.get('success'):
-                data = response.get('data', [])
-                if isinstance(data, list):
-                    return [r for r in data if isinstance(r, dict)]
-        return []
     
     def update_table(self):
         """Update table with leave data and show appropriate state indicators."""

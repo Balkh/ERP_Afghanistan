@@ -102,3 +102,14 @@ class ProductSelectionDialog(EnterpriseDialog):
         if current_row >= 0:
             self.selected_product = self.table.item(current_row, 0).data(Qt.UserRole)
             self.accept()
+
+    def done(self, result):
+        """Stop the search timer on dialog close.
+
+        The QTimer lives as long as the dialog and would otherwise keep
+        its single-shot queued events. F-26 timer hygiene fix (Phase 5.6).
+        """
+        if hasattr(self, 'search_timer') and self.search_timer is not None:
+            if self.search_timer.isActive():
+                self.search_timer.stop()
+        super().done(result)

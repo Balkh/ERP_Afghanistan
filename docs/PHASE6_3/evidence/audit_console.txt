@@ -1,0 +1,155 @@
+======================================================================
+Phase 6.3 ΓÇö Hub Files Audit (READ-ONLY)
+======================================================================
+Scanned 1531 .py files (excluding tests/migrations/cache).
+
+[OK] Wrote audit_raw.json
+
+Top 20 files by LOC:
+    2173  backend/simulation/tests/test_human_approval_gateway/test_human_approval_gateway.py
+    1991  backend/phase5_8_full.py
+    1603  backend/genesis_init.py
+    1518  backend/phase5_9_full.py
+    1451  backend/tests/test_reality_simulation.py
+    1385  backend/simulation/tests/test_truth_verification/test_truth_verification.py
+    1352  backend/core/governance/industrial_test_suite.py
+    1302  backend/scripts/drift_check.py
+    1254  backend/core/operations/operational_intelligence.py
+    1195  backend/tests/test_adversarial_hardening.py
+    1157  frontend/utils/logger.py
+    1153  frontend/ui/main_window.py
+    1145  backend/tests/test_financial_reports.py
+    1120  backend/tests/test_validation_harness.py
+    1112  backend/core/api/v1/payment_operations.py
+    1092  backend/simulation/tests/test_predictive.py
+    1035  backend/security/views.py
+     969  backend/tests/factories.py
+     955  backend/security/tests.py
+     903  frontend/ui/constants.py
+
+Top 15 classes by LOC:
+   1264  backend/tests/test_reality_simulation.py::MonthRealitySimulation  (52 methods)
+   1213  backend/genesis_init.py::GenesisInitializer  (32 methods)
+   1124  frontend/ui/main_window.py::MainWindow  (45 methods)
+   1077  backend/core/api/v1/payment_operations.py::PaymentOperationsViewSet  (17 methods)
+    866  frontend/ui/purchases/purchase_invoice_screen.py::PurchaseInvoiceScreen  (32 methods)
+    861  frontend/ui/sales/sales_invoice_screen.py::SalesInvoiceScreen  (30 methods)
+    859  frontend/ui/pos/pos_screen.py::POSScreen  (40 methods)
+    841  backend/tests/test_validation_harness.py::RealExecutionTestHarness  (17 methods)
+    827  backend/inventory/service/stock_integration.py::StockIntegrationService  (13 methods)
+    788  backend/payments/services.py::PaymentEngine  (10 methods)
+    743  backend/accounting/services/financial_reports.py::FinancialReportEngine  (10 methods)
+    667  frontend/api/client.py::APIClient  (57 methods)
+    648  frontend/ui/sidebar.py::Sidebar  (18 methods)
+    633  frontend/ui/system/backup_screen.py::BackupControlScreen  (24 methods)
+    603  backend/core/services/financial_explainability.py::FinancialExplainability  (7 methods)
+
+Top 15 methods by LOC:
+    503  backend/phase5_8_full.py::<module>.workstream_b
+    390  backend/phase5_9_full.py::<module>.ws_b_enterprise_dataset
+    314  backend/simulation/control_center/orchestrator/operational_command_orchestrator.py::OperationalCommandOrchestrator.execute_command
+    303  frontend/ui/sales/sales_invoice_screen.py::SalesInvoiceScreen._setup_screen
+    301  backend/simulation/control_center/orchestrator/control_center_router.py::ControlCenterRouter.route_query
+    296  frontend/ui/purchases/purchase_invoice_screen.py::PurchaseInvoiceScreen._setup_screen
+    271  backend/core/seeders/accounting.py::AccountingSeeder.seed
+    248  backend/pre_production_hardening/sections/multi_user.py::<module>.run
+    246  backend/phase5_8_full.py::<module>.workstream_c
+    240  backend/core/operations/decision_engine.py::DecisionEngine.evaluate_all
+    218  backend/tests/test_reality_simulation.py::MonthRealitySimulation.setup_base_data
+    211  backend/core/seeders/inventory.py::InventorySeeder.seed
+    208  backend/phase5_9_full.py::<module>.ws_d_concurrency
+    204  frontend/ui/purchases/supplier_screen.py::SupplierDialog._build_content
+    193  backend/pre_production_hardening/sections/performance.py::<module>.run
+
+Top 15 most-imported modules:
+   211  accounting.models.Account
+   183  accounting.models.JournalEntry
+   166  accounting.models.JournalEntryLine
+   147  inventory.models.Product
+   136  inventory.models.Batch
+   131  sales.models.SalesInvoice
+   115  inventory.models.StockMovement
+   106  sales.models.Customer
+   103  purchases.models.PurchaseInvoice
+    94  inventory.models.Warehouse
+    93  inventory.models.Category
+    89  purchases.models.Supplier
+    86  inventory.models.Unit
+    67  accounting.services.journal_engine.JournalEngine
+    58  sales.models.CustomerPayment
+
+Focus files (special audit):
+
+  backend/backup/backup_system.py
+    LOC:               742
+    Classes:           5
+    Total methods:     36
+    Public methods:    20
+    Inbound imports:   0
+    Outbound imports:  27
+    Coupling score:    27
+    Change risk:       4.06
+
+  backend/payments/services.py
+    LOC:               810
+    Classes:           1
+    Total methods:     10
+    Public methods:    6
+    Inbound imports:   0
+    Outbound imports:  16
+    Coupling score:    16
+    Change risk:       2.84
+
+  backend/inventory/service/stock_integration.py
+    LOC:               839
+    Classes:           1
+    Total methods:     13
+    Public methods:    13
+    Inbound imports:   0
+    Outbound imports:  17
+    Coupling score:    17
+    Change risk:       3.52
+
+  frontend/ui/main_window.py
+    LOC:               1153
+    Classes:           1
+    Total methods:     45
+    Public methods:    23
+    Inbound imports:   0
+    Outbound imports:  80
+    Coupling score:    80
+    Change risk:       6.4
+
+  frontend/ui/pos/pos_screen.py
+    LOC:               897
+    Classes:           1
+    Total methods:     40
+    Public methods:    6
+    Inbound imports:   0
+    Outbound imports:  65
+    Coupling score:    65
+    Change risk:       4.04
+
+  frontend/ui/sales/sales_invoice_screen.py
+    LOC:               895
+    Classes:           1
+    Total methods:     31
+    Public methods:    24
+    Inbound imports:   0
+    Outbound imports:  70
+    Coupling score:    70
+    Change risk:       5.64
+
+  frontend/ui/purchases/purchase_invoice_screen.py
+    LOC:               897
+    Classes:           1
+    Total methods:     33
+    Public methods:    20
+    Inbound imports:   0
+    Outbound imports:  66
+    Coupling score:    66
+    Change risk:       5.23
+
+======================================================================
+AUDIT COMPLETE ΓÇö output: docs/PHASE6_3/evidence/audit_raw.json
+======================================================================

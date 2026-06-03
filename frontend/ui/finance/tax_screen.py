@@ -9,6 +9,7 @@ from ui.constants import (SPACING_XS, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN
                            BORDER_RADIUS_MD, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.state_helper import StateHelper
 
 
 class TaxScreen(BaseScreen):
@@ -38,25 +39,9 @@ class TaxScreen(BaseScreen):
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
 
-        # Loading and Empty states
-        self.loading_label = QLabel("Loading tax data...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
-        self.empty_label = QLabel("No tax data found")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.empty_label.setVisible(False)
-        layout.addWidget(self.empty_label)
-
-        self.error_label = QLabel("Error loading tax data")
-        self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.error_label.setVisible(False)
-        layout.addWidget(self.error_label)
-        
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(f"""
             QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
@@ -110,28 +95,30 @@ class TaxScreen(BaseScreen):
 
     def _show_loading(self, show=True):
         """Show/hide loading state."""
-        self.loading_label.setVisible(show)
-        self.tabs.setVisible(not show)
-        self.empty_label.setVisible(False)
-        self.error_label.setVisible(False)
-        self.btn_refresh.setEnabled(not show)
         if show:
-            QApplication.processEvents()
+            self.state_helper.show_loading("Loading tax data...")
+            self.tabs.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.tabs.setVisible(True)
+            self.btn_refresh.setEnabled(True)
 
     def _show_empty(self, message="No tax data found"):
         """Show empty state."""
-        self.loading_label.setVisible(False)
+        self.state_helper.show_empty(title=message)
         self.tabs.setVisible(False)
-        self.empty_label.setText(message)
-        self.empty_label.setVisible(True)
-        self.error_label.setVisible(False)
+        self.btn_refresh.setEnabled(True)
+
+    def _show_error(self, message="Error loading tax data"):
+        """Show error state."""
+        self.state_helper.show_error(message, on_retry=self.load_data)
+        self.tabs.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         """Show data table."""
-        self.loading_label.setVisible(False)
-        self.empty_label.setVisible(False)
-        self.error_label.setVisible(False)
+        self.state_helper.hide()
         self.tabs.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
@@ -170,8 +157,7 @@ class TaxScreen(BaseScreen):
                 self._show_empty()
         except Exception as e:
             print(f"Error loading tax config: {e}")
-            self._show_empty(f"Error: {e}")
-            self.error_label.setVisible(True)
+            self._show_error(f"Error: {e}")
     
     def _setup_returns_tab(self):
         layout = QVBoxLayout(self.returns_tab)

@@ -17,6 +17,9 @@ from ui.constants import (
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
+from ui.components.state_helper import StateHelper
+from ui.components.styles import combo_stylesheet
+from utils.format import safe_float
 from ui.screens.base_screen import BaseScreen
 
 
@@ -51,13 +54,13 @@ class PaymentAllocationExplorer(BaseScreen):
         self.entity_type_combo.addItem("Customer", "customer")
         self.entity_type_combo.addItem("Supplier", "supplier")
         self.entity_type_combo.currentIndexChanged.connect(self._on_entity_type_changed)
-        self.entity_type_combo.setStyleSheet(self._combo_style())
+        self.entity_type_combo.setStyleSheet(combo_stylesheet(min_height=30, custom_arrow=False))
         header_layout.addWidget(QLabel("Type:"))
         header_layout.addWidget(self.entity_type_combo)
 
         self.entity_combo = QComboBox()
         self.entity_combo.setMinimumWidth(250)
-        self.entity_combo.setStyleSheet(self._combo_style())
+        self.entity_combo.setStyleSheet(combo_stylesheet(min_height=30, custom_arrow=False))
         self.entity_combo.currentIndexChanged.connect(self._on_entity_selected)
         header_layout.addWidget(QLabel("Entity:"))
         header_layout.addWidget(self.entity_combo)
@@ -68,14 +71,8 @@ class PaymentAllocationExplorer(BaseScreen):
 
         layout.addLayout(header_layout)
 
-        # Loading label
-        self.loading_label = QLabel("Loading allocations...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         # Content
         self.content_widget = QWidget()
@@ -113,23 +110,6 @@ class PaymentAllocationExplorer(BaseScreen):
 
         layout.addWidget(self.content_widget)
         self.content_widget.setVisible(False)
-
-    def _combo_style(self):
-        return """
-            QComboBox {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
-                padding: {SPACING_XS}px {SPACING_SM}px;
-                color: {COLOR_TEXT_PRIMARY};
-                min-height: 30px;
-            }}
-            QComboBox::drop-down {{ border: none; }}
-            QComboBox QAbstractItemView {{
-                background-color: {COLOR_BG_ELEVATED};
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-        """
 
     def _load_entities(self):
         """Load entities for dropdown."""
@@ -177,8 +157,8 @@ class PaymentAllocationExplorer(BaseScreen):
         """Update display with allocation data."""
         payments = data.get("payment_trace", [])
         total_payments = data.get("total_payments", len(payments))
-        total_allocated = sum(self._safe_float(p.get("allocated_amount", 0)) for p in payments)
-        total_unallocated = sum(self._safe_float(p.get("unallocated_amount", 0)) for p in payments)
+        total_allocated = sum(safe_float(p.get("allocated_amount", 0)) for p in payments)
+        total_unallocated = sum(safe_float(p.get("unallocated_amount", 0)) for p in payments)
 
         self.kpi_total_payments.update_value(str(total_payments))
         self.kpi_total_allocated.update_value(f"{total_allocated:,.2f}")
@@ -190,9 +170,9 @@ class PaymentAllocationExplorer(BaseScreen):
             table_data.append({
                 "payment_number": p.get("payment_number", ""),
                 "payment_date": str(p.get("payment_date", ""))[:10],
-                "amount": f"{self._safe_float(p.get('amount', 0)):,.2f}",
-                "allocated": f"{self._safe_float(p.get('allocated_amount', 0)):,.2f}",
-                "unallocated": f"{self._safe_float(p.get('unallocated_amount', 0)):,.2f}",
+                "amount": f"{safe_float(p.get('amount', 0)):,.2f}",
+                "allocated": f"{safe_float(p.get('allocated_amount', 0)):,.2f}",
+                "unallocated": f"{safe_float(p.get('unallocated_amount', 0)):,.2f}",
                 "method": p.get("payment_method", ""),
                 "invoices_paid": str(p.get("invoices_paid_count", 0)),
             })
@@ -200,23 +180,30 @@ class PaymentAllocationExplorer(BaseScreen):
 
     def _show_loading(self, show=True):
         self._is_loading = show
-        self.loading_label.setVisible(show)
-        self.content_widget.setVisible(not show)
-        self.btn_refresh.setEnabled(not show)
+        if show:
+            self.state_helper.show_loading("Loading allocations...")
+            self.content_widget.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.content_widget.setVisible(True)
+            self.btn_refresh.setEnabled(True)
+
+    def _show_empty(self, message="No data to display"):
+        self._is_loading = False
+        self.state_helper.show_empty(title=message)
+        self.content_widget.setVisible(False)
+        self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         self._is_loading = False
-        self.loading_label.setVisible(False)
+        self.state_helper.hide()
         self.content_widget.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
     def _show_error(self, message):
         self._is_loading = False
-        self.loading_label.setText(message)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(True)
+        self.state_helper.show_error(message, on_retry=self.refresh)
         self.content_widget.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
@@ -225,8 +212,3 @@ class PaymentAllocationExplorer(BaseScreen):
         if self.entity_id:
             self.load_allocations(self.entity_id)
 
-    def _safe_float(self, value, default=0.0):
-        try:
-            return float(value) if value is not None else default
-        except (ValueError, TypeError):
-            return default

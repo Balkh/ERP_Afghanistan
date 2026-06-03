@@ -150,7 +150,7 @@ _THEME_DARK = {
     "COLOR_BG_MAIN": "#1e1e2e",
     "COLOR_BG_SURFACE": "#282838",
     "COLOR_BG_ELEVATED": "#313244",
-    "COLOR_BG_INPUT": "#1e1e2e",
+    "COLOR_BG_INPUT": "#181825",
     "COLOR_BG_CARD": "#282838",
     "COLOR_BG_DIALOG": "#282838",
     "COLOR_BG_SECTION": "#282838",
@@ -161,11 +161,17 @@ _THEME_DARK = {
     # ── CONTENT COLORS (high contrast against surfaces) ──
     "COLOR_TEXT_PRIMARY": "#e5e8f0",       # was #cdd6f4 — brighter for better contrast
     "COLOR_TEXT_SECONDARY": "#b8bdd0",     # was #a6adc8 — slightly brighter
-    "COLOR_TEXT_MUTED": "#7a7f96",         # was #6c7086 — readable on dark surfaces
+    "COLOR_TEXT_MUTED": "#8a8fa6",         # raised from #7a7f96 — passes AA on dark surfaces (4.7:1)
     "COLOR_TEXT_ON_PRIMARY": "#0f1118",    # dark text on primary buttons
     "COLOR_TEXT_ON_SUCCESS": "#0f1a14",    # dark text on success badges
     "COLOR_TEXT_ON_WARNING": "#1a1508",    # dark text on warning badges
     "COLOR_TEXT_ON_DANGER": "#1a0f12",     # dark text on danger badges
+    "COLOR_TEXT_ON_HEADER": "#e5e8f0",     # readable text on dark dialog headers (Phase Recovery)
+    "COLOR_TEXT_DISABLED": "#9a9fb6",      # readable disabled text on dark (Phase Recovery)
+    "COLOR_BG_DISABLED": "#2a2a3c",        # distinct disabled background (Phase Recovery)
+    "COLOR_HELPER_TEXT_DARK": "#8a8fa6",   # AA-passing helper text on dark (Phase Recovery)
+    "COLOR_SIDEBAR_ACTIVE_BG": "#364a6a",  # clear active sidebar item (Phase Recovery)
+    "COLOR_SIDEBAR_ACTIVE_BORDER": "#89b4fa",  # left-border accent for active items (Phase Recovery)
 
     # ── PRIMARY BRAND ──
     "COLOR_PRIMARY": "#89b4fa",
@@ -728,3 +734,170 @@ SIDEBAR_HOVER_TRANSITION_MS = 120
 # ═══════════════════════════════════════════════════════════════
 EMPTY_STATE_ICON_SIZE = 32     # px for empty state indicator
 EMPTY_STATE_SPACING = SPACING_SM  # spacing between empty state elements
+
+# ═══════════════════════════════════════════════════════════════
+# PHASE 5: TOKEN FOUNDATION EXPANSION (Workstream A)
+# ═══════════════════════════════════════════════════════════════
+# Added by Phase 5 Workstream A to close the tokenization gaps
+# identified in Phase 4 audit (UI_GOVERNANCE_BASELINE_2026.md).
+# All values are ADDITIVE — no existing tokens were modified or removed.
+# These tokens form the foundation for Workstream B (inline style
+# reduction) and Phase 5 God Object decompositions.
+# ═══════════════════════════════════════════════════════════════
+
+# ── BORDER RADIUS (additional sizes) ───────────────────────────
+# Fills the 4px-to-12px gap left by SM/MD/LG; adds circular/elliptical
+# variants and a "no radius" token for explicitly sharp corners.
+BORDER_RADIUS_NONE = 0
+BORDER_RADIUS_2XS = 2
+BORDER_RADIUS_2XL = 20
+BORDER_RADIUS_3XL = 24
+BORDER_RADIUS_CIRCLE = "50%"
+BORDER_RADIUS_FULL = 9999
+
+# ── BORDER WIDTH ───────────────────────────────────────────────
+# Standardized stroke widths. HAIRLINE is the default for most
+# UI components; THICK/HEAVY reserved for emphasis (focus rings,
+# active borders, dividers).
+BORDER_WIDTH_NONE = 0
+BORDER_WIDTH_HAIRLINE = 1
+BORDER_WIDTH_MEDIUM = 2
+BORDER_WIDTH_THICK = 3
+BORDER_WIDTH_HEAVY = 4
+
+# ── BORDER STYLE ───────────────────────────────────────────────
+# CSS border-style values. SOLID is default; DASHED/DOTTED reserved
+# for placeholder states and decorative dividers.
+BORDER_STYLE_SOLID = "solid"
+BORDER_STYLE_DASHED = "dashed"
+BORDER_STYLE_DOTTED = "dotted"
+BORDER_STYLE_NONE = "none"
+
+# ── SPACING (additional sizes) ─────────────────────────────────
+# Fills the 2px-2XL gap (SPACING_XS=4 → SPACING_XXL=24, missing 2px
+# and anything ≥ 24px). 2XS=2, 3XL=32, 4XL=40, 5XL=48.
+SPACING_2XS = 2
+SPACING_3XL = 32
+SPACING_4XL = 40
+SPACING_5XL = 48
+
+# ── MARGIN (additional sizes) ──────────────────────────────────
+# TIGHT/RELAXED/LOOSE are density-agnostic semantic aliases.
+# SECTION matches SECTION_VERTICAL_SPACING (32px) for major dividers.
+MARGIN_NONE = 0
+MARGIN_TIGHT = 8
+MARGIN_RELAXED = 24
+MARGIN_LOOSE = 32
+MARGIN_SECTION = 32
+
+# ── ICON SIZE ──────────────────────────────────────────────────
+# Standardized icon dimensions. XS/SM for inline icons (in text),
+# MD for toolbars, LG/XL/2XL for empty states and hero illustrations.
+ICON_SIZE_XS = 12
+ICON_SIZE_SM = 16
+ICON_SIZE_MD = 20
+ICON_SIZE_LG = 24
+ICON_SIZE_XL = 32
+ICON_SIZE_2XL = 48
+
+# ── FONT FAMILY ────────────────────────────────────────────────
+# Cross-platform font stacks. PRIMARY is the app default; SECONDARY
+# matches the typography of the platform OS; MONOSPACE for code, IDs,
+# phone numbers, and numeric data tables.
+FONT_FAMILY_PRIMARY = "'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+FONT_FAMILY_SECONDARY = "'Inter', 'Segoe UI', sans-serif"
+FONT_FAMILY_MONOSPACE = "'Consolas', 'Monaco', 'Courier New', monospace"
+
+# ── FONT WEIGHT ────────────────────────────────────────────────
+# Standardized weights. LIGHT/RARE for hero text; REGULAR for body;
+# MEDIUM for labels; SEMIBOLD for sub-headings; BOLD for emphasis.
+FONT_WEIGHT_LIGHT = 300
+FONT_WEIGHT_REGULAR = 400
+FONT_WEIGHT_MEDIUM = 500
+FONT_WEIGHT_SEMIBOLD = 600
+FONT_WEIGHT_BOLD = 700
+
+# ── Z-INDEX (stacking order) ───────────────────────────────────
+# Single source of truth for widget z-ordering. BASE=0 (normal
+# flow); DROPDOWN/STICKY for popups and sticky elements; OVERLAY
+# for backdrop scrims; MODAL/TOAST/TOOLTIP for elevated UI layers.
+Z_INDEX_BASE = 0
+Z_INDEX_DROPDOWN = 100
+Z_INDEX_STICKY = 200
+Z_INDEX_OVERLAY = 500
+Z_INDEX_MODAL = 1000
+Z_INDEX_TOAST = 2000
+Z_INDEX_TOOLTIP = 3000
+
+# ── OPACITY ────────────────────────────────────────────────────
+# Standardized opacity values. DISABLED/HOVER/PRESSED for
+# interaction states; OVERLAY for modal backdrops; MUTED/FULL
+# for content emphasis.
+OPACITY_DISABLED = 0.4
+OPACITY_HOVER = 0.8
+OPACITY_PRESSED = 0.6
+OPACITY_OVERLAY = 0.5
+OPACITY_MUTED = 0.6
+OPACITY_FULL = 1.0
+
+# ── LAYOUT DIMENSIONS ──────────────────────────────────────────
+# Standardized layout boundaries. MAX_WIDTH_* caps form/page/wide
+# content widths. NAV_WIDTH and SIDEBAR_WIDTH establish sidebar
+# dimensions (vs. SCROLLBAR_WIDTH for inner scrollbars).
+LAYOUT_MAX_WIDTH_FORM = 480
+LAYOUT_MAX_WIDTH_PAGE = 1200
+LAYOUT_MAX_WIDTH_WIDE = 1600
+LAYOUT_NAV_WIDTH = 240
+LAYOUT_SIDEBAR_WIDTH = 260
+LAYOUT_TOPBAR_HEIGHT = 56
+LAYOUT_FOOTER_HEIGHT = 32
+LAYOUT_TOOLBAR_HEIGHT = 48
+
+# ── ANIMATION DURATION & EASING ────────────────────────────────
+# Generic animation timings. DURATION_FAST (100ms) for hover/focus;
+# NORMAL (200ms) for state changes; SLOW (300ms) for transitions;
+# SLOWER (500ms) for emphasis (page-to-page). EASING_* for CSS
+# transition-timing-function.
+ANIMATION_DURATION_FAST = 100
+ANIMATION_DURATION_NORMAL = 200
+ANIMATION_DURATION_SLOW = 300
+ANIMATION_DURATION_SLOWER = 500
+ANIMATION_EASING_DEFAULT = "ease"
+ANIMATION_EASING_IN = "ease-in"
+ANIMATION_EASING_OUT = "ease-out"
+ANIMATION_EASING_IN_OUT = "ease-in-out"
+
+# ── SHADOW / ELEVATION ─────────────────────────────────────────
+# Box-shadow strings (CSS). NONE removes all elevation; SM/MD/LG/XL
+# provide depth from cards to dialogs. Composable with ELEVATION_*
+# tokens above (ELEVATION_INPUT=0, CARD=1, SECTION=2, DIALOG=4).
+SHADOW_NONE = "none"
+SHADOW_SM = "0 1px 2px rgba(0, 0, 0, 0.05)"
+SHADOW_MD = "0 2px 4px rgba(0, 0, 0, 0.1)"
+SHADOW_LG = "0 4px 8px rgba(0, 0, 0, 0.15)"
+SHADOW_XL = "0 8px 16px rgba(0, 0, 0, 0.2)"
+
+# ── TRANSITION SHORTCUTS ───────────────────────────────────────
+# Reusable CSS transition strings. FAST/NORMAL/SLOW are "all
+# properties Xms ease"; COLOR is restricted to color and
+# background-color for performant hover effects.
+TRANSITION_FAST = "all 100ms ease"
+TRANSITION_NORMAL = "all 200ms ease"
+TRANSITION_SLOW = "all 300ms ease"
+TRANSITION_COLOR = "color 150ms ease, background-color 150ms ease"
+
+# ── SCROLLBAR DIMENSIONS ───────────────────────────────────────
+# Standardized scrollbar geometry. WIDTH is fixed; MIN_HEIGHT
+# is the minimum draggable handle; HANDLE_RADIUS rounds the
+# scrollbar handle.
+SCROLLBAR_WIDTH = 12
+SCROLLBAR_MIN_HEIGHT = 30
+SCROLLBAR_HANDLE_RADIUS = 6
+
+# ── AVATAR SIZE ────────────────────────────────────────────────
+# Standardized user/contact avatar dimensions. XS for inline
+# mentions; SM for table cells; MD for lists; LG for profile cards.
+AVATAR_SIZE_XS = 24
+AVATAR_SIZE_SM = 32
+AVATAR_SIZE_MD = 40
+AVATAR_SIZE_LG = 48

@@ -121,8 +121,22 @@ class TenantMiddleware:
         # Resolve company
         company = resolve_company(company_id, company_code)
 
-        # Set context
+        # Set context — validate membership for authenticated users
         if company:
+            user = getattr(request, 'user', None)
+            if user and user.is_authenticated and not user.is_superuser:
+                # Validate user actually belongs to this company
+                from core.models.multitenant import UserCompanyMapping
+                if not UserCompanyMapping.objects.filter(
+                    user=user, company=company, is_active=True
+                ).exists():
+                    return JsonResponse(
+                        {
+                            'error': 'Access denied: you are not a member of the requested company.',
+                            'code': 'TENANT_001',
+                        },
+                        status=403,
+                    )
             TenantContext.set_company_id(str(company.id))
             TenantContext.set_company_code(company.code)
             request.company = company

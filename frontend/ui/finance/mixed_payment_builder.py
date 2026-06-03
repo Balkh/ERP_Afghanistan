@@ -3,7 +3,7 @@ from decimal import Decimal
 from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QLineEdit, QComboBox, QGroupBox,
-    QHeaderView, QTableWidget, QAbstractItemView, QWidget,
+    QHeaderView, QWidget,
 )
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QFont
@@ -19,7 +19,8 @@ from ui.constants import (
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog, EnterpriseDialog, DialogType
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import DataEntryGrid
+from ui.components.styles import combo_stylesheet
 
 
 class MixedPaymentBuilderDialog(EnterpriseDialog):
@@ -76,9 +77,7 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
         )
         splits_layout = QVBoxLayout(splits_group)
 
-        self.splits_table = QTableWidget()
-        self.splits_table.setColumnCount(4)
-        self.splits_table.setHorizontalHeaderLabels(["Payment Method", "Account", "Amount", ""])
+        self.splits_table = DataEntryGrid(["Payment Method", "Account", "Amount", ""])
         header = self.splits_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.Stretch)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
@@ -86,9 +85,6 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
         header.setSectionResizeMode(3, QHeaderView.Fixed)
         self.splits_table.setColumnWidth(2, 120)
         self.splits_table.setColumnWidth(3, 40)
-        self.splits_table.setStyleSheet(build_table_stylesheet())
-        self.splits_table.setAlternatingRowColors(True)
-        self.splits_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         splits_layout.addWidget(self.splits_table)
 
         # Add split button
@@ -162,33 +158,30 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
 
     def _add_split_row(self):
         """Add a new split row to the table."""
-        row = self.splits_table.rowCount()
-        self.splits_table.insertRow(row)
+        self.splits_table.add_row()
 
-        # Payment method combo
+        row = self.splits_table.rowCount() - 1
+
         method_combo = QComboBox()
         method_combo.addItem("-- Select Method --", None)
         for m in self.payment_methods:
             method_combo.addItem(m.get("name", ""), m.get("code"))
-        method_combo.setStyleSheet(self._combo_style())
-        self.splits_table.setCellWidget(row, 0, method_combo)
+        method_combo.setStyleSheet(combo_stylesheet(min_height=28, custom_arrow=False))
+        self.splits_table.set_cell_widget(row, 0, method_combo)
 
-        # Account combo
         account_combo = QComboBox()
         account_combo.addItem("-- Select Account --", None)
         for a in self.payment_accounts:
             account_combo.addItem(f"{a.get('name', '')} ({a.get('code', '')})", a.get("code"))
-        account_combo.setStyleSheet(self._combo_style())
-        self.splits_table.setCellWidget(row, 1, account_combo)
+        account_combo.setStyleSheet(combo_stylesheet(min_height=28, custom_arrow=False))
+        self.splits_table.set_cell_widget(row, 1, account_combo)
 
-        # Amount input
         amount_input = QLineEdit()
         amount_input.setPlaceholderText("0.00")
         amount_input.setStyleSheet(self._input_style())
         amount_input.textChanged.connect(self._update_validation)
-        self.splits_table.setCellWidget(row, 2, amount_input)
+        self.splits_table.set_cell_widget(row, 2, amount_input)
 
-        # Remove button
         remove_btn = EnterpriseButton("×", variant=ButtonVariant.GHOST)
         remove_btn.setFixedWidth(30)
         remove_btn.setStyleSheet(f"""
@@ -204,13 +197,21 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
                 border-radius: {BORDER_RADIUS_SM}px;
             }}
         """)
-        remove_btn.clicked.connect(lambda: self._remove_split_row(row))
-        self.splits_table.setCellWidget(row, 3, remove_btn)
+        remove_btn.clicked.connect(self._on_remove_btn_clicked)
+        self.splits_table.set_cell_widget(row, 3, remove_btn)
+
+    def _on_remove_btn_clicked(self):
+        """Handle remove-button click — find owning row via sender() to avoid stale row index."""
+        btn = self.sender()
+        for row in range(self.splits_table.rowCount()):
+            if self.splits_table.cell_widget(row, 3) is btn:
+                self._remove_split_row(row)
+                return
 
     def _remove_split_row(self, row):
         """Remove a split row."""
         if self.splits_table.rowCount() > 1:
-            self.splits_table.removeRow(row)
+            self.splits_table.remove_row(row)
             self._update_validation()
 
     def _update_validation(self):
@@ -234,7 +235,7 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
         """Calculate total of all splits."""
         total = 0.0
         for row in range(self.splits_table.rowCount()):
-            amount_widget = self.splits_table.cellWidget(row, 2)
+            amount_widget = self.splits_table.cell_widget(row, 2)
             if amount_widget:
                 try:
                     total += float(amount_widget.text() or "0")
@@ -270,9 +271,9 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
         """Get splits data from table."""
         splits = []
         for row in range(self.splits_table.rowCount()):
-            method_combo = self.splits_table.cellWidget(row, 0)
-            account_combo = self.splits_table.cellWidget(row, 1)
-            amount_input = self.splits_table.cellWidget(row, 2)
+            method_combo = self.splits_table.cell_widget(row, 0)
+            account_combo = self.splits_table.cell_widget(row, 1)
+            amount_input = self.splits_table.cell_widget(row, 2)
 
             method_code = method_combo.currentData()
             account_code = account_combo.currentData()
@@ -310,23 +311,6 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
     def get_result(self):
         """Get the payment result data."""
         return getattr(self, "result_data", None)
-
-    def _combo_style(self):
-        return f"""
-            QComboBox {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
-                padding: {SPACING_XS}px {SPACING_SM}px;
-                color: {COLOR_TEXT_PRIMARY};
-                min-height: 28px;
-            }}
-            QComboBox::drop-down {{ border: none; }}
-            QComboBox QAbstractItemView {{
-                background-color: {COLOR_BG_ELEVATED};
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-        """
 
     def _input_style(self):
         return f"""

@@ -286,26 +286,6 @@ class IncidentCard(QFrame):
         layout.addLayout(footer)
 
 
-class LoadingOverlay(QWidget):
-    """
-    Deprecated: use ui.components.loading_spinner.LoadingOverlay instead.
-    """
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        from ui.components.loading_spinner import LoadingOverlay as _LoadingOverlay
-        self._impl = _LoadingOverlay(parent)
-
-    def show_overlay(self):
-        self._impl.show_overlay("Loading...")
-
-    def hide_overlay(self):
-        self._impl.hide_overlay()
-
-    def resizeEvent(self, event):
-        self._impl.setGeometry(self.parent().rect())
-        super().resizeEvent(event)
-
-
 class SectionHeader(QFrame):
     action_clicked = Signal()
 

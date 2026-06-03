@@ -1,8 +1,8 @@
 from decimal import Decimal
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout, QFrame,
                                QLineEdit, QComboBox, QTextEdit, QWidget,
-                               QLabel, QDateEdit, QTableWidget,
-                               QHeaderView, QAbstractItemView, QGroupBox,
+                               QLabel, QDateEdit,
+                               QHeaderView, QGroupBox,
                                QDoubleSpinBox, QCheckBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QKeySequence, QShortcut
@@ -16,7 +16,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
     TEXT_CARD_TITLE, TEXT_LABEL, INPUT_HEIGHT_MD, DIALOG_WIDTH_WIDE,
     SECTION_TITLE_SPACING)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import DataEntryGrid
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.forms import FormSection
 
@@ -106,12 +106,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
         lines_layout = QVBoxLayout(lines_group)
         lines_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
 
-        self.lines_table = QTableWidget()
-        self.lines_table.setColumnCount(5)
-        self.lines_table.setHorizontalHeaderLabels(["Account", "Line Description", "Debit", "Credit", ""])
-        table_style = build_table_stylesheet(border_radius=BORDER_RADIUS_MD)
-        self.lines_table.setStyleSheet(table_style)
-        self.lines_table.setAlternatingRowColors(True)
+        self.lines_table = DataEntryGrid(["Account", "Line Description", "Debit", "Credit", ""])
         self.lines_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.lines_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.lines_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -198,7 +193,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
         try:
             self.accounts = self._api_client.get("/api/accounting/accounts/leaf_accounts/")
             for row in range(self.lines_table.rowCount()):
-                combo = self.lines_table.cellWidget(row, 0)
+                combo = self.lines_table.cell_widget(row, 0)
                 if isinstance(combo, QComboBox):
                     current_idx = combo.currentIndex()
                     combo.clear()
@@ -210,64 +205,65 @@ class JournalEntryFormDialog(EnterpriseDialog):
             self.accounts = []
 
     def _add_line(self):
-        row = self.lines_table.rowCount()
-        self.lines_table.insertRow(row)
-        self.lines_table.setRowHeight(row, 45)
+        self.lines_table.add_row()
+        row = self.lines_table.rowCount() - 1
+        self.lines_table.set_row_height(row, 45)
 
         account_combo = QComboBox()
         account_combo.addItem("Select Account...", None)
         for acc in sorted(self.accounts, key=lambda x: x.get("code", "")):
             account_combo.addItem(f"{acc['code']} - {acc['name']}", acc["id"])
-        self.lines_table.setCellWidget(row, 0, account_combo)
+        self.lines_table.set_cell_widget(row, 0, account_combo)
 
         desc_input = QLineEdit()
         desc_input.setPlaceholderText("Line description")
-        self.lines_table.setCellWidget(row, 1, desc_input)
+        self.lines_table.set_cell_widget(row, 1, desc_input)
 
         debit_spin = QDoubleSpinBox()
         debit_spin.setMaximum(999999999.99)
         debit_spin.setDecimals(2)
-        debit_spin.setButtonSymbols(QAbstractItemView.NoButtons)
         debit_spin.setAlignment(Qt.AlignRight)
         debit_spin.valueChanged.connect(self._update_totals)
-        self.lines_table.setCellWidget(row, 2, debit_spin)
+        self.lines_table.set_cell_widget(row, 2, debit_spin)
 
         credit_spin = QDoubleSpinBox()
         credit_spin.setMaximum(999999999.99)
         credit_spin.setDecimals(2)
-        credit_spin.setButtonSymbols(QAbstractItemView.NoButtons)
         credit_spin.setAlignment(Qt.AlignRight)
         credit_spin.valueChanged.connect(self._update_totals)
-        self.lines_table.setCellWidget(row, 3, credit_spin)
+        self.lines_table.set_cell_widget(row, 3, credit_spin)
 
         remove_btn = EnterpriseButton("x", variant=ButtonVariant.GHOST)
         remove_btn.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold;")
         remove_btn.setCursor(Qt.PointingHandCursor)
-        remove_btn.clicked.connect(lambda checked, r=row: self._remove_line_at(r))
-        self.lines_table.setCellWidget(row, 4, remove_btn)
+        remove_btn.clicked.connect(self._on_remove_line_btn_clicked)
+        self.lines_table.set_cell_widget(row, 4, remove_btn)
 
     def _remove_line(self):
         selected = self.lines_table.selectionModel().selectedRows()
         if selected:
             for idx in sorted([r.row() for r in selected], reverse=True):
-                self.lines_table.removeRow(idx)
+                self.lines_table.remove_row(idx)
             self._update_totals()
 
-    def _remove_line_at(self, row):
+    def _on_remove_line_btn_clicked(self):
+        """Find owning row via sender() to handle row reindexing correctly."""
         button = self.sender()
-        if button:
-            index = self.lines_table.indexAt(button.pos())
-            if index.isValid():
-                self.lines_table.removeRow(index.row())
+        if not button:
+            return
+        for row in range(self.lines_table.rowCount()):
+            if self.lines_table.cell_widget(row, 4) is button:
+                self.lines_table.remove_row(row)
                 self._update_totals()
+                return
 
     def _update_totals(self):
         total_debit = Decimal("0.00")
         total_credit = Decimal("0.00")
 
         for row in range(self.lines_table.rowCount()):
-            debit_widget = self.lines_table.cellWidget(row, 2)
-            credit_widget = self.lines_table.cellWidget(row, 3)
+            debit_widget = self.lines_table.cell_widget(row, 2)
+            credit_widget = self.lines_table.cell_widget(row, 3)
             if debit_widget:
                 total_debit += Decimal(str(debit_widget.value()))
             if credit_widget:
@@ -297,10 +293,10 @@ class JournalEntryFormDialog(EnterpriseDialog):
             "lines": [],
         }
         for row in range(self.lines_table.rowCount()):
-            account_combo = self.lines_table.cellWidget(row, 0)
-            desc_input = self.lines_table.cellWidget(row, 1)
-            debit_spin = self.lines_table.cellWidget(row, 2)
-            credit_spin = self.lines_table.cellWidget(row, 3)
+            account_combo = self.lines_table.cell_widget(row, 0)
+            desc_input = self.lines_table.cell_widget(row, 1)
+            debit_spin = self.lines_table.cell_widget(row, 2)
+            credit_spin = self.lines_table.cell_widget(row, 3)
             account_id = account_combo.currentData() if account_combo else None
             if account_id is None:
                 continue

@@ -73,22 +73,43 @@ def _setup_common(self):
         location="WH01",
         is_active=True
     )
-    # Accounts
-    self.ar_account = Account.objects.create(code='1200', name='AR', account_type='ASSET', account_category='CURRENT_ASSET', is_active=True)
-    self.revenue_account = Account.objects.create(code='4100', name='Revenue', account_type='REVENUE', account_category='OPERATING_REVENUE', is_active=True)
-    self.tax_account = Account.objects.create(code='2100', name='Tax Payable', account_type='LIABILITY', account_category='CURRENT_LIABILITY', is_active=True)
-    self.cash_account = Account.objects.create(code='1010', name='Cash', account_type='ASSET', account_category='CURRENT_ASSET', is_active=True)
-    self.sales_return_account = Account.objects.create(code='4200', name='Sales Returns', account_type='REVENUE', account_category='OPERATING_REVENUE', is_active=True)
-    self.inventory_account = Account.objects.create(code='1300', name='Inventory', account_type='ASSET', account_category='CURRENT_ASSET', is_active=True)
-    self.cogs_account = Account.objects.create(code='5100', name='COGS', account_type='EXPENSE', account_category='COST_OF_GOODS_SOLD', is_active=True)
-    self.ap_account = Account.objects.create(code='2200', name='AP', account_type='LIABILITY', account_category='CURRENT_LIABILITY', is_active=True)
-    self.purchase_tax_account = Account.objects.create(code='2110', name='Purchase Tax', account_type='ASSET', account_category='CURRENT_ASSET', is_active=True)
-    # Payment
-    self.payment_method = PaymentMethod.objects.create(name='Cash', code='CASH', method_type='CASH', is_active=True)
-    self.payment_account = PaymentAccount.objects.create(
-        name='Main Cash', code='MCASH', account_type='CASH',
-        accounting_account=self.cash_account, is_active=True
-    )
+    # Accounts (idempotent — the conftest autouse fixture pre-seeds
+    # the canonical Chart of Accounts; get_or_create is required to
+    # avoid IntegrityError on rerun / TestCase transaction reuse).
+    self.ar_account, _ = Account.objects.get_or_create(
+        code='1200', defaults={'name': 'AR', 'account_type': 'ASSET',
+                                'account_category': 'CURRENT_ASSET', 'is_active': True})
+    self.revenue_account, _ = Account.objects.get_or_create(
+        code='4100', defaults={'name': 'Revenue', 'account_type': 'REVENUE',
+                                'account_category': 'OPERATING_REVENUE', 'is_active': True})
+    self.tax_account, _ = Account.objects.get_or_create(
+        code='2100', defaults={'name': 'Tax Payable', 'account_type': 'LIABILITY',
+                                'account_category': 'CURRENT_LIABILITY', 'is_active': True})
+    self.cash_account, _ = Account.objects.get_or_create(
+        code='1010', defaults={'name': 'Cash', 'account_type': 'ASSET',
+                                'account_category': 'CURRENT_ASSET', 'is_active': True})
+    self.sales_return_account, _ = Account.objects.get_or_create(
+        code='4200', defaults={'name': 'Sales Returns', 'account_type': 'REVENUE',
+                                'account_category': 'OPERATING_REVENUE', 'is_active': True})
+    self.inventory_account, _ = Account.objects.get_or_create(
+        code='1300', defaults={'name': 'Inventory', 'account_type': 'ASSET',
+                                'account_category': 'CURRENT_ASSET', 'is_active': True})
+    self.cogs_account, _ = Account.objects.get_or_create(
+        code='5100', defaults={'name': 'COGS', 'account_type': 'EXPENSE',
+                                'account_category': 'COST_OF_GOODS_SOLD', 'is_active': True})
+    self.ap_account, _ = Account.objects.get_or_create(
+        code='2200', defaults={'name': 'AP', 'account_type': 'LIABILITY',
+                                'account_category': 'CURRENT_LIABILITY', 'is_active': True})
+    self.purchase_tax_account, _ = Account.objects.get_or_create(
+        code='2110', defaults={'name': 'Purchase Tax', 'account_type': 'ASSET',
+                                'account_category': 'CURRENT_ASSET', 'is_active': True})
+    # Payment (idempotent — same reason as accounts)
+    self.payment_method, _ = PaymentMethod.objects.get_or_create(
+        code='CASH', defaults={'name': 'Cash', 'method_type': 'CASH', 'is_active': True})
+    self.payment_account, _ = PaymentAccount.objects.get_or_create(
+        code='MCASH', defaults={
+            'name': 'Main Cash', 'account_type': 'CASH',
+            'accounting_account': self.cash_account, 'is_active': True})
 
 
 class TestReturnValidationP0(TransactionTestCase):

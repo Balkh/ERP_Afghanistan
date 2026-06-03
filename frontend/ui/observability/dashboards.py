@@ -120,6 +120,15 @@ class _BaseDashboard(BaseScreen):
     def _on_screen_shown(self):
         pass
 
+    def _on_screen_hidden(self):
+        """Stop all AsyncDataLoader timers when the screen is hidden.
+
+        Without this, each navigation cycle (open → close → reopen) leaves
+        a QTimer running. After 6 cycles the process accumulates 6 orphan
+        timers that keep firing against stale closures — the F-30 leak.
+        """
+        self.cleanup()
+
     def start_auto_refresh(self, interval_ms=5000):
         for loader in self._data_loaders:
             loader.resume()

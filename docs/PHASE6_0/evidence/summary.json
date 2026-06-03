@@ -1,0 +1,29 @@
+{
+  "audit_id": "PHASE6_0_20260602_144256",
+  "ts": "2026-06-02T14:42:56.046229",
+  "total_files": 1146,
+  "flagged_files": 67,
+  "file_tiers": {
+    "T1_OVER_500": 59,
+    "T2_OVER_1000": 8,
+    "T3_OVER_1500": 0,
+    "T4_OVER_2000": 0
+  },
+  "total_classes": 2189,
+  "flagged_classes": 76,
+  "class_tiers": {
+    "T1_OVER_300": 56,
+    "T2_OVER_500": 12,
+    "T3_OVER_800": 8
+  },
+  "total_methods": 7703,
+  "flagged_methods": 422,
+  "method_tiers": {
+    "T1_OVER_50": 340,
+    "T2_OVER_100": 73,
+    "T3_OVER_200": 9
+  },
+  "duplicate_signatures": 50,
+  "duplicate_bodies": 50,
+  "method_fanout": 50
+}

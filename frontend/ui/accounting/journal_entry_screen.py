@@ -6,6 +6,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
+from utils.format import safe_float
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
                            TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_MUTED,
                            COLOR_PRIMARY, COLOR_SUCCESS,
@@ -263,12 +264,6 @@ class JournalEntryScreen(BaseScreen):
         self.table.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
-    def _safe_float(self, value, default=0.0):
-        """Safely convert value to float."""
-        try:
-            return float(value) if value is not None else default
-        except (ValueError, TypeError):
-            return default
 
     def load_entries(self):
         self._show_loading()
@@ -314,8 +309,8 @@ class JournalEntryScreen(BaseScreen):
                 continue
 
             is_posted = entry.get("is_posted") or False
-            debit = self._safe_float(entry.get("total_debit"))
-            credit = self._safe_float(entry.get("total_credit"))
+            debit = safe_float(entry.get("total_debit"))
+            credit = safe_float(entry.get("total_credit"))
             description = entry.get("description") or ""
             entries_data.append({
                 "entry_number": entry.get("entry_number") or "",

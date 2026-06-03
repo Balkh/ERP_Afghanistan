@@ -10,33 +10,7 @@ from unittest.mock import MagicMock, patch
 
 class TestUIComponentsExist:
     """Test UI components exist and can be imported."""
-    
-    def test_enterprise_button_import(self):
-        """Test EnterpriseButton can be imported."""
-        try:
-            from ui.components.base_widgets import EnterpriseButton
-            # If import works, test passes
-            assert True
-        except ImportError as e:
-            # Component may not exist, that's OK for this test
-            pytest.skip(f"Component not available: {e}")
-            
-    def test_enterprise_table_import(self):
-        """Test EnterpriseTable can be imported."""
-        try:
-            from ui.components.base_widgets import EnterpriseTable
-            assert True
-        except ImportError as e:
-            pytest.skip(f"Component not available: {e}")
-            
-    def test_enterprise_form_import(self):
-        """Test EnterpriseForm can be imported."""
-        try:
-            from ui.components.base_widgets import EnterpriseForm
-            assert True
-        except ImportError as e:
-            pytest.skip(f"Component not available: {e}")
-            
+
     def test_notification_manager_import(self):
         """Test NotificationManager can be imported."""
         try:

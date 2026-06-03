@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from api.client import APIClient
-from api.endpoints import get_endpoint
+from api.endpoints import get_endpoint, extract_list
 from ui.utils.debounce import Debouncer
 from ui.screens.base_screen import BaseScreen, ScreenState
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XXL, MARGIN_PAGE, TEXT_PAGE_TITLE,
@@ -132,7 +132,7 @@ class EmployeeScreen(BaseScreen):
                 endpoint = "/api/hr/employees/"
              
             response = self.api_client.get(endpoint)
-            self.employees = self._parse_response(response)
+            self.employees = extract_list(response)
             
             # Update state based on data
             if len(self.employees) == 0:
@@ -145,19 +145,6 @@ class EmployeeScreen(BaseScreen):
             self.set_state(ScreenState.ERROR)
         
         self.update_table()
-    
-    def _parse_response(self, response):
-        """Parse API response."""
-        if isinstance(response, list):
-            return [e for e in response if isinstance(e, dict)]
-        elif isinstance(response, dict):
-            if response.get('success'):
-                data = response.get('data', [])
-                if isinstance(data, list):
-                    return [e for e in data if isinstance(e, dict)]
-                elif isinstance(data, dict) and 'results' in data:
-                    return [e for e in data.get('results', []) if isinstance(e, dict)]
-        return []
     
     def update_table(self):
         """Update table with employee data and show appropriate state indicators."""

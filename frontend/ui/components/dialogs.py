@@ -1,7 +1,7 @@
 from ui.constants import (
     SPACING_NONE, SPACING_SM, SPACING_MD, SPACING_LG,
     COLOR_BG_DIALOG, COLOR_BG_MAIN, COLOR_HEADER_DARK, COLOR_FORM_FOOTER_BORDER,
-    COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY,
+    COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_ON_HEADER,
     COLOR_BG_SECTION, COLOR_BORDER,
     BORDER_RADIUS_LG,
     DIALOG_WIDTH_MIN, DIALOG_WIDTH_PREFERRED, DIALOG_WIDTH_MAX,
@@ -130,7 +130,7 @@ class EnterpriseDialog(QDialog):
                 border-top-right-radius: {BORDER_RADIUS_LG}px;
             }}
             QLabel {{
-                color: {COLOR_TEXT_ON_PRIMARY};
+                color: {COLOR_TEXT_ON_HEADER};
             }}
         """)
         

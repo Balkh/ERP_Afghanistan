@@ -1,0 +1,42 @@
+[
+  {
+    "test": "pg_dump_text",
+    "ok": true,
+    "size_mb": 718.2269306182861,
+    "elapsed_sec": 7.317330099998799
+  },
+  {
+    "test": "pg_dump_custom",
+    "ok": true,
+    "size_mb": 201.68993091583252,
+    "elapsed_sec": 24.12115730000005
+  },
+  {
+    "test": "pg_restore",
+    "elapsed_sec": 135.2414933,
+    "mirror_counts": {
+      "inventory_product": 100000,
+      "sales_customer": 50000,
+      "accounting_journalentryline": 2000000
+    }
+  },
+  {
+    "test": "wal",
+    "wal_level": "replica",
+    "archive_mode": "off"
+  },
+  {
+    "test": "pitr",
+    "ready": false,
+    "wal_level": "replica",
+    "archive_mode": "off"
+  },
+  {
+    "test": "corruption",
+    "ok": true
+  },
+  {
+    "check": "score",
+    "value": 80
+  }
+]

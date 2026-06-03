@@ -1,0 +1,35 @@
+======================================================================
+Phase 6.3 ΓÇö Evidence backup SHA256 checksums
+======================================================================
+
+backup_system_BEFORE.py
+  Size:  30,678 bytes
+  SHA256: e7aeb7ddc3a8496f6cc9be46c4d9b249d5f64a28d02292618028cd1c0e9ff661
+
+main_window_BEFORE.py
+  Size:  53,354 bytes
+  SHA256: 64ffdb6b2f0bf86626112174b16172a8c24e7e92e9b76ab99fd3edd3562a5b7f
+
+payments_services_BEFORE.py
+  Size:  32,498 bytes
+  SHA256: 248be6d44d3d4225d3f2bbc1c4db9af154f065cf4096a5d97a9ac18e08f3f442
+
+pos_screen_BEFORE.py
+  Size:  42,351 bytes
+  SHA256: 8a774ee21403647033f11cce7766952159bec2d6e6eba13875c14b5427d0e833
+
+purchase_invoice_screen_BEFORE.py
+  Size:  43,129 bytes
+  SHA256: 3b5418290328321a82c9160f06a67da53aa5e2b37f84a1486d818dffacecfb5c
+
+sales_invoice_screen_BEFORE.py
+  Size:  42,938 bytes
+  SHA256: debed68e72c084c8dc6203135b51bafadfcb728721e957e970793d5b9eb77e82
+
+stock_integration_BEFORE.py
+  Size:  32,574 bytes
+  SHA256: 676e7d573d55e5142c18d75408844090b07389fa05e5668b61e5bb9d81286236
+
+======================================================================
+All evidence backups ready for safe refactor
+======================================================================

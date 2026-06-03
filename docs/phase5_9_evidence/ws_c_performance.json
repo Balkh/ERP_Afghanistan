@@ -1,0 +1,139 @@
+[
+  {
+    "query": "product_count",
+    "sql": "SELECT COUNT(*) FROM inventory_product",
+    "iterations": 20,
+    "p50": 6.262249999053893,
+    "p95": 8.000770001126517,
+    "p99": 13.750474000589737,
+    "min": 5.546600001252955,
+    "max": 15.187900000455556,
+    "plan": "Aggregate  (cost=2074.29..2074.30 rows=1 width=8) (actual time=10.365..10.366 rows=1 loops=1)\n  Buffers: shared hit=81\n  ->  Index Only Scan using inventory_product_company_id_2757a1fd on inventory_product  (cost=0.29..1824.29 rows=100000 width=0) (actual time=0.070..6.535 rows=100000 loops=1)\n        Heap Fetches: 0\n        Buffers: shared hit=81\nPlanning:\n  Buffers: shared hit=262\nPlanning Time: 5.344 ms\nExecution Time: 10.457 ms"
+  },
+  {
+    "query": "product_by_sku",
+    "sql": "SELECT * FROM inventory_product WHERE sku = 'SKU-00001234'",
+    "iterations": 20,
+    "p50": 0.21505000040633604,
+    "p95": 0.8047600005738837,
+    "p99": 6.282232000776267,
+    "min": 0.20339999900897965,
+    "max": 7.651600000826875,
+    "plan": "Index Scan using inventory_product_sku_2aad2a63_like on inventory_product  (cost=0.42..8.44 rows=1 width=187) (actual time=0.031..0.032 rows=1 loops=1)\n  Index Cond: ((sku)::text = 'SKU-00001234'::text)\n  Buffers: shared hit=4\nPlanning:\n  Buffers: shared hit=283\nPlanning Time: 5.833 ms\nExecution Time: 0.049 ms"
+  },
+  {
+    "query": "product_list_paginated",
+    "sql": "SELECT id, name, sku FROM inventory_product ORDER BY id LIMIT 50 OFFSET 5000",
+    "iterations": 20,
+    "p50": 3.047599999263184,
+    "p95": 7.230895000066122,
+    "p99": 47.7144989992302,
+    "min": 2.7667999966070056,
+    "max": 57.83539999902132,
+    "plan": "Limit  (cost=740.82..748.22 rows=50 width=39) (actual time=9.880..9.945 rows=50 loops=1)\n  Buffers: shared hit=5081\n  ->  Index Scan using inventory_product_pkey on inventory_product  (cost=0.42..14808.37 rows=100000 width=39) (actual time=0.025..9.785 rows=5050 loops=1)\n        Buffers: shared hit=5081\nPlanning:\n  Buffers: shared hit=255\nPlanning Time: 6.734 ms\nExecution Time: 10.020 ms"
+  },
+  {
+    "query": "customer_count",
+    "sql": "SELECT COUNT(*) FROM sales_customer",
+    "iterations": 20,
+    "p50": 3.181499998390791,
+    "p95": 5.141585000819764,
+    "p99": 9.748476999375264,
+    "min": 3.0046000028960407,
+    "max": 10.900199999014148,
+    "plan": "Aggregate  (cost=1043.29..1043.30 rows=1 width=8) (actual time=5.149..5.150 rows=1 loops=1)\n  Buffers: shared hit=42\n  ->  Index Only Scan using sales_customer_company_id_c7b669d0 on sales_customer  (cost=0.29..918.29 rows=50000 width=0) (actual time=0.064..3.173 rows=50000 loops=1)\n        Heap Fetches: 0\n        Buffers: shared hit=42\nPlanning:\n  Buffers: shared hit=268\nPlanning Time: 6.788 ms\nExecution Time: 5.229 ms"
+  },
+  {
+    "query": "customer_by_code",
+    "sql": "SELECT * FROM sales_customer WHERE code = 'CUST-00001234'",
+    "iterations": 20,
+    "p50": 0.2281499982927926,
+    "p95": 0.9196649976729578,
+    "p99": 5.86217299980489,
+    "min": 0.20220000078552403,
+    "max": 7.097800000337884,
+    "plan": "Index Scan using sales_customer_code_53eb8090_like on sales_customer  (cost=0.29..8.31 rows=1 width=175) (actual time=0.018..0.018 rows=0 loops=1)\n  Index Cond: ((code)::text = 'CUST-00001234'::text)\n  Buffers: shared hit=2\nPlanning:\n  Buffers: shared hit=331\nPlanning Time: 5.374 ms\nExecution Time: 0.082 ms"
+  },
+  {
+    "query": "sales_invoice_recent",
+    "sql": "SELECT * FROM sales_salesinvoice ORDER BY invoice_date DESC LIMIT 50",
+    "iterations": 20,
+    "p50": 60.02635000004375,
+    "p95": 91.41014499909947,
+    "p99": 141.54650900076368,
+    "min": 57.023599998501595,
+    "max": 154.08060000117985,
+    "plan": "Limit  (cost=6729.88..6735.63 rows=50 width=144) (actual time=56.884..62.047 rows=50 loops=1)\n  Buffers: shared hit=2610\n  ->  Gather Merge  (cost=6729.88..15185.72 rows=73529 width=144) (actual time=56.881..62.040 rows=50 loops=1)\n        Workers Planned: 1\n        Workers Launched: 1\n        Buffers: shared hit=2610\n        ->  Sort  (cost=5729.87..5913.70 rows=73529 width=144) (actual time=41.861..41.864 rows=50 loops=2)\n              Sort Key: invoice_date DESC\n              Sort Method: top-N heapsort  Memory: 51kB\n              Buffers: shared hit=2610\n              Worker 0:  Sort Method: top-N heapsort  Memory: 51kB\n              ->  Parallel Seq Scan on sales_salesinvoice  (cost=0.00..3287.29 rows=73529 width=144) (actual time=0.012..21.494 rows=62500 loops=2)\n                    Buffers: shared hit=2552\nPlanning:\n  Buffers: shared hit=345\nPlanning Time: 5.286 ms\nExecution Time: 62.129 ms"
+  },
+  {
+    "query": "stock_movements_by_batch",
+    "sql": "SELECT * FROM inventory_stockmovement WHERE batch_id = (SELECT id FROM inventory_batch LIMIT 1) ORDER BY created_at DESC LIMIT 100",
+    "iterations": 20,
+    "p50": 0.38189999941096175,
+    "p95": 1.184355000259538,
+    "p99": 10.420711000588183,
+    "min": 0.31069999749888666,
+    "max": 12.729800000670366,
+    "plan": "Limit  (cost=379.20..379.45 rows=100 width=118) (actual time=0.045..0.046 rows=0 loops=1)\n  Buffers: shared hit=7\n  InitPlan 1 (returns $0)\n    ->  Limit  (cost=0.00..0.03 rows=1 width=16) (actual time=0.013..0.014 rows=1 loops=1)\n          Buffers: shared hit=1\n          ->  Seq Scan on inventory_batch  (cost=0.00..1270.00 rows=50000 width=16) (actual time=0.013..0.013 rows=1 loops=1)\n                Buffers: shared hit=1\n  ->  Sort  (cost=379.18..379.43 rows=100 width=118) (actual time=0.044..0.044 rows=0 loops=1)\n        Sort Key: inventory_stockmovement.created_at DESC\n        Sort Method: quicksort  Memory: 25kB\n        Buffers: shared hit=7\n        ->  Bitmap Heap Scan on inventory_stockmovement  (cost=5.20..375.85 rows=100 width=118) (actual time=0.031..0.031 rows=0 loops=1)\n              Recheck Cond: (batch_id = $0)\n              Buffers: shared hit=4\n              ->  Bitmap Index Scan on inventory_s_batch_i_8a6d71_idx  (cost=0.00..5.17 rows=100 width=0) (actual time=0.030..0.030 rows=0 loops=1)\n                    Index Cond: (batch_id = $0)\n                    Buffers: shared hit=4\nPlanning:\n  Buffers: shared hit=466\nPlanning Time: 9.777 ms\nExecution Time: 0.094 ms"
+  },
+  {
+    "query": "stock_movements_sum_by_day",
+    "sql": "SELECT DATE(created_at) AS d, SUM(quantity) FROM inventory_stockmovement GROUP BY DATE(created_at) ORDER BY d",
+    "iterations": 20,
+    "p50": 114.49899999934132,
+    "p95": 147.62193500100696,
+    "p99": 171.59894699878348,
+    "min": 103.98640000130399,
+    "max": 177.59319999822765,
+    "plan": "Finalize GroupAggregate  (cost=14500.66..15358.13 rows=3256 width=36) (actual time=111.034..117.317 rows=1 loops=1)\n  Group Key: (date(created_at))\n  Buffers: shared hit=1840 read=7792 written=28\n  ->  Gather Merge  (cost=14500.66..15260.45 rows=6512 width=36) (actual time=111.024..117.307 rows=3 loops=1)\n        Workers Planned: 2\n        Workers Launched: 2\n        Buffers: shared hit=1840 read=7792 written=28\n        ->  Sort  (cost=13500.64..13508.78 rows=3256 width=36) (actual time=87.724..87.725 rows=1 loops=3)\n              Sort Key: (date(created_at))\n              Sort Method: quicksort  Memory: 25kB\n              Buffers: shared hit=1840 read=7792 written=28\n              Worker 0:  Sort Method: quicksort  Memory: 25kB\n              Worker 1:  Sort Method: quicksort  Memory: 25kB\n              ->  Partial HashAggregate  (cost=13261.83..13310.67 rows=3256 width=36) (actual time=87.692..87.698 rows=1 loops=3)\n                    Group Key: date(created_at)\n                    Batches: 1  Memory Usage: 121kB\n                    Buffers: shared hit=1824 read=7792 written=28\n                    Worker 0:  Batches: 1  Memory Usage: 121kB\n                    Worker 1:  Batches: 1  Memory Usage: 121kB\n                    ->  Parallel Seq Scan on inventory_stockmovement  (cost=0.00..12220.17 rows=208333 width=7) (actual time=0.366..57.716 rows=166667 loops=3)\n                          Buffers: shared hit=1824 read=7792 written=28\nPlanning:\n  Buffers: shared hit=288\nPlanning "
+  },
+  {
+    "query": "journal_lines_by_account",
+    "sql": "SELECT * FROM accounting_journalentryline WHERE account_id = (SELECT id FROM accounting_account LIMIT 1) LIMIT 100",
+    "iterations": 20,
+    "p50": 4.33800000064366,
+    "p95": 6.218504996832064,
+    "p99": 18.597460999335432,
+    "min": 3.5434999990684446,
+    "max": 21.692199999961304,
+    "plan": "Limit  (cost=106.59..333.50 rows=100 width=101) (actual time=2.438..2.769 rows=100 loops=1)\n  Buffers: shared hit=111\n  InitPlan 1 (returns $0)\n    ->  Limit  (cost=0.00..0.03 rows=1 width=16) (actual time=0.012..0.012 rows=1 loops=1)\n          Buffers: shared hit=1\n          ->  Seq Scan on accounting_account  (cost=0.00..6.21 rows=221 width=16) (actual time=0.011..0.011 rows=1 loops=1)\n                Buffers: shared hit=1\n  ->  Bitmap Heap Scan on accounting_journalentryline  (cost=106.56..20641.87 rows=9050 width=101) (actual time=2.437..2.763 rows=100 loops=1)\n        Recheck Cond: (account_id = $0)\n        Heap Blocks: exact=100\n        Buffers: shared hit=111\n        ->  Bitmap Index Scan on accounting_journalentryline_account_id_521eb404  (cost=0.00..104.30 rows=9050 width=0) (actual time=1.346..1.346 rows=9050 loops=1)\n              Index Cond: (account_id = $0)\n              Buffers: shared hit=11\nPlanning:\n  Buffers: shared hit=358\nPlanning Time: 9.230 ms\nExecution Time: 2.884 ms"
+  },
+  {
+    "query": "journal_entry_full",
+    "sql": "SELECT * FROM accounting_journalentry WHERE entry_number = 'JE-00001000'",
+    "iterations": 20,
+    "p50": 0.24870000015653204,
+    "p95": 1.225225002235682,
+    "p99": 9.096165001501491,
+    "min": 0.21999999808031134,
+    "max": 11.063900001317961,
+    "plan": "Index Scan using accounting_journalentry_entry_number_a4d81ea6_like on accounting_journalentry  (cost=0.42..8.44 rows=1 width=149) (actual time=0.026..0.027 rows=1 loops=1)\n  Index Cond: ((entry_number)::text = 'JE-00001000'::text)\n  Buffers: shared hit=4\nPlanning:\n  Buffers: shared hit=378\nPlanning Time: 9.341 ms\nExecution Time: 0.093 ms"
+  },
+  {
+    "query": "trial_balance_simple",
+    "sql": "SELECT account_id, SUM(debit), SUM(credit) FROM accounting_journalentryline GROUP BY account_id",
+    "iterations": 20,
+    "p50": 342.0887499996752,
+    "p95": 354.12574500151095,
+    "p99": 363.28746900035185,
+    "min": 323.56459999937215,
+    "max": 365.5779000000621,
+    "plan": "Finalize GroupAggregate  (cost=49993.14..50053.55 rows=221 width=80) (actual time=374.625..379.665 rows=221 loops=1)\n  Group Key: account_id\n  Buffers: shared hit=2034 read=32378\n  ->  Gather Merge  (cost=49993.14..50044.71 rows=442 width=80) (actual time=374.613..379.080 rows=663 loops=1)\n        Workers Planned: 2\n        Workers Launched: 2\n        Buffers: shared hit=2034 read=32378\n        ->  Sort  (cost=48993.11..48993.66 rows=221 width=80) (actual time=335.420..335.433 rows=221 loops=3)\n              Sort Key: account_id\n              Sort Method: quicksort  Memory: 64kB\n              Buffers: shared hit=2034 read=32378\n              Worker 0:  Sort Method: quicksort  Memory: 64kB\n              Worker 1:  Sort Method: quicksort  Memory: 64kB\n              ->  Partial HashAggregate  (cost=48981.19..48984.51 rows=221 width=80) (actual time=335.183..335.264 rows=221 loops=3)\n                    Group Key: account_id\n                    Batches: 1  Memory Usage: 288kB\n                    Buffers: shared hit=2020 read=32378\n                    Worker 0:  Batches: 1  Memory Usage: 288kB\n                    Worker 1:  Batches: 1  Memory Usage: 288kB\n                    ->  Parallel Seq Scan on accounting_journalentryline  (cost=0.00..42731.25 rows=833325 width=22) (actual time=0.375..119.737 rows=666667 loops=3)\n                          Buffers: shared hit=2020 read=32378\nPlanning:\n  Buffers: shared hit=198\nPlanning Time: 9.034 ms\nExecution Time: 380.155 ms"
+  },
+  {
+    "query": "ar_aging",
+    "sql": "SELECT customer_id, SUM(total_amount - paid_amount) FROM sales_salesinvoice WHERE status = 'POSTED' GROUP BY customer_id",
+    "iterations": 20,
+    "p50": 0.22715000159223564,
+    "p95": 0.7688849973419606,
+    "p99": 5.170577001081249,
+    "min": 0.22249999892665073,
+    "max": 6.2710000020160805,
+    "plan": "GroupAggregate  (cost=4.32..4.35 rows=1 width=48) (actual time=0.037..0.037 rows=0 loops=1)\n  Group Key: customer_id\n  Buffers: shared hit=5\n  ->  Sort  (cost=4.32..4.33 rows=1 width=22) (actual time=0.036..0.036 rows=0 loops=1)\n        Sort Key: customer_id\n        Sort Method: quicksort  Memory: 25kB\n        Buffers: shared hit=5\n        ->  Index Scan using sales_sales_status_826768_idx on sales_salesinvoice  (cost=0.29..4.31 rows=1 width=22) (actual time=0.018..0.018 rows=0 loops=1)\n              Index Cond: ((status)::text = 'POSTED'::text)\n              Buffers: shared hit=2\nPlanning:\n  Buffers: shared hit=311\nPlanning Time: 6.144 ms\nExecution Time: 0.140 ms"
+  },
+  {
+    "check": "score",
+    "value": 80,
+    "p99_max": 363.28746900035185
+  }
+]

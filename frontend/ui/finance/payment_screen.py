@@ -5,11 +5,13 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.client import APIClient
-from api.endpoints import get_endpoint
+from api.endpoints import get_endpoint, extract_list
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
                             TEXT_LABEL, BORDER_RADIUS_SM, BORDER_RADIUS_LG, COLOR_BORDER, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from utils.format import safe_float
 from ui.components.tables import EnterpriseTable, TableColumn
+from ui.components.state_helper import StateHelper
 from ui.screens.base_screen import BaseScreen
 
 
@@ -52,18 +54,8 @@ class PaymentScreen(BaseScreen):
         filter_bar = self._create_filter_bar()
         layout.addWidget(filter_bar)
 
-        # Loading and Empty states
-        self.loading_label = QLabel("Loading payments...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
-
-        self.empty_label = QLabel("No payments found")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.empty_label.setVisible(False)
-        layout.addWidget(self.empty_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         # Table section
         self.table = self._create_table()
@@ -191,37 +183,37 @@ class PaymentScreen(BaseScreen):
     def _show_loading(self, show=True):
         """Show/hide loading state."""
         self._is_loading = show
-        self.loading_label.setVisible(show)
-        self.table.setVisible(not show)
-        self.empty_label.setVisible(False)
-        self.btn_refresh.setEnabled(not show)
         if show:
-            QApplication.processEvents()
+            self.state_helper.show_loading("Loading payments...")
+            self.table.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.table.setVisible(True)
+            self.btn_refresh.setEnabled(True)
 
     def _show_empty(self, message="No payments found"):
         """Show empty state."""
         self._is_loading = False
-        self.loading_label.setVisible(False)
+        self.state_helper.show_empty(title=message)
         self.table.setVisible(False)
-        self.empty_label.setText(message)
-        self.empty_label.setVisible(True)
+        self.btn_refresh.setEnabled(True)
+
+    def _show_error(self, message="Error loading payments"):
+        """Show error state."""
+        self._is_loading = False
+        self.state_helper.show_error(message, on_retry=self.load_payments)
+        self.table.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         """Show data table."""
         self._is_loading = False
-        self.loading_label.setVisible(False)
-        self.empty_label.setVisible(False)
+        self.state_helper.hide()
         self.table.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
-    def _safe_float(self, value, default=0.0):
-        """Safely convert value to float."""
-        try:
-            return float(value) if value is not None else default
-        except (ValueError, TypeError):
-            return default
-    
+
     def load_payments(self):
         """Load payments from API."""
         self._show_loading()
@@ -231,29 +223,11 @@ class PaymentScreen(BaseScreen):
                 endpoint = "/api/payments/transactions/"
 
             response = self.api_client.get(endpoint)
-            self.payments = self._parse_response(response)
+            self.payments = extract_list(response)
             self.update_table()
         except Exception as e:
             self.payments = []
-            self.loading_label.setVisible(False)
-            self.table.setVisible(False)
-            self.empty_label.setText(f"Error loading payments: {e}")
-            self.empty_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-            self.empty_label.setVisible(True)
-            self.btn_refresh.setEnabled(True)
-
-    def _parse_response(self, response):
-        """Parse API response."""
-        if isinstance(response, list):
-            return [p for p in response if isinstance(p, dict)]
-        elif isinstance(response, dict):
-            if response.get('success'):
-                data = response.get('data', [])
-                if isinstance(data, list):
-                    return [p for p in data if isinstance(p, dict)]
-                elif isinstance(data, dict) and 'results' in data:
-                    return [p for p in data.get('results', []) if isinstance(p, dict)]
-        return []
+            self._show_error(f"Error loading payments: {e}")
 
     def update_table(self):
         """Update table with payment data."""
@@ -270,7 +244,7 @@ class PaymentScreen(BaseScreen):
                 "id": str(payment.get('id') or '')[:8],
                 "date": str(payment.get('transaction_date') or '')[:10],
                 "type": payment.get('transaction_type') or '',
-                "amount": f"{self._safe_float(payment.get('amount')):,.2f}",
+                "amount": f"{safe_float(payment.get('amount')):,.2f}",
                 "method": payment.get('payment_method') or '',
                 "account": payment.get('account_name') or '',
                 "reference": payment.get('reference_number') or '',

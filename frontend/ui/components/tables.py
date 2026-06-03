@@ -561,11 +561,26 @@ class DataEntryGrid(QTableWidget):
 
     Standardized QTableWidget wrapper for interactive line-item data entry.
     Uses the same canonical table stylesheet as EnterpriseTable.
+
+    Supports both text-only cells (via add_row/set_row_values) and
+    widget cells (via set_cell_widget/cell_widget) for combo boxes,
+    spin boxes, and action buttons.
+
+    Signals:
+        cell_value_changed(int, int, object) — emitted when cell text or widget value changes
+        row_added(int) — emitted after a row is inserted
+        row_removed(int) — emitted before a row is removed
     """
+
+    cell_value_changed = Signal(int, int, object)
+    row_added = Signal(int)
+    row_removed = Signal(int)
 
     def __init__(self, columns: List, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self._column_keys = []
+        self._row_data: Dict[int, Dict[str, Any]] = {}
+        self._widget_signal_handlers: Dict[tuple, Any] = {}
         headers = []
         for col in columns:
             if isinstance(col, (list, tuple)):
@@ -582,10 +597,29 @@ class DataEntryGrid(QTableWidget):
         self.setAlternatingRowColors(True)
         self.verticalHeader().setDefaultSectionSize(TABLE_ROW_HEIGHT_MD)
         self.setStyleSheet(self._build_stylesheet())
+        self.cellChanged.connect(self._on_cell_text_changed)
 
     def _build_stylesheet(self) -> str:
         from theme.style_builder import UIStyleBuilder
         return UIStyleBuilder.get_table_style()
+
+    def _on_cell_text_changed(self, row: int, col: int):
+        item = self.item(row, col)
+        value = item.text() if item else None
+        self.cell_value_changed.emit(row, col, value)
+
+    def _disconnect_widget_handler(self, row: int, col: int):
+        key = (row, col)
+        handler = self._widget_signal_handlers.pop(key, None)
+        widget = self.cellWidget(row, col)
+        if handler is not None and widget is not None:
+            for sig_name in ("valueChanged", "currentIndexChanged", "textChanged", "stateChanged"):
+                sig = getattr(widget, sig_name, None)
+                if sig is not None:
+                    try:
+                        sig.disconnect(handler)
+                    except (RuntimeError, TypeError):
+                        pass
 
     def add_remove_column(self, header: str = "") -> int:
         col = self.columnCount()
@@ -593,17 +627,28 @@ class DataEntryGrid(QTableWidget):
         self.setHorizontalHeaderItem(col, QTableWidgetItem(header or "Remove"))
         return col
 
-    def add_row(self, values: List[str]) -> int:
+    def add_row(self, values: Optional[List[str]] = None) -> int:
         row = self.rowCount()
         self.insertRow(row)
-        for col, val in enumerate(values):
-            if col < self.columnCount():
-                item = QTableWidgetItem(str(val))
-                self.setItem(row, col, item)
+        if values:
+            for col, val in enumerate(values):
+                if col < self.columnCount():
+                    item = QTableWidgetItem(str(val))
+                    self.setItem(row, col, item)
+        self.row_added.emit(row)
         return row
 
     def remove_row(self, row: int) -> None:
+        if row < 0 or row >= self.rowCount():
+            return
+        for col in range(self.columnCount()):
+            self._disconnect_widget_handler(row, col)
+        self._row_data.pop(row, None)
+        self.row_removed.emit(row)
         self.removeRow(row)
+        for r in sorted(self._row_data.keys()):
+            if r > row:
+                self._row_data[r - 1] = self._row_data.pop(r)
 
     def get_row_values(self, row: int) -> List[str]:
         return [
@@ -619,3 +664,58 @@ class DataEntryGrid(QTableWidget):
                     item.setText(str(val))
                 else:
                     self.setItem(row, col, QTableWidgetItem(str(val)))
+
+    def set_cell_widget(self, row: int, col: int, widget: QWidget) -> None:
+        if row < 0 or col < 0 or row >= self.rowCount() or col >= self.columnCount():
+            return
+        self._disconnect_widget_handler(row, col)
+
+        def _make_handler(r, c, w):
+            def _handler(*args):
+                for sig_name in ("value", "currentText", "text", "isChecked"):
+                    getter = getattr(w, sig_name, None)
+                    if callable(getter):
+                        try:
+                            value = getter()
+                        except Exception:
+                            value = None
+                        self.cell_value_changed.emit(r, c, value)
+                        return
+            return _handler
+
+        handler = _make_handler(row, col, widget)
+        self._widget_signal_handlers[(row, col)] = handler
+        connected = False
+        for sig_name in ("valueChanged", "currentIndexChanged", "textChanged", "stateChanged", "toggled"):
+            sig = getattr(widget, sig_name, None)
+            if sig is not None:
+                try:
+                    sig.connect(handler)
+                    connected = True
+                    break
+                except (RuntimeError, TypeError):
+                    continue
+        self.setCellWidget(row, col, widget)
+
+    def cell_widget(self, row: int, col: int) -> Optional[QWidget]:
+        if row < 0 or col < 0 or row >= self.rowCount() or col >= self.columnCount():
+            return None
+        return self.cellWidget(row, col)
+
+    def set_row_data(self, row: int, data: Dict[str, Any]) -> None:
+        if row < 0 or row >= self.rowCount():
+            return
+        self._row_data[row] = dict(data)
+
+    def get_row_data(self, row: int) -> Dict[str, Any]:
+        if row < 0 or row >= self.rowCount():
+            return {}
+        return dict(self._row_data.get(row, {}))
+
+    def clear_all_rows(self) -> None:
+        for row in range(self.rowCount() - 1, -1, -1):
+            self.remove_row(row)
+
+    def set_row_height(self, row: int, height: int) -> None:
+        if 0 <= row < self.rowCount():
+            self.setRowHeight(row, height)

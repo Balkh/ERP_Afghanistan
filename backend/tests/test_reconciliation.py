@@ -32,9 +32,11 @@ class ReconciliationInventoryTest(TransactionTestCase):
         self.warehouse = Warehouse.objects.create(
             name='Main WH', code='WH01', is_active=True
         )
-        self.inventory_account = Account.objects.create(
-            code='1300', name='Inventory', account_type='ASSET',
-            account_category='CURRENT_ASSET', is_active=True
+        self.inventory_account, _ = Account.objects.get_or_create(
+            code='1300', defaults={
+                'name': 'Inventory', 'account_type': 'ASSET',
+                'account_category': 'CURRENT_ASSET', 'is_active': True,
+            }
         )
 
     def test_inventory_reconciliation_passes_with_matching_values(self):
@@ -241,9 +243,11 @@ class ReconciliationPaymentTest(TransactionTestCase):
             code='CASH',
             defaults={'name': 'Cash', 'method_type': 'CASH', 'is_active': True}
         )
-        self.accounting_account = Account.objects.create(
-            code='1010', name='Cash Account', account_type='ASSET',
-            account_category='CURRENT_ASSET', is_active=True
+        self.accounting_account, _ = Account.objects.get_or_create(
+            code='1010', defaults={
+                'name': 'Cash Account', 'account_type': 'ASSET',
+                'account_category': 'CURRENT_ASSET', 'is_active': True,
+            }
         )
         self.payment_account = PaymentAccount.objects.create(
             code='CASH01',
@@ -311,11 +315,15 @@ class ReconciliationJournalBalanceTest(TransactionTestCase):
     """Test journal entry balance reconciliation."""
 
     def setUp(self):
-        self.asset = Account.objects.create(
-            code='1000', name='Asset', account_type='ASSET', is_active=True
+        self.asset, _ = Account.objects.get_or_create(
+            code='1000', defaults={
+                'name': 'Asset', 'account_type': 'ASSET', 'is_active': True,
+            }
         )
-        self.revenue = Account.objects.create(
-            code='4000', name='Revenue', account_type='REVENUE', is_active=True
+        self.revenue, _ = Account.objects.get_or_create(
+            code='4000', defaults={
+                'name': 'Revenue', 'account_type': 'REVENUE', 'is_active': True,
+            }
         )
 
     def test_reconciliation_passes_when_entries_balanced(self):
@@ -375,9 +383,11 @@ class ReconciliationCustomerBalanceTest(TransactionTestCase):
     """Test customer balance reconciliation."""
 
     def setUp(self):
-        self.ar_account = Account.objects.create(
-            code='1200', name='AR Account', account_type='ASSET',
-            account_category='CURRENT_ASSET', is_active=True
+        self.ar_account, _ = Account.objects.get_or_create(
+            code='1200', defaults={
+                'name': 'AR Account', 'account_type': 'ASSET',
+                'account_category': 'CURRENT_ASSET', 'is_active': True,
+            }
         )
         self.customer = Customer.objects.create(
             name='Customer', phone='123', balance=Decimal('0.00'), is_active=True

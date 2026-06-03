@@ -1,0 +1,81 @@
+[
+  {
+    "matrix": [
+      {
+        "scenario": "single_company",
+        "description": "Single tenant, 25 users",
+        "elapsed_ms": 174.80190000060247,
+        "decision": "GO",
+        "products": 100000,
+        "stock_movements": 500000,
+        "journal_lines": 2000000
+      },
+      {
+        "scenario": "multi_company",
+        "description": "10 tenants, 5 users each",
+        "elapsed_ms": 150.38849999837112,
+        "decision": "GO",
+        "products": 100000,
+        "stock_movements": 500000,
+        "journal_lines": 2000000
+      },
+      {
+        "scenario": "single_warehouse",
+        "description": "1 warehouse, 25 users",
+        "elapsed_ms": 220.07939999821247,
+        "decision": "GO",
+        "products": 100000,
+        "stock_movements": 500000,
+        "journal_lines": 2000000
+      },
+      {
+        "scenario": "multi_warehouse",
+        "description": "20 warehouses, 25 users",
+        "elapsed_ms": 145.1950000009674,
+        "decision": "GO",
+        "products": 100000,
+        "stock_movements": 500000,
+        "journal_lines": 2000000
+      },
+      {
+        "scenario": "5_users",
+        "description": "5 concurrent users",
+        "elapsed_ms": 152.94970000104513,
+        "decision": "GO",
+        "products": 100000,
+        "stock_movements": 500000,
+        "journal_lines": 2000000
+      },
+      {
+        "scenario": "25_users",
+        "description": "25 concurrent users",
+        "elapsed_ms": 152.52930000133347,
+        "decision": "GO",
+        "products": 100000,
+        "stock_movements": 500000,
+        "journal_lines": 2000000
+      },
+      {
+        "scenario": "100k_products",
+        "description": "100K products",
+        "elapsed_ms": 142.26620000044932,
+        "decision": "GO",
+        "products": 100000,
+        "stock_movements": 500000,
+        "journal_lines": 2000000
+      },
+      {
+        "scenario": "500k_movements",
+        "description": "500K stock movements",
+        "elapsed_ms": 222.58290000172565,
+        "decision": "GO",
+        "products": 100000,
+        "stock_movements": 500000,
+        "journal_lines": 2000000
+      }
+    ],
+    "go": 8,
+    "total": 8,
+    "score": 100
+  }
+]

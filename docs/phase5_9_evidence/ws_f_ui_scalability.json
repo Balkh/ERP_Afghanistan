@@ -1,0 +1,21 @@
+[
+  {
+    "rows": 100,
+    "render_ms": 3,
+    "component": "QTableWidget"
+  },
+  {
+    "rows": 1000,
+    "render_ms": 16,
+    "component": "QTableWidget"
+  },
+  {
+    "rows": 10000,
+    "render_ms": 147,
+    "component": "QTableWidget"
+  },
+  {
+    "check": "score",
+    "value": 100
+  }
+]

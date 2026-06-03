@@ -50,6 +50,10 @@
 | Phase UX.3 | Enterprise UI Foundation Migration (BaseScreen + EnterpriseDialog) | ✅ Complete |
 | Phase UX.4 | Enterprise UI Governance Lockdown (accounting screens, dialog standard) | ✅ Complete |
 | Phase UX.5 | Intelligent UX Operations & Runtime Governance (telemetry, observability) | ✅ Complete |
+| **Phase 3A** | **Frontend Dead Code Purge (4 components, 524 lines removed)** | **✅ Complete** |
+| **Phase 3B** | **StateHelper Adoption (15 screens, 57% state-UI code reduction)** | **✅ Complete** |
+| **Phase 3C** | **DataEntryGrid Adoption (4 line-item tables, widget-cell API added)** | **✅ Complete** |
+| **Phase 3D** | **Utility Consolidation (17 duplicate helpers → 3 canonical functions)** | **✅ Complete** |
 
 ### Test Suite Summary
 - **~1,587+ tests passing** (core ERP + integrity 79 + sandbox 85 + C-RUNNER 132 + audit 63 + governance 77 + test_governance 47 + simulation ~363)
@@ -294,9 +298,9 @@ Advanced Operational Intelligence Layer - DETERMINISTIC (NO AI/ML):
 ## Where to Start Next
 
 ### Recommended Next Steps
-1. **Migrate remaining UI dialogs (7)** to EnterpriseDialog: EmailConfigDialog, BatchFormDialog, CategoryFormDialog, WarehouseFormDialog, ProductFormDialog, CreditWarningDialog, AccountFormDialog (if not already done)
-2. **Replace remaining raw QPushButton** (~68 violations in 30 files)
-3. **Tokenize remaining raw spacing values** (~41 style + 6 margin violations)
+1. **Replace remaining raw QPushButton** (~68 violations in 30 files)
+2. **Tokenize remaining raw spacing values** (~41 style + 6 margin violations)
+3. **Decompose 15 CRITICAL + 21 HIGH God Object screens** identified in Phase 1 audit
 4. **Fix test_stock_integration_behavior.py, test_stock_integration_enterprise.py, test_validation_harness.py** — collection errors (import/dependency issues)
 5. **Run coverage baseline** to establish first weighted coverage snapshot
 6. **Deploy production** — Infrastructure migration certified at 76/100
@@ -673,4 +677,81 @@ access_token at data.data: True  ← Correct after fix
 Token prefix: eyJhbGciOiJIUzI1NiIs
 User: testgov
 ```
+
+---
+
+## Phase 3 — Frontend Debt-Reduction (Surgical Refactoring)
+
+### Summary
+| Metric | Value |
+|--------|-------|
+| Sub-phases | 4 (3A Dead Code, 3B StateHelper, 3C DataEntryGrid, 3D Utilities) |
+| Screens migrated to StateHelper | 15 |
+| Line-item tables migrated to DataEntryGrid | 4 |
+| Duplicate helper sites consolidated | 17 → 3 canonical functions |
+| Latent bugs fixed as side benefits | 14 |
+| Net lines of code eliminated | ~1,024 |
+| New architectural patterns introduced | 0 (surgical, behaviour-preserving) |
+| Reports generated | 6 (1 precheck + 4 sub-phase + 1 final) |
+
+### Phase 3A — Dead Code Purge (`docs/DEAD_CODE_VALIDATION_REPORT.md`)
+| Target | File | Lines Removed |
+|--------|------|---------------|
+| `BaseWidget`, `Section`, `FormField`, `ToolBar` | `frontend/ui/components/base_widgets.py` | 244 |
+| 12 dialog functions | `frontend/ui/licensing/dialogs.py` | 126 |
+| `DocumentActionDialog` | `frontend/ui/components/document_action_dialog.py` | 132 |
+| `LoadingOverlay` shim | `frontend/ui/observability/widgets.py:289-306` | 18 |
+| Broken test imports | `frontend/tests/ui/test_enterprise_comprehensive.py` | 3 |
+| Skip-list entry | `frontend/scripts/screen_migration_audit.py:109` | 1 |
+| **Total** | | **524** |
+
+All targets verified at 0 production callers + 0 external subclasses before deletion.
+
+### Phase 3B — StateHelper Adoption (`docs/STATEHELPER_MIGRATION_REPORT.md`)
+15 screens migrated with 0 call-site changes:
+- **Pattern A (tabs, 6):** budgeting, cashflow, cost_centers, expense, payment, tax
+- **Pattern B (workspace, 6):** customer_payment_workspace, supplier_payment_workspace, payment_allocation_explorer, journal_reversal_explorer, financial_operations_console, returns_explainability
+- **Pattern D (inline toggles, 2):** reconciliation_screen, chart_of_accounts_screen
+- **Pattern E (ScreenState, 1):** customer_screen
+
+**57% state-UI code reduction.** 6 incidental bug fixes during migration.
+
+### Phase 3C — DataEntryGrid Adoption (`docs/DATAENTRYGRID_ADOPTION_REPORT.md`)
+4 line-item tables migrated with 0 call-site changes:
+- `returns_screen.py:577-880` (ReturnOrderDialog) — text-only
+- `purchase_invoice_screen.py:109-925` — text + Remove cellWidget
+- `mixed_payment_builder.py:1-344` — all cellWidgets; **fixed closure-capture bug** in `_remove_split_row`
+- `journal_entry_form.py:1-350` — all cellWidgets; **fixed indexAt/sender bug** in `_remove_line_at`
+
+**DataEntryGrid extension** (`frontend/ui/components/tables.py:558+`):
+- New methods: `set_cell_widget`, `cell_widget`, `set_row_data`, `get_row_data`, `clear_all_rows`, `set_row_height`
+- New signals: `cell_value_changed(row, col, value)`, `row_added(row)`, `row_removed(row)`
+- Internal: `_row_data`, `_widget_signal_handlers`, `_make_handler`, stable row identity across removals
+
+2 POS-specific tables (Sales Invoice, POS Cart) deferred — too POS-specific for text-only DataEntryGrid.
+
+### Phase 3D — Utility Consolidation (`docs/UTILITY_CONSOLIDATION_REPORT.md`)
+17 duplicate helper sites consolidated into 3 canonical free functions:
+| Helper | Duplicates | Canonical Location | Latent Bugs Fixed |
+|--------|------------|---------------------|-------------------|
+| `_safe_float` | 9 | `frontend/utils/format.py:safe_float` (new) | — |
+| `_parse_response` | 4 | `frontend/api/endpoints.py:extract_list` (extended) | Missing `results` pagination in 2 sites |
+| `_combo_style` | 4 | `frontend/ui/components/styles.py:combo_stylesheet` (new) | Missing `f`-prefix in payment_allocation_explorer |
+
+`extract_list` extended with `isinstance(x, dict)` filter (additive — 14 existing call sites get safer behaviour for free).
+
+### Phase 3 Final Report (`docs/PHASE3_FINAL_REPORT.md`)
+- ~1,024 net lines eliminated
+- 14 latent bugs total fixed
+- 0 new architecture introduced
+- 0 external behaviour changes
+
+### Remaining Debt Inventory (Phase 4+ candidates)
+- ~1,432 inline style violations (Phase 2 audit)
+- ~68 QPushButton violations in 30 files (Phase 2 audit)
+- 15 CRITICAL + 21 HIGH God Object screens (Phase 1 audit)
+- 3 test collection errors (test_stock_integration_*.py, test_validation_harness.py)
+- 2 deferred POS-specific tables
+- ~~**HIGH:** Missing `from ui.components.tables` import in `frontend/ui/finance/supplier_payment_workspace.py`~~ — **FIXED during Phase 3 follow-up**
+
 

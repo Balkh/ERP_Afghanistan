@@ -20,6 +20,9 @@ from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
 from ui.screens.base_screen import BaseScreen
 from ui.components.dialogs import AlertDialog, ConfirmDialog
+from ui.components.state_helper import StateHelper
+from ui.components.styles import combo_stylesheet
+from utils.format import safe_float
 
 
 class CustomerPaymentWorkspace(BaseScreen):
@@ -57,7 +60,7 @@ class CustomerPaymentWorkspace(BaseScreen):
 
         self.customer_combo = QComboBox()
         self.customer_combo.setMinimumWidth(250)
-        self.customer_combo.setStyleSheet(self._combo_style())
+        self.customer_combo.setStyleSheet(combo_stylesheet())
         self.customer_combo.currentIndexChanged.connect(self._on_customer_selected)
         header_layout.addWidget(QLabel("Customer:"))
         header_layout.addWidget(self.customer_combo)
@@ -74,14 +77,8 @@ class CustomerPaymentWorkspace(BaseScreen):
 
         layout.addLayout(header_layout)
 
-        # Loading label
-        self.loading_label = QLabel("Loading workspace...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         # Main content area (hidden until data loads)
         self.content_widget = QWidget()
@@ -216,41 +213,33 @@ class CustomerPaymentWorkspace(BaseScreen):
 
         return section
 
-    def _combo_style(self):
-        return f"""
-            QComboBox {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
-                padding: {SPACING_XS}px {SPACING_SM}px;
-                color: {COLOR_TEXT_PRIMARY};
-                min-height: 30px;
-            }}
-            QComboBox::drop-down {{ border: none; }}
-            QComboBox::down-arrow {{
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 5px solid {COLOR_TEXT_PRIMARY};
-            }}
-            QComboBox QAbstractItemView {{
-                background-color: {COLOR_BG_ELEVATED};
-                color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY};
-            }}
-        """
-
     def _show_loading(self, show=True):
         self._is_loading = show
-        self.loading_label.setVisible(show)
-        self.content_widget.setVisible(not show)
-        self.btn_refresh.setEnabled(not show)
         if show:
-            QApplication.processEvents()
+            self.state_helper.show_loading("Loading workspace...")
+            self.content_widget.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.content_widget.setVisible(True)
+            self.btn_refresh.setEnabled(True)
+
+    def _show_empty(self, message="No data to display"):
+        self._is_loading = False
+        self.state_helper.show_empty(title=message)
+        self.content_widget.setVisible(False)
+        self.btn_refresh.setEnabled(True)
+
+    def _show_error(self, message):
+        """Show error state."""
+        self._is_loading = False
+        self.state_helper.show_error(message, on_retry=self.refresh_workspace)
+        self.content_widget.setVisible(False)
+        self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         self._is_loading = False
-        self.loading_label.setVisible(False)
+        self.state_helper.hide()
         self.content_widget.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
@@ -296,8 +285,8 @@ class CustomerPaymentWorkspace(BaseScreen):
         customer = data.get("customer", {})
         self.customer_data = customer
         balance = customer.get("derived_balance", {})
-        self.kpi_customer_balance.update_value(f"{self._safe_float(balance.get('balance', 0)):,.2f}")
-        self.kpi_credit_limit.update_value(f"{self._safe_float(customer.get('credit_limit', 0)):,.2f}")
+        self.kpi_customer_balance.update_value(f"{safe_float(balance.get('balance', 0)):,.2f}")
+        self.kpi_credit_limit.update_value(f"{safe_float(customer.get('credit_limit', 0)):,.2f}")
 
         # Outstanding invoices
         self.outstanding_invoices = data.get("outstanding_invoices", [])
@@ -307,7 +296,7 @@ class CustomerPaymentWorkspace(BaseScreen):
         # Unallocated payments
         self.unallocated_payments = data.get("unallocated_payments", [])
         total_unallocated = sum(
-            self._safe_float(p.get("unallocated_amount", p.get("amount", 0)))
+            safe_float(p.get("unallocated_amount", p.get("amount", 0)))
             for p in self.unallocated_payments
         )
         self.kpi_unallocated.update_value(f"{total_unallocated:,.2f}")
@@ -320,23 +309,23 @@ class CustomerPaymentWorkspace(BaseScreen):
         self.lbl_fully_paid.setText(f"Fully Paid: {summary.get('fully_paid', 0)}")
         self.lbl_partial.setText(f"Partial: {summary.get('partial', 0)}")
         self.lbl_total_allocated.setText(
-            f"Total Allocated: {self._safe_float(summary.get('total_allocated', 0)):,.2f}"
+            f"Total Allocated: {safe_float(summary.get('total_allocated', 0)):,.2f}"
         )
-        available = self._safe_float(customer.get("credit_limit", 0)) - self._safe_float(balance.get("balance", 0))
+        available = safe_float(customer.get("credit_limit", 0)) - safe_float(balance.get("balance", 0))
         self.lbl_available_credit.setText(f"Available Credit: {available:,.2f}")
 
     def _update_invoices_table(self):
         """Update invoices table."""
         data = []
         for inv in self.outstanding_invoices:
-            remaining = self._safe_float(inv.get("remaining", 0))
+            remaining = safe_float(inv.get("remaining", 0))
             days_overdue = inv.get("days_overdue", 0)
             data.append({
                 "invoice_number": inv.get("invoice_number", ""),
                 "invoice_date": str(inv.get("invoice_date", ""))[:10],
                 "due_date": str(inv.get("due_date", ""))[:10],
-                "total_amount": f"{self._safe_float(inv.get('total_amount', 0)):,.2f}",
-                "paid_amount": f"{self._safe_float(inv.get('paid_amount', 0)):,.2f}",
+                "total_amount": f"{safe_float(inv.get('total_amount', 0)):,.2f}",
+                "paid_amount": f"{safe_float(inv.get('paid_amount', 0)):,.2f}",
                 "remaining": f"{remaining:,.2f}",
                 "status": inv.get("status", ""),
                 "days_overdue": str(days_overdue) if days_overdue > 0 else "-",
@@ -350,23 +339,12 @@ class CustomerPaymentWorkspace(BaseScreen):
             data.append({
                 "payment_number": pay.get("payment_number", ""),
                 "payment_date": str(pay.get("payment_date", ""))[:10],
-                "amount": f"{self._safe_float(pay.get('amount', 0)):,.2f}",
+                "amount": f"{safe_float(pay.get('amount', 0)):,.2f}",
                 "method": pay.get("payment_method", ""),
                 "reference": pay.get("reference_number", ""),
                 "status": pay.get("status", ""),
             })
         self.payments_table.set_data(data)
-
-    def _show_error(self, message):
-        """Show error state."""
-        self._is_loading = False
-        self.loading_label.setText(message)
-        self.loading_label.setStyleSheet(
-            f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;"
-        )
-        self.loading_label.setVisible(True)
-        self.content_widget.setVisible(False)
-        self.btn_refresh.setEnabled(True)
 
     def refresh_workspace(self):
         """Refresh workspace data."""
@@ -397,7 +375,7 @@ class CustomerPaymentWorkspace(BaseScreen):
                 AlertDialog.info(
                     "Allocation Complete",
                     f"Allocated {data.get('allocations_created', 0)} payments.\n"
-                    f"Total: {self._safe_float(data.get('total_allocated', 0)):,.2f}",
+                    f"Total: {safe_float(data.get('total_allocated', 0)):,.2f}",
                     self,
                 )
                 self.allocation_completed.emit(data)
@@ -405,8 +383,3 @@ class CustomerPaymentWorkspace(BaseScreen):
         except Exception as e:
             AlertDialog.error("Allocation Error", str(e), self)
 
-    def _safe_float(self, value, default=0.0):
-        try:
-            return float(value) if value is not None else default
-        except (ValueError, TypeError):
-            return default

@@ -10,6 +10,7 @@ from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPAC
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog
 from ui.components.operator_safety import DestructiveActionGuard
+from ui.components.state_helper import StateHelper
 from ui.screens.base_screen import BaseScreen
 
 
@@ -48,18 +49,8 @@ class ChartOfAccountsScreen(BaseScreen):
         header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
         layout.addWidget(header)
 
-        # Loading and empty states
-        self.loading_label = QLabel("Loading accounts...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
-
-        self.empty_label = QLabel("No accounts found. Add an account to get started.")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.empty_label.setVisible(False)
-        layout.addWidget(self.empty_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         return layout
 
@@ -173,23 +164,20 @@ class ChartOfAccountsScreen(BaseScreen):
         self.type_filter.currentTextChanged.connect(self._filter_accounts)
 
     def load_accounts(self):
-        self.loading_label.setVisible(True)
+        self.state_helper.show_loading("Loading accounts...")
         self.tree.setVisible(False)
-        self.empty_label.setVisible(False)
         try:
             endpoint = get_endpoint("accounts")
             response = self.api_client.get(endpoint, params={"include_inactive": "true"})
             self.accounts = extract_list(response)
-            self.loading_label.setVisible(False)
             if self.accounts:
+                self.state_helper.hide()
                 self._populate_tree()
                 self.tree.setVisible(True)
             else:
-                self.empty_label.setVisible(True)
+                self.state_helper.show_empty("No accounts found. Add an account to get started.")
         except Exception as e:
-            self.loading_label.setVisible(False)
-            self.empty_label.setText(f"Failed to load accounts: {e}")
-            self.empty_label.setVisible(True)
+            self.state_helper.show_error(f"Failed to load accounts: {e}", on_retry=self.load_accounts)
 
     def _populate_tree(self):
         self.tree.clear()

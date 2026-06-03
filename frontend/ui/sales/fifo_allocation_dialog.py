@@ -23,7 +23,7 @@ from api.client import APIClient
 class FIFOAllocationDialog(EnterpriseDialog):
     """Dialog for allocating unallocated payments to invoices via FIFO."""
 
-    def __init__(self, customer_id=None, customer_name=None, parent=None):
+    def __init__(self, customer_id=None, customer_name=None, parent=None, api_client=None):
         self.api_client = api_client or APIClient()
         self.customer_id = customer_id
         self.customer_name = customer_name or "All Customers"

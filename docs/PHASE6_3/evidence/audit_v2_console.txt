@@ -1,0 +1,176 @@
+======================================================================
+Phase 6.3 ΓÇö Hub Files Audit v2 (READ-ONLY, improved module resolution)
+======================================================================
+Scanned 1532 .py files (excluding tests/migrations/cache).
+
+[OK] Wrote audit_raw.json
+
+Top 30 NON-TEST, NON-SCRIPT files by LOC:
+    1352  backend/core/governance/industrial_test_suite.py
+    1254  backend/core/operations/operational_intelligence.py
+    1157  frontend/utils/logger.py
+    1153  frontend/ui/main_window.py
+    1112  backend/core/api/v1/payment_operations.py
+    1035  backend/security/views.py
+     955  backend/security/tests.py
+     903  frontend/ui/constants.py
+     897  frontend/ui/pos/pos_screen.py
+     897  frontend/ui/purchases/purchase_invoice_screen.py
+     895  frontend/ui/sales/sales_invoice_screen.py
+     893  backend/core/governance/views.py
+     891  backend/accounting/models.py
+     887  backend/backup/views.py
+     877  backend/core/pdf_generator.py
+     869  frontend/ui/returns/returns_screen.py
+     863  frontend/ui/components/forms.py
+     861  frontend/ui/observability/dashboards.py
+     858  backend/sales/views.py
+     847  backend/returns/models.py
+     842  frontend/ui/system/backup_screen.py
+     839  backend/inventory/service/stock_integration.py
+     826  backend/core/governance/certification_tests.py
+     810  backend/payments/services.py
+     753  backend/accounting/services/financial_reports.py
+     744  backend/payments/models.py
+     743  backend/sales/models.py
+     742  backend/backup/backup_system.py
+     736  backend/core/guarantees/ecek.py
+     722  frontend/ui/components/tables.py
+
+Top 15 classes by LOC (excl tests):
+   1213  backend/genesis_init.py::GenesisInitializer  (32 methods)
+   1124  frontend/ui/main_window.py::MainWindow  (45 methods)
+   1077  backend/core/api/v1/payment_operations.py::PaymentOperationsViewSet  (17 methods)
+    866  frontend/ui/purchases/purchase_invoice_screen.py::PurchaseInvoiceScreen  (32 methods)
+    861  frontend/ui/sales/sales_invoice_screen.py::SalesInvoiceScreen  (30 methods)
+    859  frontend/ui/pos/pos_screen.py::POSScreen  (40 methods)
+    827  backend/inventory/service/stock_integration.py::StockIntegrationService  (13 methods)
+    788  backend/payments/services.py::PaymentEngine  (10 methods)
+    743  backend/accounting/services/financial_reports.py::FinancialReportEngine  (10 methods)
+    667  frontend/api/client.py::APIClient  (57 methods)
+    648  frontend/ui/sidebar.py::Sidebar  (18 methods)
+    633  frontend/ui/system/backup_screen.py::BackupControlScreen  (24 methods)
+    603  backend/core/services/financial_explainability.py::FinancialExplainability  (7 methods)
+    552  frontend/ui/returns/returns_screen.py::ReturnsScreen  (20 methods)
+    534  backend/simulation/control_center/orchestrator/control_center_engine.py::ControlCenterEngine  (31 methods)
+
+Top 15 methods by LOC (excl tests/scripts):
+    314  backend/simulation/control_center/orchestrator/operational_command_orchestrator.py::OperationalCommandOrchestrator.execute_command
+    303  frontend/ui/sales/sales_invoice_screen.py::SalesInvoiceScreen._setup_screen
+    301  backend/simulation/control_center/orchestrator/control_center_router.py::ControlCenterRouter.route_query
+    296  frontend/ui/purchases/purchase_invoice_screen.py::PurchaseInvoiceScreen._setup_screen
+    271  backend/core/seeders/accounting.py::AccountingSeeder.seed
+    248  backend/pre_production_hardening/sections/multi_user.py::<module>.run
+    240  backend/core/operations/decision_engine.py::DecisionEngine.evaluate_all
+    211  backend/core/seeders/inventory.py::InventorySeeder.seed
+    204  frontend/ui/purchases/supplier_screen.py::SupplierDialog._build_content
+    193  backend/pre_production_hardening/sections/performance.py::<module>.run
+    184  backend/pre_production_hardening/sections/session.py::<module>.run
+    180  frontend/ui/sidebar.py::Sidebar.setup_ui
+    177  frontend/ui/auth/login_screen.py::LoginDialog._build_content
+    176  backend/security/management/commands/seed_roles.py::Command.handle
+    174  frontend/utils/logger.py::<module>.evaluate_decisions
+
+Top 15 most-imported PROJECT modules:
+  (note: not aggregated ΓÇö `from x.y import z` shows as `x.y.z` AND `x.y`)
+   678  inventory.models
+   656  accounting.models
+   368  sales.models
+   290  purchases.models
+   258  tests.factories
+   211  accounting.models.Account
+   183  accounting.models.JournalEntry
+   167  simulation.control_center.models
+   166  accounting.models.JournalEntryLine
+   147  inventory.models.Product
+   136  inventory.models.Batch
+   131  sales.models.SalesInvoice
+   129  payments.models
+   115  inventory.models.StockMovement
+   106  sales.models.Customer
+
+Focus files (special audit, with IMPROVED inbound resolution):
+
+  backend/backup/backup_system.py
+    Description:        Phase 6.2 Step 4 target (already refactored)
+    LOC:                742
+    Classes:            5
+    Total methods:      36
+    Public methods:     20
+    Inbound imports:    13 (across 13 files)
+    Outbound imports:   27
+    Coupling score:     40
+    Change risk:        4.84
+    Inbound modules:    [('backup.backup_system', 13)]
+
+  backend/payments/services.py
+    Description:        Payment engine hub
+    LOC:                810
+    Classes:            1
+    Total methods:      10
+    Public methods:     6
+    Inbound imports:    9 (across 9 files)
+    Outbound imports:   16
+    Coupling score:     25
+    Change risk:        3.38
+    Inbound modules:    [('payments.services', 9)]
+
+  backend/inventory/service/stock_integration.py
+    Description:        Stock integration hub
+    LOC:                839
+    Classes:            1
+    Total methods:      13
+    Public methods:     13
+    Inbound imports:    16 (across 16 files)
+    Outbound imports:   17
+    Coupling score:     33
+    Change risk:        4.48
+    Inbound modules:    [('inventory.service.stock_integration', 16)]
+
+  frontend/ui/main_window.py
+    Description:        Main window hub
+    LOC:                1153
+    Classes:            1
+    Total methods:      45
+    Public methods:     23
+    Inbound imports:    0 (across 0 files)
+    Outbound imports:   80
+    Coupling score:     80
+    Change risk:        6.4
+
+  frontend/ui/pos/pos_screen.py
+    Description:        POS screen hub
+    LOC:                897
+    Classes:            1
+    Total methods:      40
+    Public methods:     6
+    Inbound imports:    0 (across 0 files)
+    Outbound imports:   65
+    Coupling score:     65
+    Change risk:        4.04
+
+  frontend/ui/sales/sales_invoice_screen.py
+    Description:        Sales invoice screen hub
+    LOC:                895
+    Classes:            1
+    Total methods:      31
+    Public methods:     24
+    Inbound imports:    0 (across 0 files)
+    Outbound imports:   70
+    Coupling score:     70
+    Change risk:        5.64
+
+  frontend/ui/purchases/purchase_invoice_screen.py
+    Description:        Purchase invoice screen hub
+    LOC:                897
+    Classes:            1
+    Total methods:      33
+    Public methods:     20
+    Inbound imports:    0 (across 0 files)
+    Outbound imports:   66
+    Coupling score:     66
+    Change risk:        5.23
+
+======================================================================
+AUDIT v2 COMPLETE
+======================================================================

@@ -1,0 +1,135 @@
+======================================================================
+Top 30 files by LOC (NO FILTER):
+======================================================================
+    2173  backend/simulation/tests/test_human_approval_gateway/test_human_approval_gateway.py
+    1991  backend/phase5_8_full.py
+    1603  backend/genesis_init.py
+    1518  backend/phase5_9_full.py
+    1451  backend/tests/test_reality_simulation.py
+    1385  backend/simulation/tests/test_truth_verification/test_truth_verification.py
+    1352  backend/core/governance/industrial_test_suite.py
+    1302  backend/scripts/drift_check.py
+    1254  backend/core/operations/operational_intelligence.py
+    1195  backend/tests/test_adversarial_hardening.py
+    1157  frontend/utils/logger.py
+    1153  frontend/ui/main_window.py
+    1145  backend/tests/test_financial_reports.py
+    1120  backend/tests/test_validation_harness.py
+    1112  backend/core/api/v1/payment_operations.py
+    1092  backend/simulation/tests/test_predictive.py
+    1035  backend/security/views.py
+     969  backend/tests/factories.py
+     955  backend/security/tests.py
+     903  frontend/ui/constants.py
+     899  backend/tests/lifecycle_engine/scenarios.py
+     897  frontend/ui/pos/pos_screen.py
+     897  frontend/ui/purchases/purchase_invoice_screen.py
+     895  frontend/ui/sales/sales_invoice_screen.py
+     893  backend/core/governance/views.py
+     891  backend/accounting/models.py
+     887  backend/backup/views.py
+     877  backend/core/pdf_generator.py
+     869  frontend/ui/returns/returns_screen.py
+     863  frontend/ui/components/forms.py
+
+======================================================================
+Top 30 classes by LOC:
+======================================================================
+   1264  backend/tests/test_reality_simulation.py::MonthRealitySimulation  (52 methods)
+   1213  backend/genesis_init.py::GenesisInitializer  (32 methods)
+   1124  frontend/ui/main_window.py::MainWindow  (45 methods)
+   1077  backend/core/api/v1/payment_operations.py::PaymentOperationsViewSet  (17 methods)
+    866  frontend/ui/purchases/purchase_invoice_screen.py::PurchaseInvoiceScreen  (32 methods)
+    861  frontend/ui/sales/sales_invoice_screen.py::SalesInvoiceScreen  (30 methods)
+    859  frontend/ui/pos/pos_screen.py::POSScreen  (40 methods)
+    841  backend/tests/test_validation_harness.py::RealExecutionTestHarness  (17 methods)
+    827  backend/inventory/service/stock_integration.py::StockIntegrationService  (13 methods)
+    788  backend/payments/services.py::PaymentEngine  (10 methods)
+    743  backend/accounting/services/financial_reports.py::FinancialReportEngine  (10 methods)
+    667  frontend/api/client.py::APIClient  (57 methods)
+    648  frontend/ui/sidebar.py::Sidebar  (18 methods)
+    633  frontend/ui/system/backup_screen.py::BackupControlScreen  (24 methods)
+    603  backend/core/services/financial_explainability.py::FinancialExplainability  (7 methods)
+    552  frontend/ui/returns/returns_screen.py::ReturnsScreen  (20 methods)
+    534  backend/simulation/control_center/orchestrator/control_center_engine.py::ControlCenterEngine  (31 methods)
+    529  backend/tests/test_tenant_isolation.py::Phase17ValidationTest  (46 methods)
+    519  backend/returns/models.py::ReturnOrder  (10 methods)
+    506  backend/accounting/services/advanced_reports.py::AdvancedReportsService  (12 methods)
+    489  frontend/theme/style_builder.py::UIStyleBuilder  (15 methods)
+    469  backend/accounting/services/inventory_accounting.py::InventoryAccountingService  (10 methods)
+    466  frontend/ui/dashboard.py::Dashboard  (22 methods)
+    458  backend/backup/services/restore_service.py::RestoreService  (12 methods)
+    457  backend/accounting/services/journal_engine.py::JournalEngine  (11 methods)
+    446  frontend/ui/system/intelligence_hub_screen.py::IntelligenceHubScreen  (13 methods)
+    442  frontend/ui/accounting/report_browser.py::ReportBrowser  (17 methods)
+    434  backend/core/services/financial_diagnostics.py::FinancialDiagnostics  (6 methods)
+    423  backend/backup/services/failure_injection.py::FailureInjectionTester  (16 methods)
+    422  backend/tests/test_lifecycle.py::FullLifecycleTests  (6 methods)
+
+======================================================================
+Top 30 methods by LOC:
+======================================================================
+    503  backend/phase5_8_full.py::<module>.workstream_b
+    390  backend/phase5_9_full.py::<module>.ws_b_enterprise_dataset
+    314  backend/simulation/control_center/orchestrator/operational_command_orchestrator.py::OperationalCommandOrchestrator.execute_command
+    303  frontend/ui/sales/sales_invoice_screen.py::SalesInvoiceScreen._setup_screen
+    301  backend/simulation/control_center/orchestrator/control_center_router.py::ControlCenterRouter.route_query
+    296  frontend/ui/purchases/purchase_invoice_screen.py::PurchaseInvoiceScreen._setup_screen
+    271  backend/core/seeders/accounting.py::AccountingSeeder.seed
+    248  backend/pre_production_hardening/sections/multi_user.py::<module>.run
+    246  backend/phase5_8_full.py::<module>.workstream_c
+    240  backend/core/operations/decision_engine.py::DecisionEngine.evaluate_all
+    218  backend/tests/test_reality_simulation.py::MonthRealitySimulation.setup_base_data
+    211  backend/core/seeders/inventory.py::InventorySeeder.seed
+    208  backend/phase5_9_full.py::<module>.ws_d_concurrency
+    204  frontend/ui/purchases/supplier_screen.py::SupplierDialog._build_content
+    193  backend/pre_production_hardening/sections/performance.py::<module>.run
+    190  backend/phase5_8_full.py::<module>.workstream_a
+    184  backend/pre_production_hardening/sections/session.py::<module>.run
+    181  backend/tests/test_lifecycle.py::FullLifecycleTests.test_complete_purchase_to_sale_lifecycle
+    180  backend/phase5_8_full.py::<module>.workstream_h
+    180  frontend/ui/sidebar.py::Sidebar.setup_ui
+    177  frontend/ui/auth/login_screen.py::LoginDialog._build_content
+    176  backend/security/management/commands/seed_roles.py::Command.handle
+    174  frontend/utils/logger.py::<module>.evaluate_decisions
+    173  backend/core/seeders/sales.py::SalesSeeder.seed
+    171  backend/phase5_9_full.py::<module>.ws_a_pg_certification
+    171  backend/core/governance/chaos/classifications.py::<module>.classify_failure
+    170  backend/pre_production_hardening/sections/operator.py::<module>.run
+    168  backend/pre_production_hardening/sections/export.py::<module>.run
+    167  frontend/main.py::<module>.main
+    167  frontend/ui/sales/customer_screen.py::CustomerDialog._build_content
+
+======================================================================
+Top 30 most-imported PROJECT modules:
+======================================================================
+   678  inventory.models
+   656  accounting.models
+   368  sales.models
+   290  purchases.models
+   258  tests.factories
+   211  accounting.models.Account
+   183  accounting.models.JournalEntry
+   167  simulation.control_center.models
+   166  accounting.models.JournalEntryLine
+   147  inventory.models.Product
+   136  inventory.models.Batch
+   131  sales.models.SalesInvoice
+   129  payments.models
+   115  inventory.models.StockMovement
+   106  sales.models.Customer
+   103  purchases.models.PurchaseInvoice
+    95  core.operations.truth.models
+    94  inventory.models.Warehouse
+    93  inventory.models.Category
+    89  purchases.models.Supplier
+    86  inventory.models.Unit
+    75  security.models
+    75  simulation.recovery.models
+    73  core.operations.approval.models
+    73  core.operations.truth.event_store
+    67  accounting.services.journal_engine.JournalEngine
+    67  accounting.services.journal_engine
+    59  hr.models
+    58  sales.models.CustomerPayment
+    56  simulation.replay.models

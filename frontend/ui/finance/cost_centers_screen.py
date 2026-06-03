@@ -14,6 +14,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.forms import FormSection
+from ui.components.state_helper import StateHelper
 
 
 class CostCentersScreen(BaseScreen):
@@ -43,25 +44,9 @@ class CostCentersScreen(BaseScreen):
         header_layout.addWidget(self.btn_refresh)
         layout.addLayout(header_layout)
 
-        # Loading and Empty states
-        self.loading_label = QLabel("Loading cost centers...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
-        self.empty_label = QLabel("No cost centers found")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.empty_label.setVisible(False)
-        layout.addWidget(self.empty_label)
-
-        self.error_label = QLabel("Error loading cost centers")
-        self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.error_label.setVisible(False)
-        layout.addWidget(self.error_label)
-        
         filter_bar = QGroupBox("Filters")
         filter_font = QFont("Segoe UI", TEXT_LABEL)
         filter_font.setWeight(QFont.Weight.Bold)
@@ -125,26 +110,30 @@ class CostCentersScreen(BaseScreen):
 
     def _show_loading(self, show=True):
         """Show/hide loading state."""
-        self.loading_label.setVisible(show)
-        self.table.setVisible(not show)
-        self.empty_label.setVisible(False)
-        self.error_label.setVisible(False)
-        self.btn_refresh.setEnabled(not show)
+        if show:
+            self.state_helper.show_loading("Loading cost centers...")
+            self.table.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.table.setVisible(True)
+            self.btn_refresh.setEnabled(True)
 
     def _show_empty(self, message="No cost centers found"):
         """Show empty state."""
-        self.loading_label.setVisible(False)
+        self.state_helper.show_empty(title=message)
         self.table.setVisible(False)
-        self.empty_label.setText(message)
-        self.empty_label.setVisible(True)
-        self.error_label.setVisible(False)
+        self.btn_refresh.setEnabled(True)
+
+    def _show_error(self, message="Error loading cost centers"):
+        """Show error state."""
+        self.state_helper.show_error(message, on_retry=self.load_data)
+        self.table.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         """Show data table."""
-        self.loading_label.setVisible(False)
-        self.empty_label.setVisible(False)
-        self.error_label.setVisible(False)
+        self.state_helper.hide()
         self.table.setVisible(True)
         self.btn_refresh.setEnabled(True)
 

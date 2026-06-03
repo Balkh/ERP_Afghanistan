@@ -17,7 +17,7 @@ from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, S
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog, ConfirmDialog, EnterpriseDialog, DialogType
 from ui.components.forms import FormSection
-from ui.components.tables import EnterpriseTable, TableColumn, build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn, build_table_stylesheet, DataEntryGrid
 
 
 class ReturnsScreen(BaseScreen):
@@ -666,25 +666,15 @@ class ReturnOrderDialog(EnterpriseDialog):
         )
         items_layout = QVBoxLayout(items_group)
 
-        self.items_table = QTableWidget()
-        self.items_table.setColumnCount(7)
-        self.items_table.setHorizontalHeaderLabels(
+        self.items_table = DataEntryGrid(
             ["Product", "Sold Qty", "To Return", "Unit Price", "Discount", "Tax", "Total"]
         )
         self.items_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.items_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.items_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self.items_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self.items_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
-        self.items_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
-        self.items_table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
+        for c in range(1, 7):
+            self.items_table.horizontalHeader().setSectionResizeMode(c, QHeaderView.ResizeToContents)
         self.items_table.verticalHeader().setVisible(False)
-        self.items_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.items_table.setAlternatingRowColors(True)
-        self.items_table.setStyleSheet(build_table_stylesheet())
         self.items_table.setMinimumHeight(150)
-        self.items_table.setEditTriggers(QAbstractItemView.DoubleClicked)
-        self.items_table.cellChanged.connect(self._on_cell_changed)
+        self.items_table.cell_value_changed.connect(self._on_cell_changed)
         items_layout.addWidget(self.items_table)
 
         self.summary_label = QLabel("Refund Preview: 0.00 AFN")
@@ -712,7 +702,7 @@ class ReturnOrderDialog(EnterpriseDialog):
     def _on_type_change(self):
         self._invoice_data = None
         self._items = []
-        self.items_table.setRowCount(0)
+        self.items_table.clear_all_rows()
         self.party_label.setText("Party: —")
         self.invoice_total_label.setText("Invoice Total: —")
         self.summary_label.setText("Refund Preview: 0.00 AFN")
@@ -747,7 +737,7 @@ class ReturnOrderDialog(EnterpriseDialog):
 
         items = inv.get("items", [])
         self._items = []
-        self.items_table.setRowCount(len(items))
+        self.items_table.clear_all_rows()
 
         for i, item in enumerate(items):
             product_name = item.get("product_name", "Unknown")
@@ -766,19 +756,21 @@ class ReturnOrderDialog(EnterpriseDialog):
                 "max_qty": sold_qty,
             })
 
-            self.items_table.setItem(i, 0, QTableWidgetItem(product_name))
-            self.items_table.setItem(i, 1, QTableWidgetItem(str(int(sold_qty))))
-            self.items_table.setItem(i, 2, QTableWidgetItem("0"))
-            self.items_table.setItem(i, 3, QTableWidgetItem(f"{unit_price:.2f}"))
-            self.items_table.setItem(i, 4, QTableWidgetItem(f"{discount:.2f}"))
-            self.items_table.setItem(i, 5, QTableWidgetItem(f"{tax:.2f}"))
-            self.items_table.setItem(i, 6, QTableWidgetItem("0.00"))
+            self.items_table.add_row([
+                product_name,
+                str(int(sold_qty)),
+                "0",
+                f"{unit_price:.2f}",
+                f"{discount:.2f}",
+                f"{tax:.2f}",
+                "0.00",
+            ])
 
-    def _on_cell_changed(self, row, col):
+    def _on_cell_changed(self, row, col, value):
         if col != 2 or row >= len(self._items):
             return
         try:
-            qty = int(self.items_table.item(row, col).text() or "0")
+            qty = int(value or "0")
             max_qty = int(self._items[row]["max_qty"])
             if qty < 0:
                 qty = 0
@@ -791,7 +783,10 @@ class ReturnOrderDialog(EnterpriseDialog):
             tax = self._items[row]["tax_amount"]
             ratio = qty / max_qty if max_qty > 0 else 0
             total = (qty * up) - (disc * ratio) + (tax * ratio)
-            self.items_table.item(row, 6).setText(f"{total:.2f}")
+
+            current = list(self.items_table.get_row_values(row))
+            current[6] = f"{total:.2f}"
+            self.items_table.set_row_values(row, current)
 
             refund_total = sum(
                 (it["quantity"] * it["unit_price"])

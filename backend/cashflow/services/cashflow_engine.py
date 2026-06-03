@@ -216,21 +216,21 @@ class CashFlowEngine:
         
         for acc in accounts:
             inbound = FinancialTransaction.objects.filter(
-                payment_account=acc,
+                destination_account=acc,
                 status='COMPLETED',
                 transaction_date__lte=as_of_date,
                 transaction_type__in=['RECEIPT', 'REFUND']
             ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            
+
             outbound = FinancialTransaction.objects.filter(
-                payment_account=acc,
+                source_account=acc,
                 status='COMPLETED',
                 transaction_date__lte=as_of_date,
                 transaction_type__in=['PAYMENT', 'TRANSFER', 'REFUND']
             ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            
+
             total += inbound - outbound
-        
+
         return abs(total)
 
     @staticmethod
@@ -245,13 +245,13 @@ class CashFlowEngine:
         
         for acc in accounts:
             inbound = FinancialTransaction.objects.filter(
-                payment_account=acc,
+                destination_account=acc,
                 status='COMPLETED',
                 transaction_type__in=['RECEIPT', 'REFUND']
             ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-            
+
             outbound = FinancialTransaction.objects.filter(
-                payment_account=acc,
+                source_account=acc,
                 status='COMPLETED',
                 transaction_type__in=['PAYMENT', 'TRANSFER', 'REFUND']
             ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')

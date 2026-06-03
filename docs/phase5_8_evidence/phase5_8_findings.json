@@ -1,0 +1,696 @@
+{
+  "WS-A": [
+    {
+      "key": "db_engine",
+      "value": "sqlite"
+    },
+    {
+      "key": "pg_available",
+      "value": false
+    },
+    {
+      "key": "pg_version",
+      "value": "not reachable"
+    },
+    {
+      "key": "settings_db_engine",
+      "value": "django.db.backends.sqlite3"
+    },
+    {
+      "key": "settings_db_name",
+      "value": "E:\\all downloads\\Pharmacy_ERP\\backend\\db.sqlite3"
+    },
+    {
+      "key": "pg_readiness_items",
+      "value": [
+        {
+          "item": "Connection pooling configured",
+          "config_evidence": "CONN_MAX_AGE not in settings (default 0)",
+          "pg_required": true,
+          "status": "NOT_CONFIGURED"
+        },
+        {
+          "item": "ATOMIC_REQUESTS enabled",
+          "config_evidence": "False",
+          "pg_required": false,
+          "status": "OK"
+        },
+        {
+          "item": "CONN_HEALTH_CHECKS enabled",
+          "config_evidence": "False",
+          "pg_required": true,
+          "status": "NOT_CONFIGURED"
+        },
+        {
+          "item": "PG-specific OPTIONS configured",
+          "config_evidence": "{}",
+          "pg_required": true,
+          "status": "NOT_CONFIGURED"
+        },
+        {
+          "item": "Engine is PostgreSQL",
+          "config_evidence": "django.db.backends.sqlite3",
+          "pg_required": true,
+          "status": "NOT_PG"
+        },
+        {
+          "item": "Transaction control via Django ORM",
+          "config_evidence": "transaction.atomic() used throughout",
+          "pg_required": true,
+          "status": "OK"
+        }
+      ]
+    },
+    {
+      "key": "index_inventory",
+      "value": [
+        {
+          "table": "inventory_product",
+          "rows": 1000,
+          "cols": 18,
+          "indexes": 7,
+          "fk_no_index": []
+        },
+        {
+          "table": "inventory_batch",
+          "rows": 5000,
+          "cols": 14,
+          "indexes": 6,
+          "fk_no_index": []
+        },
+        {
+          "table": "inventory_stockmovement",
+          "rows": 50000,
+          "cols": 15,
+          "indexes": 10,
+          "fk_no_index": []
+        },
+        {
+          "table": "inventory_warehouse",
+          "rows": 15,
+          "cols": 11,
+          "indexes": 6,
+          "fk_no_index": []
+        },
+        {
+          "table": "inventory_category",
+          "rows": 50,
+          "cols": 7,
+          "indexes": 3,
+          "fk_no_index": []
+        },
+        {
+          "table": "accounting_account",
+          "rows": 33,
+          "cols": 14,
+          "indexes": 9,
+          "fk_no_index": []
+        },
+        {
+          "table": "accounting_journalentry",
+          "rows": 10000,
+          "cols": 18,
+          "indexes": 15,
+          "fk_no_index": []
+        },
+        {
+          "table": "accounting_journalentryline",
+          "rows": 50000,
+          "cols": 9,
+          "indexes": 6,
+          "fk_no_index": []
+        },
+        {
+          "table": "sales_customer",
+          "rows": 5000,
+          "cols": 33,
+          "indexes": 9,
+          "fk_no_index": []
+        },
+        {
+          "table": "sales_salesinvoice",
+          "rows": 5000,
+          "cols": 22,
+          "indexes": 9,
+          "fk_no_index": []
+        },
+        {
+          "table": "sales_salesitem",
+          "rows": 25000,
+          "cols": 12,
+          "indexes": 7,
+          "fk_no_index": []
+        },
+        {
+          "table": "purchases_supplier",
+          "rows": 1000,
+          "cols": 37,
+          "indexes": 8,
+          "fk_no_index": []
+        },
+        {
+          "table": "purchases_purchaseinvoice",
+          "rows": 1000,
+          "cols": 22,
+          "indexes": 8,
+          "fk_no_index": []
+        },
+        {
+          "table": "purchases_purchaseitem",
+          "rows": 5000,
+          "cols": 13,
+          "indexes": 5,
+          "fk_no_index": []
+        }
+      ]
+    },
+    {
+      "key": "sqlite_config",
+      "value": {
+        "journal_mode": "delete",
+        "synchronous": 2,
+        "cache_size": -2000,
+        "page_size": 4096,
+        "foreign_keys": 1,
+        "temp_store": 0,
+        "mmap_size": 0
+      }
+    }
+  ],
+  "WS-B": [
+    {
+      "key": "final_counts",
+      "value": {
+        "Product": 1000,
+        "Batch": 5000,
+        "StockMovement": 50000,
+        "Warehouse": 15,
+        "Category": 50,
+        "Unit": 11,
+        "Account": 33,
+        "JournalEntry": 10000,
+        "JournalEntryLine": 50000,
+        "Customer": 5000,
+        "SalesInvoice": 5000,
+        "SalesItem": 25000,
+        "Supplier": 1000,
+        "PurchaseInvoice": 1000
+      }
+    },
+    {
+      "key": "referential_integrity",
+      "value": {
+        "journal_lines_for_100_je": 488,
+        "orphan_stock_movements": 0,
+        "invoices_for_50_customers": 50
+      }
+    },
+    {
+      "key": "accounting_invariant",
+      "value": {
+        "total_debits": "1265073140.02000",
+        "total_credits": "1240070384.16000",
+        "imbalance": "25002755.86000",
+        "balanced": false
+      }
+    }
+  ],
+  "WS-C": [
+    {
+      "key": "sample_query_plans",
+      "value": [
+        {
+          "sql": "SELECT * FROM inventory_product WHERE sku = 'SKU00000000'",
+          "plan": [
+            "(3, 0, 39, 'SEARCH inventory_product USING INDEX sqlite_autoindex_inventory_product_3 (sku=?)')"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM accounting_journalentryline WHERE account_id IS NOT NULL ORDER BY ",
+          "plan": [
+            "(5, 0, 216, 'SCAN accounting_journalentryline')",
+            "(26, 0, 0, 'USE TEMP B-TREE FOR ORDER BY')"
+          ]
+        },
+        {
+          "sql": "SELECT product_id, SUM(quantity) FROM inventory_stockmovement GROUP BY product_i",
+          "plan": [
+            "(8, 0, 223, 'SCAN inventory_stockmovement USING INDEX inventory_stockmovement_product_id_4eccfd0a')"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM inventory_batch WHERE expiry_date <= date('now', '+30 days')",
+          "plan": [
+            "(3, 0, 202, 'SEARCH inventory_batch USING INDEX inventory_b_expiry__96c551_idx (expiry_date<?)')"
+          ]
+        },
+        {
+          "sql": "SELECT * FROM sales_salesinvoice WHERE customer_id IS NOT NULL AND payment_statu",
+          "plan": [
+            "(5, 0, 71, 'SEARCH sales_salesinvoice USING INDEX sales_sales_payment_b98ba6_idx (payment_status=?)')"
+          ]
+        }
+      ]
+    }
+  ],
+  "WS-D": [
+    {
+      "key": "read_5_elapsed_ms",
+      "value": 779.7340000006443
+    },
+    {
+      "key": "read_10_elapsed_ms",
+      "value": 1597.2641999996995
+    },
+    {
+      "key": "read_25_elapsed_ms",
+      "value": 4104.2723999999
+    },
+    {
+      "key": "write_5_elapsed_ms",
+      "value": 1007.2459000002709
+    },
+    {
+      "key": "write_5_errors",
+      "value": 0
+    },
+    {
+      "key": "write_10_elapsed_ms",
+      "value": 1606.4248000002408
+    },
+    {
+      "key": "write_10_errors",
+      "value": 0
+    },
+    {
+      "key": "write_25_elapsed_ms",
+      "value": 4038.0519000000277
+    },
+    {
+      "key": "write_25_errors",
+      "value": 0
+    },
+    {
+      "key": "select_for_update_total",
+      "value": 58
+    },
+    {
+      "key": "select_for_update_files",
+      "value": [
+        {
+          "file": "backend\\phase5_8_full.py",
+          "count": 6
+        },
+        {
+          "file": "backend\\accounting\\services\\journal_engine.py",
+          "count": 7
+        },
+        {
+          "file": "backend\\core\\balance_sync.py",
+          "count": 4
+        },
+        {
+          "file": "backend\\core\\operations\\concurrency.py",
+          "count": 6
+        },
+        {
+          "file": "backend\\inventory\\service\\stock_integration.py",
+          "count": 7
+        },
+        {
+          "file": "backend\\inventory\\service\\transfer_service.py",
+          "count": 4
+        },
+        {
+          "file": "backend\\pre_production_hardening\\hardening_validator.py",
+          "count": 4
+        },
+        {
+          "file": "backend\\production_infrastructure\\migration_validator.py",
+          "count": 8
+        },
+        {
+          "file": "backend\\purchases\\views.py",
+          "count": 1
+        },
+        {
+          "file": "backend\\purchases\\services\\fifo_allocation.py",
+          "count": 2
+        },
+        {
+          "file": "backend\\returns\\models.py",
+          "count": 3
+        },
+        {
+          "file": "backend\\sales\\views.py",
+          "count": 4
+        },
+        {
+          "file": "backend\\sales\\services\\fifo_allocation.py",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "key": "mix_5r_5w_elapsed_ms",
+      "value": 1921.471799999381
+    },
+    {
+      "key": "mix_5r_5w_errors",
+      "value": 0
+    },
+    {
+      "key": "mix_10r_10w_elapsed_ms",
+      "value": 4084.9543000003905
+    },
+    {
+      "key": "mix_10r_10w_errors",
+      "value": 0
+    },
+    {
+      "key": "mix_20r_20w_elapsed_ms",
+      "value": 31650.08779999971
+    },
+    {
+      "key": "mix_20r_20w_errors",
+      "value": 27
+    }
+  ],
+  "WS-E": [
+    {
+      "key": "rss_baseline_mb",
+      "value": 74.59765625
+    },
+    {
+      "key": "rss_final_mb",
+      "value": 75.19140625
+    },
+    {
+      "key": "rss_growth_mb",
+      "value": 0.59375
+    },
+    {
+      "key": "rss_samples",
+      "value": [
+        74.84765625,
+        75.06640625,
+        75.16015625,
+        75.1875,
+        75.1875,
+        75.1875,
+        75.1875,
+        75.1875
+      ]
+    },
+    {
+      "key": "heap_samples_mb",
+      "value": [
+        0.25901222229003906,
+        0.43482398986816406,
+        0.46207427978515625,
+        0.4735078811645508,
+        0.48089122772216797,
+        0.49184513092041016,
+        0.49925708770751953,
+        0.49925708770751953
+      ]
+    },
+    {
+      "key": "rss_slope_mb_per_iter",
+      "value": 0.03650483630952381
+    },
+    {
+      "key": "memory_leak_detected",
+      "value": false
+    },
+    {
+      "key": "gc_objects_before",
+      "value": 76268
+    },
+    {
+      "key": "gc_objects_after",
+      "value": 76263
+    },
+    {
+      "key": "gc_objects_growth",
+      "value": -5
+    },
+    {
+      "key": "live_qtimers",
+      "value": 0
+    }
+  ],
+  "WS-F": [
+    {
+      "key": "table_100_rows_render_ms",
+      "value": 827.5223000000551
+    },
+    {
+      "key": "table_100_rows_memory_mb",
+      "value": 98.828125
+    },
+    {
+      "key": "table_1000_rows_render_ms",
+      "value": 24.996199999804958
+    },
+    {
+      "key": "table_1000_rows_memory_mb",
+      "value": 102.16796875
+    }
+  ],
+  "WS-G": [
+    {
+      "key": "backup_paths",
+      "value": [
+        {
+          "label": "warm",
+          "path": "E:\\all downloads\\Pharmacy_ERP\\backend\\db_phase58_backup_warm.sqlite3",
+          "size_mb": 5.3203125,
+          "time_ms": 2.921799999967334
+        },
+        {
+          "label": "cold",
+          "path": "E:\\all downloads\\Pharmacy_ERP\\backend\\db_phase58_backup_cold.sqlite3",
+          "size_mb": 5.3203125,
+          "time_ms": 2.899299999626237
+        }
+      ]
+    },
+    {
+      "key": "verify_results",
+      "value": [
+        {
+          "label": "warm",
+          "accounts": 33,
+          "products": 164,
+          "integrity": "ok",
+          "verify_time_ms": 51.43520000001445
+        },
+        {
+          "label": "cold",
+          "accounts": 33,
+          "products": 164,
+          "integrity": "ok",
+          "verify_time_ms": 23.261100000127044
+        }
+      ]
+    },
+    {
+      "key": "restored_counts",
+      "value": {
+        "accounts": 33,
+        "journal_entries": 105,
+        "journal_lines": 210
+      }
+    },
+    {
+      "key": "restore_time_ms",
+      "value": 2.914499999860709
+    },
+    {
+      "key": "corruption_detected",
+      "value": true
+    },
+    {
+      "key": "integrity_check_error",
+      "value": "database disk image is malformed"
+    },
+    {
+      "key": "pitr_status",
+      "value": "NOT_APPLICABLE_SQLITE"
+    },
+    {
+      "key": "pitr_pg_requirements",
+      "value": [
+        "archive_mode=on",
+        "wal_level=replica",
+        "full_page_writes=on",
+        "archive_command=cp %p /archive/%f"
+      ]
+    },
+    {
+      "key": "restore_point_model",
+      "value": true
+    }
+  ],
+  "WS-H": [
+    {
+      "key": "n_plus_one_count",
+      "value": 0
+    },
+    {
+      "key": "n_plus_one_samples",
+      "value": []
+    },
+    {
+      "key": "o_n2_count",
+      "value": 0
+    },
+    {
+      "key": "unbounded_count",
+      "value": 0
+    },
+    {
+      "key": "unbounded_samples",
+      "value": []
+    },
+    {
+      "key": "swallowed_count",
+      "value": 194
+    },
+    {
+      "key": "swallowed_samples",
+      "value": [
+        {
+          "file": "backend\\genesis_init.py",
+          "line": 1363
+        },
+        {
+          "file": "backend\\governance_engine.py",
+          "line": 190
+        },
+        {
+          "file": "backend\\governance_engine.py",
+          "line": 192
+        },
+        {
+          "file": "backend\\phase5_7_full.py",
+          "line": 497
+        },
+        {
+          "file": "backend\\phase5_8_full.py",
+          "line": 205
+        },
+        {
+          "file": "backend\\phase5_8_full.py",
+          "line": 1211
+        },
+        {
+          "file": "backend\\phase5_8_full.py",
+          "line": 1651
+        },
+        {
+          "file": "backend\\phase5_8_full.py",
+          "line": 1673
+        },
+        {
+          "file": "backend\\phase5_8_full.py",
+          "line": 1693
+        },
+        {
+          "file": "backend\\phase5_8_full.py",
+          "line": 1717
+        }
+      ]
+    },
+    {
+      "key": "recursive_signals",
+      "value": 1
+    },
+    {
+      "key": "long_txn_files",
+      "value": 4
+    },
+    {
+      "key": "fk_no_db_index",
+      "value": 189
+    }
+  ],
+  "WS-I": [
+    {
+      "key": "pilot_counts",
+      "value": {
+        "products": 1000,
+        "warehouses": 15,
+        "batches": 5000,
+        "stock_movements": 50000,
+        "accounts": 33,
+        "journal_entries": 10000,
+        "journal_lines": 50000,
+        "customers": 5000,
+        "sales_invoices": 5000,
+        "suppliers": 1000,
+        "purchase_invoices": 1000
+      }
+    },
+    {
+      "key": "pilot_constraints",
+      "value": {
+        "1_company": true,
+        "1_warehouse_recommended": true,
+        "le_5_users": true,
+        "14_days": true
+      }
+    },
+    {
+      "key": "op_readiness",
+      "value": {
+        "restore_point_model": true,
+        "audit_log": false,
+        "monitoring": true,
+        "backup_strategy": true
+      }
+    },
+    {
+      "key": "risk_gates",
+      "value": []
+    }
+  ],
+  "WS-J": [
+    {
+      "key": "weighted_score",
+      "value": 88.6
+    },
+    {
+      "key": "verdict",
+      "value": "READY WITH FIXES"
+    },
+    {
+      "key": "limitations",
+      "value": [
+        "SQLite used as PG proxy \u2014 real PG measurements not taken",
+        "Products at 1,000 (target 100,000, factor=1%)",
+        "Stock movements at 50,000 (target 500,000, factor=10%)",
+        "Journal lines at 50,000 (target 2,000,000, factor=2%)"
+      ]
+    },
+    {
+      "key": "weights",
+      "value": {
+        "WS-A": 10,
+        "WS-B": 10,
+        "WS-C": 15,
+        "WS-D": 10,
+        "WS-E": 10,
+        "WS-F": 10,
+        "WS-G": 10,
+        "WS-H": 10,
+        "WS-I": 15
+      }
+    },
+    {
+      "key": "total_elapsed_s",
+      "value": 95.10664719999932
+    }
+  ]
+}

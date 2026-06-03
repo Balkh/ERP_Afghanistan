@@ -93,6 +93,15 @@ class LicensingScreen(BaseScreen):
         self._timer.timeout.connect(self._refresh)
         self._timer.start(60000)
 
+    def _on_screen_hidden(self):
+        """Stop the refresh timer when the screen is hidden.
+
+        Without this, the timer keeps firing every 60s even when the
+        user has navigated away — F-26 timer leak. Phase 5.6 fix.
+        """
+        if self._timer is not None and self._timer.isActive():
+            self._timer.stop()
+
     def _refresh(self):
         try:
             resp = self._api.get("/api/licensing/info/")

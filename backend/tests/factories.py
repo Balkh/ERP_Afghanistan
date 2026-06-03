@@ -802,8 +802,22 @@ class AccountFactory:
 
     @staticmethod
     def create(code=None, **kwargs):
+        if code is not None:
+            defaults = {
+                'name': kwargs.get('name', f'Account {uuid.uuid4().hex[:6]}'),
+                'account_type': kwargs.get('account_type', 'ASSET'),
+                'account_category': kwargs.get('account_category', 'CURRENT_ASSET'),
+                'parent': kwargs.get('parent'),
+                'description': kwargs.get('description', 'Test account'),
+                'is_active': True,
+                'is_system': kwargs.get('is_system', False),
+                'balance': kwargs.get('balance', Decimal('0.00')),
+            }
+            defaults.update(kwargs)
+            account, _ = Account.objects.get_or_create(code=code, defaults=defaults)
+            return account
         defaults = {
-            'code': code or f'{uuid.uuid4().int % 10000:04d}',
+            'code': f'{uuid.uuid4().int % 10000:04d}',
             'name': kwargs.get('name', f'Account {uuid.uuid4().hex[:6]}'),
             'account_type': kwargs.get('account_type', 'ASSET'),
             'account_category': kwargs.get('account_category', 'CURRENT_ASSET'),

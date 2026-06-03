@@ -132,23 +132,28 @@ def get_endpoint(key, **kwargs):
 
 def extract_list(response):
     """Extract a list from any API response format.
-    
+
     Handles:
     - Direct list: [...]
     - Paginated: {"data": {"count": N, "results": [...]}}
     - Non-paginated: {"data": [...]}
     - Plain dict with results: {"results": [...]}
+
+    Returns only dict items (filters out non-dict entries such as stray
+    strings or numbers that some legacy endpoints include in their list
+    responses). Replaces the 4 _parse_response helper methods that
+    previously existed in finance/HR screens.
     """
     if isinstance(response, list):
-        return response
+        return [x for x in response if isinstance(x, dict)]
     if not isinstance(response, dict):
         return []
     data = response.get("data", response)
     if isinstance(data, list):
-        return data
+        return [x for x in data if isinstance(x, dict)]
     if isinstance(data, dict):
         results = data.get("results", data.get("data", []))
         if isinstance(results, list):
-            return results
+            return [x for x in results if isinstance(x, dict)]
     results = response.get("results", [])
-    return results if isinstance(results, list) else []
+    return [x for x in results if isinstance(x, dict)] if isinstance(results, list) else []

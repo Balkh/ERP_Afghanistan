@@ -13,6 +13,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.forms import FormSection
+from ui.components.state_helper import StateHelper
 
 class ExpenseScreen(BaseScreen):
     """Screen for managing pharmacy expenses."""
@@ -84,24 +85,8 @@ class ExpenseScreen(BaseScreen):
         
         layout.addWidget(filter_bar)
 
-        # Loading and Empty states
-        self.loading_label = QLabel("Loading expenses...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
-
-        self.empty_label = QLabel("No expenses found")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.empty_label.setVisible(False)
-        layout.addWidget(self.empty_label)
-
-        self.error_label = QLabel("Error loading expenses")
-        self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
-        self.error_label.setVisible(False)
-        layout.addWidget(self.error_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         # Table
         columns = [
@@ -118,28 +103,30 @@ class ExpenseScreen(BaseScreen):
 
     def _show_loading(self, show=True):
         """Show/hide loading state."""
-        self.loading_label.setVisible(show)
-        self.table.setVisible(not show)
-        self.empty_label.setVisible(False)
-        self.error_label.setVisible(False)
-        self.btn_refresh.setEnabled(not show)
         if show:
-            QApplication.processEvents()
+            self.state_helper.show_loading("Loading expenses...")
+            self.table.setVisible(False)
+            self.btn_refresh.setEnabled(False)
+        else:
+            self.state_helper.hide()
+            self.table.setVisible(True)
+            self.btn_refresh.setEnabled(True)
 
     def _show_empty(self, message="No expenses found"):
         """Show empty state."""
-        self.loading_label.setVisible(False)
+        self.state_helper.show_empty(title=message)
         self.table.setVisible(False)
-        self.empty_label.setText(message)
-        self.empty_label.setVisible(True)
-        self.error_label.setVisible(False)
+        self.btn_refresh.setEnabled(True)
+
+    def _show_error(self, message="Error loading expenses"):
+        """Show error state."""
+        self.state_helper.show_error(message, on_retry=self.load_expenses)
+        self.table.setVisible(False)
         self.btn_refresh.setEnabled(True)
 
     def _show_data(self):
         """Show data table."""
-        self.loading_label.setVisible(False)
-        self.empty_label.setVisible(False)
-        self.error_label.setVisible(False)
+        self.state_helper.hide()
         self.table.setVisible(True)
         self.btn_refresh.setEnabled(True)
 
@@ -162,9 +149,7 @@ class ExpenseScreen(BaseScreen):
             else:
                 self._show_empty()
         except Exception as e:
-            self.error_label.setText(f"Failed to load expenses: {e}")
-            self._show_empty(f"Error: {e}")
-            self.error_label.setVisible(True)
+            self._show_error(f"Failed to load expenses: {e}")
 
     def _populate_table(self):
         data = []

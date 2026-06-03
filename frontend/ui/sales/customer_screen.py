@@ -14,6 +14,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.forms import FormSection
+from ui.components.state_helper import StateHelper
 
 
 class CustomerScreen(BaseScreen):
@@ -67,26 +68,8 @@ class CustomerScreen(BaseScreen):
         search_layout.addWidget(self.search_box)
         layout.addLayout(search_layout)
 
-        # Loading indicator
-        self.loading_label = QLabel("Loading customers...")
-        self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
-        self.loading_label.setVisible(False)
-        layout.addWidget(self.loading_label)
-
-        # Error indicator
-        self.error_label = QLabel()
-        self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
-        self.error_label.setVisible(False)
-        layout.addWidget(self.error_label)
-
-        # Empty state indicator
-        self.empty_label = QLabel("No customers found")
-        self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
-        self.empty_label.setVisible(False)
-        layout.addWidget(self.empty_label)
+        # Loading, empty, and error states (managed by StateHelper)
+        self.state_helper = StateHelper(layout)
 
         # Table
         columns = [
@@ -138,7 +121,7 @@ class CustomerScreen(BaseScreen):
             return customers
         except Exception as e:
             self.set_state(ScreenState.ERROR)
-            self.error_label.setText(f"Failed to load customers: {e}")
+            self.error_text = f"Failed to load customers: {e}"
             return []
 
     def load_customers(self):
@@ -159,10 +142,20 @@ class CustomerScreen(BaseScreen):
         valid_customers = [c for c in self.customers if isinstance(c, dict)]
 
         state = self.state
-        self.loading_label.setVisible(state == ScreenState.LOADING)
-        self.error_label.setVisible(state == ScreenState.ERROR)
-        self.empty_label.setVisible(state == ScreenState.EMPTY and len(valid_customers) == 0)
-        self.table.setVisible(state == ScreenState.READY and len(valid_customers) > 0)
+        if state == ScreenState.LOADING:
+            self.state_helper.show_loading("Loading customers...")
+            self.table.setVisible(False)
+        elif state == ScreenState.ERROR:
+            self.error_text and self.state_helper.show_error(
+                self.error_text, on_retry=self.load_customers
+            )
+            self.table.setVisible(False)
+        elif state == ScreenState.EMPTY or len(valid_customers) == 0:
+            self.state_helper.show_empty("No customers found")
+            self.table.setVisible(False)
+        else:
+            self.state_helper.hide()
+            self.table.setVisible(True)
 
         data = []
         for customer in valid_customers:

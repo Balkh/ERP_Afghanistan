@@ -8,6 +8,7 @@ from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_
 from ui.components.kpi_cards import KPICard
 from theme.theme_engine import ThemeEngine
 from ui.screens.base_screen import BaseScreen
+from ui.dashboard_colors import DashboardColorScheme
 
 
 class Dashboard(BaseScreen):
@@ -19,13 +20,6 @@ class Dashboard(BaseScreen):
         self._dashboard_data = {}
         self._extra_counts = {}
         self._kpi_labels = {}
-        self._color_map = {
-            'blue': COLOR_PRIMARY,
-            'red': COLOR_DANGER,
-            'green': COLOR_SUCCESS,
-            'mauve': COLOR_INFO,
-            'peach': COLOR_WARNING,
-        }
         super().__init__()
 
         self._refresh_timer = QTimer(self)
@@ -377,7 +371,7 @@ class Dashboard(BaseScreen):
         self._role_stack.addLayout(grid)
 
     def _mini_card(self, label, value, color_key, is_currency):
-        c = self._color_map.get(color_key, COLOR_PRIMARY)
+        c = DashboardColorScheme.get(color_key)
         f = QFrame()
         f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; }}")
         lay = QVBoxLayout(f)
@@ -435,7 +429,7 @@ class Dashboard(BaseScreen):
             for a in recent[:3]:
                 msg = a.get('message', '') if isinstance(a, dict) else str(a)
                 sev = a.get('severity', 'info') if isinstance(a, dict) else 'info'
-                ck = 'red' if sev == 'critical' else 'peach' if sev == 'warning' else 'blue'
+                ck = DashboardColorScheme.for_severity(sev)
                 self._alert_stack.addWidget(self._alert_line("", msg, ck))
         else:
             self._alert_stack.addWidget(self._alert_line("System", "No current alerts", 'blue'))
@@ -443,7 +437,7 @@ class Dashboard(BaseScreen):
         self._alert_stack.addStretch()
 
     def _alert_line(self, label, status, color_key):
-        c = self._color_map.get(color_key, COLOR_PRIMARY)
+        c = DashboardColorScheme.get(color_key)
         box = QFrame()
         box.setStyleSheet(f"""
             QFrame {{

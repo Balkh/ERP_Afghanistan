@@ -25,6 +25,49 @@ def enable_db_access_for_all_tests(db):
     pass
 
 
+@pytest.fixture(autouse=True)
+def seed_chart_of_accounts(db):
+    """Seed canonical Chart of Accounts before each test.
+
+    Tests that exercise the financial engine (PaymentEngine, journal
+    entries, reconciliation) require required account codes to be
+    present. The bootstrap orchestrator is run here in-process so the
+    seed step is exercised in the same code path as production.
+    """
+    from accounting.models import Account
+    from accounting.management.commands.seed_accounts import (
+        seed_canonical_chart_of_accounts,
+    )
+    if Account.objects.count() == 0:
+        seed_canonical_chart_of_accounts()
+    yield
+
+
+@pytest.fixture(autouse=True)
+def seed_payment_accounts_with_balance(db):
+    """Seed payment methods/accounts with sufficient test balance.
+
+    The bootstrap orchestrator's seed_payments step creates
+    PaymentAccount records but with a zero starting balance. Tests
+    that exercise the supplier-payment path (process_payment) need a
+    non-zero source balance to avoid false "Insufficient funds"
+    failures that have nothing to do with the assertion under test.
+    """
+    from decimal import Decimal
+    from payments.models import PaymentMethod, PaymentAccount
+    from accounting.models import Account
+    from django.core.management import call_command
+    from io import StringIO
+    if PaymentMethod.objects.count() == 0:
+        call_command("seed_payments", stdout=StringIO())
+    cash_accounting = Account.objects.filter(code='1010').first()
+    if cash_accounting is not None:
+        PaymentAccount.objects.filter(
+            current_balance=Decimal('0.00')
+        ).update(current_balance=Decimal('1000000.00'))
+    yield
+
+
 @pytest.fixture
 def default_currency():
     """Create default currency."""
