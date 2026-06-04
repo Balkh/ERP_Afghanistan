@@ -98,15 +98,15 @@ class MainWindow(QMainWindow):
         
         # Device ID
         self.device_id_label = QLabel()
-        self.device_id_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_TEXT_SECONDARY};")
+        self.device_id_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_TEXT_SECONDARY};")
         
         # License status
         self.license_status_label = QLabel()
-        self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_TEXT_SECONDARY}; margin-left: {SPACING_MD}px;")
+        self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_TEXT_SECONDARY}; margin-left: {SPACING_MD}px;")
         
         # Connection status
         self.connection_status_label = QLabel()
-        self.connection_status_label.setStyleSheet(f"font-size: {TEXT_TABLE}px; color: {COLOR_TEXT_SECONDARY}; margin-left: {SPACING_MD}px;")
+        self.connection_status_label.setStyleSheet(f"font-size: {TEXT_TABLE}pt; color: {COLOR_TEXT_SECONDARY}; margin-left: {SPACING_MD}px;")
         
         self.conn_label = QLabel("● Connected")
         self.conn_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: {SPACING_LG}px; font-weight: bold;")
@@ -307,7 +307,7 @@ class MainWindow(QMainWindow):
                 color: {COLOR_TEXT_PRIMARY};
                 font-weight: bold;
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 margin-top: {SPACING_SM}px;
                 padding-top: {SPACING_SM}px;
             }}
@@ -320,7 +320,7 @@ class MainWindow(QMainWindow):
                 background-color: {COLOR_BG_SURFACE};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
+                border-radius: {BORDER_RADIUS_MD}px;
                 padding: {SPACING_SM}px;
             }}
             QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
@@ -333,7 +333,6 @@ class MainWindow(QMainWindow):
         content_layout = QVBoxLayout(content_frame)
         content_layout.setContentsMargins(MARGIN_PAGE, SPACING_SM, MARGIN_PAGE, SPACING_MD)
         content_layout.setSpacing(SPACING_MD + SPACING_XS)
-        content_layout.addStretch(1)  # Make content expand to fill available space
 
         self.header = QLabel("Pharmacy ERP Dashboard")
         self.header.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
@@ -358,6 +357,7 @@ class MainWindow(QMainWindow):
         self.pages = QStackedWidget()
         self.pages.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         content_layout.addWidget(self.pages)
+        content_layout.addStretch(1)  # F10: stretch placed after all content widgets
 
         # 0: Dashboard (always loaded first)
         self.dashboard = Dashboard(role=self.user_role, api_client=self.api_client)
@@ -581,10 +581,10 @@ class MainWindow(QMainWindow):
             status = self.license_validator.get_license_status()
             if status["is_valid"]:
                 self.license_status_label.setText(f"License: Valid ({status['message']})")
-                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Green
+                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Green
             else:
                 self.license_status_label.setText(f"License: Invalid ({status['message']})")
-                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Red
+                self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Red
 
     def check_connection(self):
         """Check the connection to the backend and update the status bar."""
@@ -601,10 +601,10 @@ class MainWindow(QMainWindow):
             is_reachable = self.api_client.health_check()
             if is_reachable:
                 self.connection_status_label.setText("Connected")
-                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")
+                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")
             else:
                 self.connection_status_label.setText("Disconnected")
-                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")
+                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")
         except (RuntimeError, AttributeError) as e:
             # Catch PySide6 deletion errors silently during shutdown
             if "deleted" in str(e).lower():
@@ -619,10 +619,10 @@ class MainWindow(QMainWindow):
             
         if is_valid:
             self.license_status_label.setText(f"License: Valid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Green
+            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Green
         else:
             self.license_status_label.setText(f"License: Invalid ({message})")
-            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}px; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Red
+            self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Red
             
             # Show critical error message if validation fails
             if not is_valid and "too many times" in message:
@@ -692,7 +692,7 @@ class MainWindow(QMainWindow):
                     color: {C.COLOR_TEXT_PRIMARY};
                     font-weight: bold;
                     border: 1px solid {C.COLOR_BORDER};
-                    border-radius: {C.BORDER_RADIUS_LG};
+                    border-radius: {C.BORDER_RADIUS_LG}px;
                     margin-top: {SPACING_SM}px;
                     padding-top: {SPACING_SM}px;
                 }}
@@ -705,7 +705,7 @@ class MainWindow(QMainWindow):
                     background-color: {C.COLOR_BG_SURFACE};
                     color: {C.COLOR_TEXT_PRIMARY};
                     border: 1px solid {C.COLOR_BORDER};
-                    border-radius: {C.BORDER_RADIUS_MD};
+                    border-radius: {C.BORDER_RADIUS_MD}px;
                     padding: {C.SPACING_SM}px;
                 }}
                 QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
@@ -724,9 +724,9 @@ class MainWindow(QMainWindow):
             ('user_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: {C.SPACING_LG}px;"),
             ('conn_label', f"color: {C.COLOR_STATUS_VALID}; margin-right: {C.SPACING_LG}px; font-weight: bold;"),
             ('time_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: {C.SPACING_LG}px;"),
-            ('device_id_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED};"),
-            ('license_status_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED}; margin-left: {C.SPACING_MD}px;"),
-            ('connection_status_label', f"font-size: {C.TEXT_LABEL}px; color: {C.COLOR_TEXT_MUTED}; margin-left: {C.SPACING_MD}px;"),
+            ('device_id_label', f"font-size: {C.TEXT_LABEL}pt; color: {C.COLOR_TEXT_MUTED};"),
+            ('license_status_label', f"font-size: {C.TEXT_LABEL}pt; color: {C.COLOR_TEXT_MUTED}; margin-left: {C.SPACING_MD}px;"),
+            ('connection_status_label', f"font-size: {C.TEXT_LABEL}pt; color: {C.COLOR_TEXT_MUTED}; margin-left: {C.SPACING_MD}px;"),
         ]:
             widget = getattr(self, attr, None)
             if widget is not None:
@@ -746,9 +746,9 @@ class MainWindow(QMainWindow):
                 background-color: transparent;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_6}px {SPACING_SM}px;
-                font-size: {TEXT_BODY}px;
+                font-size: {TEXT_BODY}pt;
             }}
             EnterpriseButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};
@@ -1090,11 +1090,14 @@ class MainWindow(QMainWindow):
             # Logout via AuthManager — single source of truth for session cleanup
             self.auth_manager._clear_session()
 
-            # Close main window and show login
+            # F13: Safe restart — close first, then spawn after event loop
+            # processes the close event to prevent dual-process overlap.
             self.close()
-            # Re-run main to show login
             import subprocess
-            subprocess.Popen([sys.executable, os.path.join(os.path.dirname(__file__), "..", "main.py")])
+            _main_path = os.path.normpath(
+                os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "main.py")
+            )
+            QTimer.singleShot(500, lambda: subprocess.Popen([sys.executable, _main_path]))
     
     def refresh_current_view(self):
         """Refresh the current view data."""
