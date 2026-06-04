@@ -13,7 +13,7 @@ class LoadingSpinner(QWidget):
         self.size = size
         self.color = QColor(color)
         self.angle = 0
-        self.timer = QTimer()
+        self.timer = QTimer(self)
         self.timer.timeout.connect(self.rotate)
         self.setFixedSize(size, size)
         
@@ -69,7 +69,7 @@ class LoadingOverlay(QWidget):
         self.label.setStyleSheet(f"""
             QLabel {{
                 color: {COLOR_PRIMARY};
-                font-size: {TEXT_BODY}px;
+                font-size: {TEXT_BODY}pt;
                 margin-top: 10px;
             }}
         """)

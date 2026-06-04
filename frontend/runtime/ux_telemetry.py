@@ -45,7 +45,11 @@ class _TelemetryBuffer:
     def _setup_flush(self):
         """Periodic flush via non-blocking timer."""
         try:
-            self._flush_timer = QTimer()
+            # F11: Use QApplication.instance() as parent so the timer lifetime
+            # is tied to the application and destroyed before the event loop exits.
+            from PySide6.QtWidgets import QApplication
+            _app = QApplication.instance()
+            self._flush_timer = QTimer(_app)
             self._flush_timer.setSingleShot(False)
             self._flush_timer.timeout.connect(self.flush)
             self._flush_timer.start(_FLUSH_INTERVAL_MS)

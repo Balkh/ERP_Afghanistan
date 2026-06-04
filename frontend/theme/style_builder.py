@@ -382,7 +382,7 @@ class UIStyleBuilder:
                 border: 2px solid {color};
                 border-radius: {_tokens.BORDER_RADIUS_LG}px;
                 padding: {_tokens.SPACING_LG}px 20px;
-                font-size: {_tokens.TEXT_CARD_TITLE}px;
+                font-size: {_tokens.TEXT_CARD_TITLE}pt;
                 font-weight: bold;
                 text-align: left;
             }}

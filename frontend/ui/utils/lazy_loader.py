@@ -79,6 +79,6 @@ class LazyScreenManager:
         label = QLabel(text)
         label.setAlignment(Qt.AlignCenter)
         from ui.constants import COLOR_TEXT_MUTED
-        label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px;")
+        label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt;")
         layout.addWidget(label)
         return w

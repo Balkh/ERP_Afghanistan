@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
                                   QGridLayout, QApplication, QScrollArea)
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QThread, Signal, QObject
 from PySide6.QtGui import QFont
 from ui.role_manager import UserRole
 from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_6, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_HELPER, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
@@ -20,6 +20,8 @@ class Dashboard(BaseScreen):
         self._dashboard_data = {}
         self._extra_counts = {}
         self._kpi_labels = {}
+        self._refresh_worker = None   # F20: active worker reference
+        self._refresh_thread = None   # F20: active thread reference
         super().__init__()
 
         self._refresh_timer = QTimer(self)
@@ -60,7 +62,18 @@ class Dashboard(BaseScreen):
     def cleanup(self):
         if self._refresh_timer:
             self._refresh_timer.stop()
+        self._cancel_refresh_worker()
         ThemeEngine.instance().unregister(self._theme_token)
+
+    def _cancel_refresh_worker(self):
+        """F20: Stop and clean up the background refresh worker if running."""
+        if self._refresh_worker is not None:
+            self._refresh_worker.cancel()
+        if self._refresh_thread is not None and self._refresh_thread.isRunning():
+            self._refresh_thread.quit()
+            self._refresh_thread.wait(2000)
+        self._refresh_worker = None
+        self._refresh_thread = None
 
     def _on_screen_shown(self):
         if self._refresh_timer and not self._refresh_timer.isActive():
@@ -191,31 +204,51 @@ class Dashboard(BaseScreen):
         return btn
 
     # ------------------------------------------------------------------
-    # Data refresh  (updates labels, never rebuilds UI)
+    # Data refresh  (F20/F21: non-blocking via background QThread)
     # ------------------------------------------------------------------
     def refresh_data(self):
+        """Trigger a non-blocking background refresh.
+
+        F20/F21: All three API calls are executed in a QThread worker
+        so the UI thread is never blocked.
+        """
         if not self._api_client:
             return
+        if self._refresh_thread is not None and self._refresh_thread.isRunning():
+            return
         self._subtitle.setText("Refreshing…")
-        try:
-            raw = self._api_client.get("/api/control-center/")
-            if raw and isinstance(raw, dict):
-                d = raw.get('data', {})
-                self._dashboard_data = d if isinstance(d, dict) else raw
-            else:
-                self._dashboard_data = raw if isinstance(raw, dict) else {}
-            self._fetch_extra_counts()
-            self._sync_ui()
-            self._subtitle.setText("Up to date")
-        except Exception as e:
-            print(f"Dashboard refresh error: {e}")
-            self._subtitle.setText("Refresh failed")
+        self._refresh_worker = _DashboardRefreshWorker(self._api_client)
+        self._refresh_thread = QThread(self)
+        self._refresh_worker.moveToThread(self._refresh_thread)
+        self._refresh_thread.started.connect(self._refresh_worker.run)
+        self._refresh_worker.finished.connect(self._on_refresh_done)
+        self._refresh_worker.finished.connect(self._refresh_thread.quit)
+        self._refresh_worker.error.connect(self._on_refresh_error)
+        self._refresh_thread.finished.connect(self._on_thread_finished)
+        self._refresh_thread.start()
+
+    def _on_refresh_done(self, dashboard_data: dict, extra_counts: dict):
+        """Receive results from background worker and update UI (UI thread)."""
+        self._dashboard_data = dashboard_data
+        self._extra_counts = extra_counts
+        self._sync_ui()
+        self._subtitle.setText("Up to date")
+
+    def _on_refresh_error(self, message: str):
+        """Handle background worker error (UI thread)."""
+        self._subtitle.setText("Refresh failed")
+
+    def _on_thread_finished(self):
+        """Clean up thread/worker references after completion."""
+        self._refresh_worker = None
+        self._refresh_thread = None
 
     def _fetch_extra_counts(self):
+        """Kept for internal use by _DashboardRefreshWorker only."""
         for key, url in [('customers', '/api/sales/customers/?limit=1'),
                          ('suppliers', '/api/purchases/suppliers/?limit=1')]:
             try:
-                r = self._api_client.get(url)
+                r = self._api_client.get(url, background=True)
                 if r and isinstance(r, dict):
                     d = r.get('data', r)
                     if isinstance(d, dict):
@@ -373,7 +406,7 @@ class Dashboard(BaseScreen):
     def _mini_card(self, label, value, color_key, is_currency):
         c = DashboardColorScheme.get(color_key)
         f = QFrame()
-        f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; }}")
+        f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; }}")
         lay = QVBoxLayout(f)
         lay.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_MD, SPACING_SM)
         lay.setSpacing(SPACING_XS)
@@ -444,7 +477,7 @@ class Dashboard(BaseScreen):
                 background-color: {COLOR_BORDER};
                 border: 1px solid {COLOR_BORDER_LIGHT};
                 border-left: 3px solid {c};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
             }}
         """)
         row = QHBoxLayout(box)
@@ -477,5 +510,67 @@ class Dashboard(BaseScreen):
             if isinstance(w, MainWindow):
                 w.change_page(index, titles.get(index, "Dashboard"))
                 break
+
+
+# ---------------------------------------------------------------------------
+# F20/F21 — Background worker for Dashboard data fetching
+# ---------------------------------------------------------------------------
+
+class _DashboardRefreshWorker(QObject):
+    """Worker that fetches all dashboard data in a background thread.
+
+    Emits:
+        finished(dashboard_data, extra_counts) — on success
+        error(message)                         — on failure
+    """
+
+    finished = Signal(dict, dict)
+    error = Signal(str)
+
+    def __init__(self, api_client):
+        super().__init__()
+        self._api_client = api_client
+        self._cancelled = False
+
+    def cancel(self):
+        """Request cancellation."""
+        self._cancelled = True
+
+    def run(self):
+        """Execute all API calls sequentially in the background thread."""
+        try:
+            if self._cancelled:
+                return
+            raw = self._api_client.get("/api/control-center/", background=True)
+            if isinstance(raw, dict):
+                d = raw.get('data', {})
+                dashboard_data = d if isinstance(d, dict) else raw
+            else:
+                dashboard_data = raw if isinstance(raw, dict) else {}
+
+            extra_counts = {}
+            for key, url in [
+                ('customers', '/api/sales/customers/?limit=1'),
+                ('suppliers', '/api/purchases/suppliers/?limit=1'),
+            ]:
+                if self._cancelled:
+                    return
+                try:
+                    r = self._api_client.get(url, background=True)
+                    if r and isinstance(r, dict):
+                        d = r.get('data', r)
+                        if isinstance(d, dict):
+                            extra_counts[key] = d.get('count', 0)
+                        elif isinstance(d, list):
+                            extra_counts[key] = len(d)
+                except Exception:
+                    pass
+
+            if not self._cancelled:
+                self.finished.emit(dashboard_data, extra_counts)
+
+        except Exception as e:
+            if not self._cancelled:
+                self.error.emit(str(e))
 
 
