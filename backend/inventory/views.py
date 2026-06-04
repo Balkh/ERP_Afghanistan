@@ -1,7 +1,10 @@
 from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.translation import gettext_lazy as _
+from django.db import models
 from core.multitenant.views import UnifiedEnterpriseViewSetMixin
 from .models import Category, Unit, Product, Batch, Warehouse, StockMovement
 from .serializers.product_serializers import CategorySerializer, UnitSerializer, ProductSerializer
@@ -520,6 +523,38 @@ class StockMovementViewSet(viewsets.ModelViewSet):
     search_fields = ['product__name', 'product__generic_name', 'product__brand_name', 'batch__batch_number', 'warehouse__name', 'reference_id', 'notes']
     ordering_fields = ['created_at', 'quantity']
     ordering = ['-created_at']  # Most recent first
+
+    def perform_create(self, serializer):
+        """
+        Enforce integrity: reject zero-quantity movements and movements that
+        would drive the linked batch's remaining quantity negative.
+        """
+        from decimal import Decimal
+        instance = serializer.save()
+        if instance.quantity == Decimal('0.00') or instance.quantity is None:
+            raise ValidationError({'quantity': _('Stock movement quantity must be non-zero.')})
+        if instance.batch is not None:
+            from inventory.models import Batch
+            current = Batch.stockmovement_set.filter(batch=instance.batch).aggregate(
+                total=models.Sum('quantity')
+            )['total'] or Decimal('0.00')
+            if current < Decimal('0.00'):
+                raise ValidationError({
+                    'batch': _('Movement would drive batch remaining quantity below zero.')
+                })
+
+    def perform_update(self, serializer):
+        """Block direct edits to posted/approved stock movements."""
+        instance = serializer.instance
+        if instance.movement_type in ('IN', 'OUT') and instance.reference_type not in ('MANUAL', 'ADJUSTMENT'):
+            raise ValidationError({'detail': _('Posted stock movements cannot be modified directly.')})
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        """Block deletion of non-manual stock movements."""
+        if instance.reference_type not in ('MANUAL', 'ADJUSTMENT'):
+            raise ValidationError({'detail': _('Only manual/adjustment stock movements can be deleted.')})
+        instance.delete()
 
     @action(detail=False, methods=['get'])
     def stock_in(self, request):

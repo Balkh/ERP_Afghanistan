@@ -326,9 +326,13 @@ class AssetDisposal(TimeStampedUUIDModel):
         return f"{self.asset.asset_code} - {self.disposal_date}"
 
     def save(self, *args, **kwargs):
-        """Calculate gain/loss on disposal."""
+        """Calculate gain/loss on disposal — freeze once computed (FA-01)."""
         self.full_clean()
         if self.asset:
-            book_value = self.asset.current_book_value
-            self.gain_loss = self.proceeds - book_value - self.disposal_cost
+            # Compute gain_loss ONLY on initial create. On update, preserve the
+            # original calculation so marking is_posted=True does not retroactively
+            # rewrite historic financial reports.
+            if self._state.adding or self.gain_loss is None:
+                book_value = self.asset.current_book_value
+                self.gain_loss = self.proceeds - book_value - self.disposal_cost
         super().save(*args, **kwargs)

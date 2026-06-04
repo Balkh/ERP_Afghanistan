@@ -78,7 +78,7 @@ class PaymentEngine:
             return {'success': False, 'errors': [_('Payment method not found or inactive')]}
 
         try:
-            dest_account = PaymentAccount.objects.get(code=destination_account_code, is_active=True)
+            dest_account = PaymentAccount.objects.select_for_update().get(code=destination_account_code, is_active=True)
         except PaymentAccount.DoesNotExist:
             return {'success': False, 'errors': [_('Destination account not found or inactive')]}
 
@@ -179,7 +179,7 @@ class PaymentEngine:
             return {'success': False, 'errors': [_('Payment method not found or inactive')]}
 
         try:
-            source_account = PaymentAccount.objects.get(code=source_account_code, is_active=True)
+            source_account = PaymentAccount.objects.select_for_update().get(code=source_account_code, is_active=True)
         except PaymentAccount.DoesNotExist:
             return {'success': False, 'errors': [_('Source account not found or inactive')]}
 
@@ -267,12 +267,12 @@ class PaymentEngine:
         Returns dict with success status and transaction details.
         """
         try:
-            source_account = PaymentAccount.objects.get(code=source_account_code, is_active=True)
+            source_account = PaymentAccount.objects.select_for_update().get(code=source_account_code, is_active=True)
         except PaymentAccount.DoesNotExist:
             return {'success': False, 'errors': [_('Source account not found or inactive')]}
 
         try:
-            dest_account = PaymentAccount.objects.get(code=destination_account_code, is_active=True)
+            dest_account = PaymentAccount.objects.select_for_update().get(code=destination_account_code, is_active=True)
         except PaymentAccount.DoesNotExist:
             return {'success': False, 'errors': [_('Destination account not found or inactive')]}
 
@@ -285,11 +285,13 @@ class PaymentEngine:
                 'errors': [_(f'Insufficient funds. Available: {source_account.current_balance}')]
             }
 
-        # Use cash method for fee (internal transfers typically no fee)
+        # Use cash method for fee (internal transfers typically no fee). Reject explicitly if absent (PAY-06).
         try:
             cash_method = PaymentMethod.objects.get(method_type='CASH', is_default=True)
         except PaymentMethod.DoesNotExist:
             cash_method = PaymentMethod.objects.filter(method_type='CASH').first()
+        if cash_method is None:
+            return {'success': False, 'errors': [_('No CASH payment method configured for inter-account transfer.')]}
         
         fee = fee_override if fee_override is not None else Decimal('0.00')
         total_deduction = amount + fee

@@ -237,30 +237,24 @@ class ReturnOrder(TimeStampedUUIDModel):
         
         # 4. Execute refund for sale returns that have payments
         if self.return_type == 'SALE_RETURN':
-            try:
-                from returns.services.refund_service import RefundExecutionService, RefundRequest
-                refund_service = RefundExecutionService()
-                refund_request = RefundRequest(
-                    return_order=self,
-                    refund_amount=self.total_amount,
-                    reason_code="CUSTOMER_RETURN",
-                    performed_by=str(employee.id) if hasattr(employee, 'id') else 'system',
-                    notes=self.reason,
-                )
-                refund_result = refund_service.execute_return_refund(refund_request)
-                if not refund_result.get('success', False):
-                    import logging
-                    logger = logging.getLogger(__name__)
-                    logger.warning(
-                        f"Refund failed for return {self.return_number}: {refund_result.get('message', 'Unknown error')}. "
-                        f"Return still approved — manual refund may be required."
-                    )
-            except Exception as e:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.error(
-                    f"Refund exception for return {self.return_number}: {e}. "
-                    f"Return still approved — manual refund required."
+            from returns.services.refund_service import RefundExecutionService, RefundRequest
+            refund_service = RefundExecutionService()
+            refund_request = RefundRequest(
+                return_order=self,
+                refund_amount=self.total_amount,
+                reason_code="CUSTOMER_RETURN",
+                performed_by=str(employee.id) if hasattr(employee, 'id') else 'system',
+                notes=self.reason,
+            )
+            refund_result = refund_service.execute_return_refund(refund_request)
+            if not refund_result.get('success', False):
+                # R-02: Refund failure must abort approval — the customer credit was created
+                # above; without cash disbursed the ledger is inconsistent. Raise so the
+                # surrounding @transaction.atomic rolls back inventory and journal writes.
+                raise ValidationError(
+                    _(f"Refund failed for return {self.return_number}: "
+                      f"{refund_result.get('message', 'Unknown error')}. "
+                      f"Approval aborted to preserve ledger integrity.")
                 )
 
         # 5. Update status
@@ -502,26 +496,9 @@ class ReturnOrder(TimeStampedUUIDModel):
                 raise ValidationError(f"Failed to create journal entry: {result.get('errors')}")
             
             self.journal_entry_id = result.get('entry_id')
-        
+
         self.credit_note_number = f"CN-{self.return_number}"
         self.save()
-    
-    @transaction.atomic
-    def complete(self, completed_by=None):
-        """
-        Mark a return order as COMPLETED.
-        Only APPROVED returns can be completed.
-        This is the terminal status — all inventory, accounting, refund, and reconciliation
-        processing must have already succeeded via approve().
-        """
-        if self.status != 'APPROVED':
-            raise ValidationError(_('Only approved returns can be completed.'))
-        
-        self.status = 'COMPLETED'
-        if completed_by and hasattr(completed_by, 'user'):
-            self.notes = f"{self.notes}\n\nCompleted by: {str(completed_by)}".strip()
-        self.save(update_fields=['status', 'notes'])
-        return True
 
     def get_total_invoice_amount(self):
         """Get the original invoice total."""

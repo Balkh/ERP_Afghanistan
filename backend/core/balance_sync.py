@@ -160,6 +160,7 @@ class BalanceSyncService:
             New balance as Decimal
         """
         from sales.models import Customer
+        from returns.models import ReturnOrder
         from core.services.financial_audit import FinancialAuditService
 
         qs = Customer.objects
@@ -173,12 +174,22 @@ class BalanceSyncService:
             status__in=['CONFIRMED', 'DISPATCHED', 'PARTIAL_PAID', 'PAID'],
             is_active=True,
         ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        total_invoices = total_invoices.quantize(Decimal('0.01'))
 
         total_payments = invoice.customer.payments.aggregate(
             total=Sum('amount')
         )['total'] or Decimal('0.00')
+        total_payments = total_payments.quantize(Decimal('0.01'))
 
-        new_balance = total_invoices - total_payments
+        # X-03: include return credits so this method matches sync_customer()
+        total_returns = ReturnOrder.objects.filter(
+            party=customer,
+            return_type='SALE_RETURN',
+            status__in=['APPROVED', 'COMPLETED'],
+        ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        total_returns = total_returns.quantize(Decimal('0.01'))
+
+        new_balance = (total_invoices - total_payments - total_returns).quantize(Decimal('0.01'))
         customer.balance = new_balance
         customer.save(update_fields=['balance', 'updated_at'])
 
@@ -207,6 +218,7 @@ class BalanceSyncService:
             New balance as Decimal
         """
         from purchases.models import Supplier
+        from returns.models import ReturnOrder
         from core.services.financial_audit import FinancialAuditService
 
         qs = Supplier.objects
@@ -220,12 +232,22 @@ class BalanceSyncService:
             status__in=['CONFIRMED', 'RECEIVED', 'PARTIAL_PAID', 'PAID'],
             is_active=True,
         ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        total_invoices = total_invoices.quantize(Decimal('0.01'))
 
         total_payments = invoice.supplier.payments.aggregate(
             total=Sum('amount')
         )['total'] or Decimal('0.00')
+        total_payments = total_payments.quantize(Decimal('0.01'))
 
-        new_balance = total_invoices - total_payments
+        # X-03: include return debits so this method matches sync_supplier()
+        total_returns = ReturnOrder.objects.filter(
+            supplier=supplier,
+            return_type='PURCHASE_RETURN',
+            status__in=['APPROVED', 'COMPLETED'],
+        ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        total_returns = total_returns.quantize(Decimal('0.01'))
+
+        new_balance = (total_invoices - total_payments - total_returns).quantize(Decimal('0.01'))
         supplier.balance = new_balance
         supplier.save(update_fields=['balance', 'updated_at'])
 

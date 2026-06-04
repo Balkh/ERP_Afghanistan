@@ -94,12 +94,15 @@ class StockIntegrationService:
         
         # Get available batches
         if batch_id:
-            # Allocate from specific batch
-            batches = Batch.objects.select_for_update().filter(
+            # Allocate from specific batch — also enforce warehouse when provided
+            batch_qs = Batch.objects.select_for_update().filter(
                 id=batch_id,
                 remaining_quantity__gt=0,
                 is_active=True
             )
+            if warehouse is not None:
+                batch_qs = batch_qs.filter(warehouse=warehouse)
+            batches = batch_qs
         else:
             batches = StockIntegrationService.get_available_batches(
                 product, warehouse, exclude_expired=True, selection_mode=selection_mode
@@ -204,9 +207,9 @@ class StockIntegrationService:
                 result.success = False
                 break
             
-            # Check stock availability
+            # Check stock availability — always enforced, not skipped on batch_id
             available = StockIntegrationService.get_total_available_stock(product, warehouse)
-            if available < quantity and not batch_id:
+            if available < quantity:
                 result.errors.append(
                     f'Insufficient stock for {product}. Available: {available}, Requested: {quantity}'
                 )

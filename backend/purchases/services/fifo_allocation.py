@@ -46,8 +46,8 @@ class SupplierFIFOAllocationService:
         remaining = payment.amount
         allocations = []
 
-        # Get oldest outstanding invoices for this supplier
-        outstanding = list(PurchaseInvoice.objects.filter(
+        # Get oldest outstanding invoices for this supplier with row-level locking
+        outstanding = list(PurchaseInvoice.objects.select_for_update().filter(
             supplier=payment.supplier,
             status__in=['CONFIRMED', 'RECEIVED', 'PARTIAL_PAID'],
             is_active=True,

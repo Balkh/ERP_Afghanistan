@@ -200,7 +200,7 @@ class ReportBrowser(BaseScreen):
 
     DATE_RANGE_REPORTS = {"profit_loss", "cash_flow"}
 
-    def __init__(self, parent=None, report_type="trial_balance"):
+    def __init__(self, parent=None, report_type="trial_balance", api_client=None):
         super().__init__(parent, screen_id=f"report_{report_type}")
         self.api_client = api_client or APIClient()
         self.report_type = report_type

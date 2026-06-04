@@ -531,6 +531,8 @@ class JournalEntry(CompanyScopedMixin, TimeStampedUUIDModel):
             return False
         if self.entry_type == 'REVERSAL':
             return False
+        if self.entry_date and is_period_locked(self.entry_date):
+            return False
         return not self.is_reversed
 
 
@@ -849,20 +851,31 @@ def is_period_locked(entry_date, company=None):
     if company:
         queryset = queryset.filter(company=company)
 
-    return queryset.exists()
-
-
-def get_period_for_date(entry_date, company=None):
-    """Get the fiscal period for a given date."""
-    queryset = FiscalPeriod.objects.filter(
-        start_date__lte=entry_date,
-        end_date__gte=entry_date,
-    )
-
-    if company:
-        queryset = queryset.filter(company=company)
-
     return queryset.first()
+
+
+# ACC-03: Keep Account.balance in sync with JournalEntryLine writes.
+# Catches direct admin edits and any path that bypasses JournalEngine.update_account_balances.
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
+
+
+@receiver(post_save, sender='accounting.JournalEntryLine')
+@receiver(post_delete, sender='accounting.JournalEntryLine')
+def _recalc_account_balance_on_line_change(sender, instance, **kwargs):
+    """Recalculate Account.balance for the line's account after any direct write."""
+    if instance is None or getattr(instance, 'account_id', None) is None:
+        return
+    from decimal import Decimal
+    from django.db.models import Sum
+    total = instance.account.journal_lines.aggregate(
+        total_debit=Sum('debit'),
+        total_credit=Sum('credit'),
+    )
+    debit = total.get('total_debit') or Decimal('0.00')
+    credit = total.get('total_credit') or Decimal('0.00')
+    new_balance = (debit - credit).quantize(Decimal('0.01'))
+    Account.objects.filter(pk=instance.account_id).update(balance=new_balance)
 
 
 def get_open_period_for_date(entry_date, company=None):
@@ -877,14 +890,3 @@ def get_open_period_for_date(entry_date, company=None):
         queryset = queryset.filter(company=company)
 
     return queryset.first()
-    
-    return locked_period is not None
-
-
-def get_open_period_for_date(entry_date):
-    """Get the open period for a given date."""
-    return FiscalPeriod.objects.filter(
-        status='OPEN',
-        start_date__lte=entry_date,
-        end_date__gte=entry_date
-    ).first()

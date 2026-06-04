@@ -6,9 +6,11 @@ from decimal import Decimal
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 from django.http import HttpResponse
 from django.db import models
 from django.db.models import Q
+from django.utils.translation import gettext_lazy as _
 from .models import ReturnOrder, ReturnItem, ReconciliationEntry
 from .serializers import (
     ReturnOrderSerializer, ReturnOrderCreateSerializer,
@@ -25,15 +27,33 @@ class ReturnOrderViewSet(CompanyScopedViewSetMixin, viewsets.ModelViewSet):
         'invoice', 'purchase_invoice', 'party', 'supplier', 'approved_by'
     ).prefetch_related('items', 'items__product', 'items__batch')
     permission_classes = [RoleBasedPermission]
-    
+
     def get_serializer_class(self):
         if self.action == 'create':
             return ReturnOrderCreateSerializer
         return ReturnOrderSerializer
-    
+
+    # R-05: Block direct edits to lifecycle fields and direct delete on active returns.
+    LIFECYCLE_FIELDS = {'status', 'approved_by', 'approved_at', 'journal_entry_id', 'credit_note_number'}
+
+    def perform_update(self, serializer):
+        for field in self.LIFECYCLE_FIELDS:
+            if field in serializer.validated_data:
+                raise ValidationError({
+                    field: _('This field cannot be modified directly. Use the workflow actions (approve / complete / void).')
+                })
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.status not in ('PENDING', 'CANCELLED'):
+            raise ValidationError({
+                'detail': _('Only PENDING or CANCELLED returns can be deleted.')
+            })
+        instance.delete()
+
     def get_queryset(self):
         queryset = super().get_queryset()
-        
+
         company_id = TenantContext.get_company_id()
         if company_id and not self.request.user.is_superuser:
             queryset = queryset.filter(

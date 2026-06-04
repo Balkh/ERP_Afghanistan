@@ -1,0 +1,96 @@
+{"type": "navigation", "screen": "Intelligence Hub", "duration_ms": 254.6, "ts": 1780481185.5482166}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2276.1, "ts": 1780481205.6700556}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 3788.6, "ts": 1780481215.2663357}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 1857.3, "ts": 1780481218.5044124}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2169.7, "ts": 1780481222.3634605}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2369.1, "ts": 1780481226.360086}
+{"type": "navigation", "screen": "Control Center", "duration_ms": 347.1, "ts": 1780481236.9544394}
+{"type": "navigation", "screen": "Invoice Templates", "duration_ms": 1166.2, "ts": 1780481259.2383578}
+{"type": "navigation", "screen": "Company Profile", "duration_ms": 35.2, "ts": 1780481265.4485617}
+{"type": "navigation", "screen": "Licensing", "duration_ms": 94.6, "ts": 1780481283.5922675}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 5286.0, "ts": 1780481311.6061857}
+{"type": "navigation", "screen": "Fixed Assets", "duration_ms": 61.7, "ts": 1780481317.9274712}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780481325.4044046}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780481325.4044046}
+{"type": "navigation", "screen": "Backup & Restore", "duration_ms": 367.5, "ts": 1780481325.5236387}
+{"type": "navigation", "screen": "Backup & Restore", "duration_ms": 0.0, "ts": 1780481326.0585432}
+{"type": "navigation", "screen": "Audit Log", "duration_ms": 27.4, "ts": 1780481334.4428627}
+{"type": "navigation", "screen": "User Management", "duration_ms": 222.5, "ts": 1780481338.0943527}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780481346.1773784}
+{"type": "navigation", "screen": "Employees", "duration_ms": 165.5, "ts": 1780481346.1952906}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780481348.4540184}
+{"type": "navigation", "screen": "Attendance", "duration_ms": 131.0, "ts": 1780481348.4746568}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780481350.146534}
+{"type": "navigation", "screen": "Leave", "duration_ms": 58.3, "ts": 1780481350.1595118}
+{"type": "table_render", "rows": 3, "duration_ms": 2.2, "ts": 1780481351.809856}
+{"type": "table_render", "rows": 3, "duration_ms": 1.9, "ts": 1780481351.9123495}
+{"type": "table_render", "rows": 2, "duration_ms": 0.0, "ts": 1780481351.9927285}
+{"type": "table_render", "rows": 3, "duration_ms": 0.0, "ts": 1780481352.1050138}
+{"type": "table_render", "rows": 3, "duration_ms": 0.0, "ts": 1780481352.1244364}
+{"type": "table_render", "rows": 2, "duration_ms": 1.1, "ts": 1780481352.145489}
+{"type": "table_render", "rows": 3, "duration_ms": 0.8, "ts": 1780481352.1672487}
+{"type": "table_render", "rows": 3, "duration_ms": 1.0, "ts": 1780481352.1936774}
+{"type": "table_render", "rows": 2, "duration_ms": 0.8, "ts": 1780481352.2203565}
+{"type": "navigation", "screen": "Payroll", "duration_ms": 557.2, "ts": 1780481352.2233505}
+{"type": "table_render", "rows": 5, "duration_ms": 0.0, "ts": 1780481461.6500866}
+{"type": "table_render", "rows": 5, "duration_ms": 1.1, "ts": 1780481461.7203567}
+{"type": "navigation", "screen": "Cost Centers", "duration_ms": 216.2, "ts": 1780481461.7245793}
+{"type": "table_render", "rows": 5, "duration_ms": 2.2, "ts": 1780481478.3068767}
+{"type": "table_render", "rows": 5, "duration_ms": 0.0, "ts": 1780481479.7120342}
+{"type": "table_render", "rows": 5, "duration_ms": 1.0, "ts": 1780481484.994002}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780482053.3260674}
+{"type": "navigation", "screen": "Trial Balance", "duration_ms": 3.1, "ts": 1780482073.8468432}
+{"type": "navigation", "screen": "Profit & Loss", "duration_ms": 46.2, "ts": 1780482075.9110227}
+{"type": "navigation", "screen": "Balance Sheet", "duration_ms": 2.1, "ts": 1780482077.9358752}
+{"type": "navigation", "screen": "Profit & Loss", "duration_ms": 2.2, "ts": 1780482079.7180862}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780482089.623265}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2824.4, "ts": 1780482101.3507235}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2963.8, "ts": 1780482106.0562603}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2227.6, "ts": 1780482109.9677103}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 1813.7, "ts": 1780482113.4862556}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2264.2, "ts": 1780482117.3584373}
+{"type": "navigation", "screen": "Return Orders", "duration_ms": 183.9, "ts": 1780482132.7782218}
+{"type": "navigation", "screen": "Reconciliation", "duration_ms": 40.3, "ts": 1780482140.0246296}
+{"type": "navigation", "screen": "Return Orders", "duration_ms": 2.1, "ts": 1780482141.7449577}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 6257.4, "ts": 1780482150.1825287}
+{"type": "navigation", "screen": "Purchase Invoice", "duration_ms": 1139.8, "ts": 1780482158.8265471}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2508.0, "ts": 1780482170.430243}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 3188.0, "ts": 1780482185.2470603}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 3152.4, "ts": 1780482189.6673734}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2790.9, "ts": 1780482209.1263125}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 1753.9, "ts": 1780482213.0631068}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 48144.3, "ts": 1780482265.96688}
+{"type": "navigation", "screen": "Sales Invoice", "duration_ms": 225.1, "ts": 1780482280.513772}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 6751.1, "ts": 1780482293.0351663}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2615.1, "ts": 1780482300.696415}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 1782.5, "ts": 1780482304.0886474}
+{"type": "table_render", "rows": 4, "duration_ms": 0.0, "ts": 1780482316.3062615}
+{"type": "table_render", "rows": 4, "duration_ms": 0.0, "ts": 1780482316.3220613}
+{"type": "navigation", "screen": "Customers", "duration_ms": 109.9, "ts": 1780482316.3220613}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 4283.6, "ts": 1780482324.4869053}
+{"type": "dialog", "dialog_type": "confirm", "duration_ms": 2238.7, "ts": 1780482327.9363031}
+{"type": "table_render", "rows": 4, "duration_ms": 3.3, "ts": 1780482327.9707289}
+{"type": "dialog", "dialog_type": "confirm", "duration_ms": 1420.7, "ts": 1780482332.9190192}
+{"type": "table_render", "rows": 4, "duration_ms": 0.0, "ts": 1780482332.946922}
+{"type": "table_render", "rows": 4, "duration_ms": 1.5, "ts": 1780482334.755199}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780482341.1481323}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1780482341.1963272}
+{"type": "navigation", "screen": "Products", "duration_ms": 187.8, "ts": 1780482341.1963272}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 4588.8, "ts": 1780482348.0341485}
+{"type": "navigation", "screen": "Settings", "duration_ms": 154.3, "ts": 1780482357.3731375}
+{"type": "navigation", "screen": "Role Management", "duration_ms": 207.9, "ts": 1780482365.4469004}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 5020.1, "ts": 1780482378.2256935}
+{"type": "navigation", "screen": "User Management", "duration_ms": 187.4, "ts": 1780482385.9244776}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 1933.2, "ts": 1780482402.6897695}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 15852.3, "ts": 1780482404.0592098}
+{"type": "navigation", "screen": "Audit Log", "duration_ms": 5.0, "ts": 1780482407.5658865}
+{"type": "navigation", "screen": "Sales Invoice", "duration_ms": 3.1, "ts": 1780482720.1923323}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 4240.8, "ts": 1780482729.7978802}
+{"type": "navigation", "screen": "Control Center", "duration_ms": 115.6, "ts": 1780482805.374834}
+{"type": "navigation", "screen": "Invoice Templates", "duration_ms": 39.5, "ts": 1780482836.691424}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2367.5, "ts": 1780482854.6828141}
+{"type": "navigation", "screen": "Intelligence Hub", "duration_ms": 71.1, "ts": 1780482858.6401188}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 22157.7, "ts": 1780482918.3890274}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2366.5, "ts": 1780482941.6869867}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 3028.4, "ts": 1780482952.4741633}
+{"type": "dialog", "dialog_type": "alert", "duration_ms": 2737.6, "ts": 1780482976.8725061}

@@ -119,9 +119,8 @@ def theme_engine(qtbot):
 @pytest.fixture(scope="function")
 def theme_manager(qtbot):
     """DEPRECATED — Use theme_engine instead."""
-    from theme.theme_manager import ThemeManager
-    manager = ThemeManager()
-    return manager
+    from theme.theme_engine import ThemeEngine
+    return ThemeEngine.instance()
 
 
 @pytest.fixture(scope="function")

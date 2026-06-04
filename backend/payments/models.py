@@ -536,9 +536,29 @@ class FinancialTransaction(TimeStampedUUIDModel):
             raise ValidationError(_('Exchange rate must be positive.'))
 
     def save(self, *args, **kwargs):
-        """Calculate derived fields."""
+        """Calculate derived fields. Retries transaction_number on IntegrityError (PAY-01)."""
+        from django.db import IntegrityError, transaction as db_transaction
         if not self.transaction_number:
-            self.transaction_number = self.generate_transaction_number()
+            # Try up to 5 times to allocate a unique transaction_number under concurrency
+            for _attempt in range(5):
+                candidate = self.generate_transaction_number()
+                self.transaction_number = candidate
+                try:
+                    with db_transaction.atomic():
+                        if self.net_amount is None:
+                            self.net_amount = self.amount - self.fee
+                        if self.currency == 'AFN':
+                            self.amount_in_base = self.amount
+                        elif self.exchange_rate:
+                            self.amount_in_base = self.amount * self.exchange_rate
+                        super().save(*args, **kwargs)
+                    return
+                except IntegrityError:
+                    self.transaction_number = None
+                    continue
+            raise IntegrityError(
+                _('Could not allocate a unique transaction_number after 5 attempts.')
+            )
 
         if self.net_amount is None:
             self.net_amount = self.amount - self.fee
@@ -690,6 +710,7 @@ class TransactionSettlement(TimeStampedUUIDModel):
         return f"{self.settlement_number} - {self.settlement_type} ({self.status})"
 
     def save(self, *args, **kwargs):
+        from django.db import IntegrityError
         if not self.settlement_number:
             prefix_map = {
                 'BATCH': 'SET',
@@ -700,11 +721,24 @@ class TransactionSettlement(TimeStampedUUIDModel):
             }
             prefix = prefix_map.get(self.settlement_type, 'SET')
             now = timezone.now()
-            seq = TransactionSettlement.objects.filter(
-                created_at__month=now.month,
-                created_at__year=now.year
-            ).count() + 1
-            self.settlement_number = f"{prefix}-{now.strftime('%Y%m')}-{seq:04d}"
+            # Retry on IntegrityError to handle concurrent settlement_number generation (PAY-02)
+            for _attempt in range(5):
+                seq = TransactionSettlement.objects.filter(
+                    created_at__month=now.month,
+                    created_at__year=now.year
+                ).count() + 1
+                self.settlement_number = f"{prefix}-{now.strftime('%Y%m')}-{seq:04d}"
+                if self.actual_amount is not None:
+                    self.difference = self.actual_amount - self.expected_amount
+                try:
+                    super().save(*args, **kwargs)
+                    return
+                except IntegrityError:
+                    self.settlement_number = None
+                    continue
+            raise IntegrityError(
+                _('Could not allocate a unique settlement_number after 5 attempts.')
+            )
 
         if self.actual_amount is not None:
             self.difference = self.actual_amount - self.expected_amount

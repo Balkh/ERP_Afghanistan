@@ -1,6 +1,7 @@
 from decimal import Decimal
 from rest_framework import serializers
 from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from inventory.models import Product, Warehouse, Batch
@@ -39,6 +40,7 @@ class PurchaseProcessingRequestSerializer(serializers.Serializer):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def allocate_stock(request):
     """
     Allocate stock for a sale without committing the transaction.
@@ -100,6 +102,7 @@ def allocate_stock(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def process_sale_stock(request):
     """
     Process stock deduction for a sales invoice.
@@ -180,6 +183,7 @@ def process_sale_stock(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAdminUser])
 def process_purchase_stock(request):
     """
     Process stock addition from a purchase invoice.
@@ -253,6 +257,7 @@ def process_purchase_stock(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def check_stock_availability(request):
     """
     Check stock availability for products.
@@ -292,6 +297,7 @@ def check_stock_availability(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_stock_levels(request):
     """
     Get current stock levels.
@@ -325,6 +331,7 @@ def get_stock_levels(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_available_batches(request, product_id):
     """
     Get available batches for a product.
