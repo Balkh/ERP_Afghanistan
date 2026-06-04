@@ -109,7 +109,7 @@ class NotificationItem(QWidget):
         self.setStyleSheet(f"""
             QWidget {{
                 background-color: {bg_color};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 color: {text_color};
             }}
         """)

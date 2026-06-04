@@ -48,7 +48,7 @@ def combo_stylesheet(min_height=30, custom_arrow=True, with_selection=True):
         f"            QComboBox {{\n"
         f"                background-color: {COLOR_BG_ELEVATED};\n"
         f"                border: 1px solid {COLOR_BORDER};\n"
-        f"                border-radius: {BORDER_RADIUS_SM};\n"
+        f"                border-radius: {BORDER_RADIUS_SM}px;\n"
         f"                padding: {SPACING_XS}px {SPACING_SM}px;\n"
         f"                color: {COLOR_TEXT_PRIMARY};\n"
         f"                min-height: {min_height}px;\n"

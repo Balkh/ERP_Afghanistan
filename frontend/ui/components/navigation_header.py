@@ -46,9 +46,9 @@ class NavigationHeader(QWidget):
                 background-color: transparent;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_6}px {SPACING_SM}px;
-                font-size: {TEXT_SECTION_TITLE}px;
+                font-size: {TEXT_SECTION_TITLE}pt;
             }}
             EnterpriseButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};

@@ -373,7 +373,7 @@ class Dashboard(BaseScreen):
     def _mini_card(self, label, value, color_key, is_currency):
         c = DashboardColorScheme.get(color_key)
         f = QFrame()
-        f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; }}")
+        f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; }}")
         lay = QVBoxLayout(f)
         lay.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_MD, SPACING_SM)
         lay.setSpacing(SPACING_XS)
@@ -444,7 +444,7 @@ class Dashboard(BaseScreen):
                 background-color: {COLOR_BORDER};
                 border: 1px solid {COLOR_BORDER_LIGHT};
                 border-left: 3px solid {c};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
             }}
         """)
         row = QHBoxLayout(box)
