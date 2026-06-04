@@ -44,7 +44,7 @@ class DestructiveActionGuard:
     @staticmethod
     def confirm_irreversible(parent: QWidget, title: str, message: str) -> bool:
         """Generic irreversible action confirmation."""
-        return ConfirmDialog.confirm("Error", "", parent)
+        return ConfirmDialog.confirm(title, message, parent)
 
     @staticmethod
     def confirm_bulk_action(
