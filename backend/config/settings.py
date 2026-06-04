@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     # 'production',  # Removed: service-only, no API, no consumers, no migrations
     'workflows',
     'jobs',
-    'integration',
+    # 'integration',  # Removed: pre-existing missing module (no `integration/` directory on disk)
     'insurance',
 ]
 

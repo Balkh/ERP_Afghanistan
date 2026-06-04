@@ -19,6 +19,8 @@ from sales.serializers import (
     SalesInvoiceSerializer,
     SalesItemSerializer,
 )
+from sales.services_calculators import calculate_cogs_from_allocations
+from sales.services_mappers import resolve_cash_account_code
 from inventory.service import StockIntegrationService, StockSelectionMode
 from inventory.models import Warehouse
 from accounting.models import Account
@@ -40,36 +42,11 @@ class SalesAccountingService:
     @classmethod
     def calculate_cogs(cls, invoice: SalesInvoice, allocations: list) -> Decimal:
         """Calculate Cost of Goods Sold from stock allocations.
-        
+
         Uses actual batch unit costs from FIFO/FEFO selection.
         This ensures COGS reflects true cost, not average or std cost.
         """
-        from decimal import Decimal
-        
-        total_cogs = Decimal('0.00')
-        
-        for item in invoice.items.all():
-            item_quantity = item.quantity
-            item_cost = Decimal('0.00')
-            
-            matching_allocations = [
-                a for a in allocations 
-                if str(a.product_id) == str(item.product_id)
-            ]
-            
-            if matching_allocations:
-                total_allocated = sum(a.quantity for a in matching_allocations)
-                for alloc in matching_allocations:
-                    if alloc.unit_cost is not None:
-                        proportion = alloc.quantity / total_allocated if total_allocated > 0 else 0
-                        item_cost += (item_quantity * proportion) * alloc.unit_cost
-            else:
-                if item.batch and item.batch.purchase_price:
-                    item_cost = item_quantity * item.batch.purchase_price
-            
-            total_cogs += item_cost
-        
-        return total_cogs.quantize(Decimal('0.01'))
+        return calculate_cogs_from_allocations(invoice, allocations)
 
     @classmethod
     def create_sales_journal_entry(cls, invoice: SalesInvoice, allocations: list = None, cogs_override: Decimal = None) -> dict:
@@ -216,14 +193,7 @@ class SalesAccountingService:
     @classmethod
     def _get_cash_account(cls, payment_method: str) -> str:
         """Get appropriate cash account code based on payment method."""
-        method_accounts = {
-            'CASH': cls.CASH_ACCOUNT_CODE,
-            'BANK_TRANSFER': '1020',
-            'CHEQUE': '1030',
-            'CREDIT_CARD': '1040',
-            'INSURANCE': '1210',
-        }
-        return method_accounts.get(payment_method, cls.CASH_ACCOUNT_CODE)
+        return resolve_cash_account_code(payment_method, cls.CASH_ACCOUNT_CODE)
 
 
 class CustomerViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):

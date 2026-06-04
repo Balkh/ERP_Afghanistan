@@ -1,12 +1,18 @@
 from decimal import Decimal
 from datetime import date
-from typing import Optional, Union
-from dataclasses import dataclass, field
-from django.db import models, transaction
-from django.core.exceptions import ValidationError
+from typing import Optional
+from django.db import transaction
 from django.utils import timezone as django_timezone
 
 from accounting.models import Account, JournalEntry, JournalEntryLine, JournalEventLog
+from accounting.services.journal_validators import validate_lines, generate_entry_number
+from accounting.services.journal_calculators import (
+    compute_account_balance,
+    compute_opening_balance,
+    apply_running_delta,
+    compute_inverse_balance_delta,
+)
+from accounting.services.journal_mappers import format_ledger_entry
 
 
 class AccountingError(Exception):
@@ -34,23 +40,7 @@ class JournalEngine:
         Generate a unique journal entry number.
         Format: JE-{YEAR}{MONTH}-{SEQUENCE}-{TYPE}
         """
-        now = django_timezone.now()
-        prefix = f"JE-{now.strftime('%Y%m')}"
-        
-        last_entry = JournalEntry.objects.filter(
-            entry_number__startswith=prefix
-        ).order_by('-entry_number').first()
-        
-        if last_entry:
-            try:
-                parts = last_entry.entry_number.split('-')
-                sequence = int(parts[2]) + 1
-            except (IndexError, ValueError):
-                sequence = 1
-        else:
-            sequence = 1
-        
-        return f"{prefix}-{sequence:04d}-{entry_type[:3].upper()}"
+        return generate_entry_number(entry_type)
 
     @staticmethod
     def validate_lines(lines: list[dict]) -> list[str]:
@@ -58,56 +48,7 @@ class JournalEngine:
         Validate journal entry lines.
         Returns list of validation error messages.
         """
-        errors = []
-        
-        if len(lines) < 2:
-            errors.append('Journal entry must have at least 2 lines.')
-        
-        total_debit = Decimal('0.00')
-        total_credit = Decimal('0.00')
-        seen_accounts = set()
-        
-        for i, line in enumerate(lines):
-            account = None
-            if 'account_id' in line:
-                try:
-                    account = Account.objects.get(id=line['account_id'], is_active=True)
-                except Account.DoesNotExist:
-                    errors.append(f"Line {i+1}: Account not found or inactive.")
-                    continue
-            elif 'account_code' in line:
-                try:
-                    account = Account.objects.get(code=line['account_code'], is_active=True)
-                except Account.DoesNotExist:
-                    errors.append(f"Line {i+1}: Account '{line['account_code']}' not found or inactive.")
-                    continue
-            
-            if account:
-                if account.id in seen_accounts:
-                    errors.append(f"Line {i+1}: Account '{account.code}' appears multiple times.")
-                seen_accounts.add(account.id)
-            
-            debit = Decimal(str(line.get('debit', 0)))
-            credit = Decimal(str(line.get('credit', 0)))
-            
-            if debit < 0 or credit < 0:
-                errors.append(f"Line {i+1}: Amounts cannot be negative.")
-            if debit == 0 and credit == 0:
-                errors.append(f"Line {i+1}: Either debit or credit must be positive.")
-            if debit > 0 and credit > 0:
-                errors.append(f"Line {i+1}: Cannot have both debit and credit on the same line.")
-            
-            total_debit += debit
-            total_credit += credit
-        
-        if total_debit != total_credit:
-            errors.append(
-                f'Journal entry is not balanced. '
-                f'Debits: {total_debit:.2f}, Credits: {total_credit:.2f}, '
-                f'Difference: {abs(total_debit - total_credit):.2f}'
-            )
-        
-        return errors
+        return validate_lines(lines)
 
     @staticmethod
     @transaction.atomic
@@ -358,20 +299,7 @@ class JournalEngine:
         """Update account balances based on a posted journal entry with row-level locking."""
         for line in entry.lines.all():
             account = Account.objects.select_for_update().get(id=line.account.id)
-
-            total_debit = JournalEntryLine.objects.filter(
-                account=account, entry__is_posted=True, entry__is_active=True
-            ).aggregate(total=models.Sum('debit'))['total'] or Decimal('0.00')
-
-            total_credit = JournalEntryLine.objects.filter(
-                account=account, entry__is_posted=True, entry__is_active=True
-            ).aggregate(total=models.Sum('credit'))['total'] or Decimal('0.00')
-
-            if account.account_type in ['ASSET', 'EXPENSE']:
-                balance = total_debit - total_credit
-            else:
-                balance = total_credit - total_debit
-
+            balance = compute_account_balance(account)
             Account.objects.filter(id=account.id).update(balance=balance)
 
     @staticmethod
@@ -380,33 +308,17 @@ class JournalEngine:
         """Inverse update: subtract this entry's amounts from account balances (for unpost)."""
         for line in entry.lines.all():
             account = Account.objects.select_for_update().get(id=line.account.id)
-
-            if account.account_type in ['ASSET', 'EXPENSE']:
-                new_balance = account.balance - line.debit + line.credit
-            else:
-                new_balance = account.balance - line.credit + line.debit
-
+            delta = compute_inverse_balance_delta(account, line.debit, line.credit)
+            new_balance = account.balance + delta
             Account.objects.filter(id=account.id).update(balance=new_balance)
 
     @staticmethod
     def recalculate_all_balances():
         """Recalculate balances for all accounts from posted journal entries."""
         accounts = Account.objects.filter(is_active=True)
-        
+
         for account in accounts:
-            total_debit = JournalEntryLine.objects.filter(
-                account=account, entry__is_posted=True, entry__is_active=True
-            ).aggregate(total=models.Sum('debit'))['total'] or Decimal('0.00')
-            
-            total_credit = JournalEntryLine.objects.filter(
-                account=account, entry__is_posted=True, entry__is_active=True
-            ).aggregate(total=models.Sum('credit'))['total'] or Decimal('0.00')
-            
-            if account.account_type in ['ASSET', 'EXPENSE']:
-                balance = total_debit - total_credit
-            else:
-                balance = total_credit - total_debit
-            
+            balance = compute_account_balance(account)
             Account.objects.filter(id=account.id).update(balance=balance)
 
     @staticmethod
@@ -415,59 +327,43 @@ class JournalEngine:
         lines = JournalEntryLine.objects.filter(
             account_id=account_id, entry__is_posted=True, entry__is_active=True
         ).select_related('entry').order_by('entry__entry_date', 'entry__created_at')
-        
+
         if start_date:
             lines = lines.filter(entry__entry_date__gte=start_date)
         if end_date:
             lines = lines.filter(entry__entry_date__lte=end_date)
-        
+
         try:
             account = Account.objects.get(id=account_id)
         except Account.DoesNotExist:
             return {'error': 'Account not found', 'entries': []}
-        
+
         opening_debit = Decimal('0.00')
         opening_credit = Decimal('0.00')
-        
+
         if start_date:
             opening_debit = JournalEntryLine.objects.filter(
                 account_id=account_id, entry__is_posted=True, entry__is_active=True,
                 entry__entry_date__lt=start_date
             ).aggregate(total=models.Sum('debit'))['total'] or Decimal('0.00')
-            
+
             opening_credit = JournalEntryLine.objects.filter(
                 account_id=account_id, entry__is_posted=True, entry__is_active=True,
                 entry__entry_date__lt=start_date
             ).aggregate(total=models.Sum('credit'))['total'] or Decimal('0.00')
-        
-        if account.account_type in ['ASSET', 'EXPENSE']:
-            running_balance = opening_debit - opening_credit
-        else:
-            running_balance = opening_credit - opening_debit
-        
+
+        running_balance = compute_opening_balance(account, opening_debit, opening_credit)
+
         ledger_entries = []
         for line in lines:
-            if account.account_type in ['ASSET', 'EXPENSE']:
-                running_balance += line.debit - line.credit
-            else:
-                running_balance += line.credit - line.debit
-            
-            ledger_entries.append({
-                'entry_number': line.entry.entry_number,
-                'entry_date': line.entry.entry_date.isoformat(),
-                'entry_type': line.entry.entry_type,
-                'description': line.entry.description,
-                'reference': line.entry.reference,
-                'debit': line.debit,
-                'credit': line.credit,
-                'running_balance': running_balance,
-            })
-        
+            running_balance = apply_running_delta(account, running_balance, line.debit, line.credit)
+            ledger_entries.append(format_ledger_entry(line, running_balance))
+
         return {
             'account_code': account.code,
             'account_name': account.name,
             'account_type': account.account_type,
-            'opening_balance': opening_debit - opening_credit if account.account_type in ['ASSET', 'EXPENSE'] else opening_credit - opening_debit,
+            'opening_balance': compute_opening_balance(account, opening_debit, opening_credit),
             'entries': ledger_entries,
             'closing_balance': running_balance,
         }

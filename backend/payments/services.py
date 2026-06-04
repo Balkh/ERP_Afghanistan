@@ -15,6 +15,20 @@ from payments.models import (
     SettlementTransaction,
 )
 from accounting.models import Account
+from payments.services_validators import (
+    validate_required_accounts,
+    validate_payment_method,
+    validate_payment_account_for_update,
+    find_cash_method,
+)
+from payments.services_calculators import (
+    compute_fee,
+    compute_net_amount,
+    compute_total_deduction,
+    compute_settlement_included_amount,
+    compute_transaction_totals,
+)
+from payments.services_mappers import format_transaction_dict
 
 logger = logging.getLogger('erp.payments')
 
@@ -82,15 +96,9 @@ class PaymentEngine:
         except PaymentAccount.DoesNotExist:
             return {'success': False, 'errors': [_('Destination account not found or inactive')]}
 
-        # Calculate fee
-        fee = fee_override if fee_override is not None else payment_method.calculate_fee(amount)
-        # Round fee to 2 decimal places to match account precision
-        fee = fee.quantize(Decimal('0.01'))
-        net_amount = amount - fee
-        # Round net_amount to 2 decimal places to match account precision
-        net_amount = net_amount.quantize(Decimal('0.01'))
-        # Round net_amount to 2 decimal places to match account precision
-        net_amount = net_amount.quantize(Decimal('0.01'))
+        # Calculate fee (quantized)
+        fee = compute_fee(amount, payment_method, fee_override)
+        net_amount = compute_net_amount(amount, fee)
 
         # Create transaction
         txn = FinancialTransaction(
@@ -183,13 +191,9 @@ class PaymentEngine:
         except PaymentAccount.DoesNotExist:
             return {'success': False, 'errors': [_('Source account not found or inactive')]}
 
-        # Calculate fee
-        fee = fee_override if fee_override is not None else payment_method.calculate_fee(amount)
-        # Round fee to 2 decimal places to match account precision
-        fee = fee.quantize(Decimal('0.01'))
-        total_deduction = amount + fee
-        # Round total_deduction to 2 decimal places to match account precision
-        total_deduction = total_deduction.quantize(Decimal('0.01'))
+        # Calculate fee and total deduction
+        fee = compute_fee(amount, payment_method, fee_override)
+        total_deduction = compute_total_deduction(amount, fee)
 
         # Check sufficient funds
         if not source_account.can_withdraw(total_deduction):
@@ -442,12 +446,11 @@ class PaymentEngine:
         total_included = Decimal('0.00')
         for txn in transactions:
             # Determine the amount that applies to this account
-            if txn.destination_account_id == payment_account.id:
-                included_amount = txn.net_amount
-            elif txn.source_account_id == payment_account.id:
-                included_amount = -(txn.amount + txn.fee)
-            else:
+            is_destination = txn.destination_account_id == payment_account.id
+            is_source = txn.source_account_id == payment_account.id
+            if not (is_destination or is_source):
                 continue
+            included_amount = compute_settlement_included_amount(txn, payment_account)
 
             SettlementTransaction.objects.create(
                 settlement=settlement,
@@ -484,23 +487,7 @@ class PaymentEngine:
         
         Returns list of missing account codes if any are missing.
         """
-        missing = []
-        
-        required_accounts = {
-            '1000': 'Cash/Bank',  # Primary payment account
-            '1200': 'Accounts Receivable',
-            '1300': 'Inventory',
-            '2100': 'Tax Payable',
-            '4100': 'Sales Revenue',
-            '5100': 'COGS',
-            '6100': 'Operating Expenses',
-        }
-        
-        for code, name in required_accounts.items():
-            if not Account.objects.filter(code=code, is_active=True).exists():
-                missing.append(f"{code} ({name})")
-        
-        return missing
+        return validate_required_accounts()
 
     @staticmethod
     def _create_receipt_journal_entry(txn: FinancialTransaction) -> dict:
@@ -771,31 +758,12 @@ class PaymentEngine:
             '-transaction_date', '-created_at'
         )
 
-        total_in = Decimal('0.00')
-        total_out = Decimal('0.00')
-        total_fees = Decimal('0.00')
+        transactions = FinancialTransaction.objects.filter(filters).order_by(
+            '-transaction_date', '-created_at'
+        )
 
-        txn_list = []
-        for txn in transactions:
-            if txn.destination_account_id == account.id:
-                total_in += txn.net_amount
-            if txn.source_account_id == account.id:
-                total_out += txn.amount + txn.fee
-            total_fees += txn.fee
-
-            txn_list.append({
-                'transaction_number': txn.transaction_number,
-                'transaction_type': txn.transaction_type,
-                'status': txn.status,
-                'amount': str(txn.amount),
-                'fee': str(txn.fee),
-                'net_amount': str(txn.net_amount),
-                'currency': txn.currency,
-                'description': txn.description,
-                'reference_number': txn.reference_number,
-                'transaction_date': txn.transaction_date.isoformat(),
-                'is_settled': txn.is_settled,
-            })
+        txn_list = [format_transaction_dict(txn) for txn in transactions]
+        total_in, total_out, total_fees = compute_transaction_totals(transactions, account)
 
         return {
             'account_code': account.code,
