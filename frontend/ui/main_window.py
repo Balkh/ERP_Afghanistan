@@ -4,7 +4,7 @@ import time
 from PySide6.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                                  QFrame, QLabel, QStackedWidget, QStatusBar, QApplication,
                                  QSizePolicy)
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QThread, Signal, QObject
 from PySide6.QtGui import QFont, QAction
 from ui.licensing.license_manager_dialog import LicenseManagerDialog
 from ui.sidebar import Sidebar
@@ -139,65 +139,56 @@ class MainWindow(QMainWindow):
         self.status_bar.addPermanentWidget(self.time_label)
 
     def _check_startup_health(self):
-        """Run startup health check and update status bar."""
+        """F19: Run startup health check in a background thread."""
+        worker = _StartupHealthWorker(self.api_client)
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.result.connect(self._on_startup_health_result)
+        worker.result.connect(thread.quit)
+        thread.finished.connect(thread.deleteLater)
+        worker.finished.connect(worker.deleteLater)
+        thread.start()
+
+    def _on_startup_health_result(self, label: str, color: str, message: str):
+        """Apply startup health result to UI (UI thread)."""
+        if not hasattr(self, 'health_label'):
+            return
         try:
-            is_reachable = self.api_client.health_check()
-            if is_reachable:
-                health_data = self.api_client.get("/api/health/")
-                if isinstance(health_data, dict):
-                    data = health_data.get('data', health_data)
-                    db = data.get('database', {})
-                    db_status = db.get('status', 'unknown')
-                    if db_status == 'healthy':
-                        self.health_label.setText("● DB OK")
-                        self.health_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: {SPACING_LG}px; font-weight: bold;")
-                        self.status_bar.showMessage("Startup: all systems healthy", 3000)
-                        log.info("Startup health: all systems healthy",
-                                 extra={'extra_fields': {'tags': ['system', 'startup']}})
-                    else:
-                        self.health_label.setText(f"● DB {db_status.upper()}")
-                        self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: {SPACING_LG}px; font-weight: bold;")
-                        self.status_bar.showMessage(f"Startup: DB status {db_status}", 5000)
-                        log.warning(f"Startup health: DB status {db_status}",
-                                     extra={'extra_fields': {'tags': ['system', 'startup', 'warning']}})
-                else:
-                    self.health_label.setText("● Online")
-                    self.health_label.setStyleSheet(f"color: {COLOR_SUCCESS}; margin-right: {SPACING_LG}px; font-weight: bold;")
-                    log.info("Startup health: backend online",
-                             extra={'extra_fields': {'tags': ['system', 'startup']}})
-            else:
-                self.health_label.setText("● Offline")
-                self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: {SPACING_LG}px; font-weight: bold;")
-                log.warning("Startup health: backend unreachable",
-                             extra={'extra_fields': {'tags': ['system', 'startup', 'warning']}})
-        except Exception as e:
-            self.health_label.setText("● Error")
-            self.health_label.setStyleSheet(f"color: {COLOR_DANGER}; margin-right: {SPACING_LG}px; font-weight: bold;")
-            _cid = generate_correlation_id("health")
-            record_error(exc_type=type(e).__name__, module='startup_health', category='api')
-            emit_event('system_event', module='main_window', action='health_check_error',
-                       metadata={'error': str(e), 'screen': get_active_screen()},
-                       correlation_id=_cid)
-            log.warning(f"Startup health check error: {e}",
-                         extra={'extra_fields': {'tags': ['system', 'startup', 'error']}})
+            self.health_label.setText(label)
+            self.health_label.setStyleSheet(
+                f"color: {color}; margin-right: {SPACING_LG}px; font-weight: bold;"
+            )
+            if message:
+                self.status_bar.showMessage(message, 5000)
+        except RuntimeError:
+            pass
 
     def _update_status_bar_time(self):
         from datetime import datetime
         self.time_label.setText(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     def _load_company_settings(self):
-        """Load company name from backend API (SSOT) and set window title."""
+        """F22: Load company name from backend in a background thread."""
         if not self.api_client:
             return
-        try:
-            resp = self.api_client.get("/api/companies/config/")
-            if isinstance(resp, dict) and resp.get("success"):
-                data = resp.get("data", resp)
-                company_name = data.get("company_name", "Pharmacy ERP")
+        worker = _CompanySettingsWorker(self.api_client)
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.result.connect(self._on_company_settings_loaded)
+        worker.result.connect(thread.quit)
+        thread.finished.connect(thread.deleteLater)
+        worker.finished.connect(worker.deleteLater)
+        thread.start()
+
+    def _on_company_settings_loaded(self, company_name: str):
+        """Apply company name to window title (UI thread)."""
+        if company_name:
+            try:
                 self.setWindowTitle(f"{company_name} - Pharmacy ERP")
-        except Exception as e:
-            log.debug(f"Could not load company settings from API: {e}",
-                       extra={'extra_fields': {'tags': ['ui', 'startup']}})
+            except RuntimeError:
+                pass
     
     def _determine_role(self):
         """Determine user role from user_data."""
@@ -587,30 +578,41 @@ class MainWindow(QMainWindow):
                 self.license_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")  # Red
 
     def check_connection(self):
-        """Check the connection to the backend and update the status bar."""
-        # Safety check: ensure widget is not being deleted (PySide6 C++ guard)
+        """F18: Trigger a non-blocking connection check in a background thread."""
         if not self.isVisible() or not hasattr(self, 'connection_status_label'):
             return
-            
+        worker = _ConnectionCheckWorker(self.api_client)
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.result.connect(self._on_connection_result)
+        worker.result.connect(thread.quit)
+        thread.finished.connect(thread.deleteLater)
+        worker.finished.connect(worker.deleteLater)
+        thread.start()
+
+    def _on_connection_result(self, is_reachable: bool):
+        """Apply connection status to UI labels (UI thread)."""
+        if not hasattr(self, 'connection_status_label'):
+            return
         try:
-            # libshiboken guard: check if the underlying C++ object still exists
             from shiboken6 import isValid
             if not isValid(self.connection_status_label):
                 return
-                
-            is_reachable = self.api_client.health_check()
             if is_reachable:
                 self.connection_status_label.setText("Connected")
-                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_SUCCESS}; margin-left: {SPACING_MD}px; font-weight: 500;")
+                self.connection_status_label.setStyleSheet(
+                    f"font-size: {TEXT_LABEL}pt; color: {COLOR_SUCCESS};"
+                    f" margin-left: {SPACING_MD}px; font-weight: 500;"
+                )
             else:
                 self.connection_status_label.setText("Disconnected")
-                self.connection_status_label.setStyleSheet(f"font-size: {TEXT_LABEL}pt; color: {COLOR_DANGER}; margin-left: {SPACING_MD}px; font-weight: 500;")
-        except (RuntimeError, AttributeError) as e:
-            # Catch PySide6 deletion errors silently during shutdown
-            if "deleted" in str(e).lower():
-                return
-            log.debug(f"Connection check failed: {e}",
-                       extra={'extra_fields': {'tags': ['ui', 'connection']}})
+                self.connection_status_label.setStyleSheet(
+                    f"font-size: {TEXT_LABEL}pt; color: {COLOR_DANGER};"
+                    f" margin-left: {SPACING_MD}px; font-weight: 500;"
+                )
+        except (RuntimeError, AttributeError):
+            pass
 
     def on_license_validation_changed(self, is_valid: bool, message: str):
         """Handle license validation change signals."""
@@ -1153,3 +1155,112 @@ class MainWindow(QMainWindow):
             return
         
         super().keyPressEvent(event)
+
+
+# ---------------------------------------------------------------------------
+# F18 — Background worker: connection health check
+# ---------------------------------------------------------------------------
+
+class _ConnectionCheckWorker(QObject):
+    """Checks backend reachability in a background thread.
+
+    Emits:
+        result(bool)   — True if reachable, False otherwise
+        finished()     — always emitted after run() completes
+    """
+
+    result = Signal(bool)
+    finished = Signal()
+
+    def __init__(self, api_client):
+        super().__init__()
+        self._api_client = api_client
+
+    def run(self):
+        try:
+            is_reachable = self._api_client.health_check()
+        except Exception:
+            is_reachable = False
+        self.result.emit(is_reachable)
+        self.finished.emit()
+
+
+# ---------------------------------------------------------------------------
+# F19 — Background worker: startup health check
+# ---------------------------------------------------------------------------
+
+class _StartupHealthWorker(QObject):
+    """Performs the startup health check in a background thread.
+
+    Emits:
+        result(label, color, status_message)  — UI-ready strings
+        finished()                            — always emitted after run()
+    """
+
+    result = Signal(str, str, str)
+    finished = Signal()
+
+    def __init__(self, api_client):
+        super().__init__()
+        self._api_client = api_client
+
+    def run(self):
+        from ui.constants import COLOR_SUCCESS, COLOR_DANGER
+        try:
+            is_reachable = self._api_client.health_check()
+            if not is_reachable:
+                self.result.emit("● Offline", COLOR_DANGER, "")
+                return
+            health_data = self._api_client.get("/api/health/", background=True)
+            if isinstance(health_data, dict):
+                data = health_data.get('data', health_data)
+                db = data.get('database', {})
+                db_status = db.get('status', 'unknown')
+                if db_status == 'healthy':
+                    self.result.emit("● DB OK", COLOR_SUCCESS, "Startup: all systems healthy")
+                else:
+                    self.result.emit(
+                        f"● DB {db_status.upper()}",
+                        COLOR_DANGER,
+                        f"Startup: DB status {db_status}",
+                    )
+            else:
+                self.result.emit("● Online", COLOR_SUCCESS, "")
+        except Exception:
+            from ui.constants import COLOR_DANGER as _CD
+            self.result.emit("● Error", _CD, "")
+        finally:
+            self.finished.emit()
+
+
+# ---------------------------------------------------------------------------
+# F22 — Background worker: company settings
+# ---------------------------------------------------------------------------
+
+class _CompanySettingsWorker(QObject):
+    """Fetches company name from the backend in a background thread.
+
+    Emits:
+        result(company_name)  — empty string on failure
+        finished()            — always emitted after run()
+    """
+
+    result = Signal(str)
+    finished = Signal()
+
+    def __init__(self, api_client):
+        super().__init__()
+        self._api_client = api_client
+
+    def run(self):
+        try:
+            resp = self._api_client.get("/api/companies/config/", background=True)
+            if isinstance(resp, dict) and resp.get("success"):
+                data = resp.get("data", resp)
+                self.result.emit(data.get("company_name", ""))
+            else:
+                self.result.emit("")
+        except Exception:
+            self.result.emit("")
+        finally:
+            self.finished.emit()
