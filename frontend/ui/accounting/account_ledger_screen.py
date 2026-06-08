@@ -19,7 +19,7 @@ class AccountLedgerScreen(BaseScreen):
 
     def __init__(self, parent=None):
         super().__init__(parent, screen_id="account_ledger")
-        self.api_client = api_client or APIClient()
+        self.api_client = APIClient()
         self.accounts = []
         self._is_loading = False
         self.setup_ui()

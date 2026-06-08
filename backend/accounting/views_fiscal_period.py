@@ -6,6 +6,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from security.permissions import RoleBasedPermission
 
 from accounting.models import FiscalPeriod, FiscalPeriodCloseLog
 from accounting.serializers import (
@@ -24,7 +25,7 @@ logger = logging.getLogger('erp.fiscal_period_views')
 class FiscalPeriodViewSet(viewsets.ModelViewSet):
     """ViewSet for fiscal period management."""
     serializer_class = FiscalPeriodSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleBasedPermission]
     ordering = ['-start_date']
 
     def get_queryset(self):
@@ -187,7 +188,7 @@ class FiscalPeriodViewSet(viewsets.ModelViewSet):
 class FiscalPeriodCloseLogViewSet(viewsets.ReadOnlyModelViewSet):
     """Read-only ViewSet for fiscal period close logs."""
     serializer_class = FiscalPeriodCloseLogSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [RoleBasedPermission]
     ordering = ['-created_at']
 
     def get_queryset(self):

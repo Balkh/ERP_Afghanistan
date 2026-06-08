@@ -24,7 +24,7 @@ class AccountHierarchyService:
         {'code': '1100', 'name': 'Current Assets', 'type': 'ASSET', 'category': 'CURRENT_ASSET', 'parent': '1000', 'is_system': True},
         {'code': '1110', 'name': 'Cash', 'type': 'ASSET', 'category': 'CURRENT_ASSET', 'parent': '1100', 'is_system': True},
         {'code': '1120', 'name': 'Bank Accounts', 'type': 'ASSET', 'category': 'CURRENT_ASSET', 'parent': '1100', 'is_system': True},
-        {'code': '1130', 'name': 'Accounts Receivable', 'type': 'ASSET', 'category': 'CURRENT_ASSET', 'parent': '1100', 'is_system': True},
+        {'code': '1200', 'name': 'Accounts Receivable', 'type': 'ASSET', 'category': 'CURRENT_ASSET', 'parent': '1100', 'is_system': True},
         {'code': '1140', 'name': 'Inventory', 'type': 'ASSET', 'category': 'CURRENT_ASSET', 'parent': '1100', 'is_system': True},
         {'code': '1200', 'name': 'Fixed Assets', 'type': 'ASSET', 'category': 'FIXED_ASSET', 'parent': '1000', 'is_system': True},
         {'code': '1210', 'name': 'Equipment', 'type': 'ASSET', 'category': 'FIXED_ASSET', 'parent': '1200', 'is_system': True},
@@ -34,7 +34,7 @@ class AccountHierarchyService:
         # Liabilities (2000-2999)
         {'code': '2000', 'name': 'Liabilities', 'type': 'LIABILITY', 'category': None, 'parent': None, 'is_system': True},
         {'code': '2100', 'name': 'Current Liabilities', 'type': 'LIABILITY', 'category': 'CURRENT_LIABILITY', 'parent': '2000', 'is_system': True},
-        {'code': '2110', 'name': 'Accounts Payable', 'type': 'LIABILITY', 'category': 'CURRENT_LIABILITY', 'parent': '2100', 'is_system': True},
+        {'code': '2100', 'name': 'Accounts Payable', 'type': 'LIABILITY', 'category': 'CURRENT_LIABILITY', 'parent': '2100', 'is_system': True},
         {'code': '2120', 'name': 'Short-term Loans', 'type': 'LIABILITY', 'category': 'CURRENT_LIABILITY', 'parent': '2100', 'is_system': True},
         {'code': '2130', 'name': 'Accrued Expenses', 'type': 'LIABILITY', 'category': 'CURRENT_LIABILITY', 'parent': '2100', 'is_system': True},
         {'code': '2200', 'name': 'Long-term Liabilities', 'type': 'LIABILITY', 'category': 'LONG_TERM_LIABILITY', 'parent': '2000', 'is_system': True},

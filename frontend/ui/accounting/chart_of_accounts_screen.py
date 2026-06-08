@@ -21,7 +21,7 @@ class ChartOfAccountsScreen(BaseScreen):
 
     def __init__(self, parent=None):
         super().__init__(parent, screen_id="chart_of_accounts")
-        self.api_client = api_client or APIClient()
+        self.api_client = APIClient()
         self.accounts = []
         self.setup_ui()
         self.load_accounts()

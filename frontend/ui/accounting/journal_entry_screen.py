@@ -1,21 +1,20 @@
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
                                QHeaderView, QAbstractItemView,
-                               QComboBox, QLineEdit, QDateEdit,
-                               QGroupBox, QApplication)
+                               QApplication)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
-from utils.format import safe_float
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
-                           TEXT_LABEL, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_MUTED,
-                           COLOR_PRIMARY, COLOR_SUCCESS,
-                           COLOR_WARNING, COLOR_DANGER)
+                           BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
+                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog
 from ui.components.operator_safety import DestructiveActionGuard
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
+from ui.accounting.journal_entry_helpers import (
+    build_filter_bar, build_filter_params, transform_entries)
 
 
 class JournalEntryScreen(BaseScreen):
@@ -25,7 +24,7 @@ class JournalEntryScreen(BaseScreen):
 
     def __init__(self, parent=None):
         super().__init__(parent, screen_id="journal_entries")
-        self.api_client = api_client or APIClient()
+        self.api_client = APIClient()
         self.entries = []
         self._is_loading = False
         self.setup_ui()
@@ -117,97 +116,14 @@ class JournalEntryScreen(BaseScreen):
         return toolbar
 
     def _create_filter_bar(self):
-        bar = QGroupBox("Filters")
-        bar.setStyleSheet(f"""
-            QGroupBox {{
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_LG};
-                margin-top: {SPACING_SM}px;
-                padding-top: {SPACING_SM}px;
-                color: {COLOR_TEXT_PRIMARY};
-                font-size: {TEXT_LABEL}pt;
-                font-weight: 700;
-            }}
-        """)
-        layout = QHBoxLayout(bar)
-        layout.setSpacing(SPACING_MD + SPACING_XS)
-
-        # Type filter
-        type_layout = QVBoxLayout()
-        type_layout.addWidget(QLabel("Entry Type:"))
-        self.type_filter = QComboBox()
-        self.type_filter.setStyleSheet(f"""
-            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
-            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY}; selection-color: {COLOR_TEXT_ON_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; }}
-        """)
-        self.type_filter.addItem("All", "")
-        for t in ["SALE", "PURCHASE", "PAYMENT", "RECEIPT", "ADJUSTMENT", "TRANSFER", "OPENING", "CLOSING", "REVERSAL"]:
-            self.type_filter.addItem(t, t)
-        self.type_filter.setMinimumWidth(120)
-        type_layout.addWidget(self.type_filter)
-        layout.addLayout(type_layout)
-
-        # Status filter
-        status_layout = QVBoxLayout()
-        status_layout.addWidget(QLabel("Status:"))
-        self.status_filter = QComboBox()
-        self.status_filter.setStyleSheet(f"""
-            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
-            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY}; selection-color: {COLOR_TEXT_ON_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; }}
-        """)
-        self.status_filter.addItem("All", "")
-        self.status_filter.addItem("Posted", "posted")
-        self.status_filter.addItem("Draft", "draft")
-        self.status_filter.setMinimumWidth(100)
-        status_layout.addWidget(self.status_filter)
-        layout.addLayout(status_layout)
-
-        # Date range
-        date_layout = QVBoxLayout()
-        date_label_layout = QHBoxLayout()
-        date_label_layout.addWidget(QLabel("From:"))
-        self.date_from = QDateEdit()
-        self.date_from.setCalendarPopup(True)
-        self.date_from.setDisplayFormat("yyyy-MM-dd")
-        date_label_layout.addWidget(self.date_from)
-        
-        date_label_layout.addWidget(QLabel("To:"))
-        self.date_to = QDateEdit()
-        self.date_to.setCalendarPopup(True)
-        self.date_to.setDisplayFormat("yyyy-MM-dd")
-        date_label_layout.addWidget(self.date_to)
-        date_layout.addLayout(date_label_layout)
-        layout.addLayout(date_layout)
-
-        # Search
-        search_layout = QVBoxLayout()
-        search_layout.addWidget(QLabel("Search:"))
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Entry # or description...")
-        self.search_input.setMinimumWidth(200)
-        self.search_input.setMinimumHeight(30)
-        search_layout.addWidget(self.search_input)
-        layout.addLayout(search_layout)
-
-        # Apply button
-        self.btn_apply = EnterpriseButton(
-            text="Apply Filters",
-            variant=ButtonVariant.SECONDARY,
-            size=ButtonSize.MEDIUM
-        )
+        bar, refs = build_filter_bar()
+        self.type_filter = refs["type_filter"]
+        self.status_filter = refs["status_filter"]
+        self.date_from = refs["date_from"]
+        self.date_to = refs["date_to"]
+        self.search_input = refs["search_input"]
+        self.btn_apply = refs["btn_apply"]
         self.btn_apply.clicked.connect(self.load_entries)
-        
-        btn_layout = QVBoxLayout()
-        btn_layout.addStretch()
-        btn_layout.addWidget(self.btn_apply)
-        layout.addLayout(btn_layout)
-
         return bar
 
     def _create_table(self):
@@ -267,21 +183,7 @@ class JournalEntryScreen(BaseScreen):
 
     def load_entries(self):
         self._show_loading()
-        params = {"page_size": 100}
-
-        type_val = self.type_filter.currentData()
-        if type_val:
-            params["entry_type"] = type_val
-
-        status_val = self.status_filter.currentData()
-        if status_val == "posted":
-            params["is_posted"] = "true"
-        elif status_val == "draft":
-            params["is_posted"] = "false"
-
-        search = self.search_input.text().strip()
-        if search:
-            params["search"] = search
+        params = build_filter_params(self.type_filter, self.status_filter, self.search_input)
 
         try:
             endpoint = get_endpoint("journal_entries")
@@ -303,30 +205,7 @@ class JournalEntryScreen(BaseScreen):
             return
 
         self._show_data()
-        entries_data = []
-        for entry in self.entries:
-            if not isinstance(entry, dict):
-                continue
-
-            is_posted = entry.get("is_posted") or False
-            debit = safe_float(entry.get("total_debit"))
-            credit = safe_float(entry.get("total_credit"))
-            description = entry.get("description") or ""
-            entries_data.append({
-                "entry_number": entry.get("entry_number") or "",
-                "entry_date": entry.get("entry_date") or "",
-                "entry_type": entry.get("entry_type") or "",
-                "description": description[:60] if len(description) > 60 else description,
-                "debit": f"{debit:,.2f}",
-                "credit": f"{credit:,.2f}",
-                "status": "Posted" if is_posted else "Draft",
-                "reference": entry.get("reference") or "",
-                "id": entry.get("id"),
-                "is_posted": is_posted,
-                "_debit_value": debit,
-                "_credit_value": credit,
-            })
-
+        entries_data = transform_entries(self.entries)
         self.table.set_data(entries_data)
 
         # Apply foreground colors after data is set

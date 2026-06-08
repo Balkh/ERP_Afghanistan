@@ -14,8 +14,7 @@ from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from uuid import UUID
-import uuid as uuid_lib
+from core.accounting_registry import ACC
 
 User = get_user_model()
 
@@ -26,10 +25,10 @@ class PayrollAccountingService:
     Generates journal entries for payroll transactions.
     """
     
-    # Default accounts for payroll (configurable in settings)
-    SALARY_EXPENSE_ACCOUNT_CODE = '6201'  # Salary Expense
-    CASH_ACCOUNT_CODE = '1201'  # Cash at Bank
-    TAX_PAYABLE_ACCOUNT_CODE = '2201'  # Tax Payable
+    # Default accounts for payroll — resolved via ACC registry
+    SALARY_EXPENSE_ACCOUNT_KEY = 'payroll_salary'   # 7010
+    CASH_ACCOUNT_KEY = 'cash_on_hand'               # 1010
+    TAX_PAYABLE_ACCOUNT_KEY = 'tax_payable'         # 2120
     
     @staticmethod
     @transaction.atomic
@@ -47,79 +46,56 @@ class PayrollAccountingService:
         Returns:
             JournalEntry instance
         """
-        from accounting.models import JournalEntry, JournalEntryLine, Account
-        from payroll.models import PayrollRecord
+        from accounting.models import Account, JournalEntry
+        from accounting.services.journal_engine import JournalEngine
         
         if payroll_cycle.status != 'APPROVED':
             raise ValidationError('Can only create journal for APPROVED payroll.')
         
-        # Get accounts
+        # Get accounts via registry
         try:
-            salary_expense = Account.objects.get(code=PayrollAccountingService.SALARY_EXPENSE_ACCOUNT_CODE)
-            cash_account = Account.objects.get(code=PayrollAccountingService.CASH_ACCOUNT_CODE)
-            tax_payable = Account.objects.get(code=PayrollAccountingService.TAX_PAYABLE_ACCOUNT_CODE)
-        except Account.DoesNotExist as e:
-            raise ValidationError(f'Payroll account not configured: {e}')
-        
-        # Create journal entry
-        journal_entry = JournalEntry.objects.create(
-            entry_number=f"JE-PAY-{payroll_cycle.period_month:02d}{payroll_cycle.period_year}",
-            entry_date=payroll_cycle.end_date,
-            entry_type='PAYMENT',
-            description=f"Payroll {payroll_cycle.name} - {payroll_cycle.employee_count} employees",
-            reference_type='PAYROLL',
-            reference_id=str(payroll_cycle.id),
-            status='POSTED',
-            created_by=approved_by
-        )
+            salary_expense_code = ACC[PayrollAccountingService.SALARY_EXPENSE_ACCOUNT_KEY]
+            cash_account_code = ACC[PayrollAccountingService.CASH_ACCOUNT_KEY]
+            tax_payable_code = ACC[PayrollAccountingService.TAX_PAYABLE_ACCOUNT_KEY]
+        except KeyError as e:
+            raise ValidationError(f'Payroll account key not in registry: {e}')
+
+        for key, code in [('salary_expense', salary_expense_code), ('cash_account', cash_account_code), ('tax_payable', tax_payable_code)]:
+            if not Account.objects.filter(code=code, is_active=True).exists():
+                raise ValidationError(f'Payroll account {key} (code {code}) not found or inactive.')
         
         total_gross = payroll_cycle.total_gross or Decimal('0')
         total_deductions = payroll_cycle.total_deductions or Decimal('0')
         total_net = payroll_cycle.total_net or Decimal('0')
-        
-        # Debit: Salary Expense (Gross)
-        JournalEntryLine.objects.create(
-            entry=journal_entry,
-            account=salary_expense,
-            debit=total_gross,
-            credit=0,
-            memo='Salary Expense'
-        )
-        
-        # Credit: Cash/Bank (Net - amount paid to employees)
-        JournalEntryLine.objects.create(
-            entry=journal_entry,
-            account=cash_account,
-            debit=0,
-            credit=total_net,
-            memo='Cash Payment'
-        )
-        
-        # Credit: Tax Payable (Tax deducted)
+
+        lines = [
+            {'account_code': salary_expense_code, 'debit': total_gross, 'credit': Decimal('0.00'), 'description': f'Salary expense for {payroll_cycle.name}'},
+            {'account_code': cash_account_code, 'debit': Decimal('0.00'), 'credit': total_net, 'description': f'Net cash payment for {payroll_cycle.name}'},
+        ]
         if total_deductions > 0:
-            JournalEntryLine.objects.create(
-                entry=journal_entry,
-                account=tax_payable,
-                debit=0,
-                credit=total_deductions,
-                memo='Tax Withheld'
-            )
-        
-        # Verify double-entry balance
-        lines = journal_entry.lines.all()
-        total_debit = sum(line.debit for line in lines)
-        total_credit = sum(line.credit for line in lines)
-        
-        if total_debit != total_credit:
-            raise ValidationError(
-                f'Journal entry out of balance: Debit={total_debit}, Credit={total_credit}'
-            )
-        
-        # Link journal to payroll cycle
+            lines.append({'account_code': tax_payable_code, 'debit': Decimal('0.00'), 'credit': total_deductions, 'description': f'Tax withheld for {payroll_cycle.name}'})
+
+        created_by_id = approved_by.id if hasattr(approved_by, 'id') else approved_by
+        result = JournalEngine.create_entry(
+            entry_type='PAYROLL',
+            description=f"Payroll {payroll_cycle.name} - {payroll_cycle.employee_count} employees",
+            lines=lines,
+            entry_date=payroll_cycle.end_date,
+            reference=f"PAY-{payroll_cycle.period_month:02d}{payroll_cycle.period_year}",
+            auto_post=True,
+            source_module='payroll',
+            source_document=str(payroll_cycle.id),
+            change_reason=f'Payroll cycle {payroll_cycle.name}',
+            created_by=created_by_id,
+        )
+        if not result.get('success'):
+            raise ValidationError(f'Failed to create payroll journal entry: {result.get("errors")}')
+
+        journal_entry = JournalEntry.objects.get(id=result['entry_id'])
         payroll_cycle.accounting_entry_id = journal_entry.id
         payroll_cycle.save()
-        
-        return journal_entry
+
+        return result
     
     @staticmethod
     @transaction.atomic
@@ -135,53 +111,34 @@ class PayrollAccountingService:
         Returns:
             New JournalEntry (reversing)
         """
-        from accounting.models import JournalEntry, JournalEntryLine
-        
+        from accounting.models import JournalEntry
+        from accounting.services.journal_engine import JournalEngine
+
         if not payroll_cycle.accounting_entry_id:
             raise ValidationError('No accounting entry to reverse.')
-        
-        # Get original entry
+
         try:
             original = JournalEntry.objects.get(id=payroll_cycle.accounting_entry_id)
         except JournalEntry.DoesNotExist:
             raise ValidationError('Original accounting entry not found.')
-        
-        # Check if already reversed
-        if original.status == 'REVERSED':
-            raise ValidationError('Entry already reversed.')
-        
-        # Create reversing entry
-        reversing_entry = JournalEntry.objects.create(
-            entry_number=f"JE-PAY-RVS-{payroll_cycle.period_month:02d}{payroll_cycle.period_year}",
-            entry_date=timezone.now().date(),
-            entry_type='ADJUSTMENT',
-            description=f"Reversal: {original.description}. Reason: {reason}",
-            reference_type='PAYROLL_REVERSAL',
-            reference_id=str(payroll_cycle.id),
-            status='POSTED',
-            created_by=reversed_by
+
+        if original.is_reversed:
+            raise ValidationError('Entry has already been reversed.')
+
+        reversed_by_id = reversed_by.id if hasattr(reversed_by, 'id') else reversed_by
+        result = JournalEngine.reverse_entry(
+            entry_id=str(original.id),
+            reason=reason or f'Payroll reversal for {payroll_cycle.name}',
+            user_id=reversed_by_id,
         )
-        
-        # Reverse all lines (swap debits and credits)
-        for line in original.lines.all():
-            JournalEntryLine.objects.create(
-                entry=reversing_entry,
-                account=line.account,
-                debit=line.credit,  # Swap
-                credit=line.debit,    # Swap
-                memo=f"Reversal of {line.memo}"
-            )
-        
-        # Mark original as reversed
-        original.status = 'REVERSED'
-        original.save()
-        
-        # Update payroll cycle
+        if not result.get('success'):
+            raise ValidationError(f'Failed to reverse payroll journal entry: {result.get("errors")}')
+
         payroll_cycle.status = 'CANCELLED'
         payroll_cycle.accounting_entry_id = None
         payroll_cycle.save()
-        
-        return reversing_entry
+
+        return result
     
     @staticmethod
     def validate_payroll_accounts():
@@ -194,9 +151,9 @@ class PayrollAccountingService:
         from accounting.models import Account
         
         accounts = {
-            'SALARY_EXPENSE': PayrollAccountingService.SALARY_EXPENSE_ACCOUNT_CODE,
-            'CASH': PayrollAccountingService.CASH_ACCOUNT_CODE,
-            'TAX_PAYABLE': PayrollAccountingService.TAX_PAYABLE_ACCOUNT_CODE,
+            'SALARY_EXPENSE': ACC[PayrollAccountingService.SALARY_EXPENSE_ACCOUNT_KEY],
+            'CASH': ACC[PayrollAccountingService.CASH_ACCOUNT_KEY],
+            'TAX_PAYABLE': ACC[PayrollAccountingService.TAX_PAYABLE_ACCOUNT_KEY],
         }
         
         status = {}
@@ -227,7 +184,7 @@ class PayrollAccountingService:
         Returns:
             tuple: (payroll_cycle, journal_entry)
         """
-        from payroll.models import PayrollRecord
+        
         
         # Validate accounting accounts exist
         accounts_valid = PayrollAccountingService.validate_payroll_accounts()
@@ -260,7 +217,3 @@ class PayrollAccountingService:
         
         return payroll_cycle
 
-
-# Import at bottom to avoid circular imports
-from accounting.models import Account, JournalEntry, JournalEntryLine
-from payroll.models import PayrollCycle
