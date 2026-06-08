@@ -117,6 +117,10 @@ class LicenseActivationRequestView(View):
 class LicenseImportView(View):
     """POST /licensing/import-license/ — Import a signed .lic file."""
     def post(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({'success': False, 'error': 'Authentication required'}, status=401)
+        if not (request.user.is_staff or request.user.is_superuser):
+            return JsonResponse({'success': False, 'error': 'Admin privileges required'}, status=403)
         try:
             uploaded = request.FILES.get('license_file')
             if uploaded:

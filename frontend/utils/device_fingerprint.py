@@ -29,8 +29,7 @@ def generate_device_id() -> str:
     # Using SHA256 for good distribution and taking first 32 chars
     device_hash = hashlib.sha256(combined.encode('utf-8')).hexdigest()
     
-    # Return first 32 characters (128 bits) as the device ID
-    return device_hash[:32]
+    return device_hash
 
 
 def get_device_fingerprint() -> dict:
@@ -58,9 +57,9 @@ def is_device_id_valid(device_id: str) -> bool:
     Returns:
         bool: True if device_id is a 32-character hexadecimal string
     """
-    if not device_id or len(device_id) != 32:
+    if not device_id or len(device_id) not in (32, 64):
         return False
-    
+
     try:
         int(device_id, 16)
         return True

@@ -1,12 +1,12 @@
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
-from .validator import LicenseValidator, is_dev_mode
+from .validator import resolve_license
 
 
 class LicenseMiddleware(MiddlewareMixin):
     """
     Lightweight license middleware.
-    
+
     State handling:
       dev      → No restrictions
       trial    → Full access (header: X-License-Mode: trial)
@@ -25,6 +25,7 @@ class LicenseMiddleware(MiddlewareMixin):
     ALLOWED_LIMITED_PATHS = [
         '/licensing/',
         '/api/system/',
+        '/api/backup/',
     ]
 
     def process_request(self, request):
@@ -37,24 +38,19 @@ class LicenseMiddleware(MiddlewareMixin):
             return None
 
         try:
-            val = LicenseValidator()
-            state = val.validate()
-            info = val.get_info()
+            state = resolve_license(request)
+            request.license_state = state
+            request.license_mode = state['mode']
+            request.license_info = state
 
-            request.license_mode = state
-            request.license_info = info
-
-            if state == "dev" or state == "licensed":
+            if state['mode'] in ("dev", "licensed", "trial"):
                 return None
 
-            if state == "trial":
-                return None
-
-            if state == "limited":
+            if state['mode'] == "limited":
                 if not self._is_allowed_in_limited(path):
                     return JsonResponse({
                         'error': 'Trial period expired',
-                        'message': info.get('message',
+                        'message': state.get('message',
                                             'Trial has expired. Please activate a license.'),
                         'code': 'TRIAL_EXPIRED',
                         'restricted': True,
@@ -63,14 +59,14 @@ class LicenseMiddleware(MiddlewareMixin):
 
             return JsonResponse({
                 'error': 'License required',
-                'message': info.get('message', 'No valid license found.'),
+                'message': state.get('message', 'No valid license found.'),
                 'code': 'LICENSE_REQUIRED',
             }, status=403)
 
         except Exception:
             request.license_mode = 'unknown'
-            request.license_info = {'mode': 'unknown', 'is_valid': False,
-                                     'message': 'License validation unavailable'}
+            request.license_state = {'mode': 'unknown', 'is_valid': False,
+                                      'message': 'License validation unavailable'}
             return None
 
     def _is_exempt_path(self, path):

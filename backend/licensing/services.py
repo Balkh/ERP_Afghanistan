@@ -2,8 +2,8 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import DeviceLicense
 from .providers import DeviceFingerprintProvider, ProductionFingerprintProvider, get_fingerprint_provider
-from .rsa import create_signed_license, verify_signed_license
-from .validator import LicenseValidator
+from .rsa import create_signed_license
+from .validator import resolve_license, LicenseValidator
 
 
 class LicenseValidationError(ValidationError):
@@ -28,16 +28,8 @@ def get_fingerprint_provider_instance():
 class LicenseService:
     """
     Lightweight license service facade.
-    Delegates to LicenseValidator for state evaluation.
+    Delegates to resolve_license() for all state evaluation.
     """
-
-    _validator = None
-
-    @classmethod
-    def _get_validator(cls) -> LicenseValidator:
-        if cls._validator is None:
-            cls._validator = LicenseValidator()
-        return cls._validator
 
     @staticmethod
     def get_current_device_fingerprint():
@@ -50,18 +42,19 @@ class LicenseService:
     @staticmethod
     def validate_license(license_key=None):
         """Returns validated license, trial, or raises error."""
-        val = LicenseService._get_validator()
-        state = val.validate()
+        resolved = resolve_license()
 
-        if state == "dev":
+        if resolved['mode'] == 'dev':
             return None
-        if state == "trial":
-            return val._find_active_trial()
-        if state == "licensed":
-            return val._find_valid_license()
+        if resolved['mode'] == 'trial':
+            return resolved.get('trial')
+        if resolved['mode'] == 'licensed':
+            lic = resolved.get('license')
+            if lic and lic.is_valid():
+                return lic
+            raise LicenseValidationError('License has expired')
 
-        info = val.get_info()
-        raise LicenseValidationError(info.get("message", "License is not valid"))
+        raise LicenseValidationError(resolved.get('message', 'License is not valid'))
 
     @staticmethod
     def is_licensed(license_key=None):
@@ -73,9 +66,31 @@ class LicenseService:
 
     @staticmethod
     def get_license_info(license_key=None):
-        val = LicenseService._get_validator()
-        val.validate()
-        return val.get_info()
+        resolved = resolve_license()
+        mode = resolved['mode']
+        info = {'mode': mode, 'is_valid': resolved['is_valid'], 'message': resolved['message']}
+        if mode == 'licensed':
+            lic = resolved.get('license')
+            if lic:
+                info.update({
+                    'license_key': lic.license_key,
+                    'issued_to': lic.issued_to,
+                    'company_name': lic.company_name,
+                    'license_type': lic.license_type,
+                    'features': lic.features,
+                    'max_branches': lic.max_branches,
+                    'expires_date': lic.expires_date.isoformat() if lic.expires_date else None,
+                })
+        elif mode == 'trial':
+            trial = resolved.get('trial')
+            if trial:
+                info.update({
+                    'days_remaining': trial.days_remaining(),
+                    'expires_at': trial.expires_at.isoformat(),
+                    'started_at': trial.started_at.isoformat(),
+                    'access_count': trial.access_count,
+                })
+        return info
 
     @staticmethod
     def create_license(license_key, issued_to=None, expires_date=None, notes=None):
@@ -113,11 +128,11 @@ class LicenseService:
 
     @staticmethod
     def generate_activation_request():
-        return LicenseService._get_validator().generate_activation_request()
+        return LicenseValidator().generate_activation_request()
 
     @staticmethod
     def import_license_file(lic_filepath):
-        success, message = LicenseService._get_validator().import_license(lic_filepath)
+        success, message = LicenseValidator().import_license(lic_filepath)
         if not success:
             raise LicenseValidationError(message)
         return message
