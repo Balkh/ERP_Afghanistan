@@ -307,5 +307,91 @@ class TestModulesExist(unittest.TestCase):
         self.assertTrue((_FRONTEND_ROOT / "security" / "session_store.py").exists())
 
 
+# ═══════════════════════════════════════════════════════════════════
+# Test 10: connect_unique utility (source scan — no Qt)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestConnectUnique(unittest.TestCase):
+    """Verify connect_unique disconnects before connecting."""
+
+    def test_module_exists(self):
+        self.assertTrue((_FRONTEND_ROOT / "ui" / "utils" / "signal_utils.py").exists())
+
+    def test_disconnect_before_connect_pattern(self):
+        src = (_FRONTEND_ROOT / "ui" / "utils" / "signal_utils.py").read_text()
+        # Must contain disconnect then connect
+        self.assertIn("signal.disconnect(slot)", src)
+        self.assertIn("signal.connect(slot)", src)
+        # disconnect must come before connect
+        disc_pos = src.index("signal.disconnect(slot)")
+        conn_pos = src.index("signal.connect(slot)")
+        self.assertLess(disc_pos, conn_pos,
+                        "disconnect must come before connect")
+
+    def test_report_browser_uses_connect_unique(self):
+        src = (_FRONTEND_ROOT / "ui" / "accounting" / "report_browser.py").read_text()
+        self.assertIn("connect_unique", src)
+        # Must not use raw .connect( for its interactive widgets
+        # (type_selector, btn_run, btn_export should all use connect_unique)
+        self.assertIn("connect_unique(self.type_selector", src)
+        self.assertIn("connect_unique(self.btn_run", src)
+        self.assertIn("connect_unique(self.btn_export", src)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 11: ReportBrowser has no threads (so no cleanup needed)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestReportBrowserNoThreads(unittest.TestCase):
+    """Verify ReportBrowser uses no threads — cleanup is not required."""
+
+    def test_no_qthread_in_report_browser(self):
+        src = (_FRONTEND_ROOT / "ui" / "accounting" / "report_browser.py").read_text()
+        self.assertNotIn("QThread", src)
+        self.assertNotIn("QRunnable", src)
+        self.assertNotIn("QThreadPool", src)
+        self.assertNotIn("threading.Thread", src)
+        self.assertNotIn("moveToThread", src)
+
+    def test_no_worker_class_in_report_browser(self):
+        src = (_FRONTEND_ROOT / "ui" / "accounting" / "report_browser.py").read_text()
+        # No Worker class definitions
+        tree = ast.parse(src)
+        class_names = [n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
+        worker_classes = [c for c in class_names if "worker" in c.lower()]
+        self.assertEqual(worker_classes, [],
+                         f"Unexpected worker classes: {worker_classes}")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 12: All thread sites have cleanup (source scan)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestThreadCleanup(unittest.TestCase):
+    """Verify every QThread creation has matching deleteLater/quit/wait."""
+
+    def _check_file_threads(self, relpath):
+        fpath = _FRONTEND_ROOT / relpath
+        src = fpath.read_text()
+        thread_count = src.count("QThread(")
+        # deleteLater appears both as deleteLater) in connect() and deleteLater() standalone
+        delete_count = src.count("deleteLater")
+        # Every thread creation must have matching cleanup
+        self.assertGreaterEqual(delete_count, thread_count,
+            f"{relpath}: {thread_count} QThread( but only {delete_count} deleteLater")
+
+    def test_dashboard_thread_cleanup(self):
+        self._check_file_threads("ui/dashboard.py")
+
+    def test_main_window_thread_cleanup(self):
+        self._check_file_threads("ui/main_window.py")
+
+    def test_async_api_thread_cleanup(self):
+        self._check_file_threads("ui/utils/async_api.py")
+
+
 if __name__ == "__main__":
     unittest.main()
