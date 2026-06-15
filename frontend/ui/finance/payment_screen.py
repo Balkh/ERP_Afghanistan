@@ -33,7 +33,7 @@ class PaymentScreen(BaseScreen):
 
     def _setup_screen(self):
         super()._setup_screen()
-        layout = QVBoxLayout(self)
+        layout = self.layout() or QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 

@@ -84,7 +84,7 @@ class POSScreen(BaseScreen):
 
     def _setup_screen(self):
         super()._setup_screen()
-        layout = QVBoxLayout(self)
+        layout = self.layout() or QVBoxLayout(self)
         layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_MD)
 

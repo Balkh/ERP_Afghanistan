@@ -1,4 +1,4 @@
-from ui.constants import (COLOR_PRIMARY, TEXT_BODY)
+from ui.constants import (COLOR_PRIMARY, TEXT_BODY, SPACING_MD)
 """Loading spinner component for ERP."""
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PySide6.QtCore import Qt, QTimer, QRect
@@ -70,7 +70,7 @@ class LoadingOverlay(QWidget):
             QLabel {{
                 color: {COLOR_PRIMARY};
                 font-size: {TEXT_BODY}pt;
-                margin-top: 10px;
+                margin-top: {SPACING_MD}px;
             }}
         """)
         layout.addWidget(self.label)

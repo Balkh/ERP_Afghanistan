@@ -192,7 +192,7 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
             EnterpriseButton {{
                 background-color: transparent;
                 color: {COLOR_DANGER};
-                font-size: 16pt;
+                font-size: {TEXT_CARD_TITLE}pt;
                 font-weight: bold;
                 border: none;
             }}

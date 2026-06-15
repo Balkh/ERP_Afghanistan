@@ -27,7 +27,10 @@ class BaseInventoryScreen(BaseScreen):
     def _setup_screen(self):
         super()._setup_screen()
         """Setup the base UI components."""
-        layout = QVBoxLayout(self)
+        if self.layout():
+            layout = self.layout()
+        else:
+            layout = QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE,  MARGIN_PAGE,  MARGIN_PAGE,  MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
         
