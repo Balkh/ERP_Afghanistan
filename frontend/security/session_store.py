@@ -1,17 +1,17 @@
-"""
-Phase 5B.16 — Secure Session Store.
+"""Encrypted session store for frontend authentication data."""
+from __future__ import annotations
 
-Replaces insecure XOR encryption with Fernet (AES-CBC + HMAC).
-Backward compatible — can load legacy XOR-encrypted sessions.
-"""
-import os
-import json
 import base64
-from cryptography.fernet import Fernet
-from utils.device_fingerprint import generate_device_id
+import json
+import os
+from typing import Any, Dict, Optional, Tuple
+
+from cryptography.fernet import Fernet, InvalidToken
+
 from config.production_config import get_data_path
-from utils.logger import get_logger
 from utils.atomic_io import atomic_write_text
+from utils.device_fingerprint import generate_device_id
+from utils.logger import get_logger
 
 log = get_logger('session')
 
@@ -20,40 +20,22 @@ LEGACY_FILENAME = 'session.dat'
 
 
 def _derive_fernet_key() -> bytes:
-    """Derive a valid Fernet key (32 url-safe base64 bytes) from device fingerprint."""
+    """Derive a valid Fernet key from the local device fingerprint."""
     device_id = generate_device_id()
-    # Fernet requires a 32-byte url-safe-base64 key
     raw = device_id.encode('utf-8').ljust(32, b'\x00')[:32]
     return base64.urlsafe_b64encode(raw)
 
 
 def _fernet_encrypt(data: str) -> str:
-    key = _derive_fernet_key()
-    f = Fernet(key)
-    return f.encrypt(data.encode('utf-8')).decode('utf-8')
+    return Fernet(_derive_fernet_key()).encrypt(data.encode('utf-8')).decode('utf-8')
 
 
 def _fernet_decrypt(encrypted: str) -> str:
-    key = _derive_fernet_key()
-    f = Fernet(key)
-    return f.decrypt(encrypted.encode('utf-8')).decode('utf-8')
-
-
-def _xor_decrypt(encrypted_b64: str, key: bytes):
-    """Legacy XOR decryption for backward compatibility with old session files."""
-    try:
-        enc = base64.b64decode(encrypted_b64.encode('utf-8'))
-        dec = bytearray()
-        for i, byte in enumerate(enc):
-            dec.append(byte ^ key[i % len(key)])
-        return dec.decode('utf-8')
-    except Exception:
-        return None
+    return Fernet(_derive_fernet_key()).decrypt(encrypted.encode('utf-8')).decode('utf-8')
 
 
 def _get_session_path() -> str:
-    data_dir = get_data_path()
-    return os.path.join(data_dir, SESSION_FILENAME)
+    return os.path.join(get_data_path(), SESSION_FILENAME)
 
 
 def _get_legacy_path() -> str:
@@ -61,82 +43,75 @@ def _get_legacy_path() -> str:
     return os.path.abspath(os.path.join(base, LEGACY_FILENAME))
 
 
-def save_session(username: str, access_token: str, refresh_token: str = ''):
-    """Encrypt (Fernet) and save session data to disk."""
+def save_session_data(session: Dict[str, Any]) -> bool:
+    """Encrypt and persist the full session payload."""
     try:
-        data = json.dumps({
-            'username': username,
-            'access_token': access_token,
-            'refresh_token': refresh_token,
-            '_v': '2',
-        })
-        encrypted = _fernet_encrypt(data)
-        path = _get_session_path()
-        atomic_write_text(path, encrypted)
+        payload = dict(session or {})
+        payload['_v'] = '3'
+        encrypted = _fernet_encrypt(json.dumps(payload))
+        atomic_write_text(_get_session_path(), encrypted)
         _remove_legacy()
-        log.info(f"Session saved for user: {username}")
+        log.info("Encrypted session saved")
         return True
     except Exception as e:
         log.error(f"Session save failed: {e}")
         return False
 
 
-def load_session():
-    """Load session data. Tries Fernet first, falls back to legacy XOR."""
+def load_session_data() -> Optional[Dict[str, Any]]:
+    """Load only the encrypted Fernet session payload."""
+    path = _get_session_path()
+    if not os.path.exists(path):
+        return None
     try:
-        path = _get_session_path()
-        if os.path.exists(path):
-            with open(path, 'r') as f:
-                content = f.read()
-            # Try Fernet first (new format)
-            try:
-                decrypted = _fernet_decrypt(content)
-                data = json.loads(decrypted)
-                username = data.get('username')
-                log.info(f"Session loaded for user: {username}")
-                return (username, data.get('access_token'), data.get('refresh_token', ''))
-            except Exception:
-                pass
-            # Fallback: legacy XOR
-            key_bytes = generate_device_id().encode('utf-8')[:32].ljust(32, b'\x00')
-            decrypted = _xor_decrypt(content, key_bytes)
-            if decrypted:
-                data = json.loads(decrypted)
-                username = data.get('username')
-                log.info(f"Session loaded (legacy) for user: {username}")
-                return (username, data.get('access_token'), data.get('refresh_token', ''))
+        with open(path, 'r') as f:
+            content = f.read()
+        data = json.loads(_fernet_decrypt(content))
+        if not isinstance(data, dict):
+            clear_session()
+            return None
+        log.info(f"Encrypted session loaded for user: {data.get('username') or (data.get('user') or {}).get('username')}")
+        return data
+    except (InvalidToken, json.JSONDecodeError, UnicodeDecodeError) as e:
+        log.warning(f"Encrypted session invalid; clearing: {e}")
+        clear_session()
+        return None
     except Exception as e:
         log.warning(f"Session load error: {e}")
-
-    return _load_legacy()
-
-
-def _load_legacy():
-    """Load legacy plaintext session.dat for backward compatibility."""
-    try:
-        path = _get_legacy_path()
-        if os.path.exists(path):
-            with open(path, 'r') as f:
-                parts = f.read().split(':')
-                if len(parts) == 2:
-                    return parts[0], parts[1], ''
-    except Exception:
-        pass
-    return None, None, None
+        return None
 
 
-def clear_session():
+def save_session(username: str, access_token: str, refresh_token: str = '') -> bool:
+    """Compatibility wrapper that still stores data in encrypted form only."""
+    return save_session_data({
+        'username': username,
+        'access_token': access_token,
+        'refresh_token': refresh_token,
+    })
+
+
+def load_session() -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """Compatibility wrapper for login prefill; no plaintext fallback."""
+    data = load_session_data()
+    if not data:
+        return None, None, None
+    user = data.get('user') if isinstance(data.get('user'), dict) else {}
+    username = data.get('username') or user.get('username')
+    return username, data.get('access_token'), data.get('refresh_token', '')
+
+
+def clear_session() -> None:
     try:
         path = _get_session_path()
         if os.path.exists(path):
             os.remove(path)
-            log.info("Session cleared")
+            log.info("Encrypted session cleared")
     except Exception as e:
         log.warning(f"Session clear error: {e}")
     _remove_legacy()
 
 
-def _remove_legacy():
+def _remove_legacy() -> None:
     try:
         path = _get_legacy_path()
         if os.path.exists(path):
@@ -145,7 +120,8 @@ def _remove_legacy():
         pass
 
 
-def _migrate_from_legacy():
-    username, token, _ = _load_legacy()
-    if username and token:
-        save_session(username, token)
+def _migrate_from_legacy() -> bool:
+    """Legacy plaintext session restore is disabled; remove stale legacy file."""
+    existed = os.path.exists(_get_legacy_path())
+    _remove_legacy()
+    return False if existed else False

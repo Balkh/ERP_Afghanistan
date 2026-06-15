@@ -7,7 +7,6 @@ SINGLE SOURCE OF TRUTH for session management (Rule 4 compliance).
 import json
 from pathlib import Path
 from typing import Optional, Dict, Any
-from utils.atomic_io import atomic_write_json
 
 from PySide6.QtCore import QObject, Signal
 
@@ -165,39 +164,64 @@ class AuthManager(QObject):
     # ── Session Persistence (Single Source of Truth) ──
 
     def _store_session(self, data: Dict[str, Any]) -> None:
-        """Persist session tokens and metadata to disk."""
+        """Persist session tokens and metadata in the encrypted session store."""
         try:
-            _TOKEN_DIR.mkdir(parents=True, exist_ok=True)
+            from security.session_store import save_session_data
             session = {
                 "access_token": data.get("access_token"),
                 "refresh_token": data.get("refresh_token"),
                 "user": data.get("user"),
                 "ui_scopes": data.get("ui_scopes"),
             }
-            atomic_write_json(_TOKEN_FILE, session)
+            if not save_session_data(session):
+                raise RuntimeError("encrypted session save failed")
+            self._remove_plaintext_session_file()
         except Exception as e:
             log.error(f"Failed to store session: {e}", extra={'extra_fields': {'tags': ['auth', 'error']}})
 
-    def _restore_session(self) -> None:
-        """Restore session from disk if tokens exist and are valid."""
+    def _migrate_plaintext_session_file(self) -> None:
+        """One-time migration from the old plaintext session.json, then delete it."""
         if not _TOKEN_FILE.exists():
             return
-
         try:
             with open(_TOKEN_FILE, "r") as f:
                 session = json.load(f)
+            if isinstance(session, dict) and session.get("access_token"):
+                from security.session_store import save_session_data
+                save_session_data(session)
+        except Exception as e:
+            log.warning(f"Plaintext session migration skipped: {e}", extra={'extra_fields': {'tags': ['auth', 'session']}})
+        finally:
+            self._remove_plaintext_session_file()
+
+    @staticmethod
+    def _remove_plaintext_session_file() -> None:
+        try:
+            if _TOKEN_FILE.exists():
+                _TOKEN_FILE.unlink()
+        except Exception:
+            pass
+
+    def _restore_session(self) -> None:
+        """Restore session from encrypted store if tokens exist."""
+        self._migrate_plaintext_session_file()
+        try:
+            from security.session_store import load_session_data
+            session = load_session_data()
+            if not session:
+                return
 
             access_token = session.get("access_token")
             if not access_token:
                 return
 
             self.api_client.set_auth_data(session)
-            self._user_data = session.get("user")
-            self._ui_scopes = session.get("ui_scopes", self._ui_scopes)
+            self._user_data = session.get("user") if isinstance(session.get("user"), dict) else None
+            self._ui_scopes = session.get("ui_scopes", self._ui_scopes) or self._ui_scopes
             self._roles = self._user_data.get("roles", []) if self._user_data else []
             self._is_authenticated = True
 
-            log.info("Session restored from disk", extra={'extra_fields': {'tags': ['auth']}})
+            log.info("Encrypted session restored", extra={'extra_fields': {'tags': ['auth']}})
 
         except Exception as e:
             log.error(f"Failed to restore session: {e}", extra={'extra_fields': {'tags': ['auth', 'error']}})
@@ -206,13 +230,7 @@ class AuthManager(QObject):
     def _clear_session(self) -> None:
         """Remove ALL session data from disk and memory (single source of truth)."""
         self.api_client.clear_auth_token()
-        # Clear plaintext session store
-        if _TOKEN_FILE.exists():
-            try:
-                _TOKEN_FILE.unlink()
-            except Exception:
-                pass
-        # Clear encrypted session store (delegated to session_store)
+        self._remove_plaintext_session_file()
         try:
             from security.session_store import clear_session as _clear_encrypted
             _clear_encrypted()

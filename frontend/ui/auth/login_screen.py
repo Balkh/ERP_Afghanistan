@@ -13,7 +13,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
                            COLOR_DANGER)
 from api.client import APIClient
-from security.session_store import save_session as encrypted_save_session, load_session as encrypted_load_session
+from security.session_store import load_session as encrypted_load_session
 from security.auth_manager import AuthManager
 from utils.logger import get_logger
 
@@ -279,7 +279,6 @@ class LoginDialog(EnterpriseDialog):
 
                 if token:
                     if self.remember.isChecked():
-                        encrypted_save_session(username, token, self.auth_manager.api_client._refresh_token or '')
                         log.info(f"Session persisted for user={username}",
                                  extra={'extra_fields': {'tags': ['auth', 'session']}})
 
@@ -300,8 +299,8 @@ class LoginDialog(EnterpriseDialog):
             self.show_error(f"Connection failed: {str(e)}")
     
     def _save_session(self, token, username):
-        """Save session to encrypted file. Use encrypted_save_session instead."""
-        encrypted_save_session(username, token)
+        """Session persistence is handled by AuthManager."""
+        return None
 
     def load_session(self):
         """Load saved session from encrypted store with legacy fallback."""

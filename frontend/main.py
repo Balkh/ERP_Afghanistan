@@ -12,7 +12,7 @@ from security.tamper_detector import TamperDetector
 from api.client import APIClient
 from security.auth_manager import AuthManager
 from utils.logger import get_logger, init_logging, shutdown as log_shutdown, set_active_screen, get_active_screen, capture_health_snapshot, DiagnosticContext, record_error, emit_event
-from security.session_store import load_session as session_store_load, _migrate_from_legacy
+
 
 log = get_logger(__name__)
 
