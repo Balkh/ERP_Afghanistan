@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
 from PySide6.QtCore import Qt, QDate, Signal
 from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
+from utils.format import safe_float
 
 from ui.common.batch_selection import BatchSelectionDialog
 from ui.common.barcode_search import BarcodeSearchLineEdit
@@ -673,12 +674,12 @@ class SalesInvoiceScreen(BaseScreen):
             "invoice_date": self.invoice_date.date().toString("yyyy-MM-dd"),
             "due_date": self.due_date.date().toString("yyyy-MM-dd"),
             "currency": self.currency_combo.currentText(),
-            "subtotal": float(self.subtotal_label.text()),
+            "subtotal": safe_float(self.subtotal_label.text()),
             "discount": float(self.discount_input.value()),
             "tax_enabled": self.tax_enabled_cb.isChecked(),
             "tax_rate": float(self.tax_input.value()),
-            "tax": float(self.tax_amount_label.text()),
-            "total_amount": float(self.total_label.text()),
+            "tax": safe_float(self.tax_amount_label.text()),
+            "total_amount": safe_float(self.total_label.text()),
             "paid_amount": float(self.paid_input.value()),
             "notes": self.notes_input.toPlainText(),
             "items": items,

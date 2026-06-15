@@ -132,6 +132,8 @@ class BatchFormDialog(EnterpriseDialog):
     def load_batch_data(self):
         try:
             response = self.api_client.get(f"/api/inventory/batches/{self.batch_id}/")
+            if not response:
+                return
             batch = response.get('data') if isinstance(response, dict) and response.get('success') else response
             if batch:
                 self.batch_number_input.setText(batch.get("batch_number") or "")

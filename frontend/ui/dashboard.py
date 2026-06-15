@@ -227,6 +227,8 @@ class Dashboard(BaseScreen):
 
     def _on_refresh_done(self, dashboard_data: dict, extra_counts: dict):
         """Receive results from background worker and update UI (UI thread)."""
+        if not hasattr(self, '_subtitle'):
+            return  # Widget destroyed before callback
         self._dashboard_data = dashboard_data
         self._extra_counts = extra_counts
         self._sync_ui()
@@ -234,6 +236,8 @@ class Dashboard(BaseScreen):
 
     def _on_refresh_error(self, message: str):
         """Handle background worker error (UI thread)."""
+        if not hasattr(self, '_subtitle'):
+            return  # Widget destroyed before callback
         self._subtitle.setText("Refresh failed")
 
     def _on_thread_finished(self):

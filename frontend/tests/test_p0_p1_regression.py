@@ -395,3 +395,92 @@ class TestThreadCleanup(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 13: safe_float usage in invoice screens (crash prevention)
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestSafeFloatUsage(unittest.TestCase):
+    """Verify invoice screens use safe_float instead of bare float() on labels."""
+
+    def test_sales_uses_safe_float(self):
+        src = (_FRONTEND_ROOT / "ui" / "sales" / "sales_invoice_screen.py").read_text()
+        self.assertIn("from utils.format import safe_float", src)
+        self.assertIn("safe_float(self.subtotal_label.text())", src)
+        self.assertIn("safe_float(self.total_label.text())", src)
+        # Must NOT have bare float() on label text
+        import re
+        bare = re.findall(r'(?<!safe_)float\(self\.\w+_label\.text\(\)\)', src)
+        self.assertEqual(bare, [], f"Bare float() on labels: {bare}")
+
+    def test_purchase_uses_safe_float(self):
+        src = (_FRONTEND_ROOT / "ui" / "purchases" / "purchase_invoice_screen.py").read_text()
+        self.assertIn("from utils.format import safe_float", src)
+        self.assertIn("safe_float(self.subtotal_label.text())", src)
+        import re
+        bare = re.findall(r'(?<!safe_)float\(self\.\w+_label\.text\(\)\)', src)
+        self.assertEqual(bare, [], f"Bare float() on labels: {bare}")
+
+
+class TestSafeFloatFunction(unittest.TestCase):
+    """Verify safe_float behavior."""
+
+    def test_normal_value(self):
+        from utils.format import safe_float
+        self.assertEqual(safe_float("123.45"), 123.45)
+
+    def test_none(self):
+        from utils.format import safe_float
+        self.assertEqual(safe_float(None), 0.0)
+
+    def test_empty_string(self):
+        from utils.format import safe_float
+        self.assertEqual(safe_float(""), 0.0)
+
+    def test_non_numeric(self):
+        from utils.format import safe_float
+        self.assertEqual(safe_float("abc"), 0.0)
+
+    def test_comma_formatted(self):
+        from utils.format import safe_float
+        # "1,234.56" will fail float() — safe_float returns default
+        self.assertEqual(safe_float("1,234.56"), 0.0)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 14: Dashboard refresh callback guards
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestDashboardCallbackGuard(unittest.TestCase):
+    """Verify dashboard protects against widget-destroyed-during-refresh."""
+
+    def test_on_refresh_done_has_guard(self):
+        src = (_FRONTEND_ROOT / "ui" / "dashboard.py").read_text()
+        # Must check hasattr before accessing _subtitle
+        idx = src.index("def _on_refresh_done")
+        method_body = src[idx:src.index("\n    def ", idx + 1)]
+        self.assertIn("hasattr(self, '_subtitle')", method_body)
+
+    def test_on_refresh_error_has_guard(self):
+        src = (_FRONTEND_ROOT / "ui" / "dashboard.py").read_text()
+        idx = src.index("def _on_refresh_error")
+        method_body = src[idx:src.index("\n    def ", idx + 1)]
+        self.assertIn("hasattr(self, '_subtitle')", method_body)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 15: Batch form dialog None guard
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestBatchFormDialogGuard(unittest.TestCase):
+    """Verify batch form dialog guards against None API response."""
+
+    def test_load_batch_data_has_none_guard(self):
+        src = (_FRONTEND_ROOT / "ui" / "inventory" / "components" / "batch_form_dialog.py").read_text()
+        idx = src.index("def load_batch_data")
+        method_body = src[idx:src.index("\n    def ", idx + 1)]
+        self.assertIn("if not response", method_body)
