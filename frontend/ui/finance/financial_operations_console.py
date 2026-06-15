@@ -1,4 +1,5 @@
 """Phase 20: Unified Financial Operations Console - cohesive dashboard for all financial operations."""
+import logging
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QScrollArea, QFrame,
@@ -213,7 +214,7 @@ class FinancialOperationsConsole(BaseScreen):
             self._load_returns_data()
             self._load_health_data()
         except Exception as e:
-            print(f"Error loading dashboard: {e}")
+            logging.getLogger(__name__).warning(f"Error loading dashboard: {e}")
             self._show_error(f"Error: {e}")
         self._show_data()
 
@@ -236,7 +237,7 @@ class FinancialOperationsConsole(BaseScreen):
             total = sum(safe_float(p.get("amount", 0)) for p in payments)
             self.pay_kpi_4.update_value(f"{total:,.2f}")
         except Exception as e:
-            print(f"Error loading payment data: {e}")
+            logging.getLogger(__name__).warning(f"Error loading payment data: {e}")
 
     def _load_allocation_data(self):
         """Load allocation metrics."""
@@ -265,7 +266,7 @@ class FinancialOperationsConsole(BaseScreen):
             self.ret_kpi_3.update_value(str(len([r for r in returns if r.get("journal_entry_reversed")])))
             self.ret_kpi_4.update_value(str(len([r for r in returns if r.get("status") == "PENDING"])))
         except Exception as e:
-            print(f"Error loading returns data: {e}")
+            logging.getLogger(__name__).warning(f"Error loading returns data: {e}")
 
     def _load_health_data(self):
         """Load financial health metrics."""

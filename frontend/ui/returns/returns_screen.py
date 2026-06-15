@@ -1,4 +1,5 @@
 """Returns management screen."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                    QLabel, QLineEdit,
                                    QHeaderView, QComboBox,
@@ -281,7 +282,7 @@ class ReturnsScreen(BaseScreen):
                     self._populate_table()
                     self._load_summary()
             except Exception as e:
-                print(f"Error loading returns: {e}")
+                logging.getLogger(__name__).warning(f"Error loading returns: {e}")
                 self.returns_data = self._get_mock_returns()
                 self._populate_table()
         else:

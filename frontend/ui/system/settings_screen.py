@@ -1,4 +1,5 @@
 """Settings screen for ERP."""
+import logging
 import json
 import os
 from utils.atomic_io import atomic_write_json
@@ -75,7 +76,7 @@ class SettingsScreen(BaseScreen):
             self._load_company_currency()
             return True
         except Exception as e:
-            print(f"Failed to load settings from API: {e}")
+            logging.getLogger(__name__).warning(f"Failed to load settings from API: {e}")
         return False
 
     def _load_company_currency(self):
@@ -98,7 +99,7 @@ class SettingsScreen(BaseScreen):
                     currency = data.get("default_currency", "AFN")
                     self._settings["currency"] = currency
         except Exception as e:
-            print(f"Failed to load company currency: {e}")
+            logging.getLogger(__name__).warning(f"Failed to load company currency: {e}")
 
     def _load_from_local_cache(self):
         """Load settings from local JSON cache file (fallback when API is unavailable)."""
@@ -140,7 +141,7 @@ class SettingsScreen(BaseScreen):
             atomic_write_json(SETTINGS_FILE, self._settings, indent=2)
             return True
         except Exception as e:
-            print(f"Failed to save settings: {e}")
+            logging.getLogger(__name__).warning(f"Failed to save settings: {e}")
             return False
     
     def _load_theme_from_api(self):
@@ -158,7 +159,7 @@ class SettingsScreen(BaseScreen):
             resp = self._api_client.post("/api/system-config/bulk_update/", json=payload)
             return isinstance(resp, dict) and resp.get("success")
         except Exception as e:
-            print(f"Failed to save settings to API: {e}")
+            logging.getLogger(__name__).warning(f"Failed to save settings to API: {e}")
             return False
     
     def _apply_theme(self):

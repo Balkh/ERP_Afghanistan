@@ -1,4 +1,5 @@
 """Phase 20: Returns Explainability UI - explains why returns were processed."""
+import logging
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QGroupBox, QTextEdit,
@@ -167,7 +168,7 @@ class ReturnsExplainabilityScreen(BaseScreen):
             self.returns = extract_list(response)
             self._update_display()
         except Exception as e:
-            print(f"Error loading returns: {e}")
+            logging.getLogger(__name__).warning(f"Error loading returns: {e}")
             self._show_error(f"Error: {e}")
         self._show_data()
 

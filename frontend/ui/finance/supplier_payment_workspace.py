@@ -1,4 +1,5 @@
 """Phase 20: Supplier Payment Workspace screen."""
+import logging
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QComboBox, QGroupBox, QApplication,
@@ -259,7 +260,7 @@ class SupplierPaymentWorkspace(BaseScreen):
             for s in suppliers:
                 self.supplier_combo.addItem(s.get("name", ""), s.get("id"))
         except Exception as e:
-            print(f"Error loading suppliers: {e}")
+            logging.getLogger(__name__).warning(f"Error loading suppliers: {e}")
 
     def _on_supplier_selected(self, index):
         """Handle supplier selection."""
@@ -287,7 +288,7 @@ class SupplierPaymentWorkspace(BaseScreen):
             else:
                 self._show_error("Failed to load workspace")
         except Exception as e:
-            print(f"Error loading workspace: {e}")
+            logging.getLogger(__name__).warning(f"Error loading workspace: {e}")
             self._show_error(f"Error: {e}")
         self._show_data()
 

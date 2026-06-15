@@ -1,4 +1,5 @@
 """Payroll management screen."""
+import logging
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                  QLabel, QLineEdit,
                                  QComboBox, QFormLayout,
@@ -238,7 +239,7 @@ class PayrollScreen(BaseScreen):
             self.set_state(ScreenState.READY)
             self._update_state_indicators(True, True)
         except Exception as e:
-            print(f"Error loading salary structures: {e}")
+            logging.getLogger(__name__).warning(f"Error loading salary structures: {e}")
             data = self._get_mock_salary_structures()
             self.set_state(ScreenState.READY)
             self._update_state_indicators(True, True)
@@ -279,7 +280,7 @@ class PayrollScreen(BaseScreen):
             if not data:
                 data = self._get_mock_payroll_cycles()
         except Exception as e:
-            print(f"Error loading payroll cycles: {e}")
+            logging.getLogger(__name__).warning(f"Error loading payroll cycles: {e}")
             data = self._get_mock_payroll_cycles()
         
         cycle_data = []
@@ -318,7 +319,7 @@ class PayrollScreen(BaseScreen):
             if not data or not isinstance(data, list):
                 data = self._get_mock_payroll_records()
         except Exception as e:
-            print(f"Error loading payroll records: {e}")
+            logging.getLogger(__name__).warning(f"Error loading payroll records: {e}")
             data = self._get_mock_payroll_records()
         
         records_data = []

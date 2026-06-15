@@ -1,4 +1,5 @@
 """Phase 20: Payment Allocation Explorer screen."""
+import logging
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QComboBox,
@@ -135,7 +136,7 @@ class PaymentAllocationExplorer(BaseScreen):
             for e in entities:
                 self.entity_combo.addItem(e.get("name", ""), e.get("id"))
         except Exception as e:
-            print(f"Error loading {self.entity_type}s: {e}")
+            logging.getLogger(__name__).warning(f"Error loading {self.entity_type}s: {e}")
 
     def _on_entity_selected(self, index):
         """Handle entity selection."""
@@ -163,7 +164,7 @@ class PaymentAllocationExplorer(BaseScreen):
             else:
                 self._show_error("Failed to load allocations")
         except Exception as e:
-            print(f"Error loading allocations: {e}")
+            logging.getLogger(__name__).warning(f"Error loading allocations: {e}")
             self._show_error(f"Error: {e}")
         self._show_data()
 

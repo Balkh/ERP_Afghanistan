@@ -1,4 +1,5 @@
 """Tax management screen."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QComboBox, QWidget,
                                   QTabWidget, QApplication)
@@ -163,7 +164,7 @@ class TaxScreen(BaseScreen):
             else:
                 self._show_empty()
         except Exception as e:
-            print(f"Error loading tax config: {e}")
+            logging.getLogger(__name__).warning(f"Error loading tax config: {e}")
             self._show_error(f"Error: {e}")
     
     def _setup_returns_tab(self):
@@ -252,7 +253,7 @@ class TaxScreen(BaseScreen):
                     })
                 self.returns_table.set_data(ret_data)
         except Exception as e:
-            print(f"Error loading tax returns: {e}")
+            logging.getLogger(__name__).warning(f"Error loading tax returns: {e}")
 
     def _load_withholding(self):
         try:
@@ -278,7 +279,7 @@ class TaxScreen(BaseScreen):
                     })
                 self.withholding_table.set_data(wh_data)
         except Exception as e:
-            print(f"Error loading tax transactions: {e}")
+            logging.getLogger(__name__).warning(f"Error loading tax transactions: {e}")
     
     def _on_screen_shown(self):
         """Called when screen is shown (overrides BaseScreen)."""

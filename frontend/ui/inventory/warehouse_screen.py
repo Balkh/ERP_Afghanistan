@@ -1,3 +1,4 @@
+import logging
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from PySide6.QtCore import Slot
@@ -78,7 +79,7 @@ class WarehouseScreen(BaseInventoryScreen):
 
             self.update_table()
         except Exception as e:
-            print(f"Error loading warehouses: {e}")
+            logging.getLogger(__name__).warning(f"Error loading warehouses: {e}")
             self.warehouses = []
             self.update_table()
 

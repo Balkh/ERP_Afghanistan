@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit, QComboBox, QGroupBox,
                                   QFormLayout, QCheckBox, QColorDialog, 
@@ -154,7 +155,7 @@ class InvoiceTemplateManager(BaseScreen):
                 self.current_config.update(config)
                 self._update_ui_from_config()
         except Exception as e:
-            print(f"Failed to load template: {e}")
+            logging.getLogger(__name__).warning(f"Failed to load template: {e}")
 
     def _update_ui_from_config(self):
         c = self.current_config

@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
                                QLabel, QTableWidget, QTableWidgetItem, QHeaderView,
                                QGroupBox, QFrame, QAbstractItemView, QWidget)
@@ -213,4 +214,4 @@ class JournalEntryDetailDialog(EnterpriseDialog):
             self.total_credit_label.setText(f"{total_credit:,.2f}")
 
         except Exception as e:
-            print(f"Error loading journal lines: {e}")
+            logging.getLogger(__name__).warning(f"Error loading journal lines: {e}")

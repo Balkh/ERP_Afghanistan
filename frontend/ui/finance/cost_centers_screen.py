@@ -1,4 +1,5 @@
 """Cost Centers management screen."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
                                   QComboBox, QGroupBox,
@@ -169,7 +170,7 @@ class CostCentersScreen(BaseScreen):
             
             self._show_data()
         except Exception as e:
-            print(f"Error loading cost centers: {e}")
+            logging.getLogger(__name__).warning(f"Error loading cost centers: {e}")
             data = self._get_mock_cost_centers()
             self._show_data()
         

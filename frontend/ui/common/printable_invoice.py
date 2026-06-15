@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QTextEdit,
                                 QHBoxLayout, QLabel, QFileDialog, QWidget)
 from PySide6.QtGui import QFont
@@ -127,7 +128,7 @@ class PrintableInvoiceDialog(EnterpriseDialog):
                 self.preview.setHtml(html)
                 return
         except Exception as e:
-            print(f"Dynamic template failed: {e}")
+            logging.getLogger(__name__).warning(f"Dynamic template failed: {e}")
             
         # Fallback to static HTML
         html = self.generate_invoice_html()

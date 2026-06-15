@@ -1,4 +1,5 @@
 """Reconciliation management screen for returns."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
                                 QComboBox, QGroupBox, QInputDialog, QFileDialog)
 from PySide6.QtCore import Qt
@@ -190,7 +191,7 @@ class ReconciliationScreen(BaseScreen):
                     self._populate_table()
                     self._load_summary()
             except Exception as e:
-                print(f"Error loading reconciliation: {e}")
+                logging.getLogger(__name__).warning(f"Error loading reconciliation: {e}")
                 self.state_helper.show_error(f"Error loading data: {e}", on_retry=self._load_entries)
         else:
             self.state_helper.show_empty("No reconciliation entries found")

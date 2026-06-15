@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
                                QComboBox, QDateEdit,
                                QGroupBox)
@@ -164,7 +165,7 @@ class AccountLedgerScreen(BaseScreen):
                 if acc_id:
                     self.account_combo.addItem(f"{code} - {name}", acc_id)
         except Exception as e:
-            print(f"Error loading accounts: {e}")
+            logging.getLogger(__name__).warning(f"Error loading accounts: {e}")
             self.accounts = []
 
     def load_ledger(self):

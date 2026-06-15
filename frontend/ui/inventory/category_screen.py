@@ -1,3 +1,4 @@
+import logging
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from PySide6.QtCore import Slot
@@ -77,7 +78,7 @@ class CategoryScreen(BaseInventoryScreen):
 
             self.update_table()
         except Exception as e:
-            print(f"Error loading categories: {e}")
+            logging.getLogger(__name__).warning(f"Error loading categories: {e}")
             self.categories = []
             self.update_table()
 

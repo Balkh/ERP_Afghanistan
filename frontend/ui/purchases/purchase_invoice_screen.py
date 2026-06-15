@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
                                 QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
                                 QDateEdit, QHeaderView, QAbstractItemView,
@@ -440,7 +441,7 @@ class PurchaseInvoiceScreen(BaseScreen):
                 if api_suppliers:
                     self.suppliers = api_suppliers
             except Exception as e:
-                print(f"Failed to load suppliers: {e}")
+                logging.getLogger(__name__).warning(f"Failed to load suppliers: {e}")
 
         self.supplier_combo.clear()
         self.supplier_combo.addItem("Select Supplier...", None)
@@ -872,7 +873,7 @@ class PurchaseInvoiceScreen(BaseScreen):
                 self.reject_wf_btn.setVisible(data.get('can_approve', False))
                 self.post_wf_btn.setVisible(data.get('can_post', False))
         except Exception as e:
-            print(f"Error loading workflow status: {e}")
+            logging.getLogger(__name__).warning(f"Error loading workflow status: {e}")
     
     def perform_workflow_action(self, action: str):
         """Perform workflow action on current invoice."""

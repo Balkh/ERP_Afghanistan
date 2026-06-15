@@ -1,4 +1,5 @@
 """Phase 20: Journal Reversal Explorer - tracks journal entry reversals."""
+import logging
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel,
@@ -139,7 +140,7 @@ class JournalReversalExplorer(BaseScreen):
             self.journal_entries = extract_list(response)
             self._update_display()
         except Exception as e:
-            print(f"Error loading journal entries: {e}")
+            logging.getLogger(__name__).warning(f"Error loading journal entries: {e}")
             self._show_error(f"Error: {e}")
         self._show_data()
 

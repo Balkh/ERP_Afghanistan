@@ -1,4 +1,5 @@
 """Audit log screen."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
                                   QLabel, QLineEdit,
                                   QComboBox, QGroupBox, QDateEdit)
@@ -163,7 +164,7 @@ class AuditScreen(BaseScreen):
                 
         except Exception as e:
             self.status_label.setText(f"Error: {str(e)}")
-            print(f"Audit log load error: {e}")
+            logging.getLogger(__name__).warning(f"Audit log load error: {e}")
 
     def _show_details(self, item):
         row = item.row()
