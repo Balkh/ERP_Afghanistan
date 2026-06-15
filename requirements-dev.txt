@@ -1,8 +1,12 @@
 coverage==7.13.5
+cryptography==49.0.0
 flake8
 mypy
 pip-tools
 pipreqs
+PySide6==6.11.1
 pytest-cov==7.1.0
 pytest-django==4.12.0
 pytest==9.0.3
+requests==2.33.0
+rsa==4.9.1
