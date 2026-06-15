@@ -263,7 +263,13 @@ class ReturnsScreen(BaseScreen):
                 response = self._api_client.get(endpoint, params=params)
                 
                 if response and isinstance(response, dict) and response.get("success"):
-                    self.returns_data = response.get("data", [])
+                    data = response.get("data", [])
+                    if isinstance(data, dict):
+                        self.returns_data = data.get("results", [])
+                    elif isinstance(data, list):
+                        self.returns_data = data
+                    else:
+                        self.returns_data = []
                 elif isinstance(response, list):
                     self.returns_data = response
                 else:
