@@ -28,8 +28,6 @@ class Dashboard(BaseScreen):
         self._refresh_timer.timeout.connect(self.refresh_data)
         self._refresh_timer.start(120000)
 
-        self._theme_token = ThemeEngine.instance().register(self.refresh_theme)
-
         if self._api_client:
             QTimer.singleShot(3500, self.refresh_data)
 

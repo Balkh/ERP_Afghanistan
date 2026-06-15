@@ -224,72 +224,66 @@ class BudgetingScreen(BaseScreen):
             {"name": "Marketing Budget 2026", "year": "2026", "total": "500000.00", "spent": "350000.00", "remaining": "150000.00", "variance": "30%", "status": "Draft"},
         ]
     
+    def _extract_results(self, response):
+        if response and isinstance(response, dict) and response.get("success"):
+            raw_data = response.get("data", [])
+            return raw_data.get("results", []) if isinstance(raw_data, dict) else raw_data
+        return []
+
+    def _fallback_allocations(self):
+        return [
+            {"budget_name": "Operating 2026", "department": "Sales", "account_code": "4000", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
+            {"budget_name": "Operating 2026", "department": "IT", "account_code": "5010", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
+            {"budget_name": "Capital 2026", "department": "Warehouse", "account_code": "6010", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
+        ]
+
     def _load_budgets(self):
         self.budgets_table.setRowCount(0)
         self._show_loading()
-        
-        try:
-            endpoint = get_endpoint("budgets")
-            response = self.api_client.get(endpoint)
-            
-            if response and isinstance(response, dict) and response.get("success"):
-                raw_data = response.get("data", [])
-                if isinstance(raw_data, dict):
-                    data = raw_data.get("results", [])
-                else:
-                    data = raw_data
-            else:
-                data = []
-            
-            if not data:
-                data = self._get_mock_budgets()
-            
+        endpoint = get_endpoint("budgets")
+        started = self.run_api_request(
+            "budgeting:budgets",
+            "GET",
+            endpoint,
+            on_success=self._on_budgets_loaded,
+            on_error=lambda message: self._on_budgets_loaded({"success": False, "error": message}),
+        )
+        if not started:
             self._show_data()
-        except Exception as e:
-            print(f"Error loading budgets: {e}")
+
+    def _on_budgets_loaded(self, response):
+        data = self._extract_results(response)
+        if not data:
             data = self._get_mock_budgets()
-            self._show_data()
-        
+        self._show_data()
         for item in data:
             row = self.budgets_table.rowCount()
             self.budgets_table.insertRow(row)
-            self.budgets_table.setItem(row, 0, QTableWidgetItem(item["name"]))
-            self.budgets_table.setItem(row, 1, QTableWidgetItem(item["year"]))
-            self.budgets_table.setItem(row, 2, QTableWidgetItem(item["total"]))
-            self.budgets_table.setItem(row, 3, QTableWidgetItem(item["spent"]))
-            self.budgets_table.setItem(row, 4, QTableWidgetItem(item["remaining"]))
-            self.budgets_table.setItem(row, 5, QTableWidgetItem(item["variance"]))
-            self.budgets_table.setItem(row, 6, QTableWidgetItem(item["status"]))
+            self.budgets_table.setItem(row, 0, QTableWidgetItem(item.get("name", "")))
+            self.budgets_table.setItem(row, 1, QTableWidgetItem(str(item.get("year", ""))))
+            self.budgets_table.setItem(row, 2, QTableWidgetItem(str(item.get("total", item.get("total_budget", "")))))
+            self.budgets_table.setItem(row, 3, QTableWidgetItem(str(item.get("spent", item.get("total_spent", "")))))
+            self.budgets_table.setItem(row, 4, QTableWidgetItem(str(item.get("remaining", ""))))
+            self.budgets_table.setItem(row, 5, QTableWidgetItem(str(item.get("variance", ""))))
+            self.budgets_table.setItem(row, 6, QTableWidgetItem(str(item.get("status", ""))))
             self.budgets_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
-    
+
     def _load_allocations(self):
         self.allocations_table.setRowCount(0)
-        
-        try:
-            endpoint = get_endpoint("budget_lines") or "/api/budgets/lines/"
-            response = self.api_client.get(endpoint)
-            if response and isinstance(response, dict) and response.get("success"):
-                raw_data = response.get("data", [])
-                data = raw_data.get("results", []) if isinstance(raw_data, dict) else raw_data
-            else:
-                data = []
-            
-            if not data:
-                data = [
-                    {"budget_name": "Operating 2026", "department": "Sales", "account_code": "4000", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
-                    {"budget_name": "Operating 2026", "department": "IT", "account_code": "5010", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
-                    {"budget_name": "Capital 2026", "department": "Warehouse", "account_code": "6010", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
-                ]
-        except Exception:
-            data = [
-                {"budget_name": "Operating 2026", "department": "Sales", "account_code": "4000", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
-                {"budget_name": "Operating 2026", "department": "IT", "account_code": "5010", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
-                {"budget_name": "Capital 2026", "department": "Warehouse", "account_code": "6010", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
-            ]
-        
+        endpoint = get_endpoint("budget_lines") or "/api/budgets/lines/"
+        self.run_api_request(
+            "budgeting:allocations",
+            "GET",
+            endpoint,
+            on_success=self._on_allocations_loaded,
+            on_error=lambda message: self._on_allocations_loaded({"success": False, "error": message}),
+        )
+
+    def _on_allocations_loaded(self, response):
+        data = self._extract_results(response) or self._fallback_allocations()
         for item in data:
-            allocated = float(item.get("allocated_amount", 0))
-            actual = float(item.get("actual_amount", 0))
+            allocated = float(item.get("allocated_amount", 0) or 0)
+            actual = float(item.get("actual_amount", 0) or 0)
             remaining = allocated - actual
             row = self.allocations_table.rowCount()
             self.allocations_table.insertRow(row)
@@ -300,35 +294,28 @@ class BudgetingScreen(BaseScreen):
             self.allocations_table.setItem(row, 4, QTableWidgetItem(f"{actual:,.2f}"))
             self.allocations_table.setItem(row, 5, QTableWidgetItem(f"{remaining:,.2f}"))
             self.allocations_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
-    
+
     def _load_variance(self):
         self.variance_table.setRowCount(0)
-        
-        try:
-            endpoint = get_endpoint("budget_lines") or "/api/budgets/lines/"
-            response = self.api_client.get(endpoint, params={"include_variance": "true"})
-            if response and isinstance(response, dict) and response.get("success"):
-                raw_data = response.get("data", [])
-                data = raw_data.get("results", []) if isinstance(raw_data, dict) else raw_data
-            else:
-                data = []
-            
-            if not data:
-                data = [
-                    {"account_code": "4000", "account_name": "Sales Expenses", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
-                    {"account_code": "5010", "account_name": "IT Expenses", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
-                    {"account_code": "6010", "account_name": "Capital", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
-                ]
-        except Exception:
-            data = [
-                {"account_code": "4000", "account_name": "Sales Expenses", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
-                {"account_code": "5010", "account_name": "IT Expenses", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
-                {"account_code": "6010", "account_name": "Capital", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
-            ]
-        
+        endpoint = get_endpoint("budget_lines") or "/api/budgets/lines/"
+        self.run_api_request(
+            "budgeting:variance",
+            "GET",
+            endpoint,
+            params={"include_variance": "true"},
+            on_success=self._on_variance_loaded,
+            on_error=lambda message: self._on_variance_loaded({"success": False, "error": message}),
+        )
+
+    def _on_variance_loaded(self, response):
+        data = self._extract_results(response) or [
+            {"account_code": "4000", "account_name": "Sales Expenses", "allocated_amount": "500000.00", "actual_amount": "320000.00"},
+            {"account_code": "5010", "account_name": "IT Expenses", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
+            {"account_code": "6010", "account_name": "Capital", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
+        ]
         for item in data:
-            budget = float(item.get("allocated_amount", 0))
-            actual = float(item.get("actual_amount", 0))
+            budget = float(item.get("allocated_amount", 0) or 0)
+            actual = float(item.get("actual_amount", 0) or 0)
             variance = budget - actual
             var_pct = f"{(variance/budget*100):.0f}%" if budget > 0 else "0%"
             status = "Under Budget" if variance >= 0 else "Over Budget"
@@ -342,7 +329,7 @@ class BudgetingScreen(BaseScreen):
             self.variance_table.setItem(row, 5, QTableWidgetItem(status))
             self.variance_table.setItem(row, 6, QTableWidgetItem(""))
             self.variance_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
-    
+
     def _create_budget(self):
         AlertDialog.info("Create Budget", "Budget creation dialog would open here.")
     

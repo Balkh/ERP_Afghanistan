@@ -1,6 +1,7 @@
 """Settings screen for ERP."""
 import json
 import os
+from utils.atomic_io import atomic_write_json
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                    QLabel, QComboBox, QGroupBox, QFormLayout,
                                    QCheckBox, QSpinBox)
@@ -136,8 +137,7 @@ class SettingsScreen(BaseScreen):
     def _save_settings(self):
         """Save settings to local cache file (secondary). SystemConfig API is SSOT."""
         try:
-            with open(SETTINGS_FILE, 'w') as f:
-                json.dump(self._settings, f, indent=2)
+            atomic_write_json(SETTINGS_FILE, self._settings, indent=2)
             return True
         except Exception as e:
             print(f"Failed to save settings: {e}")

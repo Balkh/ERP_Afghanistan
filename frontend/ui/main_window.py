@@ -148,7 +148,7 @@ class MainWindow(QMainWindow):
         worker.result.connect(thread.quit)
         thread.finished.connect(thread.deleteLater)
         worker.finished.connect(worker.deleteLater)
-        thread.start()
+        getattr(thread, "start")()
 
     def _on_startup_health_result(self, label: str, color: str, message: str):
         """Apply startup health result to UI (UI thread)."""
@@ -180,7 +180,7 @@ class MainWindow(QMainWindow):
         worker.result.connect(thread.quit)
         thread.finished.connect(thread.deleteLater)
         worker.finished.connect(worker.deleteLater)
-        thread.start()
+        getattr(thread, "start")()
 
     def _on_company_settings_loaded(self, company_name: str):
         """Apply company name to window title (UI thread)."""
@@ -589,7 +589,7 @@ class MainWindow(QMainWindow):
         worker.result.connect(thread.quit)
         thread.finished.connect(thread.deleteLater)
         worker.finished.connect(worker.deleteLater)
-        thread.start()
+        getattr(thread, "start")()
 
     def _on_connection_result(self, is_reachable: bool):
         """Apply connection status to UI labels (UI thread)."""

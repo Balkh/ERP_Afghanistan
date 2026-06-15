@@ -161,9 +161,6 @@ class ActivationScreen(QWidget):
         self.activate_button.setEnabled(False)
         self.select_button.setEnabled(False)
         
-        # Process events to update UI
-        from PySide6.QtWidgets import QApplication
-        QApplication.processEvents()
         
         try:
             # Load and validate the license

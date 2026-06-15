@@ -7,6 +7,7 @@ SINGLE SOURCE OF TRUTH for session management (Rule 4 compliance).
 import json
 from pathlib import Path
 from typing import Optional, Dict, Any
+from utils.atomic_io import atomic_write_json
 
 from PySide6.QtCore import QObject, Signal
 
@@ -173,8 +174,7 @@ class AuthManager(QObject):
                 "user": data.get("user"),
                 "ui_scopes": data.get("ui_scopes"),
             }
-            with open(_TOKEN_FILE, "w") as f:
-                json.dump(session, f)
+            atomic_write_json(_TOKEN_FILE, session)
         except Exception as e:
             log.error(f"Failed to store session: {e}", extra={'extra_fields': {'tags': ['auth', 'error']}})
 

@@ -221,7 +221,14 @@ class FinancialOperationsConsole(BaseScreen):
         """Load payment metrics."""
         try:
             endpoint = "/api/payments/transactions/"
-            response = self.api_client.get(endpoint, params={"page_size": 100})
+            if not hasattr(self, "_async_ops_payments_response"):
+                self.run_api_request(
+                    "operations_console:payments", "GET", endpoint, params={"page_size": 100},
+                    on_success=lambda r: self._resume_api_request("_async_ops_payments_response", self._load_payment_data, r),
+                    on_error=lambda m: self._resume_api_request("_async_ops_payments_response", self._load_payment_data, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_ops_payments_response")
             payments = extract_list(response)
             self.pay_kpi_1.update_value(str(len([p for p in payments if p.get("transaction_type") == "RECEIPT"])))
             self.pay_kpi_2.update_value(str(len([p for p in payments if p.get("transaction_type") == "PAYMENT"])))
@@ -243,7 +250,14 @@ class FinancialOperationsConsole(BaseScreen):
         """Load returns metrics."""
         try:
             endpoint = get_endpoint("returns") or "/api/returns/orders/"
-            response = self.api_client.get(endpoint, params={"page_size": 100})
+            if not hasattr(self, "_async_ops_returns_response"):
+                self.run_api_request(
+                    "operations_console:returns", "GET", endpoint, params={"page_size": 100},
+                    on_success=lambda r: self._resume_api_request("_async_ops_returns_response", self._load_returns_data, r),
+                    on_error=lambda m: self._resume_api_request("_async_ops_returns_response", self._load_returns_data, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_ops_returns_response")
             returns = extract_list(response)
             self.ret_kpi_1.update_value(str(len(returns)))
             total = sum(safe_float(r.get("total_amount", 0)) for r in returns)

@@ -451,8 +451,6 @@ class Sidebar(QWidget):
         group_widget.layout().invalidate()
         group_widget.update()
 
-        from PySide6.QtWidgets import QApplication
-        QApplication.processEvents()
 
     def _on_item_clicked(self, page_index, page_title):
         """Handle navigation item click."""

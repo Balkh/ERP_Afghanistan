@@ -245,7 +245,14 @@ class SupplierPaymentWorkspace(BaseScreen):
         """Load supplier list for dropdown."""
         try:
             endpoint = get_endpoint("suppliers") or "/api/purchases/suppliers/"
-            response = self.api_client.get(endpoint, params={"page_size": 100})
+            if not hasattr(self, "_async_suppliers_response"):
+                self.run_api_request(
+                    "supplier_payments:suppliers", "GET", endpoint, params={"page_size": 100},
+                    on_success=lambda r: self._resume_api_request("_async_suppliers_response", self._load_suppliers, r),
+                    on_error=lambda m: self._resume_api_request("_async_suppliers_response", self._load_suppliers, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_suppliers_response")
             suppliers = extract_list(response)
             self.supplier_combo.clear()
             self.supplier_combo.addItem("-- Select Supplier --", None)
@@ -266,7 +273,14 @@ class SupplierPaymentWorkspace(BaseScreen):
         self._show_loading()
         try:
             endpoint = f"/api/v1/payment-operations/suppliers/{supplier_id}/payment-workspace/"
-            response = self.api_client.get(endpoint)
+            if not hasattr(self, "_async_supplier_workspace_response"):
+                self.run_api_request(
+                    f"supplier_payments:workspace:{supplier_id}", "GET", endpoint,
+                    on_success=lambda r: self._resume_api_request("_async_supplier_workspace_response", lambda: self.load_workspace(supplier_id), r),
+                    on_error=lambda m: self._resume_api_request("_async_supplier_workspace_response", lambda: self.load_workspace(supplier_id), {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_supplier_workspace_response")
             if response and response.get("success"):
                 data = response.get("data", {})
                 self._update_workspace(data)
@@ -360,7 +374,14 @@ class SupplierPaymentWorkspace(BaseScreen):
             return
         try:
             endpoint = f"/api/v1/payment-operations/suppliers/{self.supplier_id}/allocate-unallocated/"
-            response = self.api_client.post(endpoint, {})
+            if not hasattr(self, "_async_supplier_allocate_response"):
+                self.run_api_request(
+                    "supplier_payments:allocate", "POST", endpoint, data={},
+                    on_success=lambda r: self._resume_api_request("_async_supplier_allocate_response", self._on_allocate_fifo, r),
+                    on_error=lambda m: self._resume_api_request("_async_supplier_allocate_response", self._on_allocate_fifo, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_supplier_allocate_response")
             if response and response.get("success"):
                 data = response.get("data", {})
                 AlertDialog.info(

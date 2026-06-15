@@ -222,7 +222,14 @@ class PaymentScreen(BaseScreen):
             if not endpoint:
                 endpoint = "/api/payments/transactions/"
 
-            response = self.api_client.get(endpoint)
+            if not hasattr(self, "_async_payments_response"):
+                self.run_api_request(
+                    "payments:list", "GET", endpoint,
+                    on_success=lambda r: self._resume_api_request("_async_payments_response", self.load_payments, r),
+                    on_error=lambda m: self._resume_api_request("_async_payments_response", self.load_payments, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_payments_response")
             self.payments = extract_list(response)
             self.update_table()
         except Exception as e:

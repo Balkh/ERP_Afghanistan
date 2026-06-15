@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
-                               QHeaderView, QAbstractItemView,
-                               QApplication)
+                               QHeaderView, QAbstractItemView)
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor
 from api.client import APIClient
@@ -160,8 +159,6 @@ class JournalEntryScreen(BaseScreen):
         self.table.setVisible(not show)
         self.empty_label.setVisible(False)
         self.btn_refresh.setEnabled(not show)
-        if show:
-            QApplication.processEvents()
 
     def _show_empty(self, message="No entries found"):
         """Show empty state."""

@@ -131,7 +131,14 @@ class TaxScreen(BaseScreen):
     def _load_config(self):
         self._show_loading()
         try:
-            response = self.api_client.get('/api/tax/rates/')
+            if not hasattr(self, "_async_tax_rates_response"):
+                self.run_api_request(
+                    "tax:rates", "GET", "/api/tax/rates/",
+                    on_success=lambda r: self._resume_api_request("_async_tax_rates_response", self._load_config, r),
+                    on_error=lambda m: self._resume_api_request("_async_tax_rates_response", self._load_config, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_tax_rates_response")
             if response and response.get('success'):
                 data = response['data']
                 rates = data.get('results', data) if isinstance(data, dict) else data
@@ -218,7 +225,14 @@ class TaxScreen(BaseScreen):
             params['status'] = status_f
             
         try:
-            response = self.api_client.get('/api/tax/returns/', params=params)
+            if not hasattr(self, "_async_tax_returns_response"):
+                self.run_api_request(
+                    "tax:returns", "GET", "/api/tax/returns/", params=params,
+                    on_success=lambda r: self._resume_api_request("_async_tax_returns_response", self._load_returns, r),
+                    on_error=lambda m: self._resume_api_request("_async_tax_returns_response", self._load_returns, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_tax_returns_response")
             if response and response.get('success'):
                 data = response['data']
                 returns = data.get('results', data) if isinstance(data, dict) else data
@@ -242,7 +256,14 @@ class TaxScreen(BaseScreen):
 
     def _load_withholding(self):
         try:
-            response = self.api_client.get('/api/tax/transactions/')
+            if not hasattr(self, "_async_tax_transactions_response"):
+                self.run_api_request(
+                    "tax:transactions", "GET", "/api/tax/transactions/",
+                    on_success=lambda r: self._resume_api_request("_async_tax_transactions_response", self._load_withholding, r),
+                    on_error=lambda m: self._resume_api_request("_async_tax_transactions_response", self._load_withholding, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_tax_transactions_response")
             if response and response.get('success'):
                 data = response['data']
                 withholding = data.get('results', data) if isinstance(data, dict) else data

@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                    QLabel, QLineEdit,
                                    QHeaderView, QComboBox,
                                     QGroupBox, QFormLayout, QWidget,
-                                   QTextEdit, QInputDialog, QApplication, QFileDialog,
+                                   QTextEdit, QInputDialog, QFileDialog,
                                    QTableWidget, QTableWidgetItem, QAbstractItemView)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
@@ -219,7 +219,6 @@ class ReturnsScreen(BaseScreen):
         self.loading_label.setVisible(show)
         self.table.setVisible(not show)
         self.empty_label.setVisible(False)
-        QApplication.processEvents()
 
     def _show_empty(self, message="No return orders found"):
         """Show empty state."""

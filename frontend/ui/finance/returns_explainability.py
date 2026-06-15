@@ -155,7 +155,15 @@ class ReturnsExplainabilityScreen(BaseScreen):
         self._show_loading()
         try:
             endpoint = get_endpoint("returns") or "/api/returns/orders/"
-            response = self.api_client.get(endpoint, params={"page_size": 100})
+            if not hasattr(self, "_async_returns_explainability_response"):
+                self.run_api_request(
+                    "returns_explainability:list", "GET", endpoint,
+                    params={"page_size": 100},
+                    on_success=lambda r: self._resume_api_request("_async_returns_explainability_response", self.load_returns, r),
+                    on_error=lambda m: self._resume_api_request("_async_returns_explainability_response", self.load_returns, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_returns_explainability_response")
             self.returns = extract_list(response)
             self._update_display()
         except Exception as e:

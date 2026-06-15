@@ -146,7 +146,14 @@ class CostCentersScreen(BaseScreen):
         
         try:
             endpoint = get_endpoint("cost_centers")
-            response = self.api_client.get(endpoint)
+            if not hasattr(self, "_async_cost_centers_response"):
+                self.run_api_request(
+                    "cost_centers:list", "GET", endpoint,
+                    on_success=lambda r: self._resume_api_request("_async_cost_centers_response", self._load_cost_centers, r),
+                    on_error=lambda m: self._resume_api_request("_async_cost_centers_response", self._load_cost_centers, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_cost_centers_response")
             
             if response and isinstance(response, dict) and response.get("success"):
                 raw_data = response.get("data", [])
@@ -276,18 +283,20 @@ class CostCenterDialog(EnterpriseDialog):
             "budget": self.budget.text().strip() or "0",
             "description": self.description.toPlainText().strip(),
         }
-        try:
-            if self._center_id:
-                response = self.api_client.put(f"/api/cost-centers/centers/{self._center_id}/", data)
-            else:
-                response = self.api_client.post("/api/cost-centers/centers/", data)
-            if response and (response.get("success") or response.get("id")):
-                AlertDialog.info("Success", "Cost center saved.", self)
-                self.accept()
-            else:
-                errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
-                AlertDialog.error("Error", str(errors), self)
-        except Exception as e:
-            AlertDialog.error("Error", str(e), self)
-        finally:
-            self._submitting = False
+        if not hasattr(self, "_async_save_response"):
+            method = "PUT" if self._center_id else "POST"
+            endpoint = f"/api/cost-centers/centers/{self._center_id}/" if self._center_id else "/api/cost-centers/centers/"
+            self.run_api_request(
+                "cost_center_dialog:save", method, endpoint, data=data,
+                on_success=lambda r: self._resume_api_request("_async_save_response", self.save, r),
+                on_error=lambda m: self._resume_api_request("_async_save_response", self.save, {"success": False, "error": m}),
+            )
+            return
+        response = self._take_api_response("_async_save_response")
+        if response and (response.get("success") or response.get("id")):
+            AlertDialog.info("Success", "Cost center saved.", self)
+            self.accept()
+        else:
+            errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
+            AlertDialog.error("Error", str(errors), self)
+        self._submitting = False

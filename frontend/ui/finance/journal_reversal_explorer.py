@@ -127,7 +127,15 @@ class JournalReversalExplorer(BaseScreen):
         self._show_loading()
         try:
             endpoint = get_endpoint("journal_entries") or "/api/accounting/journal-entries/"
-            response = self.api_client.get(endpoint, params={"page_size": 200})
+            if not hasattr(self, "_async_reversals_response"):
+                self.run_api_request(
+                    "journal_reversals:list", "GET", endpoint,
+                    params={"page_size": 200},
+                    on_success=lambda r: self._resume_api_request("_async_reversals_response", self.load_reversals, r),
+                    on_error=lambda m: self._resume_api_request("_async_reversals_response", self.load_reversals, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_reversals_response")
             self.journal_entries = extract_list(response)
             self._update_display()
         except Exception as e:

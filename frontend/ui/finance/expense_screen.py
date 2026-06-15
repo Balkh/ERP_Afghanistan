@@ -138,7 +138,14 @@ class ExpenseScreen(BaseScreen):
                 'start_date': self.date_from.date().toString("yyyy-MM-dd"),
                 'end_date': self.date_to.date().toString("yyyy-MM-dd")
             }
-            response = self.api_client.get("/api/expenses/", params=params)
+            if not hasattr(self, "_async_expenses_response"):
+                self.run_api_request(
+                    "expenses:list", "GET", "/api/expenses/", params=params,
+                    on_success=lambda r: self._resume_api_request("_async_expenses_response", self.load_expenses, r),
+                    on_error=lambda m: self._resume_api_request("_async_expenses_response", self.load_expenses, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_expenses_response")
             if response and response.get('success'):
                 self.expenses_data = response['data'].get('results', [])
                 if not self.expenses_data:
@@ -229,25 +236,30 @@ class AddExpenseDialog(EnterpriseDialog):
         self.set_content(widget)
 
     def _load_accounts(self):
-        try:
-            # Load expense accounts
-            exp_res = self.api_client.get("/api/accounting/accounts/", params={'account_type': 'EXPENSE'})
-            if exp_res and exp_res.get('success'):
-                data = exp_res['data']
-                results = data.get('results', data) if isinstance(data, dict) else data
-                for acc in results:
-                    self.expense_account.addItem(f"{acc['code']} - {acc['name']}", acc['id'])
-            
-            # Load payment accounts
-            pay_res = self.api_client.get("/api/payments/accounts/")
-            if pay_res and pay_res.get('success'):
-                data = pay_res['data']
-                results = data.get('results', data) if isinstance(data, dict) else data
-                for acc in results:
-                    self.payment_account.addItem(acc['name'], acc['id'])
-        except Exception as e:
-            # TODO: Replace with user-facing error state (dialog has no error_label/empty_label)
-            print(f"Failed to load accounts for expense: {e}")
+        self.run_api_request(
+            "expense_dialog:expense_accounts", "GET", "/api/accounting/accounts/", params={'account_type': 'EXPENSE'},
+            on_success=self._populate_expense_accounts,
+            on_error=lambda m: print(f"Failed to load expense accounts: {m}"),
+        )
+        self.run_api_request(
+            "expense_dialog:payment_accounts", "GET", "/api/payments/accounts/",
+            on_success=self._populate_payment_accounts,
+            on_error=lambda m: print(f"Failed to load payment accounts: {m}"),
+        )
+
+    def _populate_expense_accounts(self, exp_res):
+        if exp_res and exp_res.get('success'):
+            data = exp_res['data']
+            results = data.get('results', data) if isinstance(data, dict) else data
+            for acc in results:
+                self.expense_account.addItem(f"{acc['code']} - {acc['name']}", acc['id'])
+
+    def _populate_payment_accounts(self, pay_res):
+        if pay_res and pay_res.get('success'):
+            data = pay_res['data']
+            results = data.get('results', data) if isinstance(data, dict) else data
+            for acc in results:
+                self.payment_account.addItem(acc['name'], acc['id'])
 
     def save_expense(self):
         try:
@@ -264,7 +276,14 @@ class AddExpenseDialog(EnterpriseDialog):
                 "description": self.description.toPlainText()
             }
             
-            response = self.api_client.post("/api/expenses/", data)
+            if not hasattr(self, "_async_save_expense_response"):
+                self.run_api_request(
+                    "expense_dialog:save", "POST", "/api/expenses/", data=data,
+                    on_success=lambda r: self._resume_api_request("_async_save_expense_response", self.save_expense, r),
+                    on_error=lambda m: self._resume_api_request("_async_save_expense_response", self.save_expense, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_save_expense_response")
             if response and response.get('id'):
                 self.accept()
             else:

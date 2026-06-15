@@ -123,7 +123,14 @@ class PaymentAllocationExplorer(BaseScreen):
 
         try:
             endpoint = get_endpoint(f"{self.entity_type}s") or f"/api/{self.entity_type}s/{self.entity_type}s/"
-            response = self.api_client.get(endpoint, params={"page_size": 100})
+            if not hasattr(self, "_async_entities_response"):
+                self.run_api_request(
+                    f"allocation_explorer:entities:{self.entity_type}", "GET", endpoint, params={"page_size": 100},
+                    on_success=lambda r: self._resume_api_request("_async_entities_response", self._on_entity_type_changed, r),
+                    on_error=lambda m: self._resume_api_request("_async_entities_response", self._on_entity_type_changed, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_entities_response")
             entities = extract_list(response)
             for e in entities:
                 self.entity_combo.addItem(e.get("name", ""), e.get("id"))
@@ -142,7 +149,14 @@ class PaymentAllocationExplorer(BaseScreen):
         self._show_loading()
         try:
             endpoint = f"/api/v1/payment-operations/{self.entity_type}s/{entity_id}/payment-trace/"
-            response = self.api_client.get(endpoint)
+            if not hasattr(self, "_async_allocations_response"):
+                self.run_api_request(
+                    f"allocation_explorer:trace:{entity_id}", "GET", endpoint,
+                    on_success=lambda r: self._resume_api_request("_async_allocations_response", lambda: self.load_allocations(entity_id), r),
+                    on_error=lambda m: self._resume_api_request("_async_allocations_response", lambda: self.load_allocations(entity_id), {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_allocations_response")
             if response and response.get("success"):
                 data = response.get("data", {})
                 self._update_display(data)

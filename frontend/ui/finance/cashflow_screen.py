@@ -163,7 +163,14 @@ class CashflowScreen(BaseScreen):
             if not endpoint:
                 endpoint = "/api/cashflow/items/"
 
-            response = self.api_client.get(endpoint)
+            if not hasattr(self, "_async_cashflow_response"):
+                self.run_api_request(
+                    "cashflow:data", "GET", endpoint,
+                    on_success=lambda r: self._resume_api_request("_async_cashflow_response", self._load_cashflow_data, r),
+                    on_error=lambda m: self._resume_api_request("_async_cashflow_response", self._load_cashflow_data, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_cashflow_response")
             if response and isinstance(response, dict) and response.get('success'):
                 data = response.get('data', {})
                 self._cashflow_data = data.get('cash_flow', []) or data.get('entries', []) or []
@@ -266,7 +273,14 @@ class CashflowScreen(BaseScreen):
         self.forecast_table.setRowCount(0)
         try:
             endpoint = get_endpoint("cashflow_forecasts") or "/api/cashflow/forecasts/"
-            response = self.api_client.get(endpoint)
+            if not hasattr(self, "_async_forecast_response"):
+                self.run_api_request(
+                    "cashflow:forecast", "GET", endpoint,
+                    on_success=lambda r: self._resume_api_request("_async_forecast_response", self._load_forecast, r),
+                    on_error=lambda m: self._resume_api_request("_async_forecast_response", self._load_forecast, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_forecast_response")
             if response and isinstance(response, dict) and response.get("success"):
                 raw_data = response.get("data", [])
                 data = raw_data.get("results", []) if isinstance(raw_data, dict) else raw_data
@@ -299,7 +313,14 @@ class CashflowScreen(BaseScreen):
         self.position_table.setRowCount(0)
         try:
             endpoint = get_endpoint("cashflow_items") or "/api/cashflow/items/"
-            response = self.api_client.get(endpoint)
+            if not hasattr(self, "_async_position_response"):
+                self.run_api_request(
+                    "cashflow:position", "GET", endpoint,
+                    on_success=lambda r: self._resume_api_request("_async_position_response", self._load_position, r),
+                    on_error=lambda m: self._resume_api_request("_async_position_response", self._load_position, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_position_response")
             if response and isinstance(response, dict) and response.get("success"):
                 raw_data = response.get("data", [])
                 data = raw_data.get("results", []) if isinstance(raw_data, dict) else raw_data

@@ -491,12 +491,11 @@ class EnterpriseForm(QWidget):
         if not key:
             return False
         try:
-            import json, os
+            import os
+            from utils.atomic_io import atomic_write_json
             draft_dir = os.path.join(os.path.expanduser("~"), ".pharmacy_erp", "drafts")
-            os.makedirs(draft_dir, exist_ok=True)
             draft_path = os.path.join(draft_dir, f"{key}.json")
-            with open(draft_path, "w") as f:
-                json.dump(self.get_data(), f)
+            atomic_write_json(draft_path, self.get_data())
             return True
         except Exception:
             return False

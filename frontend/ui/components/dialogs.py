@@ -22,6 +22,7 @@ from PySide6.QtGui import QFont
 from typing import Optional, Dict, Any
 from enum import Enum
 import time
+from ui.utils.async_api import AsyncRequestMixin
 
 class DialogType(Enum):
     """Dialog types."""
@@ -40,7 +41,7 @@ class DialogButton(Enum):
     DELETE = "delete"
     CLOSE = "close"
 
-class EnterpriseDialog(QDialog):
+class EnterpriseDialog(AsyncRequestMixin, QDialog):
     """
     Base enterprise dialog with standard styling and buttons.
     """

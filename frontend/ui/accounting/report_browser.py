@@ -4,9 +4,8 @@ Supports Accounting, HR, and Payroll report types via configuration.
 """
 
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-                                QDateEdit, QGroupBox, QFileDialog,
-                                QApplication)
-from PySide6.QtCore import Qt, QDate, QThread, Signal
+                                QDateEdit, QGroupBox, QFileDialog)
+from PySide6.QtCore import Qt, QDate
 from datetime import date
 from api.client import APIClient
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
@@ -15,6 +14,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN
                            BORDER_RADIUS_MD, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED)
 from ui.screens.base_screen import BaseScreen
 from ui.components.dialogs import AlertDialog, ConfirmDialog
+from ui.utils.signal_utils import connect_unique
 
 
 REPORT_TYPES = {
@@ -177,24 +177,6 @@ REPORT_TYPES = {
 }
 
 
-class ReportWorker(QThread):
-    finished = Signal(object)
-    error = Signal(str)
-
-    def __init__(self, api_client, api_url, params):
-        super().__init__()
-        self.api_client = api_client
-        self.api_url = api_url
-        self.params = params
-
-    def run(self):
-        try:
-            resp = self.api_client.get(self.api_url, params=self.params)
-            self.finished.emit(resp)
-        except Exception as e:
-            self.error.emit(str(e))
-
-
 class ReportBrowser(BaseScreen):
     """Consolidated report browser — handles all accounting/HR/payroll reports."""
 
@@ -253,7 +235,7 @@ class ReportBrowser(BaseScreen):
         idx = self.type_selector.findData(self.report_type)
         if idx >= 0:
             self.type_selector.setCurrentIndex(idx)
-        self.type_selector.currentIndexChanged.connect(self._on_type_changed)
+        connect_unique(self.type_selector.currentIndexChanged, self._on_type_changed)
         bar_layout.addWidget(QLabel("Report:"))
         bar_layout.addWidget(self.type_selector)
 
@@ -283,11 +265,11 @@ class ReportBrowser(BaseScreen):
         bar_layout.addStretch()
 
         self.btn_run = EnterpriseButton(text="Run Report", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
-        self.btn_run.clicked.connect(self.run_report)
+        connect_unique(self.btn_run.clicked, self.run_report)
         bar_layout.addWidget(self.btn_run)
 
         self.btn_export = EnterpriseButton(text="Export CSV", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
-        self.btn_export.clicked.connect(self._export_csv)
+        connect_unique(self.btn_export.clicked, self._export_csv)
         bar_layout.addWidget(self.btn_export)
 
         layout.addWidget(toolbar)
@@ -346,7 +328,7 @@ class ReportBrowser(BaseScreen):
             idx = self.type_selector.findData(self.report_type)
         if idx >= 0:
             self.type_selector.setCurrentIndex(idx)
-        self.type_selector.currentIndexChanged.connect(self._on_type_changed)
+        connect_unique(self.type_selector.currentIndexChanged, self._on_type_changed)
         bar_layout.addWidget(QLabel("Report:"))
         bar_layout.addWidget(self.type_selector)
 
@@ -375,11 +357,11 @@ class ReportBrowser(BaseScreen):
         bar_layout.addStretch()
 
         self.btn_run = EnterpriseButton(text="Run Report", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
-        self.btn_run.clicked.connect(self.run_report)
+        connect_unique(self.btn_run.clicked, self.run_report)
         bar_layout.addWidget(self.btn_run)
 
         self.btn_export = EnterpriseButton(text="Export CSV", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
-        self.btn_export.clicked.connect(self._export_csv)
+        connect_unique(self.btn_export.clicked, self._export_csv)
         bar_layout.addWidget(self.btn_export)
 
     def _rebuild_table(self, config):
@@ -408,10 +390,16 @@ class ReportBrowser(BaseScreen):
             if hasattr(self, 'date_input') and self.date_input.date() != QDate():
                 params["as_of_date"] = self.date_input.date().toString("yyyy-MM-dd")
         
-        self.worker = ReportWorker(self.api_client, config["api"], params)
-        self.worker.finished.connect(lambda resp: self._on_report_finished(resp, config))
-        self.worker.error.connect(self._on_report_error)
-        self.worker.start()
+        started = self.run_api_request(
+            "run_report",
+            "GET",
+            config["api"],
+            params=params,
+            on_success=lambda resp, cfg=config: self._on_report_finished(resp, cfg),
+            on_error=self._on_report_error,
+        )
+        if not started:
+            self._set_loading(False)
 
     def _on_report_finished(self, resp, config):
         self.report_data = resp.get("data", resp) if isinstance(resp, dict) else resp
@@ -419,6 +407,7 @@ class ReportBrowser(BaseScreen):
         self._set_loading(False)
 
     def _on_report_error(self, err_msg):
+        self._set_loading(False)
         self._set_empty(f"Error: {err_msg}")
 
     def _populate_table(self, config):
@@ -596,8 +585,6 @@ class ReportBrowser(BaseScreen):
         self.table.setVisible(not show)
         self.empty_label.setVisible(False)
         self.btn_run.setEnabled(not show)
-        if show:
-            QApplication.processEvents()
 
     def _set_empty(self, msg):
         self.loading_label.setVisible(False)

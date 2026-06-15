@@ -140,21 +140,25 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
 
     def _load_payment_data(self):
         """Load payment methods and accounts."""
-        try:
-            methods_endpoint = "/api/v1/payment-operations/payment-methods/"
-            methods_response = self.api_client.get(methods_endpoint)
-            if methods_response and methods_response.get("success"):
-                self.payment_methods = methods_response.get("data", [])
-
-            accounts_endpoint = "/api/v1/payment-operations/payment-accounts/"
-            accounts_response = self.api_client.get(accounts_endpoint)
-            if accounts_response and accounts_response.get("success"):
-                self.payment_accounts = accounts_response.get("data", [])
-        except Exception as e:
-            print(f"Error loading payment data: {e}")
-
-        # Add initial row
+        self.run_api_request(
+            "mixed_payment:methods", "GET", "/api/v1/payment-operations/payment-methods/",
+            on_success=self._on_payment_methods_loaded,
+            on_error=lambda m: print(f"Error loading payment methods: {m}"),
+        )
+        self.run_api_request(
+            "mixed_payment:accounts", "GET", "/api/v1/payment-operations/payment-accounts/",
+            on_success=self._on_payment_accounts_loaded,
+            on_error=lambda m: print(f"Error loading payment accounts: {m}"),
+        )
         self._add_split_row()
+
+    def _on_payment_methods_loaded(self, methods_response):
+        if methods_response and methods_response.get("success"):
+            self.payment_methods = methods_response.get("data", [])
+
+    def _on_payment_accounts_loaded(self, accounts_response):
+        if accounts_response and accounts_response.get("success"):
+            self.payment_accounts = accounts_response.get("data", [])
 
     def _add_split_row(self):
         """Add a new split row to the table."""
@@ -252,10 +256,18 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
 
         try:
             endpoint = "/api/v1/payment-operations/validate-mixed-payment/"
-            response = self.api_client.post(endpoint, {
+            payload = {
                 "total_amount": str(self.total_amount),
                 "splits": splits,
-            })
+            }
+            if not hasattr(self, "_async_validate_response"):
+                self.run_api_request(
+                    "mixed_payment:validate", "POST", endpoint, data=payload,
+                    on_success=lambda r: self._resume_api_request("_async_validate_response", self._validate_splits, r),
+                    on_error=lambda m: self._resume_api_request("_async_validate_response", self._validate_splits, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_validate_response")
             if response and response.get("success"):
                 data = response.get("data", {})
                 if data.get("is_valid"):

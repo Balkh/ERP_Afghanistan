@@ -12,6 +12,7 @@ from typing import Optional, Dict, Any, Callable
 import logging
 
 from runtime.timer_registry import register_timer, unregister_owner
+from ui.utils.async_api import AsyncRequestMixin
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ class ScreenState:
     EMPTY = "empty"
 
 
-class BaseScreen(QWidget):
+class BaseScreen(AsyncRequestMixin, QWidget):
     """
     Base class for all application screens.
     Provides consistent lifecycle, navigation, and state management.
@@ -284,6 +285,27 @@ class BaseScreen(QWidget):
     def release_submission_lock(self):
         """Release submission lock."""
         self._submission_in_progress = False
+
+    def cleanup(self):
+        """Release screen-owned global registrations and timers."""
+        if self._refresh_timer:
+            self._refresh_timer.stop()
+            unregister_owner(f"screen_{id(self)}")
+            self._refresh_timer.deleteLater()
+            self._refresh_timer = None
+        if self._theme_token is not None:
+            try:
+                from theme.theme_engine import ThemeEngine
+                ThemeEngine.instance().unregister(self._theme_token)
+            finally:
+                self._theme_token = None
+        cancel_requests = getattr(self, "cancel_api_requests", None)
+        if callable(cancel_requests):
+            cancel_requests()
+
+    def closeEvent(self, event):
+        self.cleanup()
+        super().closeEvent(event)
 
 
 class BaseFormScreen(BaseScreen):

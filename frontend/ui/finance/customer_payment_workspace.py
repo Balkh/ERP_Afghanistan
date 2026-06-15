@@ -247,7 +247,14 @@ class CustomerPaymentWorkspace(BaseScreen):
         """Load customer list for dropdown."""
         try:
             endpoint = get_endpoint("customers") or "/api/sales/customers/"
-            response = self.api_client.get(endpoint, params={"page_size": 100})
+            if not hasattr(self, "_async_customers_response"):
+                self.run_api_request(
+                    "customer_payments:customers", "GET", endpoint, params={"page_size": 100},
+                    on_success=lambda r: self._resume_api_request("_async_customers_response", self._load_customers, r),
+                    on_error=lambda m: self._resume_api_request("_async_customers_response", self._load_customers, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_customers_response")
             customers = extract_list(response)
             self.customer_combo.clear()
             self.customer_combo.addItem("-- Select Customer --", None)
@@ -268,7 +275,14 @@ class CustomerPaymentWorkspace(BaseScreen):
         self._show_loading()
         try:
             endpoint = f"/api/v1/payment-operations/customers/{customer_id}/payment-workspace/"
-            response = self.api_client.get(endpoint)
+            if not hasattr(self, "_async_customer_workspace_response"):
+                self.run_api_request(
+                    f"customer_payments:workspace:{customer_id}", "GET", endpoint,
+                    on_success=lambda r: self._resume_api_request("_async_customer_workspace_response", lambda: self.load_workspace(customer_id), r),
+                    on_error=lambda m: self._resume_api_request("_async_customer_workspace_response", lambda: self.load_workspace(customer_id), {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_customer_workspace_response")
             if response and response.get("success"):
                 data = response.get("data", {})
                 self._update_workspace(data)
@@ -369,7 +383,14 @@ class CustomerPaymentWorkspace(BaseScreen):
             return
         try:
             endpoint = f"/api/v1/payment-operations/customers/{self.customer_id}/allocate-unallocated/"
-            response = self.api_client.post(endpoint, {})
+            if not hasattr(self, "_async_customer_allocate_response"):
+                self.run_api_request(
+                    "customer_payments:allocate", "POST", endpoint, data={},
+                    on_success=lambda r: self._resume_api_request("_async_customer_allocate_response", self._on_allocate_fifo, r),
+                    on_error=lambda m: self._resume_api_request("_async_customer_allocate_response", self._on_allocate_fifo, {"success": False, "error": m}),
+                )
+                return
+            response = self._take_api_response("_async_customer_allocate_response")
             if response and response.get("success"):
                 data = response.get("data", {})
                 AlertDialog.info(

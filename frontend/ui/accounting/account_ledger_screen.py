@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
                                QComboBox, QDateEdit,
-                               QGroupBox, QApplication)
+                               QGroupBox)
 from PySide6.QtCore import Qt, QDate
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
@@ -117,7 +117,6 @@ class AccountLedgerScreen(BaseScreen):
         self.table.setVisible(not show)
         self.empty_label.setVisible(False)
         self.btn_load.setEnabled(not show)
-        QApplication.processEvents()
 
     def _show_empty(self, message="No ledger data available"):
         """Show empty state."""

@@ -2,7 +2,6 @@ import json
 import requests
 import time
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtWidgets import QApplication
 from typing import Dict, Any, Optional
 from utils.logger import get_logger, record_api_time, record_error, emit_event, generate_correlation_id
 
@@ -58,6 +57,7 @@ class APIClient(QObject):
         if self._loading_count == 1 and not background:
             # Show loading overlay on first foreground request
             from ui.main_window import MainWindow
+            from PySide6.QtWidgets import QApplication
             # Find the main window to show loading overlay
             app = QApplication.instance()
             if app:
@@ -193,6 +193,7 @@ class APIClient(QObject):
         """Safely hide the loading overlay."""
         try:
             from ui.main_window import MainWindow
+            from PySide6.QtWidgets import QApplication
             app = QApplication.instance()
             if not app:
                 return
@@ -358,6 +359,15 @@ class APIClient(QObject):
             # Any other error
             return False
     
+    def clone_for_worker(self):
+        """Create an APIClient copy with an independent requests.Session for a worker thread."""
+        clone = APIClient(base_url=self.base_url)
+        if self._auth_token:
+            clone.set_auth_token(self._auth_token)
+        if self._refresh_token:
+            clone._refresh_token = self._refresh_token
+        return clone
+
     def set_auth_token(self, token: str):
         """Set authorization token for requests."""
         self._auth_token = token

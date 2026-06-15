@@ -11,6 +11,7 @@ from cryptography.fernet import Fernet
 from utils.device_fingerprint import generate_device_id
 from config.production_config import get_data_path
 from utils.logger import get_logger
+from utils.atomic_io import atomic_write_text
 
 log = get_logger('session')
 
@@ -71,9 +72,7 @@ def save_session(username: str, access_token: str, refresh_token: str = ''):
         })
         encrypted = _fernet_encrypt(data)
         path = _get_session_path()
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, 'w') as f:
-            f.write(encrypted)
+        atomic_write_text(path, encrypted)
         _remove_legacy()
         log.info(f"Session saved for user: {username}")
         return True
