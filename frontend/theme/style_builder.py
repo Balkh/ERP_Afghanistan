@@ -496,3 +496,54 @@ class UIStyleBuilder:
                 letter-spacing: 0.3px;
             }}
         """
+
+    @staticmethod
+    def get_state_label_style(state: str = "loading") -> str:
+        """Generate style for loading/empty/error state labels.
+
+        Centralizes the 25+ inline styles for state labels across all screens.
+
+        Args:
+            state: "loading" | "empty" | "error"
+        """
+        from ui.constants import (
+            COLOR_TEXT_MUTED, COLOR_DANGER, TEXT_BODY, SPACING_XL, SPACING_MD
+        )
+        padding = SPACING_XL + SPACING_MD
+        if state == "error":
+            return (
+                f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; "
+                f"padding: {padding}px;"
+            )
+        return (
+            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; "
+            f"padding: {padding}px;"
+        )
+
+    @staticmethod
+    def get_page_header_style() -> str:
+        """Generate style for page title headers."""
+        return (
+            f"color: {_tokens.COLOR_TEXT_PRIMARY}; "
+            f"font-size: {_tokens.TEXT_PAGE_TITLE}pt; "
+            f"font-weight: 700;"
+        )
+
+    @staticmethod
+    def get_toolbar_style() -> str:
+        """Generate style for toolbar containers."""
+        return (
+            f"background-color: {_tokens.COLOR_BG_MAIN}; "
+            f"border: 1px solid {_tokens.COLOR_BORDER}; "
+            f"border-radius: {_tokens.BORDER_RADIUS_LG}px;"
+        )
+
+    @staticmethod
+    def get_subtitle_style() -> str:
+        """Generate style for dialog/form subtitles."""
+        return (
+            f"color: {_tokens.COLOR_TEXT_MUTED}; "
+            f"font-size: {_tokens.TEXT_BODY_SMALL}pt; "
+            f"border: none; background: transparent; "
+            f"margin-bottom: {_tokens.SPACING_SM}px;"
+        )

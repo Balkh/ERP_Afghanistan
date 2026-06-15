@@ -16,6 +16,7 @@ from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.forms import FormSection
 from ui.utils.validation import FormValidator
+from theme.style_builder import UIStyleBuilder
 
 
 class EmployeeScreen(BaseScreen):
@@ -94,19 +95,19 @@ class EmployeeScreen(BaseScreen):
         # Loading and Empty states
         self.loading_label = QLabel("Loading employees...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No employees found")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading employees")
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
+        self.error_label.setStyleSheet(UIStyleBuilder.get_state_label_style("error"))
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 

@@ -15,6 +15,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN
 from ui.screens.base_screen import BaseScreen
 from ui.components.dialogs import AlertDialog, ConfirmDialog
 from ui.utils.signal_utils import connect_unique
+from theme.style_builder import UIStyleBuilder
 
 
 REPORT_TYPES = {
@@ -277,13 +278,13 @@ class ReportBrowser(BaseScreen):
         # Loading / Empty
         self.loading_label = QLabel("Loading...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("Run the report to generate data.")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 

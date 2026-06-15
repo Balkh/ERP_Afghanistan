@@ -12,6 +12,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
+from theme.style_builder import UIStyleBuilder
 
 
 class AccountLedgerScreen(BaseScreen):
@@ -97,13 +98,13 @@ class AccountLedgerScreen(BaseScreen):
         # Loading and Empty states
         self.loading_label = QLabel("Loading ledger...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("Select an account and load the ledger.")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL}px;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
