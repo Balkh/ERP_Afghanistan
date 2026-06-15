@@ -94,6 +94,7 @@ class BaseInventoryScreen(BaseScreen):
         button_layout = QHBoxLayout()
         button_layout.setSpacing(SPACING_SM)
         self.add_button = EnterpriseButton(text="Add", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.add_new_btn = self.add_button
         self.edit_button = EnterpriseButton(text="Edit", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
         self.delete_button = EnterpriseButton(text="Delete", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
         self.refresh_button = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)

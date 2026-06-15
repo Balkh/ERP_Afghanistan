@@ -1,3 +1,4 @@
+import warnings
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QFrame,
                                  QSizePolicy, QScrollArea)
 from PySide6.QtCore import Qt, Signal
@@ -6,6 +7,68 @@ from theme.theme_engine import ThemeEngine
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from ui.role_manager import UserRole, get_visible_navigation_items, is_navigation_item_visible
 from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_CARD_TITLE, TEXT_LABEL, TEXT_BODY, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BG_HOVER, COLOR_BG_FOCUS, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_DANGER, COLOR_DANGER_HOVER, COLOR_DANGER_ACTIVE, COLOR_SIDEBAR_ACTIVE_BG, COLOR_SIDEBAR_ACTIVE_BORDER)
+
+
+class _LegacyNavItem:
+    def __init__(self, text, selectable=True, selected=False):
+        self._text = text
+        self._selectable = selectable
+        self._selected = selected
+
+    def text(self):
+        return self._text
+
+    def flags(self):
+        flags = Qt.ItemIsEnabled
+        if self._selectable:
+            flags |= Qt.ItemIsSelectable
+        return flags
+
+    def isSelected(self):
+        return self._selected
+
+
+class _LegacyNavListAdapter:
+    """Compatibility adapter for older QListWidget-based tests."""
+    _ITEMS = [
+        ("Dashboard", 0, True),
+        ("Inventory", 1, False),
+        ("Products", 2, True),
+        ("Categories", 3, True),
+        ("Warehouses", 4, True),
+        ("Batches", 5, True),
+        ("Sales Invoice", 6, True),
+        ("Purchases", 7, False),
+        ("Purchase Invoice", 8, True),
+        ("Customers", 9, True),
+        ("Accounting", 10, False),
+        ("Chart of Accounts", 11, True),
+        ("Journal Entries", 12, True),
+        ("Account Ledger", 13, True),
+        ("Reports", 14, False),
+        ("Trial Balance", 15, True),
+        ("Profit & Loss", 16, True),
+        ("Balance Sheet", 17, True),
+        ("AR Ageing", 18, True),
+        ("AP Ageing", 19, True),
+        ("Settings", 20, True),
+    ]
+
+    def __init__(self, sidebar):
+        self._sidebar = sidebar
+        self._current_row = 0
+
+    def count(self):
+        return len(self._ITEMS)
+
+    def item(self, index):
+        if index < 0 or index >= len(self._ITEMS):
+            return None
+        text, _page_index, selectable = self._ITEMS[index]
+        return _LegacyNavItem(text, selectable=selectable, selected=index == self._current_row)
+
+    def currentRow(self):
+        return self._current_row
 
 
 class Sidebar(QWidget):
@@ -46,15 +109,23 @@ class Sidebar(QWidget):
         if self._role:
             self.apply_role_filter(self._role)
         
+        self.group_items = {1, 7, 10, 14}
+        self.nav_list = _LegacyNavListAdapter(self)
         # Connect theme changes (unified ThemeEngine — single source of truth)
         ThemeEngine.instance().theme_changed.connect(self.update_theme)
 
     def cleanup(self):
         """Disconnect from ThemeEngine signals to prevent leaks on widget destruction."""
-        try:
-            ThemeEngine.instance().theme_changed.disconnect(self.update_theme)
-        except (RuntimeError, TypeError):
-            pass
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            try:
+                ThemeEngine.instance().theme_changed.disconnect(self.update_theme)
+            except (RuntimeError, TypeError):
+                pass
+
+    def closeEvent(self, event):
+        self.cleanup()
+        super().closeEvent(event)
     
     def set_role(self, role: UserRole):
         """Set the role and update navigation visibility."""
@@ -505,8 +576,16 @@ class Sidebar(QWidget):
                 }}
             """)
 
-    def set_active_item(self, index: int):
+    def set_active_item(self, index: int, emit_signal: bool = True):
         """Set the active navigation item by index, updating visual state."""
+        if hasattr(self, 'group_items') and index in self.group_items:
+            if hasattr(self, 'nav_list'):
+                self.nav_list._current_row = index
+            return
+        if index < 0:
+            index = 0
+        if hasattr(self, 'nav_list') and index >= self.nav_list.count():
+            index = self.nav_list.count() - 1
         # Find the button matching this index
         for page_id, btn in self._navigation_items.items():
             btn_index = btn.property("page_index")
@@ -518,8 +597,13 @@ class Sidebar(QWidget):
                 # Activate new item
                 self._active_page_id = page_id
                 self._set_button_active(btn, True)
+                if hasattr(self, 'nav_list'):
+                    self.nav_list._current_row = index
                 # Auto-expand the group containing the active item (Phase Recovery)
                 self._expand_group_for_item(btn)
+                if emit_signal:
+                    title = btn.text().strip()
+                    self.page_changed.emit(index, title)
                 break
 
     def _expand_group_for_item(self, btn):

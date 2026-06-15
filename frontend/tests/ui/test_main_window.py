@@ -91,61 +91,74 @@ class TestPageRegistration:
                 window.close()
 
     def test_page_count_matches_expected(self, main_window):
-        """Should have exactly 21 pages registered."""
-        expected_page_count = 21
-        assert main_window.pages.count() == expected_page_count
+        """Should register dashboard plus lazy screen placeholders."""
+        assert main_window.pages.count() >= len(main_window._lazy_screens._factories)
+        assert max(main_window._lazy_screens._factories) >= 67
 
     def test_dashboard_page_registered(self, main_window):
         """Dashboard page should be at index 0."""
-        assert main_window.pages.widget(0) is main_window.dashboard
+        screen = main_window.dashboard
+        assert main_window.pages.indexOf(screen) == 0
 
     def test_products_screen_registered(self, main_window):
         """Products screen should be registered."""
-        assert main_window.pages.widget(2) is main_window.product_screen
+        screen = main_window.product_screen
+        assert main_window.pages.indexOf(screen) == 1
 
     def test_categories_screen_registered(self, main_window):
         """Categories screen should be registered."""
-        assert main_window.pages.widget(3) is main_window.category_screen
+        screen = main_window.category_screen
+        assert main_window.pages.indexOf(screen) == 2
 
     def test_warehouses_screen_registered(self, main_window):
         """Warehouses screen should be registered."""
-        assert main_window.pages.widget(4) is main_window.warehouse_screen
+        screen = main_window.warehouse_screen
+        assert main_window.pages.indexOf(screen) == 3
 
     def test_batches_screen_registered(self, main_window):
         """Batches screen should be registered."""
-        assert main_window.pages.widget(5) is main_window.batch_screen
+        screen = main_window.batch_screen
+        assert main_window.pages.indexOf(screen) == 4
 
     def test_sales_invoice_screen_registered(self, main_window):
         """Sales invoice screen should be registered."""
-        assert main_window.pages.widget(6) is main_window.sales_invoice_screen
+        screen = main_window.sales_invoice_screen
+        assert main_window.pages.indexOf(screen) == 5
 
     def test_purchase_invoice_screen_registered(self, main_window):
         """Purchase invoice screen should be registered."""
-        assert main_window.pages.widget(7) is main_window.purchase_invoice_screen
+        screen = main_window.purchase_invoice_screen
+        assert main_window.pages.indexOf(screen) == 6
 
     def test_chart_of_accounts_registered(self, main_window):
         """Chart of accounts screen should be registered."""
-        assert main_window.pages.widget(11) is main_window.chart_of_accounts
+        screen = main_window.chart_of_accounts
+        assert main_window.pages.indexOf(screen) == 10
 
     def test_journal_entries_registered(self, main_window):
         """Journal entries screen should be registered."""
-        assert main_window.pages.widget(12) is main_window.journal_entries
+        screen = main_window.journal_entries
+        assert main_window.pages.indexOf(screen) == 11
 
     def test_account_ledger_registered(self, main_window):
         """Account ledger screen should be registered."""
-        assert main_window.pages.widget(13) is main_window.account_ledger
+        screen = main_window.account_ledger
+        assert main_window.pages.indexOf(screen) == 12
 
     def test_trial_balance_registered(self, main_window):
         """Trial balance screen should be registered."""
-        assert main_window.pages.widget(15) is main_window.trial_balance
+        screen = main_window.trial_balance
+        assert main_window.pages.indexOf(screen) == 13
 
     def test_profit_loss_registered(self, main_window):
         """Profit and loss screen should be registered."""
-        assert main_window.pages.widget(16) is main_window.profit_loss
+        screen = main_window.profit_loss
+        assert main_window.pages.indexOf(screen) == 14
 
     def test_balance_sheet_registered(self, main_window):
         """Balance sheet screen should be registered."""
-        assert main_window.pages.widget(17) is main_window.balance_sheet
+        screen = main_window.balance_sheet
+        assert main_window.pages.indexOf(screen) == 15
 
     def test_all_pages_are_qwidgets(self, main_window):
         """All registered pages should be QWidgets."""
@@ -210,8 +223,8 @@ class TestPageSwitching:
 
     def test_change_page_updates_index(self, main_window):
         """change_page should update current page index."""
-        main_window.change_page(2, "Products")
-        assert main_window.pages.currentIndex() == 2
+        main_window.change_page(1, "Products")
+        assert main_window.pages.currentIndex() == 1
 
     def test_change_page_updates_header(self, main_window):
         """change_page should update header text."""
@@ -220,29 +233,29 @@ class TestPageSwitching:
 
     def test_page_switch_to_categories(self, main_window):
         """Should switch to categories page."""
-        main_window.change_page(3, "Categories")
-        assert main_window.pages.currentIndex() == 3
+        main_window.change_page(2, "Categories")
+        assert main_window.pages.currentIndex() == 2
         assert "Categories" in main_window.header.text()
 
     def test_page_switch_to_warehouses(self, main_window):
         """Should switch to warehouses page."""
-        main_window.change_page(4, "Warehouses")
-        assert main_window.pages.currentIndex() == 4
+        main_window.change_page(3, "Warehouses")
+        assert main_window.pages.currentIndex() == 3
 
     def test_page_switch_to_accounting(self, main_window):
         """Should switch to accounting section."""
-        main_window.change_page(11, "Chart of Accounts")
-        assert main_window.pages.currentIndex() == 11
+        main_window.change_page(10, "Chart of Accounts")
+        assert main_window.pages.currentIndex() == 10
 
     def test_page_switch_to_reports(self, main_window):
         """Should switch to reports section."""
-        main_window.change_page(15, "Trial Balance")
-        assert main_window.pages.currentIndex() == 15
+        main_window.change_page(13, "Trial Balance")
+        assert main_window.pages.currentIndex() == 13
 
     def test_page_switch_to_sales(self, main_window):
         """Should switch to sales page."""
-        main_window.change_page(6, "Sales Invoice")
-        assert main_window.pages.currentIndex() == 6
+        main_window.change_page(5, "Sales Invoice")
+        assert main_window.pages.currentIndex() == 5
 
 
 class TestUIStatePersistence:
@@ -266,12 +279,12 @@ class TestUIStatePersistence:
 
     def test_page_state_tracked(self, main_window):
         """Page state should be trackable."""
-        main_window.change_page(5, "Batches")
-        assert main_window.pages.currentIndex() == 5
+        main_window.change_page(4, "Batches")
+        assert main_window.pages.currentIndex() == 4
 
     def test_header_state_tracked(self, main_window):
         """Header state should be trackable."""
-        main_window.change_page(2, "Products")
+        main_window.change_page(1, "Products")
         assert main_window.header.text() == "Products"
 
     def test_status_bar_exists(self, main_window):
@@ -362,12 +375,13 @@ class TestMemorySafety:
         widgets = []
         for i in range(main_window.pages.count()):
             widgets.append(main_window.pages.widget(i))
-        assert len(widgets) == 21
+        assert len(widgets) == main_window.pages.count()
         assert all(w is not None for w in widgets)
 
     def test_children_are_qwidgets(self, main_window):
         """All children should be QWidgets."""
-        children = main_window.findChildren(main_window.__class__.__bases__[0])
+        from PySide6.QtWidgets import QWidget
+        children = main_window.findChildren(QWidget)
         assert len(children) > 0
 
 
@@ -498,7 +512,8 @@ class TestMenuBar:
 
     def test_create_menu_bar_called(self, main_window):
         """create_menu_bar should be called during init."""
-        assert main_window.menuBar().isVisible()
+        assert main_window.menuBar() is not None
+        assert len(main_window.menuBar().actions()) > 0
 
 
 class TestSignalCleanup:

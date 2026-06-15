@@ -119,14 +119,18 @@ def main_window_widget(qtbot, mock_license_validator):
 def theme_engine(qtbot):
     """Create a theme engine for testing (SSOT)."""
     from theme.theme_engine import ThemeEngine
-    return ThemeEngine.instance()
+    engine = ThemeEngine.instance()
+    engine.set_theme("light")
+    return engine
 
 
 @pytest.fixture(scope="function")
 def theme_manager(qtbot):
     """DEPRECATED — Use theme_engine instead."""
     from theme.theme_engine import ThemeEngine
-    return ThemeEngine.instance()
+    engine = ThemeEngine.instance()
+    engine.set_theme("light")
+    return engine
 
 
 @pytest.fixture(scope="function")

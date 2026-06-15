@@ -308,3 +308,6 @@ class LoginDialog(EnterpriseDialog):
         if username and token:
             return username, token
         return None, None
+
+# Backward-compatible alias used by smoke tests and older callers.
+LoginScreen = LoginDialog

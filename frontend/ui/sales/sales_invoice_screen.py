@@ -690,6 +690,9 @@ class SalesInvoiceScreen(BaseScreen):
         self.confirm_btn.setEnabled(is_draft)
         self.return_btn.setVisible(is_dispatched)
 
+    def save_invoice(self):
+        return self.confirm_invoice()
+
     def save_draft(self):
         """Save invoice as draft."""
         if not self._check_action("create"):

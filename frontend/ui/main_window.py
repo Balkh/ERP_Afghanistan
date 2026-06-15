@@ -67,6 +67,10 @@ class MainWindow(QMainWindow):
         # --- Navigation System (Phase 4-5) ---
         self.navigation_history = NavigationHistory()  # Bounded history stack
         self._disable_history = False  # For history navigation itself
+        self._closing = False
+        self._deferred_timers = []
+        self._worker_threads = []
+        self.signals_to_methods = {}
         
         # Connect license validator signals if validator is provided
         if self.license_validator:
@@ -81,8 +85,8 @@ class MainWindow(QMainWindow):
         self._build_ui()
         
         # Defer non-critical network work until after first paint (Performance Sprint V1)
-        QTimer.singleShot(3000, self._load_company_settings)
-        QTimer.singleShot(5000, self._check_startup_health)
+        self._schedule_deferred(3000, self._load_company_settings)
+        self._schedule_deferred(5000, self._check_startup_health)
         
         try:
             hs = capture_health_snapshot()
@@ -90,6 +94,20 @@ class MainWindow(QMainWindow):
                        extra={'extra_fields': {'tags': ['ui', 'startup', 'diagnostic']}})
         except Exception:
             pass
+
+    def _schedule_deferred(self, msec, callback):
+        """Schedule a single-shot callback owned by this window so closeEvent can cancel it."""
+        timer = QTimer(self)
+        timer.setSingleShot(True)
+        timer.timeout.connect(callback)
+        timer.timeout.connect(lambda t=timer: self._deferred_timers.remove(t) if t in self._deferred_timers else None)
+        self._deferred_timers.append(timer)
+        timer.start(msec)
+        return timer
+
+    def _track_worker_thread(self, thread):
+        self._worker_threads.append(thread)
+        thread.finished.connect(lambda t=thread: self._worker_threads.remove(t) if t in self._worker_threads else None)
 
     def _setup_status_bar(self):
         """Setup the professional status bar."""
@@ -140,6 +158,8 @@ class MainWindow(QMainWindow):
 
     def _check_startup_health(self):
         """F19: Run startup health check in a background thread."""
+        if self._closing:
+            return
         worker = _StartupHealthWorker(self.api_client)
         thread = QThread(self)
         worker.moveToThread(thread)
@@ -148,6 +168,7 @@ class MainWindow(QMainWindow):
         worker.result.connect(thread.quit)
         thread.finished.connect(thread.deleteLater)
         worker.finished.connect(worker.deleteLater)
+        self._track_worker_thread(thread)
         getattr(thread, "start")()
 
     def _on_startup_health_result(self, label: str, color: str, message: str):
@@ -170,7 +191,7 @@ class MainWindow(QMainWindow):
 
     def _load_company_settings(self):
         """F22: Load company name from backend in a background thread."""
-        if not self.api_client:
+        if self._closing or not self.api_client:
             return
         worker = _CompanySettingsWorker(self.api_client)
         thread = QThread(self)
@@ -180,6 +201,7 @@ class MainWindow(QMainWindow):
         worker.result.connect(thread.quit)
         thread.finished.connect(thread.deleteLater)
         worker.finished.connect(worker.deleteLater)
+        self._track_worker_thread(thread)
         getattr(thread, "start")()
 
     def _on_company_settings_loaded(self, company_name: str):
@@ -190,6 +212,32 @@ class MainWindow(QMainWindow):
             except RuntimeError:
                 pass
     
+    _SCREEN_ATTR_ALIASES = {
+        'product_screen': 1,
+        'category_screen': 2,
+        'warehouse_screen': 3,
+        'batch_screen': 4,
+        'sales_invoice_screen': 5,
+        'purchase_invoice_screen': 6,
+        'chart_of_accounts': 10,
+        'journal_entries': 11,
+        'account_ledger': 12,
+        'trial_balance': 13,
+        'profit_loss': 14,
+        'balance_sheet': 15,
+        'ar_ageing': 16,
+        'ap_ageing': 17,
+    }
+
+    def __getattr__(self, name):
+        aliases = type(self)._SCREEN_ATTR_ALIASES
+        if name in aliases and hasattr(self, '_lazy_screens'):
+            screen = self._lazy_screens.load(aliases[name])
+            if screen is not None:
+                setattr(self, name, screen)
+                return screen
+        raise AttributeError(name)
+
     def _determine_role(self):
         """Determine user role from user_data."""
         from ui.role_manager import get_role_from_user_data
@@ -365,7 +413,8 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(content_frame, 1)
 
         self.sidebar.page_changed.connect(self.change_page)
-        self.sidebar.set_active_item(0)
+        self.signals_to_methods.setdefault('page_changed', []).append(self.change_page)
+        self.sidebar.set_active_item(0, emit_signal=False)
         
         # Update device ID display in status bar
         self.update_device_id_display()
@@ -418,7 +467,7 @@ class MainWindow(QMainWindow):
         self.header.setText(page_title.strip())
         self.header.setVisible(False)
         self.pages.setCurrentIndex(index)
-        self.sidebar.set_active_item(index)
+        self.sidebar.set_active_item(index, emit_signal=False)
         self._update_nav_header(index, page_title)
 
         corr_id = generate_correlation_id("nav")
@@ -528,7 +577,7 @@ class MainWindow(QMainWindow):
             self._disable_history = True
             self.pages.setCurrentIndex(prev_index)
             self.header.setText(prev_title)
-            self.sidebar.set_active_item(prev_index)
+            self.sidebar.set_active_item(prev_index, emit_signal=False)
             self._disable_history = False
             current_idx = self.pages.currentIndex()
             self._update_nav_header(current_idx, prev_title)
@@ -543,7 +592,7 @@ class MainWindow(QMainWindow):
         self._disable_history = True
         self.pages.setCurrentIndex(0)
         self.header.setText("Pharmacy ERP Dashboard")
-        self.sidebar.set_active_item(0)
+        self.sidebar.set_active_item(0, emit_signal=False)
         self._disable_history = False
         self._update_nav_header(0, "Pharmacy ERP Dashboard")
     
@@ -579,7 +628,7 @@ class MainWindow(QMainWindow):
 
     def check_connection(self):
         """F18: Trigger a non-blocking connection check in a background thread."""
-        if not self.isVisible() or not hasattr(self, 'connection_status_label'):
+        if self._closing or not self.isVisible() or not hasattr(self, 'connection_status_label'):
             return
         worker = _ConnectionCheckWorker(self.api_client)
         thread = QThread(self)
@@ -589,6 +638,7 @@ class MainWindow(QMainWindow):
         worker.result.connect(thread.quit)
         thread.finished.connect(thread.deleteLater)
         worker.finished.connect(worker.deleteLater)
+        self._track_worker_thread(thread)
         getattr(thread, "start")()
 
     def _on_connection_result(self, is_reachable: bool):
@@ -1036,7 +1086,7 @@ class MainWindow(QMainWindow):
                 title = page_id.replace('_', ' ').title()
                 self.navigation_history.push(current, title)
             self.pages.setCurrentIndex(index)
-            self.sidebar.set_active_item(index)
+            self.sidebar.set_active_item(index, emit_signal=False)
             self._update_nav_header(index, page_id.replace('_', ' ').title())
             self.status_bar.showMessage(f"Navigated to {page_id.replace('_', ' ').title()}", 2000)
     
@@ -1126,6 +1176,17 @@ class MainWindow(QMainWindow):
         """Ensure all timers are stopped on application exit."""
         from runtime.ux_telemetry import record_exit_point, shutdown_telemetry
         record_exit_point("close")
+        self._closing = True
+        for timer in list(getattr(self, '_deferred_timers', [])):
+            if timer.isActive():
+                timer.stop()
+            timer.deleteLater()
+        self._deferred_timers.clear()
+        for thread in list(getattr(self, '_worker_threads', [])):
+            if thread.isRunning():
+                thread.quit()
+                thread.wait(2000)
+        self._worker_threads.clear()
         if hasattr(self, 'status_timer') and self.status_timer is not None:
             self.status_timer.stop()
         if hasattr(self, 'connection_timer') and self.connection_timer is not None:

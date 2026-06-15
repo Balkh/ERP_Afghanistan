@@ -113,13 +113,12 @@ class ThemeEngine(QObject):
         return QColor(value)
 
     def set_theme(self, theme_name: str) -> None:
-        """Legacy alias used by UI tests; raises on invalid themes."""
+        """Lightweight legacy alias used by tests and older callers."""
         if theme_name not in _THEMES:
             raise ValueError(f"Unknown theme: {theme_name}")
-        if theme_name == self._current_theme:
-            self.theme_changed.emit(theme_name)
-            return
-        self.apply_theme(theme_name)
+        self._current_theme = theme_name
+        _update_constants_module(_THEMES[theme_name], theme_name)
+        self.theme_changed.emit(theme_name)
 
     def _generate_stylesheet(self, theme: Dict[str, QColor]) -> str:
         """Generate a basic stylesheet for compatibility tests."""
