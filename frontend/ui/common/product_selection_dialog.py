@@ -78,7 +78,8 @@ class ProductSelectionDialog(EnterpriseDialog):
             # We use the search endpoint
             result = self._api_client.get("/api/inventory/products/", params={'search': query})
             if result and result.get('success'):
-                products = result['data'].get('results', [])
+                data = result.get('data', {})
+                products = data.get('results', []) if isinstance(data, dict) else data if isinstance(data, list) else []
                 self._populate_table(products)
         except Exception as e:
             print(f"Product search error: {e}")
@@ -94,7 +95,11 @@ class ProductSelectionDialog(EnterpriseDialog):
             self.table.setItem(row, 0, name_item)
             self.table.setItem(row, 1, QTableWidgetItem(p.get('generic_name', '')))
             self.table.setItem(row, 2, QTableWidgetItem(p.get('barcode', '')))
-            self.table.setItem(row, 3, QTableWidgetItem(f"{p.get('sale_price', 0):.2f}"))
+            try:
+                price_str = f"{float(p.get('sale_price', 0)):.2f}"
+            except (ValueError, TypeError):
+                price_str = str(p.get('sale_price', '0'))
+            self.table.setItem(row, 3, QTableWidgetItem(price_str))
             self.table.setItem(row, 4, QTableWidgetItem(str(p.get('total_stock', 0))))
 
     def accept_selection(self):

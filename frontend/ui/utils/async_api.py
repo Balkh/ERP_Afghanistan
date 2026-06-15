@@ -133,7 +133,11 @@ class AsyncRequestMixin:
     def cancel_api_requests(self):
         self._ensure_async_state()
         for thread, _worker in list(self._active_api_requests.values()):
-            if thread.isRunning():
-                thread.quit()
-                thread.wait(2000)
+            try:
+                from shiboken6 import isValid
+                if isValid(thread) and thread.isRunning():
+                    thread.quit()
+                    thread.wait(2000)
+            except (RuntimeError, ImportError):
+                pass
         self._active_api_requests.clear()
