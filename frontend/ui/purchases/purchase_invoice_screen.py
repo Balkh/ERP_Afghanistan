@@ -447,7 +447,10 @@ class PurchaseInvoiceScreen(BaseScreen):
             if isinstance(supplier, dict):
                 self.supplier_combo.addItem(supplier.get("name", "Unknown"), supplier.get("id", ""))
 
-        self.supplier_combo.currentIndexChanged.connect(self.on_supplier_selected)
+        # Guard: connect only once (load_suppliers is called from _on_screen_shown)
+        if not getattr(self, '_supplier_combo_connected', False):
+            self.supplier_combo.currentIndexChanged.connect(self.on_supplier_selected)
+            self._supplier_combo_connected = True
 
     def on_supplier_selected(self, index):
         """Handle supplier selection."""

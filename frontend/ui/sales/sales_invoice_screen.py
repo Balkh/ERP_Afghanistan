@@ -457,7 +457,10 @@ class SalesInvoiceScreen(BaseScreen):
             if isinstance(customer, dict):
                 self.customer_combo.addItem(customer.get("name", "Unknown"), customer.get("id", ""))
 
-        self.customer_combo.currentIndexChanged.connect(self.on_customer_selected)
+        # Guard: connect only once (load_customers is called from _on_screen_shown)
+        if not getattr(self, '_customer_combo_connected', False):
+            self.customer_combo.currentIndexChanged.connect(self.on_customer_selected)
+            self._customer_combo_connected = True
 
     def on_customer_selected(self, index):
         """Handle customer selection."""
