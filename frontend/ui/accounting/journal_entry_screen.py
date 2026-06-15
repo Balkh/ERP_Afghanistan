@@ -21,9 +21,9 @@ class JournalEntryScreen(BaseScreen):
 
     entry_selected = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, api_client=None):
         super().__init__(parent, screen_id="journal_entries")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.entries = []
         self._is_loading = False
         self.setup_ui()

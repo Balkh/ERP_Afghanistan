@@ -24,7 +24,7 @@ from ui.screens.base_screen import BaseScreen
 class FinancialIntegrityScreen(BaseScreen):
     """Screen displaying financial integrity validation results."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, api_client=None):
         super().__init__(parent, screen_id="financial_integrity")
         self.api_client = api_client or APIClient()
         self.setup_ui()

@@ -19,9 +19,9 @@ class ChartOfAccountsScreen(BaseScreen):
 
     account_selected = Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, api_client=None):
         super().__init__(parent, screen_id="chart_of_accounts")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.accounts = []
         self.setup_ui()
         self.load_accounts()

@@ -17,9 +17,9 @@ from ui.screens.base_screen import BaseScreen
 class AccountLedgerScreen(BaseScreen):
     """Account Ledger screen with date range and running balance."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, api_client=None):
         super().__init__(parent, screen_id="account_ledger")
-        self.api_client = APIClient()
+        self.api_client = api_client or APIClient()
         self.accounts = []
         self._is_loading = False
         self.setup_ui()

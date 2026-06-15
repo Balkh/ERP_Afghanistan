@@ -70,18 +70,15 @@ def register_all_screens(lazy: "LazyScreenManager", main: "MainWindow") -> None:
     )
 
     # 10-17 Accounting
-    _register(10, _screen_builder("ui.accounting.chart_of_accounts_screen", "ChartOfAccountsScreen",
-                                  lambda cls, api_client=None, **kw: cls(**kw)))
-    _register(11, _screen_builder("ui.accounting.journal_entry_screen", "JournalEntryScreen",
-                                  lambda cls, api_client=None, **kw: cls(**kw)))
-    _register(12, _screen_builder("ui.accounting.account_ledger_screen", "AccountLedgerScreen",
-                                  lambda cls, api_client=None, **kw: cls(**kw)))
+    _register(10, _b("ui.accounting.chart_of_accounts_screen", "ChartOfAccountsScreen"))
+    _register(11, _b("ui.accounting.journal_entry_screen", "JournalEntryScreen"))
+    _register(12, _b("ui.accounting.account_ledger_screen", "AccountLedgerScreen"))
 
     def _report(report_type: str):
         return _screen_builder(
             "ui.accounting.report_browser",
             "ReportBrowser",
-            lambda cls, api_client=None, **kw: cls(report_type=report_type, **kw),
+            lambda cls, api_client=None, **kw: cls(report_type=report_type, api_client=api_client, **kw),
         )
 
     _register(13, _report("trial_balance"))
@@ -160,10 +157,8 @@ def register_all_screens(lazy: "LazyScreenManager", main: "MainWindow") -> None:
     _register(56, _report("payroll_emp_history"))
     _register(57, _b("ui.returns.reconciliation_screen", "ReconciliationScreen"))
 
-    _register(58, _screen_builder("ui.accounting.financial_integrity_screen", "FinancialIntegrityScreen",
-                                  lambda cls, api_client=None, **kw: cls(**kw)))
-    _register(59, _screen_builder("ui.accounting.financial_audit_log_screen", "FinancialAuditLogScreen",
-                                  lambda cls, api_client=None, **kw: cls(**kw)))
+    _register(58, _b("ui.accounting.financial_integrity_screen", "FinancialIntegrityScreen"))
+    _register(59, _b("ui.accounting.financial_audit_log_screen", "FinancialAuditLogScreen"))
 
     _register(60, _b("ui.finance.customer_payment_workspace", "CustomerPaymentWorkspace"))
     _register(61, _b("ui.finance.supplier_payment_workspace", "SupplierPaymentWorkspace"))

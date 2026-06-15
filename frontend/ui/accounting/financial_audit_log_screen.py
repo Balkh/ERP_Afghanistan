@@ -42,7 +42,7 @@ FINANCIAL_ACTIONS = [
 class FinancialAuditLogScreen(BaseScreen):
     """Screen displaying the financial audit trail."""
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, api_client=None):
         super().__init__(parent, screen_id="financial_audit")
         self.api_client = api_client or APIClient()
         self.setup_ui()
