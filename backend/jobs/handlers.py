@@ -11,6 +11,7 @@ from typing import Dict, Any
 from datetime import datetime, timedelta
 
 from django.utils import timezone
+from django.db import models
 from django.db.models import Sum, Count
 from django.contrib.auth import get_user_model
 
@@ -147,7 +148,7 @@ class ExportGenerationHandler(BaseJobHandler):
         return result
     
     def get_idempotency_key(self, payload: Dict[str, Any]) -> str:
-        return f"export:{payload.get('export_type')}:{job.company_id}:{payload.get('timestamp')}"
+        return f"export:{payload.get('export_type')}:{payload.get('company_id')}:{payload.get('timestamp')}"
 
 
 class FinancialReconciliationHandler(BaseJobHandler):
@@ -203,7 +204,7 @@ class FinancialReconciliationHandler(BaseJobHandler):
     def get_idempotency_key(self, payload: Dict[str, Any]) -> str:
         from django.utils import timezone
         date = payload.get('date', timezone.now().date())
-        return f"reconciliation:{job.company_id}:{date}"
+        return f"reconciliation:{payload.get('company_id')}:{date}"
 
 
 class AnomalyScanHandler(BaseJobHandler):

@@ -1,9 +1,12 @@
+import logging
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.operator_safety import DestructiveActionGuard
 from .base_screen import BaseInventoryScreen
 from api.client import APIClient
 from api.endpoints import get_endpoint
 from PySide6.QtCore import Slot
+
+logger = logging.getLogger(__name__)
 
 class ProductScreen(BaseInventoryScreen):
     """Screen for managing products."""
@@ -86,8 +89,7 @@ class ProductScreen(BaseInventoryScreen):
             
             self.update_table()
         except Exception as e:
-            # TODO: Replace with user-facing error state (no error_label/empty_label available)
-            print(f"Error loading products: {e}")
+            logger.error(f"Error loading products: {e}")
             self.products = []
             self.update_table()
     
@@ -166,5 +168,4 @@ class ProductScreen(BaseInventoryScreen):
             self.api_client.delete(f"/api/inventory/products/{product_id}/")
             self.load_products()
         except Exception as e:
-            # TODO: Replace with user-facing error state (no error_label/empty_label available)
-            print(f"Error deleting product: {e}")
+            logger.error(f"Error deleting product: {e}")

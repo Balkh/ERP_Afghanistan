@@ -2,6 +2,7 @@
 Inventory Integrity Monitor.
 Validates stock data consistency and detects anomalies.
 """
+from decimal import Decimal
 from django.db.models import Sum, F
 from django.utils import timezone
 from datetime import timedelta

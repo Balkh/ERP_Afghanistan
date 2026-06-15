@@ -427,7 +427,7 @@ class InventoryRecoveryValidator:
 
     def _check_warehouse_totals(self):
         """Verify warehouse stock totals are consistent with movements."""
-        from inventory.models import Warehouse, StockMovement
+        from inventory.models import Warehouse, StockMovement, Batch
 
         inconsistencies = []
 

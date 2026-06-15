@@ -840,9 +840,6 @@ class FiscalPeriodCloseLog(TimeStampedUUIDModel):
 
 def is_period_locked(entry_date, company=None):
     """Check if a date falls within a locked or closed period."""
-    from django.utils import timezone
-    today = timezone.now().date()
-
     queryset = FiscalPeriod.objects.filter(
         start_date__lte=entry_date,
         end_date__gte=entry_date,

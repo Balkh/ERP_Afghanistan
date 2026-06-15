@@ -5,6 +5,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Count
 
 from audit.models import AuditTrail, AuditRetentionPolicy
+from audit.services.audit_service import AuditService
 from security.permissions import RoleBasedPermission
 
 

@@ -238,7 +238,7 @@ class IncidentCard(QFrame):
         super().__init__(parent)
         self.setObjectName("incidentCard")
         self._severity = severity
-        __severity_color = SeverityBadge.SEVERITY_COLORS.get(
+        severity_color = SeverityBadge.SEVERITY_COLORS.get(
             severity.lower(), (COLOR_TEXT_MUTED, COLOR_BG_MAIN)
         )[0]
         self.setStyleSheet(f"""

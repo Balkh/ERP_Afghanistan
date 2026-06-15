@@ -1,4 +1,5 @@
 """Role Management Screen for ERP — CRUD for roles + permission assignment."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QAbstractItemView,
                                 QLineEdit, QGroupBox,
                                 QCheckBox, QScrollArea, QWidget,
@@ -15,6 +16,9 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_
                           BORDER_RADIUS_MD, COLOR_BG_MAIN, COLOR_BG_SURFACE,
                           COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
                           COLOR_TEXT_SECONDARY, COLOR_SUCCESS)
+
+
+logger = logging.getLogger(__name__)
 
 
 class RoleManagementScreen(BaseScreen):
@@ -142,15 +146,13 @@ class RoleManagementScreen(BaseScreen):
                 self._roles = result.get("data", [])
                 self._populate_role_table()
         except Exception as e:
-            # TODO: Replace with user-facing error state (no error_label/empty_label available)
-            print(f"Error loading roles: {e}")
+            logger.error(f"Error loading roles: {e}")
         try:
             result = self._api_client.get_permissions()
             if result.get("success"):
                 self._permissions = result.get("data", [])
         except Exception as e:
-            # TODO: Replace with user-facing error state (no error_label/empty_label available)
-            print(f"Error loading permissions: {e}")
+            logger.error(f"Error loading permissions: {e}")
 
     def _populate_role_table(self):
         self.role_table.setRowCount(0)

@@ -1,9 +1,12 @@
+import logging
 from decimal import Decimal
 from datetime import date, timezone
 from typing import Optional, Union
 from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.utils import timezone as django_timezone
+
+logger = logging.getLogger(__name__)
 
 from inventory.models import Batch, StockMovement, Warehouse, Product, WarehouseTransfer
 from inventory.service import StockSelectionMode, StockAllocation, StockOperationResult

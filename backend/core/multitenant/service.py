@@ -40,6 +40,7 @@ class CompanyService:
         Returns:
             Filtered queryset or original if no company context and user is superuser
         """
+        from core.multitenant.context import TenantContext
         company_id = TenantContext.get_company_id()
         
         if not company_id:

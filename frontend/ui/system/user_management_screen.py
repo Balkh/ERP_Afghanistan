@@ -1,4 +1,5 @@
 """User Management Screen for ERP."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QAbstractItemView, QComboBox,
                                   QLineEdit,
@@ -16,6 +17,9 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_SUCCESS)
 
 
+
+
+logger = logging.getLogger(__name__)
 
 
 class UserManagementScreen(BaseScreen):
@@ -164,8 +168,7 @@ class UserManagementScreen(BaseScreen):
             if result.get('success'):
                 self._roles = result.get('data', [])
         except Exception as e:
-            # TODO: Replace with user-facing error state (no error_label/empty_label available)
-            print(f"Error loading roles: {e}")
+            logger.error(f"Error loading roles: {e}")
     
     def load_users(self):
         """Load users from API."""
@@ -178,8 +181,7 @@ class UserManagementScreen(BaseScreen):
                 self._users = result.get('data', {}).get('results', [])
                 self.populate_table()
         except Exception as e:
-            # TODO: Replace with user-facing error state (no error_label/empty_label available)
-            print(f"Error loading users: {e}")
+            logger.error(f"Error loading users: {e}")
     
     def populate_table(self):
         """Populate the users table."""

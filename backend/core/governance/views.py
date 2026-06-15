@@ -321,7 +321,7 @@ def certification_summary(request):
     orch = OperationalCertificationOrchestrator(KERNEL)
     report = orch.certify_all(soak_iterations=50)
     return Response({
-        "certification_version": CERTIFICATION_VERSION if 'CERTIFICATION_VERSION' in dir() else "2.0.0",
+        "certification_version": globals().get('CERTIFICATION_VERSION', "2.0.0"),
         "overall": {
             "passed": report.overall_passed,
             "score": report.overall_score,

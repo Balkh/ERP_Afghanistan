@@ -452,13 +452,13 @@ class SessionSecurity:
         if not hasattr(request, 'session'):
             return False
             
+        from django.utils import timezone
         last_activity = request.session.get('last_activity')
         if not last_activity:
             # Set initial activity time
             request.session['last_activity'] = timezone.now().timestamp()
             return True
             
-        from django.utils import timezone
         now = timezone.now().timestamp()
         if (now - last_activity) > (timeout_minutes * 60):
             # Session expired
