@@ -299,7 +299,8 @@ class SettingsScreen(BaseScreen):
                 return isinstance(resp, dict) and resp.get("success")
             return False
         except Exception as e:
-            print(f"Failed to save company currency: {e}")
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to save company currency: {e}")
             return False
     
     def reset_settings(self):
