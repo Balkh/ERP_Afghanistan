@@ -201,7 +201,7 @@ class InvoiceTemplateManager(BaseScreen):
                 res = self._api_client.post("/api/core/invoice-templates/", data)
             
             if res:
-                AlertDialog.info(self, "Success", "Invoice template saved successfully!")
+                AlertDialog.info("Success", "Invoice template saved successfully!", self)
                 self.current_template_id = res.get("id")
         except Exception as e:
-            AlertDialog.error(self, "Error", f"Failed to save template: {e}")
+            AlertDialog.error("Error", f"Failed to save template: {e}", self)

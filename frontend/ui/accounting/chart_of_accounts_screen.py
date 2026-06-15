@@ -301,4 +301,4 @@ class ChartOfAccountsScreen(BaseScreen):
                 self.api_client.delete(f"/api/accounting/accounts/{acc_id}/")
                 self.load_accounts()
             except Exception as e:
-                AlertDialog.error(self, "Error", f"Failed to delete account: {e}")
+                AlertDialog.error("Error", f"Failed to delete account: {e}", self)

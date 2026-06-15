@@ -333,7 +333,7 @@ class PrintableInvoiceDialog(EnterpriseDialog):
             printer.setOutputFileName(file_path)
             self.preview.print_(printer)
 
-            AlertDialog.info(self, "Success", f"Invoice saved to:\n{file_path}")
+            AlertDialog.info("Success", f"Invoice saved to:\n{file_path}", self)
 
     def share_invoice(self):
         """Share the invoice via WhatsApp."""

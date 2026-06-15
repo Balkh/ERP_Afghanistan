@@ -6,7 +6,7 @@ Displays current license information and validation status.
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, BORDER_RADIUS_MD, BORDER_RADIUS_SM, TEXT_BODY, TEXT_CARD_TITLE, TEXT_DISPLAY, TEXT_LABEL, TEXT_MONO, TEXT_SECTION_TITLE, TEXT_TABLE)
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_PRIMARY_HOVER, COLOR_PRIMARY_ACTIVE, COLOR_SUCCESS, COLOR_DANGER, COLOR_STATUS_VALID)
 
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PySide6.QtWidgets import (QWidget, QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                                 QGroupBox, QTextEdit)
 from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QFont
@@ -269,7 +269,7 @@ class LicenseStatusScreen(QWidget):
     def view_license_file(self):
         """View the current license file in a dialog."""
         if not self.current_license_data:
-            AlertDialog.info(self, "Info", "No license data available to view.")
+            AlertDialog.info("Info", "No license data available to view.", self)
             return
         
         # Create and show license details dialog
@@ -282,7 +282,7 @@ class LicenseStatusScreen(QWidget):
         self.license_validator.cleanup()
 
 
-class LicenseDetailsDialog(QWidget):
+class LicenseDetailsDialog(QDialog):
     """Dialog for displaying detailed license information."""
     
     def __init__(self, license_data, parent=None):

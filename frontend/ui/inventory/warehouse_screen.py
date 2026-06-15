@@ -150,4 +150,4 @@ class WarehouseScreen(BaseInventoryScreen):
             self.load_warehouses()
         except Exception as e:
             from ui.components.dialogs import AlertDialog
-            AlertDialog.error(self, "Error", f"Failed to delete warehouse: {e}")
+            AlertDialog.error("Error", f"Failed to delete warehouse: {e}", self)

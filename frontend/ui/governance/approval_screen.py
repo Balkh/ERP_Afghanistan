@@ -155,11 +155,10 @@ class ApprovalWorkflowScreen(BaseScreen):
                 decision=decision,
                 justification="Approved via UI",
             )
-            AlertDialog.info(self, "Signature Submitted",
-                                    f"Decision: {decision}\nNew State: {result.get('data', {}).get('state', 'unknown')}")
+            AlertDialog.info("Signature Submitted", f"Decision: {decision}\nNew State: {result.get('data', {}).get('state', 'unknown')}", self)
             self._refresh()
         except Exception as e:
-            AlertDialog.warning(self, "Error", f"Signature failed: {e}")
+            AlertDialog.warning("Error", f"Signature failed: {e}", self)
 
     def set_api_client(self, client: APIClient):
         self._api = GovernanceAPIClient(client)

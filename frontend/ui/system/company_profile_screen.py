@@ -133,7 +133,7 @@ class CompanyProfileScreen(BaseScreen):
     def _load_profile(self):
         """Load company profile from API."""
         if not self._api_client:
-            AlertDialog.warning(self, "Company Profile", "API client not available.")
+            AlertDialog.warning("Company Profile", "API client not available.", self)
             return
 
         try:
@@ -164,16 +164,16 @@ class CompanyProfileScreen(BaseScreen):
                 else:
                     self.logo_label.setText("No logo uploaded")
 
-                AlertDialog.info(self, "Company Profile", "Profile loaded successfully.")
+                AlertDialog.info("Company Profile", "Profile loaded successfully.", self)
             else:
-                AlertDialog.warning(self, "Company Profile", f"Failed to load profile: {resp}")
+                AlertDialog.warning("Company Profile", f"Failed to load profile: {resp}", self)
         except Exception as e:
-            AlertDialog.error(self, "Company Profile", f"Error loading profile: {e}")
+            AlertDialog.error("Company Profile", f"Error loading profile: {e}", self)
 
     def _save_profile(self):
         """Save company profile to API."""
         if not self._api_client:
-            AlertDialog.warning(self, "Company Profile", "API client not available.")
+            AlertDialog.warning("Company Profile", "API client not available.", self)
             return
 
         payload = {
@@ -189,10 +189,10 @@ class CompanyProfileScreen(BaseScreen):
         }
 
         if not payload["name"]:
-            AlertDialog.warning(self, "Company Profile", "Company name is required.")
+            AlertDialog.warning("Company Profile", "Company name is required.", self)
             return
         if not payload["code"]:
-            AlertDialog.warning(self, "Company Profile", "Company code is required.")
+            AlertDialog.warning("Company Profile", "Company code is required.", self)
             return
 
         try:
@@ -204,11 +204,11 @@ class CompanyProfileScreen(BaseScreen):
             if resp and resp.get("success"):
                 data = resp["data"]
                 self._company_id = data.get("id")
-                AlertDialog.info(self, "Company Profile", "Profile saved successfully.")
+                AlertDialog.info("Company Profile", "Profile saved successfully.", self)
             else:
-                AlertDialog.warning(self, "Company Profile", f"Failed to save: {resp}")
+                AlertDialog.warning("Company Profile", f"Failed to save: {resp}", self)
         except Exception as e:
-            AlertDialog.error(self, "Company Profile", f"Error saving profile: {e}")
+            AlertDialog.error("Company Profile", f"Error saving profile: {e}", self)
 
     def _upload_logo(self):
         """Upload company logo."""

@@ -595,7 +595,7 @@ class ReportBrowser(BaseScreen):
 
     def _export_csv(self):
         if not self.report_data:
-            AlertDialog.warning(self, "Warning", "Run the report first.")
+            AlertDialog.warning("Warning", "Run the report first.", self)
             return
         config = REPORT_TYPES.get(self.report_type)
         if not config:
@@ -621,6 +621,6 @@ class ReportBrowser(BaseScreen):
                 with open(file_path, "w", encoding="utf-8") as f:
                     content = resp if isinstance(resp, str) else str(resp)
                     f.write(content)
-                AlertDialog.info(self, "Success", f"Exported to {file_path}")
+                AlertDialog.info("Success", f"Exported to {file_path}", self)
             except Exception as e:
-                AlertDialog.error(self, "Error", f"Export failed: {e}")
+                AlertDialog.error("Error", f"Export failed: {e}", self)

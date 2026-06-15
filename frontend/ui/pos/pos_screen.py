@@ -504,7 +504,7 @@ class POSScreen(BaseScreen):
                         self.customer_combo.addItem(name, c.get("id"))
         except Exception as e:
             # Phase Recovery: surface the error instead of silently failing
-            AlertDialog.error(self, "Connection Error", f"Could not load customers: {e}")
+            AlertDialog.error("Connection Error", f"Could not load customers: {e}", self)
 
     def _on_barcode_scanned(self, barcode):
         self.scan_status.setText(f"Scanning: {barcode}")
@@ -600,7 +600,7 @@ class POSScreen(BaseScreen):
                         self.search_results.setCellWidget(i, 3, add_btn)
         except Exception as e:
             # Phase Recovery: surface the error instead of silently failing
-            AlertDialog.error(self, "Search Failed", f"Product search failed: {e}")
+            AlertDialog.error("Search Failed", f"Product search failed: {e}", self)
 
     def _add_search_result_to_cart(self, index):
         row = index.row()

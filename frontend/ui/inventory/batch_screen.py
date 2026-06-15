@@ -162,4 +162,4 @@ class BatchScreen(BaseInventoryScreen):
             self.load_batches()
         except Exception as e:
             from ui.components.dialogs import AlertDialog
-            AlertDialog.error(self, "Error", f"Failed to delete batch: {e}")
+            AlertDialog.error("Error", f"Failed to delete batch: {e}", self)

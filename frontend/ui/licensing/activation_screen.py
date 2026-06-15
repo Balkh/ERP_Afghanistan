@@ -152,7 +152,7 @@ class ActivationScreen(QWidget):
     def activate_license(self):
         """Activate the license using the selected file."""
         if not self.selected_license_file or not os.path.exists(self.selected_license_file):
-            AlertDialog.warning(self, "Error", "Please select a valid license file first.")
+            AlertDialog.warning("Error", "Please select a valid license file first.", self)
             return
         
         # Update UI
@@ -175,24 +175,16 @@ class ActivationScreen(QWidget):
                 self.status_label.setText("Activation successful!")
                 self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: {SPACING_SM}px;")
                 
-                AlertDialog.info(
-                    self,
-                    "Activation Successful",
-                    "Pharmacy ERP has been successfully activated!\n\n"
-                    "The application will now restart to apply the license."
-                )
+                AlertDialog.info("Activation Successful", "Pharmacy ERP has been successfully activated!\n\n"
+                    "The application will now restart to apply the license.", self)
                 
                 self.activation_success.emit()
             else:
                 self.status_label.setText(f"Activation failed: {message}")
                 self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; padding: {SPACING_SM}px;")
                 
-                AlertDialog.warning(
-                    self,
-                    "Activation Failed",
-                    f"License activation failed:\n\n{message}\n\n"
-                    "Please check your license file and try again."
-                )
+                AlertDialog.warning("Activation Failed", f"License activation failed:\n\n{message}\n\n"
+                    "Please check your license file and try again.", self)
                 
                 self.activation_failed.emit(message)
                 
@@ -200,11 +192,7 @@ class ActivationScreen(QWidget):
             self.status_label.setText(f"Activation error: {str(e)}")
             self.status_label.setStyleSheet(f"color: {COLOR_DANGER}; font-weight: bold; padding: {SPACING_SM}px;")
             
-            AlertDialog.error(
-                self,
-                "Activation Error",
-                f"An error occurred during activation:\n\n{str(e)}"
-            )
+            AlertDialog.error("Activation Error", f"An error occurred during activation:\n\n{str(e)}", self)
             
             self.activation_failed.emit(str(e))
             

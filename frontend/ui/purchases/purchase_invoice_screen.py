@@ -477,7 +477,7 @@ class PurchaseInvoiceScreen(BaseScreen):
 
         if not products:
             from ui.components.dialogs import AlertDialog
-            AlertDialog.info(self, "No Products", "No products available. Add products first.")
+            AlertDialog.info("No Products", "No products available. Add products first.", self)
             return
 
         product_name, ok = QInputDialog_getItem(
@@ -545,8 +545,7 @@ class PurchaseInvoiceScreen(BaseScreen):
         """Display search results in a pick dialog (Phase Recovery)."""
         from ui.components.dialogs import AlertDialog
         names = "\n".join(f"  • {p.get('name', 'Unknown')}" for p in products[:20])
-        AlertDialog.info(self, f"{len(products)} Product(s) Found",
-                         f"Search results:\n\n{names}\n\nClick '+ Add Product' to pick one.")
+        AlertDialog.info(f"{len(products)} Product(s) Found", f"Search results:\n\n{names}\n\nClick '+ Add Product' to pick one.", self)
 
     def add_item_to_table(self, product):
         """Add product to items table with batch info."""

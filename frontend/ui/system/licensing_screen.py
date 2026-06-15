@@ -136,13 +136,13 @@ class LicensingScreen(BaseScreen):
         try:
             resp = self._api.post("/api/licensing/import-license/", data={"file_path": path})
             if resp and resp.get("success"):
-                AlertDialog.info(self, "Success", resp.get("message", "License activated"))
+                AlertDialog.info("Success", resp.get("message", "License activated"), self)
                 self._refresh()
             else:
                 msg = (resp or {}).get("error", "Import failed")
-                AlertDialog.warning(self, "Error", msg)
+                AlertDialog.warning("Error", msg, self)
         except Exception as e:
-            AlertDialog.warning(self, "Error", str(e))
+            AlertDialog.warning("Error", str(e), self)
 
     def _show_fingerprint(self):
         fp = self._state.get("device_id", self.fingerprint_label.text()) if isinstance(self._state, dict) else str(self._state)
