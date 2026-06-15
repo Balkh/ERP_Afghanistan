@@ -345,8 +345,9 @@ class SettingsScreen(BaseScreen):
                         company_id = self._company_id
                     if company_id:
                         self._api_client.put(f"/api/core/companies/{company_id}/", {"default_currency": "AFN"})
-                except Exception:
-                    pass
+                except Exception as e:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Failed to reset company currency: {e}")
             self._apply_theme()
             AlertDialog.info("Settings", "Settings reset to defaults.", self)
     

@@ -313,8 +313,11 @@ class EmployeeDialog(EnterpriseDialog):
         try:
             res = self.api_client.get("/api/hr/departments/")
             if res and res.get('success'):
-                for d in res['data'].get('results', []):
-                    self.department.addItem(d['name'], d['id'])
+                data = res.get('data', {})
+                results = data.get('results', []) if isinstance(data, dict) else []
+                for d in results:
+                    if isinstance(d, dict):
+                        self.department.addItem(d.get('name', ''), d.get('id'))
         except Exception:
             pass
 
@@ -323,8 +326,11 @@ class EmployeeDialog(EnterpriseDialog):
         try:
             res = self.api_client.get("/api/hr/positions/")
             if res and res.get('success'):
-                for p in res['data'].get('results', []):
-                    self.position.addItem(p['title'], p['id'])
+                data = res.get('data', {})
+                results = data.get('results', []) if isinstance(data, dict) else []
+                for p in results:
+                    if isinstance(p, dict):
+                        self.position.addItem(p.get('title', ''), p.get('id'))
         except Exception:
             pass
 

@@ -73,7 +73,7 @@ class EntityManagementScreen(BaseScreen):
         try:
             response = self._api_client.get("/api/entities/entities/")
             if response and response.get('success'):
-                self.entities_data = response['data'].get('results', [])
+                self.entities_data = response.get('data', {}).get('results', [])
                 self._populate_table()
         except Exception as e:
             print(f"Failed to load entities: {e}")

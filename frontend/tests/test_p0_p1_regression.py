@@ -666,3 +666,67 @@ class TestLicenseDetailsDialogExec(unittest.TestCase):
                     "LicenseDetailsDialog must be invoked with .exec()")
                 return
         self.fail("LicenseDetailsDialog class not found")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 20: API response KeyError prevention
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestApiResponseSafety(unittest.TestCase):
+    """Verify all API response access uses .get() not bare ['key']."""
+
+    def _scan_file_for_bare_bracket(self, relpath, forbidden_patterns):
+        """Scan a file for bare bracket access on API data."""
+        import re
+        src = (_FRONTEND_ROOT / relpath).read_text()
+        violations = []
+        for pattern in forbidden_patterns:
+            for m in re.finditer(pattern, src):
+                line_no = src[:m.start()].count('\n') + 1
+                violations.append(f"{relpath}:{line_no}")
+        return violations
+
+    def test_no_bare_response_data_access(self):
+        """No file should use response['data'] — must use response.get('data')."""
+        import re
+        ui_dir = _FRONTEND_ROOT / "ui"
+        violations = []
+        for py_file in ui_dir.rglob("*.py"):
+            if "__pycache__" in str(py_file):
+                continue
+            src = py_file.read_text(errors="ignore")
+            for m in re.finditer(r"(?:res|response)\['data'\]", src):
+                line_no = src[:m.start()].count('\n') + 1
+                violations.append(f"{py_file.relative_to(_FRONTEND_ROOT)}:{line_no}")
+        self.assertEqual(violations, [],
+            f"Bare response['data'] access (KeyError risk): {violations}")
+
+    def test_expense_screen_uses_get(self):
+        src = (_FRONTEND_ROOT / "ui" / "finance" / "expense_screen.py").read_text()
+        self.assertNotIn("exp_res['data']", src)
+        self.assertNotIn("pay_res['data']", src)
+        self.assertIn("exp_res.get('data'", src)
+        self.assertIn("pay_res.get('data'", src)
+
+    def test_employee_screen_uses_get(self):
+        src = (_FRONTEND_ROOT / "ui" / "hr" / "employee_screen.py").read_text()
+        self.assertNotIn("res['data']", src)
+        self.assertIn("res.get('data'", src)
+
+    def test_account_form_uses_get(self):
+        src = (_FRONTEND_ROOT / "ui" / "accounting" / "components" / "account_form_dialog.py").read_text()
+        self.assertNotIn("acc['code']", src)
+        self.assertNotIn("acc['name']", src)
+        self.assertIn("acc.get('code'", src)
+
+    def test_journal_entry_form_uses_get(self):
+        src = (_FRONTEND_ROOT / "ui" / "accounting" / "components" / "journal_entry_form.py").read_text()
+        import re
+        bare = re.findall(r"acc\['(?:code|name|id)'\]", src)
+        self.assertEqual(bare, [], f"Bare acc['key'] access: {bare}")
+
+    def test_product_selection_uses_get(self):
+        src = (_FRONTEND_ROOT / "ui" / "common" / "product_selection_dialog.py").read_text()
+        self.assertNotIn("p['name']", src)
+        self.assertIn("p.get('name'", src)

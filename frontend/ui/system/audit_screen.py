@@ -133,7 +133,7 @@ class AuditScreen(BaseScreen):
             response = self._api_client.get('/api/audit/logs/', params=params)
             
             if response and 'data' in response:
-                data = response['data']
+                data = response.get('data', {})
                 logs = data.get('results', data) if isinstance(data, dict) else data
                 
                 log_data = []

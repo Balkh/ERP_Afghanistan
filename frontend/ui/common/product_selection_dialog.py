@@ -89,7 +89,7 @@ class ProductSelectionDialog(EnterpriseDialog):
             row = self.table.rowCount()
             self.table.insertRow(row)
             
-            name_item = QTableWidgetItem(p['name'])
+            name_item = QTableWidgetItem(p.get('name', ''))
             name_item.setData(Qt.UserRole, p)
             self.table.setItem(row, 0, name_item)
             self.table.setItem(row, 1, QTableWidgetItem(p.get('generic_name', '')))

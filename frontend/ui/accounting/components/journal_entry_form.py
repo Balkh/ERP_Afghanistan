@@ -199,7 +199,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
                     combo.clear()
                     combo.addItem("Select Account...", None)
                     for acc in sorted(self.accounts, key=lambda x: x.get("code", "")):
-                        combo.addItem(f"{acc['code']} - {acc['name']}", acc["id"])
+                        combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get('id'))
                     combo.setCurrentIndex(current_idx)
         except Exception:
             self.accounts = []
@@ -212,7 +212,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
         account_combo = QComboBox()
         account_combo.addItem("Select Account...", None)
         for acc in sorted(self.accounts, key=lambda x: x.get("code", "")):
-            account_combo.addItem(f"{acc['code']} - {acc['name']}", acc["id"])
+            account_combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get('id'))
         self.lines_table.set_cell_widget(row, 0, account_combo)
 
         desc_input = QLineEdit()

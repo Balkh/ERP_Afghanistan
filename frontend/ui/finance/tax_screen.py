@@ -140,7 +140,7 @@ class TaxScreen(BaseScreen):
                 return
             response = self._take_api_response("_async_tax_rates_response")
             if response and response.get('success'):
-                data = response['data']
+                data = response.get('data', {})
                 rates = data.get('results', data) if isinstance(data, dict) else data
                 
                 if not rates:
@@ -234,7 +234,7 @@ class TaxScreen(BaseScreen):
                 return
             response = self._take_api_response("_async_tax_returns_response")
             if response and response.get('success'):
-                data = response['data']
+                data = response.get('data', {})
                 returns = data.get('results', data) if isinstance(data, dict) else data
                 
                 ret_data = []
@@ -265,7 +265,7 @@ class TaxScreen(BaseScreen):
                 return
             response = self._take_api_response("_async_tax_transactions_response")
             if response and response.get('success'):
-                data = response['data']
+                data = response.get('data', {})
                 withholding = data.get('results', data) if isinstance(data, dict) else data
                 wh_data = []
                 for item in withholding:

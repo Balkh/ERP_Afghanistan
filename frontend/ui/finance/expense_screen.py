@@ -147,7 +147,7 @@ class ExpenseScreen(BaseScreen):
                 return
             response = self._take_api_response("_async_expenses_response")
             if response and response.get('success'):
-                self.expenses_data = response['data'].get('results', [])
+                self.expenses_data = response.get('data', {}).get('results', [])
                 if not self.expenses_data:
                     self._show_empty()
                 else:
@@ -249,17 +249,20 @@ class AddExpenseDialog(EnterpriseDialog):
 
     def _populate_expense_accounts(self, exp_res):
         if exp_res and exp_res.get('success'):
-            data = exp_res['data']
+            data = exp_res.get('data', [])
             results = data.get('results', data) if isinstance(data, dict) else data
             for acc in results:
-                self.expense_account.addItem(f"{acc['code']} - {acc['name']}", acc['id'])
+                if isinstance(acc, dict):
+                    self.expense_account.addItem(
+                        f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get('id'))
 
     def _populate_payment_accounts(self, pay_res):
         if pay_res and pay_res.get('success'):
-            data = pay_res['data']
+            data = pay_res.get('data', [])
             results = data.get('results', data) if isinstance(data, dict) else data
             for acc in results:
-                self.payment_account.addItem(acc['name'], acc['id'])
+                if isinstance(acc, dict):
+                    self.payment_account.addItem(acc.get('name', ''), acc.get('id'))
 
     def save_expense(self):
         try:
