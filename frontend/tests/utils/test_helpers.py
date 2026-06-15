@@ -42,6 +42,38 @@ class NavigationHelper:
         return index in self.GROUP_INDICES
 
 
+def assert_navigation_map(nav_map=None):
+    """Assert navigation map values are unique and usable."""
+    mapping = nav_map or NavigationHelper.NAV_MAP
+    assert isinstance(mapping, dict)
+    assert "dashboard" in mapping
+    values = list(mapping.values())
+    assert all(isinstance(v, int) for v in values)
+    assert len(values) == len(set(values)), "Navigation indices must be unique"
+
+
+def assert_sidebar_state(sidebar, expected_index=None):
+    """Assert a sidebar-like object has the expected active/current index."""
+    assert sidebar is not None
+    if expected_index is None:
+        return
+    for attr in ("active_index", "current_index", "_active_index", "_current_index"):
+        if hasattr(sidebar, attr):
+            assert getattr(sidebar, attr) == expected_index
+            return
+    if hasattr(sidebar, "currentRow"):
+        assert sidebar.currentRow() == expected_index
+        return
+    if hasattr(sidebar, "currentIndex"):
+        current = sidebar.currentIndex()
+        if hasattr(current, "row"):
+            assert current.row() == expected_index
+            return
+        assert current == expected_index
+        return
+    raise AssertionError("Sidebar active index is not observable")
+
+
 class ThemeHelper:
     """Helper for theme testing - logic only."""
     

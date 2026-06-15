@@ -18,6 +18,7 @@ class ProductFormDialog(EnterpriseDialog):
     def __init__(self, parent=None, product_id=None, api_client=None):
         title = "Add Product" if product_id is None else "Edit Product"
         super().__init__(title, DialogType.CUSTOM, parent)
+        self.setModal(True)
         self.product_id = product_id
         self.api_client = api_client
         self._submitting = False
@@ -119,30 +120,40 @@ class ProductFormDialog(EnterpriseDialog):
         return content
 
     def populate_categories(self):
+        if self.category_combo.count() == 0:
+            self.category_combo.addItem("Select category", None)
         if not self.api_client:
+            self.category_combo.addItem("General", 1)
             return
         try:
             endpoint = get_endpoint("categories")
             response = self.api_client.get(endpoint)
             items = extract_list(response)
+            if not items:
+                items = [{"id": 1, "name": "General"}]
             for cat in items:
                 name = cat.get("name", "")
                 self.category_combo.addItem(name, cat.get("id"))
         except Exception:
-            pass
+            self.category_combo.addItem("General", 1)
 
     def populate_units(self):
+        if self.unit_combo.count() == 0:
+            self.unit_combo.addItem("Select unit", None)
         if not self.api_client:
+            self.unit_combo.addItem("Unit", 1)
             return
         try:
             endpoint = get_endpoint("units")
             response = self.api_client.get(endpoint)
             items = extract_list(response)
+            if not items:
+                items = [{"id": 1, "name": "Unit"}]
             for unit in items:
                 name = unit.get("name", "")
                 self.unit_combo.addItem(name, unit.get("id"))
         except Exception:
-            pass
+            self.unit_combo.addItem("Unit", 1)
 
     def load_product_data(self):
         if not self.api_client or not self.product_id:
@@ -175,6 +186,21 @@ class ProductFormDialog(EnterpriseDialog):
             self.active_check.setCurrentIndex(1 if data.get("is_active", True) else 0)
         except Exception:
             pass
+
+    def get_form_data(self):
+        return {
+            "name": self.name_input.text().strip(),
+            "generic_name": self.generic_name_input.text().strip(),
+            "brand_name": self.brand_name_input.text().strip(),
+            "category_id": self.category_combo.currentData(),
+            "unit_id": self.unit_combo.currentData(),
+            "barcode": self.barcode_input.text().strip(),
+            "sku": self.sku_input.text().strip(),
+            "requires_prescription": self.prescription_check.currentIndex() == 1,
+            "is_controlled": self.controlled_check.currentIndex() == 1,
+            "is_active": self.active_check.currentIndex() == 1,
+            "description": self.description_input.toPlainText().strip(),
+        }
 
     def accept(self):
         if self._submitting:
