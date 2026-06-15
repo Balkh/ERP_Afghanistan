@@ -209,15 +209,21 @@ class TestLicenseDetailsDialogAST(unittest.TestCase):
 
 class TestAsyncRequestMixinAST(unittest.TestCase):
 
-    def test_has_cancel_method(self):
+    def test_cancel_method_calls_quit_and_wait(self):
+        """cancel_api_requests must call thread.quit() and thread.wait()."""
         src = (_FRONTEND_ROOT / "ui" / "utils" / "async_api.py").read_text()
         tree = ast.parse(src)
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef) and node.name == "AsyncRequestMixin":
-                methods = [n.name for n in node.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
-                self.assertIn("cancel_api_requests", methods)
-                return
-        self.fail("AsyncRequestMixin not found")
+                for item in node.body:
+                    if isinstance(item, ast.FunctionDef) and item.name == "cancel_api_requests":
+                        body_src = ast.get_source_segment(src, item)
+                        self.assertIn("quit()", body_src,
+                            "cancel_api_requests must call quit() on threads")
+                        self.assertIn("wait(", body_src,
+                            "cancel_api_requests must call wait() on threads")
+                        return
+        self.fail("AsyncRequestMixin.cancel_api_requests not found")
 
     def test_has_run_api_request_method(self):
         src = (_FRONTEND_ROOT / "ui" / "utils" / "async_api.py").read_text()
@@ -258,7 +264,8 @@ class TestNoProcessEvents(unittest.TestCase):
 
 class TestApiClientBackgroundAST(unittest.TestCase):
 
-    def test_get_has_background_param(self):
+    def test_get_has_background_param_with_toast_guard(self):
+        """get() must have background param AND suppress toasts when True."""
         src = (_FRONTEND_ROOT / "api" / "client.py").read_text()
         tree = ast.parse(src)
         for node in ast.walk(tree):
@@ -267,6 +274,9 @@ class TestApiClientBackgroundAST(unittest.TestCase):
                     if isinstance(item, ast.FunctionDef) and item.name == "get":
                         params = [a.arg for a in item.args.args]
                         self.assertIn("background", params)
+                        body_src = ast.get_source_segment(src, item)
+                        self.assertIn("not background", body_src,
+                            "get() must check 'not background' before showing toasts")
                         return
         self.fail("APIClient.get not found")
 
@@ -293,18 +303,40 @@ class TestDuplicateSignalGuard(unittest.TestCase):
 
 
 class TestModulesExist(unittest.TestCase):
+    """Verify required modules exist AND export expected symbols."""
 
-    def test_journal_entry_helpers(self):
-        self.assertTrue((_FRONTEND_ROOT / "ui" / "accounting" / "journal_entry_helpers.py").exists())
+    def test_journal_entry_helpers_exports(self):
+        p = _FRONTEND_ROOT / "ui" / "accounting" / "journal_entry_helpers.py"
+        self.assertTrue(p.exists())
+        src = p.read_text()
+        tree = ast.parse(src)
+        names = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+        self.assertIn("build_filter_bar", names)
+        self.assertIn("build_filter_params", names)
+        self.assertIn("transform_entries", names)
 
-    def test_email_config_dialog(self):
-        self.assertTrue((_FRONTEND_ROOT / "ui" / "system" / "email_config_dialog.py").exists())
+    def test_email_config_dialog_has_class(self):
+        p = _FRONTEND_ROOT / "ui" / "system" / "email_config_dialog.py"
+        self.assertTrue(p.exists())
+        src = p.read_text()
+        tree = ast.parse(src)
+        classes = [n.name for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]
+        self.assertIn("EmailConfigDialog", classes)
 
-    def test_atomic_io(self):
-        self.assertTrue((_FRONTEND_ROOT / "utils" / "atomic_io.py").exists())
+    def test_atomic_io_exports_functions(self):
+        p = _FRONTEND_ROOT / "utils" / "atomic_io.py"
+        self.assertTrue(p.exists())
+        from utils.atomic_io import atomic_write_text, atomic_write_json
+        self.assertTrue(callable(atomic_write_text))
+        self.assertTrue(callable(atomic_write_json))
 
-    def test_session_store(self):
-        self.assertTrue((_FRONTEND_ROOT / "security" / "session_store.py").exists())
+    def test_session_store_exports_functions(self):
+        p = _FRONTEND_ROOT / "security" / "session_store.py"
+        self.assertTrue(p.exists())
+        import security.session_store as ss
+        self.assertTrue(callable(getattr(ss, "save_session_data", None)))
+        self.assertTrue(callable(getattr(ss, "load_session_data", None)))
+        self.assertTrue(callable(getattr(ss, "clear_session", None)))
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -315,8 +347,14 @@ class TestModulesExist(unittest.TestCase):
 class TestConnectUnique(unittest.TestCase):
     """Verify connect_unique disconnects before connecting."""
 
-    def test_module_exists(self):
-        self.assertTrue((_FRONTEND_ROOT / "ui" / "utils" / "signal_utils.py").exists())
+    def test_connect_unique_function_importable(self):
+        """connect_unique must be importable and callable."""
+        p = _FRONTEND_ROOT / "ui" / "utils" / "signal_utils.py"
+        self.assertTrue(p.exists())
+        src = p.read_text()
+        tree = ast.parse(src)
+        funcs = [n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+        self.assertIn("connect_unique", funcs)
 
     def test_disconnect_before_connect_pattern(self):
         src = (_FRONTEND_ROOT / "ui" / "utils" / "signal_utils.py").read_text()
@@ -545,10 +583,17 @@ class TestEncryptedSessionCorrupt(unittest.TestCase):
 class TestPlaintextSessionMigration(unittest.TestCase):
     """Verify AuthManager migrates plaintext session.json then deletes it."""
 
-    def test_migrate_method_exists(self):
-        """AuthManager must have _migrate_plaintext_session_file."""
+    def test_migrate_method_exists_with_guard(self):
+        """AuthManager must have _migrate_plaintext_session_file with existence check."""
         src = (_FRONTEND_ROOT / "security" / "auth_manager.py").read_text()
-        self.assertIn("def _migrate_plaintext_session_file", src)
+        tree = ast.parse(src)
+        found = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == "AuthManager":
+                methods = [n.name for n in node.body if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))]
+                self.assertIn("_migrate_plaintext_session_file", methods)
+                found = True
+        self.assertTrue(found, "AuthManager class not found")
 
     def test_migration_deletes_plaintext(self):
         """Migration must call _remove_plaintext_session_file in finally."""
