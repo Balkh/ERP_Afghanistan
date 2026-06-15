@@ -66,7 +66,7 @@ class PayrollScreen(BaseScreen):
         self.tabs.setStyleSheet(f"""
             QTabWidget::pane {{ 
                 border: 1px solid {COLOR_BORDER}; 
-                border-radius: {BORDER_RADIUS_LG}; 
+                border-radius: {BORDER_RADIUS_LG}px; 
                 background: {COLOR_BG_MAIN}; 
             }}
             QTabBar::tab {{ 
@@ -136,7 +136,7 @@ class PayrollScreen(BaseScreen):
         filter_bar.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_BG_SURFACE};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 border: 1px solid {COLOR_BORDER};
             }}
         """)

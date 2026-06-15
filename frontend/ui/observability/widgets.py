@@ -86,8 +86,8 @@ class SeverityBadge(QLabel):
             background-color: {bg};
             color: {COLOR_BG_MAIN};
             padding: {SPACING_XS}px {SPACING_SM}px;
-            border-radius: {BORDER_RADIUS_SM};
-            font-size: {TEXT_TABLE}px;
+            border-radius: {BORDER_RADIUS_SM}px;
+            font-size: {TEXT_TABLE}pt;
             font-weight: bold;
             """
         )
@@ -102,7 +102,7 @@ class TrendArrow(QLabel):
         arrow = "▲" if direction == "up" else "▼"
         c = color or (COLOR_SUCCESS if direction == "up" else COLOR_DANGER)
         self.setText(arrow)
-        self.setStyleSheet(f"color: {c}; font-size: {TEXT_BODY}px; font-weight: bold; border: none;")
+        self.setStyleSheet(f"color: {c}; font-size: {TEXT_BODY}pt; font-weight: bold; border: none;")
         self.setAlignment(Qt.AlignCenter)
         self.setFixedWidth(20)
 
@@ -139,7 +139,7 @@ class HealthBar(QProgressBar):
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_PILL}px;
                 text-align: center;
-                font-size: {TEXT_TABLE}px;
+                font-size: {TEXT_TABLE}pt;
                 font-weight: bold;
                 color: {COLOR_TEXT_PRIMARY};
                 padding: {SPACING_NONE}px;

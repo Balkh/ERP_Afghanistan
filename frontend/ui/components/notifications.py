@@ -158,11 +158,11 @@ class NotificationItem(QWidget):
                 background-color: transparent;
                 border: none;
                 color: {text_color};
-                font-size: {TEXT_CARD_TITLE}px;
+                font-size: {TEXT_CARD_TITLE}pt;
             }}
             IconButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
             }}
         """)
         close_btn.clicked.connect(self.close)

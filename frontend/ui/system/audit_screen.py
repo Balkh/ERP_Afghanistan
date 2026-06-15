@@ -39,7 +39,7 @@ class AuditScreen(BaseScreen):
         layout.addLayout(header_layout)
         
         filter_bar = QGroupBox("Filter Logs")
-        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; font-size: {TEXT_LABEL}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}")
+        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; font-size: {TEXT_LABEL}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}")
         filter_layout = QGridLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         

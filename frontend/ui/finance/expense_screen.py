@@ -56,7 +56,7 @@ class ExpenseScreen(BaseScreen):
         filter_font = QFont("Segoe UI", TEXT_LABEL)
         filter_font.setWeight(QFont.Weight.Bold)
         filter_bar.setFont(filter_font)
-        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         

@@ -97,7 +97,7 @@ class ReconciliationScreen(BaseScreen):
         bar = QGroupBox("Filters")
         bar.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
         bar.setStyleSheet(
-            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         layout = QHBoxLayout(bar)

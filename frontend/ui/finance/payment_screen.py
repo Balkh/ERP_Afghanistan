@@ -66,7 +66,7 @@ class PaymentScreen(BaseScreen):
         bar_font = QFont("Segoe UI", TEXT_LABEL)
         bar_font.setWeight(QFont.Weight.Bold)
         bar.setFont(bar_font)
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -106,7 +106,7 @@ class PaymentScreen(BaseScreen):
             QLineEdit {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_XS}px {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
             }}
@@ -134,7 +134,7 @@ class PaymentScreen(BaseScreen):
             QComboBox {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_XS}px {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
             }}

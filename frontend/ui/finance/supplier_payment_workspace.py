@@ -187,7 +187,7 @@ class SupplierPaymentWorkspace(BaseScreen):
         section = QGroupBox("Allocation Summary")
         section.setFont(QFont("Segoe UI", TEXT_LABEL))
         section.setStyleSheet(
-            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         layout = QGridLayout(section)

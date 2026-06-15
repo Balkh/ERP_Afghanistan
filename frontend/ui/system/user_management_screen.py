@@ -282,9 +282,9 @@ class UserDialog(EnterpriseDialog):
             }}
             QGroupBox {{ 
                 font-weight: bold; 
-                font-size: {TEXT_CARD_TITLE}px;
+                font-size: {TEXT_CARD_TITLE}pt;
                 border: 1px solid {COLOR_BG_ELEVATED}; 
-                border-radius: {BORDER_RADIUS_LG}; 
+                border-radius: {BORDER_RADIUS_LG}px; 
                 margin-top: {SPACING_MD}; 
                 padding-top: {SPACING_MD}; 
                 padding-bottom: {SPACING_MD};
@@ -293,16 +293,16 @@ class UserDialog(EnterpriseDialog):
             }}
             QLabel {{
                 color: {COLOR_TEXT_PRIMARY};
-                font-size: {TEXT_BODY}px;
+                font-size: {TEXT_BODY}pt;
                 padding: {SPACING_SM} 4px;
             }}
             QLineEdit {{
                 background-color: {COLOR_BG_MAIN};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
+                border-radius: {BORDER_RADIUS_MD}px;
                 padding: {SPACING_SM};
-                font-size: {TEXT_BODY}px;
+                font-size: {TEXT_BODY}pt;
             }}
             QLineEdit:focus {{
                 border-color: {COLOR_PRIMARY};
@@ -315,9 +315,9 @@ class UserDialog(EnterpriseDialog):
                 background-color: {COLOR_BG_MAIN};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
+                border-radius: {BORDER_RADIUS_MD}px;
                 padding: {SPACING_SM};
-                font-size: {TEXT_BODY}px;
+                font-size: {TEXT_BODY}pt;
             }}
             QComboBox:focus {{
                 border-color: {COLOR_PRIMARY};
@@ -335,14 +335,14 @@ class UserDialog(EnterpriseDialog):
             }}
             QCheckBox {{
                 color: {COLOR_TEXT_PRIMARY};
-                font-size: {TEXT_BODY}px;
+                font-size: {TEXT_BODY}pt;
                 spacing: {SPACING_SM};
                 padding: {SPACING_SM} 0;
             }}
             QCheckBox::indicator {{
                 width: 20px;
                 height: 20px;
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 border: 2px solid {COLOR_BORDER};
                 background-color: {COLOR_BG_MAIN};
             }}

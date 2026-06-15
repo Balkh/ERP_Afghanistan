@@ -85,7 +85,7 @@ class JournalEntryScreen(BaseScreen):
 
     def _create_toolbar(self):
         toolbar = QFrame()
-        toolbar.setStyleSheet(f"background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG};")
+        toolbar.setStyleSheet(f"background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px;")
         layout = QHBoxLayout(toolbar)
         layout.setContentsMargins(SPACING_SM, SPACING_SM, SPACING_SM, SPACING_SM)
         layout.setSpacing(SPACING_SM + SPACING_XS)

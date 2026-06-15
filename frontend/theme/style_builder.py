@@ -142,7 +142,8 @@ class UIStyleBuilder:
         from ui.constants import (
             COLOR_BORDER, BORDER_RADIUS_LG, COLOR_BG_SURFACE,
             COLOR_BG_ELEVATED, COLOR_TEXT_SECONDARY, SPACING_MD,
-            BORDER_RADIUS_MD, COLOR_PRIMARY, COLOR_BG_HOVER, COLOR_TEXT_PRIMARY
+            BORDER_RADIUS_MD, COLOR_PRIMARY, COLOR_BG_HOVER, COLOR_TEXT_PRIMARY,
+            COLOR_TEXT_ON_PRIMARY
         )
         
         return f"""
@@ -162,7 +163,7 @@ class UIStyleBuilder:
             }}
             QTabBar::tab:selected {{ 
                 background: {COLOR_PRIMARY}; 
-                color: white; 
+                color: {COLOR_TEXT_ON_PRIMARY}; 
                 font-weight: 600; 
             }}
             QTabBar::tab:hover:!selected {{ 

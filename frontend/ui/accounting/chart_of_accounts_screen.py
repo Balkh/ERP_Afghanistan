@@ -126,7 +126,7 @@ class ChartOfAccountsScreen(BaseScreen):
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
                 border-radius: {BORDER_RADIUS_MD}px;
-                font-size: {TEXT_BODY}px;
+                font-size: {TEXT_BODY}pt;
                 padding: {SPACING_XS}px;
             }}
             QTreeWidget::item {{
@@ -147,7 +147,7 @@ class ChartOfAccountsScreen(BaseScreen):
                 border: none;
                 border-bottom: 2px solid {COLOR_BORDER};
                 font-weight: 600;
-                font-size: {TEXT_BODY_SMALL}px;
+                font-size: {TEXT_BODY_SMALL}pt;
             }}
         """)
         tree.itemSelectionChanged.connect(self._on_selection_changed)

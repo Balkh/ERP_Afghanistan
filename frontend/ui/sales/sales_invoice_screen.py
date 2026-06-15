@@ -115,14 +115,14 @@ class SalesInvoiceScreen(BaseScreen):
             background-color: {COLOR_TEXT_MUTED};
             color: {COLOR_TEXT_PRIMARY};
             padding: {SPACING_XS}px {SPACING_MD}px;
-            border-radius: {BORDER_RADIUS_SM};
+            border-radius: {BORDER_RADIUS_SM}px;
             font-weight: bold;
-            font-size: {TEXT_TABLE}px;
+            font-size: {TEXT_TABLE}pt;
         """)
         header_layout.addWidget(self.status_label)
 
         self.workflow_status_label = QLabel("")
-        self.workflow_status_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
+        self.workflow_status_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}pt;")
         header_layout.addWidget(self.workflow_status_label)
 
         layout.addLayout(header_layout)
@@ -261,21 +261,21 @@ class SalesInvoiceScreen(BaseScreen):
         details_form.setLabelAlignment(Qt.AlignRight)
 
         self.customer_phone = QLabel("—")
-        self.customer_phone.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        self.customer_phone.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}pt;")
         details_form.addRow("Phone:", self.customer_phone)
 
         self.credit_limit_label = QLabel("—")
-        self.credit_limit_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        self.credit_limit_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}pt;")
         details_form.addRow("Credit Limit:", self.credit_limit_label)
 
         self.balance_label = QLabel("0.00")
-        self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}px; font-weight: bold;")
+        self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}pt; font-weight: bold;")
         details_form.addRow("Balance:", self.balance_label)
 
         self.customer_address = QTextEdit()
         self.customer_address.setReadOnly(True)
         self.customer_address.setMaximumHeight(40)
-        self.customer_address.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px; border: none; background: transparent;")
+        self.customer_address.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}pt; border: none; background: transparent;")
         details_form.addRow("Address:", self.customer_address)
 
         zone3_layout.addLayout(details_form)
@@ -288,7 +288,7 @@ class SalesInvoiceScreen(BaseScreen):
         totals_layout.setLabelAlignment(Qt.AlignRight)
 
         self.subtotal_label = QLabel("0.00")
-        self.subtotal_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}px;")
+        self.subtotal_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
         totals_layout.addRow("Subtotal:", self.subtotal_label)
 
         self.discount_input = QDoubleSpinBox()
@@ -310,11 +310,11 @@ class SalesInvoiceScreen(BaseScreen):
         totals_layout.addRow("Tax Rate:", self.tax_input)
 
         self.tax_amount_label = QLabel("0.00")
-        self.tax_amount_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        self.tax_amount_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}pt;")
         totals_layout.addRow("Tax Amt:", self.tax_amount_label)
 
         self.total_label = QLabel("0.00")
-        self.total_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_CARD_TITLE}px; font-weight: 700;")
+        self.total_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;")
         totals_layout.addRow("Total:", self.total_label)
 
         self.paid_input = QDoubleSpinBox()
@@ -327,7 +327,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.notes_input.setPlaceholderText("Notes...")
         self.notes_input.setMaximumHeight(40)
         self.notes_input.setMaximumWidth(120)
-        self.notes_input.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_TABLE}px;")
+        self.notes_input.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_TABLE}pt;")
         totals_layout.addRow("Notes:", self.notes_input)
 
         zone3_layout.addLayout(totals_layout)
@@ -735,7 +735,7 @@ class SalesInvoiceScreen(BaseScreen):
             res = self.api_client.post(endpoint, {})
             if res:
                 self.status_label.setText("CONFIRMED")
-                self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+                self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
                 self.update_button_states("CONFIRMED")
                 AlertDialog.info("Success", "Invoice confirmed successfully.", self)
             else:
@@ -766,7 +766,7 @@ class SalesInvoiceScreen(BaseScreen):
             res = self.api_client.post(endpoint, {})
             if res:
                 self.status_label.setText("DISPATCHED")
-                self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+                self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
                 self.update_button_states("DISPATCHED")
                 AlertDialog.info("Success", "Invoice dispatched and stock deducted.", self)
             else:
@@ -821,7 +821,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.items_table.setRowCount(0)
         self.recalculate_totals()
         self.status_label.setText("DRAFT")
-        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
         self.current_invoice_id = None
         self.workflow_status_label.setText("")
         self.submit_wf_btn.setVisible(True)

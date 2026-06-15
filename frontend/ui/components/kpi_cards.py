@@ -209,17 +209,16 @@ class StatusBadge(QLabel):
         self._apply_style()
 
     def _apply_style(self):
-        __color = _severity_color(self._severity)
-        __clr = _severity_color(self._severity)
+        _color = _severity_color(self._severity)
         self.setStyleSheet(f"""
             QLabel {{
                 background-color: {COLOR_BG_ELEVATED};
-                color: {__clr};
+                color: {_color};
                 padding: {SPACING_XS}px {SPACING_SM}px;
                 border-radius: {BORDER_RADIUS_MD}px;
-                font-size: {TEXT_TABLE}px;
+                font-size: {TEXT_TABLE}pt;
                 font-weight: bold;
-                border: 1px solid {__clr};
+                border: 1px solid {_color};
             }}
         """)
         self.setFont(QFont("Segoe UI", TEXT_TABLE, QFont.Weight.Bold))

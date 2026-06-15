@@ -55,7 +55,7 @@ class JournalEntryDetailDialog(EnterpriseDialog):
             QGroupBox {{ 
                 font-weight: bold; 
                 border: 1px solid {COLOR_BORDER}; 
-                border-radius: {BORDER_RADIUS_LG}; 
+                border-radius: {BORDER_RADIUS_LG}px; 
                 margin-top: {SPACING_LG}px;
                 padding-top: {SPACING_LG}px;
                 background-color: {COLOR_BG_SURFACE};
@@ -123,7 +123,7 @@ class JournalEntryDetailDialog(EnterpriseDialog):
 
         # Totals
         totals_frame = QFrame()
-        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_XS}px;")
+        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_SM}px; padding: {SPACING_XS}px;")
         totals_layout = QHBoxLayout(totals_frame)
         totals_layout.addStretch()
         

@@ -153,7 +153,7 @@ class ReturnsScreen(BaseScreen):
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
         bar.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -632,7 +632,7 @@ class ReturnOrderDialog(EnterpriseDialog):
         self.invoice_search.setMinimumHeight(30)
         self.invoice_search.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: 1px solid {COLOR_BORDER_INPUT}; border-radius: {BORDER_RADIUS_MD}; "
+            f"border: 1px solid {COLOR_BORDER_INPUT}; border-radius: {BORDER_RADIUS_MD}px; "
             f"padding: 0 {SPACING_SM}px;"
         )
         self.invoice_search.returnPressed.connect(self._load_invoice)
@@ -661,7 +661,7 @@ class ReturnOrderDialog(EnterpriseDialog):
         items_group = QGroupBox("Return Items")
         items_group.setStyleSheet(
             f"QGroupBox {{ font-weight: bold; border: 1px solid {COLOR_BORDER_DIALOG}; "
-            f"border-radius: {BORDER_RADIUS_LG}; margin-top: {SPACING_LG}px; padding-top: {SPACING_LG}px; }}"
+            f"border-radius: {BORDER_RADIUS_LG}px; margin-top: {SPACING_LG}px; padding-top: {SPACING_LG}px; }}"
         )
         items_layout = QVBoxLayout(items_group)
 

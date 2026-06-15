@@ -50,7 +50,7 @@ class EventInvestigationScreen(BaseScreen):
         self.event_id_input.setPlaceholderText("Event ID...")
         self.event_id_input.setStyleSheet(f"""
             QLineEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}px; padding: {SPACING_SM}px; }}
         """)
         search_layout.addWidget(self.event_id_input)
 
@@ -71,7 +71,7 @@ class EventInvestigationScreen(BaseScreen):
         self.event_detail.setPlaceholderText("Event detail will appear here...")
         self.event_detail.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}px; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
         """)
         left_layout.addWidget(QLabel("Event Detail"))
@@ -85,7 +85,7 @@ class EventInvestigationScreen(BaseScreen):
         self.trace_view.setPlaceholderText("Trace chain will appear here...")
         self.trace_view.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px;
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}px; padding: {SPACING_SM}px;
             font-family: 'Consolas', monospace; }}
         """)
         right_layout.addWidget(QLabel("Trace & Causation"))

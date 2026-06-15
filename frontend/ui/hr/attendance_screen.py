@@ -45,7 +45,7 @@ class AttendanceScreen(BaseScreen):
         filter_bar.setStyleSheet(f"""
             QGroupBox {{
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 margin-top: {SPACING_SM}px;
                 padding-top: {SPACING_SM}px;
                 background-color: {COLOR_BG_MAIN};

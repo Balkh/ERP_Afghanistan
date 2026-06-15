@@ -66,7 +66,7 @@ class LicenseStatusScreen(QWidget):
 
         device_id_label = QLabel(f"Device ID: {self.device_id}")
         device_id_label.setFont(QFont("Consolas", TEXT_MONO))
-        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_MD}px; border-radius: {BORDER_RADIUS_MD}; border: 1px solid {COLOR_BORDER};")
+        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_MD}px; border-radius: {BORDER_RADIUS_MD}px; border: 1px solid {COLOR_BORDER};")
         device_layout.addWidget(device_id_label)
         
         device_group.setLayout(device_layout)
@@ -123,7 +123,7 @@ class LicenseStatusScreen(QWidget):
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_MD}px;
             }}
         """)
@@ -314,7 +314,7 @@ class LicenseDetailsDialog(QDialog):
                 background-color: {COLOR_BG_ELEVATED};
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_MD}px;
             }}
         """)

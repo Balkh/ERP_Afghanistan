@@ -91,7 +91,7 @@ class CashflowScreen(BaseScreen):
             QFrame {{
                 background-color: {COLOR_BG_SURFACE};
                 border-left: 5px solid {color};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 border-top: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-right: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-bottom: 1px solid {COLOR_TABLE_BORDER_LIGHT};

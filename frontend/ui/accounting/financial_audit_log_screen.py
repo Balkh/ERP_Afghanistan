@@ -114,7 +114,7 @@ class FinancialAuditLogScreen(BaseScreen):
                 font-weight: bold;
                 color: {COLOR_TEXT_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
+                border-radius: {BORDER_RADIUS_MD}px;
                 margin-top: {SPACING_MD};
                 padding-top: {SPACING_MD};
             }}

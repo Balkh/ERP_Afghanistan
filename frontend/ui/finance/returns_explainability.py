@@ -96,7 +96,7 @@ class ReturnsExplainabilityScreen(BaseScreen):
         self.explanation_group = QGroupBox("Return Explanation")
         self.explanation_group.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.explanation_group.setStyleSheet(
-            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         explanation_layout = QVBoxLayout(self.explanation_group)
@@ -107,7 +107,7 @@ class ReturnsExplainabilityScreen(BaseScreen):
             QTextEdit {{
                 background-color: {COLOR_BG_SURFACE};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
+                border-radius: {BORDER_RADIUS_MD}px;
                 padding: {SPACING_MD}px;
                 color: {COLOR_TEXT_PRIMARY};
                 font-size: {TEXT_BODY}pt;

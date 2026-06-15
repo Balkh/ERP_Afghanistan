@@ -85,8 +85,8 @@ class DecisionIntelligenceDashboard(BaseScreen):
         self.causal_text.setReadOnly(True)
         self.causal_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
-            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}pt; }}
         """)
         t2l.addWidget(self.causal_text)
         tabs.addTab(tab2, "② Causal Strength Paths")
@@ -98,8 +98,8 @@ class DecisionIntelligenceDashboard(BaseScreen):
         self.matrix_text.setReadOnly(True)
         self.matrix_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
-            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}pt; }}
         """)
         t3l.addWidget(self.matrix_text)
         tabs.addTab(tab3, "③ Risk vs Impact Matrix")
@@ -111,8 +111,8 @@ class DecisionIntelligenceDashboard(BaseScreen):
         self.compare_text.setReadOnly(True)
         self.compare_text.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_MD}px;
-            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_MD}px;
+            font-family: 'Consolas', monospace; font-size: {TEXT_BODY}pt; }}
         """)
         t4l.addWidget(self.compare_text)
         tabs.addTab(tab4, "④ Decision Comparison")

@@ -74,7 +74,7 @@ class FixedAssetsScreen(BaseScreen):
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_bar = QFrame()
-        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}; border: 1px solid {COLOR_BORDER};")
+        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; border: 1px solid {COLOR_BORDER};")
         filter_layout = QHBoxLayout(filter_bar)
         
         self.category_filter = QComboBox()

@@ -78,7 +78,7 @@ class BudgetingScreen(BaseScreen):
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_bar = QFrame()
-        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}; border: 1px solid {COLOR_BORDER_LIGHT};")
+        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; border: 1px solid {COLOR_BORDER_LIGHT};")
         filter_layout = QHBoxLayout(filter_bar)
         
         self.year_filter = QComboBox()

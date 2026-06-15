@@ -64,7 +64,7 @@ class CausalStrengthPanel(BaseScreen):
             group = QGroupBox(f"Path #{i + 1}")
             group.setStyleSheet(f"""
                 QGroupBox {{ color: {_CHAIN_COLORS[i]}; font-weight: bold;
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px;
                 padding: {SPACING_SM}px; padding-top: {SPACING_XL}px; }}
             """)
             g_layout = QVBoxLayout(group)
@@ -73,7 +73,7 @@ class CausalStrengthPanel(BaseScreen):
             text.setObjectName(f"path_{i}")
             text.setStyleSheet(f"""
                 QTextEdit {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: none; font-family: 'Consolas', monospace; font-size: {TEXT_CARD_TITLE}px; }}
+                border: none; font-family: 'Consolas', monospace; font-size: {TEXT_CARD_TITLE}pt; }}
             """)
             text.setMaximumHeight(100)
             g_layout.addWidget(text)
@@ -83,7 +83,7 @@ class CausalStrengthPanel(BaseScreen):
         summary_group = QGroupBox("All Nodes — Scored & Ranked")
         summary_group.setStyleSheet(f"""
             QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER};
-            border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; padding-top: {SPACING_XL}px; }}
+            border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_SM}px; padding-top: {SPACING_XL}px; }}
         """)
         summary_layout = QVBoxLayout(summary_group)
         self.table = QTableWidget()
