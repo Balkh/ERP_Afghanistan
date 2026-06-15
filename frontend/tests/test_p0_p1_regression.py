@@ -484,3 +484,140 @@ class TestBatchFormDialogGuard(unittest.TestCase):
         idx = src.index("def load_batch_data")
         method_body = src[idx:src.index("\n    def ", idx + 1)]
         self.assertIn("if not response", method_body)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 16: Encrypted session — corrupted file handling
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestEncryptedSessionCorrupt(unittest.TestCase):
+    """Verify corrupted/tampered session file does not crash, returns None."""
+
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="erp_test_corrupt_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    @patch("security.session_store._get_session_path")
+    def test_corrupted_file_returns_none(self, mock_path):
+        path = os.path.join(self.tmpdir, "session.enc")
+        mock_path.return_value = path
+        # Write garbage data
+        with open(path, "w") as f:
+            f.write("THIS IS NOT VALID ENCRYPTED DATA !@#$%^&*()")
+        from security.session_store import load_session_data
+        result = load_session_data()
+        self.assertIsNone(result)
+
+    @patch("security.session_store._get_session_path")
+    def test_empty_file_returns_none(self, mock_path):
+        path = os.path.join(self.tmpdir, "session.enc")
+        mock_path.return_value = path
+        with open(path, "w") as f:
+            f.write("")
+        from security.session_store import load_session_data
+        result = load_session_data()
+        self.assertIsNone(result)
+
+    @patch("security.session_store._get_session_path")
+    def test_truncated_encrypted_returns_none(self, mock_path):
+        path = os.path.join(self.tmpdir, "session.enc")
+        mock_path.return_value = path
+        from security.session_store import save_session_data
+        save_session_data({"access_token": "valid"})
+        # Truncate the file mid-content
+        with open(path, "r") as f:
+            content = f.read()
+        with open(path, "w") as f:
+            f.write(content[:len(content)//2])
+        from security.session_store import load_session_data
+        result = load_session_data()
+        self.assertIsNone(result)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 17: Plaintext session migration
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestPlaintextSessionMigration(unittest.TestCase):
+    """Verify AuthManager migrates plaintext session.json then deletes it."""
+
+    def test_migrate_method_exists(self):
+        """AuthManager must have _migrate_plaintext_session_file."""
+        src = (_FRONTEND_ROOT / "security" / "auth_manager.py").read_text()
+        self.assertIn("def _migrate_plaintext_session_file", src)
+
+    def test_migration_deletes_plaintext(self):
+        """Migration must call _remove_plaintext_session_file in finally."""
+        src = (_FRONTEND_ROOT / "security" / "auth_manager.py").read_text()
+        idx = src.index("def _migrate_plaintext_session_file")
+        # Find end of method
+        next_def = src.index("\n    def ", idx + 10)
+        method_body = src[idx:next_def]
+        # Must have finally block that removes plaintext
+        self.assertIn("finally:", method_body)
+        self.assertIn("_remove_plaintext_session_file", method_body)
+
+    def test_migration_calls_save_session_data(self):
+        """Migration must re-save via encrypted store."""
+        src = (_FRONTEND_ROOT / "security" / "auth_manager.py").read_text()
+        idx = src.index("def _migrate_plaintext_session_file")
+        next_def = src.index("\n    def ", idx + 10)
+        method_body = src[idx:next_def]
+        self.assertIn("save_session_data", method_body)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 18: AsyncRequestMixin — no-client error callback
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestAsyncRequestMixinNoClient(unittest.TestCase):
+    """Verify run_api_request calls on_error when no client available."""
+
+    def test_returns_false_and_calls_error(self):
+        src = (_FRONTEND_ROOT / "ui" / "utils" / "async_api.py").read_text()
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == "AsyncRequestMixin":
+                for item in node.body:
+                    if isinstance(item, ast.FunctionDef) and item.name == "run_api_request":
+                        # on_error is keyword-only
+                        all_params = ([a.arg for a in item.args.args]
+                                      + [a.arg for a in item.args.kwonlyargs])
+                        self.assertIn("on_error", all_params)
+                        # Method body must contain the no-client check
+                        body_src = ast.get_source_segment(src, item)
+                        self.assertIn("API client unavailable", body_src)
+                        self.assertIn("return False", body_src)
+                        return
+        self.fail("run_api_request method not found in AsyncRequestMixin")
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Test 19: LicenseDetailsDialog has exec via QDialog
+# ═══════════════════════════════════════════════════════════════════
+
+
+class TestLicenseDetailsDialogExec(unittest.TestCase):
+    """Verify LicenseDetailsDialog inherits exec() from QDialog."""
+
+    def test_qdialog_base_provides_exec(self):
+        src = (_FRONTEND_ROOT / "ui" / "licensing" / "license_status_screen.py").read_text()
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ClassDef) and node.name == "LicenseDetailsDialog":
+                bases = [
+                    (b.attr if isinstance(b, ast.Attribute) else b.id)
+                    for b in node.bases if isinstance(b, (ast.Name, ast.Attribute))
+                ]
+                self.assertIn("QDialog", bases,
+                    "LicenseDetailsDialog must inherit QDialog for exec()")
+                # Verify the call site uses .exec()
+                self.assertIn("dialog.exec()", src,
+                    "LicenseDetailsDialog must be invoked with .exec()")
+                return
+        self.fail("LicenseDetailsDialog class not found")
