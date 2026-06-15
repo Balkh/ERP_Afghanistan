@@ -8,6 +8,12 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 
+collect_ignore_glob = [
+    "frontend/backups/*",
+    "archive/frontend_pre_phase3_*/**",
+]
+
+
 def pytest_configure(config):
     """Configure pytest."""
     config.addinivalue_line(
