@@ -4,10 +4,8 @@ Touch-friendly, keyboard-first, barcode-integrated.
 """
 
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                                QTableWidget, QTableWidgetItem, QHeaderView,
                                 QLineEdit, QLabel, QComboBox,
-                                QGroupBox, QFrame, QSplitter,
-                                QAbstractItemView)
+                                QGroupBox, QFrame, QSplitter)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from decimal import Decimal
@@ -296,23 +294,17 @@ class POSScreen(BaseScreen):
         zone_layout = QVBoxLayout(zone)
         zone_layout.setContentsMargins(SPACING_SM, SPACING_SM, SPACING_SM, SPACING_SM)
 
-        self.cart_table = QTableWidget()
-        self.cart_table.setColumnCount(7)
-        self.cart_table.setHorizontalHeaderLabels(["#", "Product", "Batch", "Qty", "Price", "Total", ""])
-        self.cart_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        self.cart_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        self.cart_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self.cart_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self.cart_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
-        self.cart_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeToContents)
-        self.cart_table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeToContents)
-        self.cart_table.verticalHeader().setVisible(False)
-        self.cart_table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.cart_table.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.cart_table.setAlternatingRowColors(True)
-        from ui.components.tables import build_table_stylesheet
-        self.cart_table.setStyleSheet(build_table_stylesheet())
-        self.cart_table.cellChanged.connect(self._on_cart_cell_changed)
+        cart_columns = [
+            TableColumn("line_no", "#", width=50, align="center"),
+            TableColumn("product_name", "Product", width=220),
+            TableColumn("batch_number", "Batch", width=110),
+            TableColumn("quantity", "Qty", width=70, align="center"),
+            TableColumn("price", "Price", width=90, align="right"),
+            TableColumn("total", "Total", width=100, align="right"),
+            TableColumn("action", "Action", width=80, align="center"),
+        ]
+        self.cart_table = EnterpriseTable(cart_columns, density="compact")
+        self.cart_table.itemChanged.connect(self._on_cart_cell_changed)
         zone_layout.addWidget(self.cart_table)
 
         return zone
@@ -615,39 +607,34 @@ class POSScreen(BaseScreen):
             self._add_to_cart(product)
 
     def _refresh_cart(self):
-        self.cart_table.setRowCount(len(self.cart_items))
+        rows = []
         for i, item in enumerate(self.cart_items):
-            self.cart_table.setItem(i, 0, QTableWidgetItem(str(i + 1)))
-            self.cart_table.setItem(i, 1, QTableWidgetItem(item["product_name"]))
-            self.cart_table.setItem(i, 2, QTableWidgetItem(item["batch_number"]))
-
-            qty_item = QTableWidgetItem(str(item["quantity"]))
-            qty_item.setTextAlignment(Qt.AlignCenter)
-            self.cart_table.setItem(i, 3, qty_item)
-
-            self.cart_table.setItem(i, 4, QTableWidgetItem(f"{item['price']:.2f}"))
-            self.cart_table.setItem(i, 5, QTableWidgetItem(f"{item['total']:.2f}"))
-
-            remove_btn = EnterpriseButton("✕", variant=ButtonVariant.DANGER)
-            remove_btn.setFixedWidth(28)
-            remove_btn.clicked.connect(lambda checked, idx=i: self._remove_item(idx))
-            self.cart_table.setCellWidget(i, 6, remove_btn)
-
+            rows.append({
+                **item,
+                "line_no": str(i + 1),
+                "quantity": str(item["quantity"]),
+                "price": f"{item['price']:.2f}",
+                "total": f"{item['total']:.2f}",
+                "action": "Del",
+            })
+        self.cart_table.set_data(rows)
         self._update_totals()
         self.item_count_label.setText(f"Items: {len(self.cart_items)}")
 
-    def _on_cart_cell_changed(self, row, col):
+    def _on_cart_cell_changed(self, item):
+        row = item.row()
+        col = item.column()
         if col == 3 and 0 <= row < len(self.cart_items):
-            item = self.cart_items[row]
+            cart_item = self.cart_items[row]
             try:
-                new_qty = int(self.cart_table.item(row, col).text())
+                new_qty = int(item.text())
                 if new_qty < 1:
                     new_qty = 1
-                if new_qty > item["max_stock"]:
-                    new_qty = item["max_stock"]
-                    self._show_alert(f"Max stock: {item['max_stock']}", "warning")
-                item["quantity"] = new_qty
-                item["total"] = item["quantity"] * item["price"]
+                if new_qty > cart_item["max_stock"]:
+                    new_qty = cart_item["max_stock"]
+                    self._show_alert(f"Max stock: {cart_item['max_stock']}", "warning")
+                cart_item["quantity"] = new_qty
+                cart_item["total"] = cart_item["quantity"] * cart_item["price"]
                 self._refresh_cart()
             except ValueError:
                 pass
