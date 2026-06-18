@@ -3,17 +3,17 @@ Phase 5B.6 — Approval Workflow Screen.
 PySide6 UI for viewing and managing governance approval workflows.
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QTableWidget, QTableWidgetItem,
-                                 QTextEdit, QSplitter, QAbstractItemView)
+                                 QTextEdit, QSplitter)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.components.page_header import PageHeader
 from ui.components.dialogs import AlertDialog
 from ui.screens.base_screen import BaseScreen
 
 from api.client import APIClient
 from api.governance_client import GovernanceAPIClient
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_SECONDARY, COLOR_PRIMARY, COLOR_SUCCESS,
                            COLOR_DANGER, COLOR_BORDER, SPACING_LG,
@@ -35,9 +35,11 @@ class ApprovalWorkflowScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
 
-        header = QLabel("Approval Workflows")
-        header.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header = PageHeader(
+            "Approval Workflows",
+            "Review risk, signatures and approval state before operational changes are released.",
+            "GOVERNANCE CONTROL",
+        )
         layout.addWidget(header)
 
         splitter = QSplitter(Qt.Horizontal)
@@ -56,14 +58,15 @@ class ApprovalWorkflowScreen(BaseScreen):
         self.refresh_btn.clicked.connect(self._refresh)
         left_layout.addWidget(self.refresh_btn)
 
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["ID", "Action", "Risk", "State", "Signatures"])
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setAlternatingRowColors(True)
-        self.table.setStyleSheet(build_table_stylesheet())
-        self.table.itemClicked.connect(self._on_workflow_selected)
+        columns = [
+            TableColumn("workflow_id_short", "ID", width=100),
+            TableColumn("action_type", "Action", width=140),
+            TableColumn("risk_level", "Risk", width=90, align="center"),
+            TableColumn("state", "State", width=110, align="center"),
+            TableColumn("signatures", "Signatures", width=100, align="center"),
+        ]
+        self.table = EnterpriseTable(columns, density="compact")
+        self.table.row_selected.connect(self._on_workflow_selected)
         left_layout.addWidget(self.table)
 
         # Right: Detail panel
@@ -113,23 +116,25 @@ class ApprovalWorkflowScreen(BaseScreen):
     def _refresh(self):
         try:
             workflows = self._api.list_workflows()
-            self.table.setRowCount(len(workflows))
-            for i, wf in enumerate(workflows):
-                self.table.setItem(i, 0, QTableWidgetItem(wf.get("workflow_id", "")[:12]))
-                self.table.setItem(i, 1, QTableWidgetItem(wf.get("action_type", "")))
-                self.table.setItem(i, 2, QTableWidgetItem(wf.get("risk_level", "")))
-                self.table.setItem(i, 3, QTableWidgetItem(wf.get("state", "")))
-                sigs = f"{wf.get('signature_count', 0)}/{wf.get('required_signatures', 0)}"
-                self.table.setItem(i, 4, QTableWidgetItem(sigs))
+            rows = []
+            for wf in workflows:
+                wid = wf.get("workflow_id", "")
+                rows.append({
+                    **wf,
+                    "workflow_id_short": wid[:12],
+                    "action_type": wf.get("action_type", ""),
+                    "risk_level": wf.get("risk_level", ""),
+                    "state": wf.get("state", ""),
+                    "signatures": f"{wf.get('signature_count', 0)}/{wf.get('required_signatures', 0)}",
+                })
+            self.table.set_data(rows)
         except Exception as e:
             self.detail_text.setPlainText(f"Error loading workflows: {e}")
 
-    def _on_workflow_selected(self, item):
-        row = item.row()
-        wid_item = self.table.item(row, 0)
-        if not wid_item:
+    def _on_workflow_selected(self, row, data):
+        wid = data.get("workflow_id") or data.get("workflow_id_short")
+        if not wid:
             return
-        wid = self.table.item(row, 0).text()
         self._current_workflow_id = wid
         self.approve_btn.setEnabled(True)
         self.reject_btn.setEnabled(True)
