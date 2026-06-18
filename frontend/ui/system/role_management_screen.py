@@ -2,11 +2,12 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QAbstractItemView,
                                 QLineEdit, QGroupBox,
                                 QCheckBox, QScrollArea, QWidget,
-                                QSplitter, QTableWidgetItem, QTextEdit)
+                                QSplitter, QTextEdit)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from ui.screens.base_screen import BaseScreen
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
 from ui.components.forms import FormSection
@@ -34,20 +35,18 @@ class RoleManagementScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
 
-        header_layout = QHBoxLayout()
-        header = QLabel("Role Management")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(header)
-        header_layout.addStretch()
-
+        header = PageHeader(
+            "Role Management",
+            "Create roles, review assignments and govern permission scope from one access-control workspace.",
+            "ACCESS CONTROL",
+        )
         self.btn_create = EnterpriseButton(text="+ Create Role", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.btn_create.clicked.connect(self.create_role)
-        header_layout.addWidget(self.btn_create)
-
-        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        header.add_action(self.btn_create)
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_data)
-        header_layout.addWidget(self.btn_refresh)
-        layout.addLayout(header_layout)
+        header.add_action(self.btn_refresh)
+        layout.addWidget(header)
 
         splitter = QSplitter(Qt.Horizontal)
         left_widget = self._build_role_list()
@@ -153,16 +152,17 @@ class RoleManagementScreen(BaseScreen):
             print(f"Error loading permissions: {e}")
 
     def _populate_role_table(self):
-        self.role_table.setRowCount(0)
+        rows = []
         for role in self._roles:
-            row = self.role_table.rowCount()
-            self.role_table.insertRow(row)
-            self.role_table.setItem(row, 0, QTableWidgetItem(role.get("name", "")))
-            self.role_table.setItem(row, 1, QTableWidgetItem(role.get("description", "")))
-            self.role_table.setItem(row, 2, QTableWidgetItem(str(role.get("user_count", 0))))
-            self.role_table.setItem(row, 3, QTableWidgetItem(str(role.get("permission_count", 0))))
-            active = "Yes" if role.get("is_active", True) else "No"
-            self.role_table.setItem(row, 4, QTableWidgetItem(active))
+            rows.append({
+                **role,
+                "name": role.get("name", ""),
+                "description": role.get("description", ""),
+                "user_count": str(role.get("user_count", 0)),
+                "perm_count": str(role.get("permission_count", 0)),
+                "active": "Yes" if role.get("is_active", True) else "No",
+            })
+        self.role_table.set_data(rows)
 
     def _on_role_selected(self, selected, deselected):
         indexes = self.role_table.selectionModel().selectedRows()

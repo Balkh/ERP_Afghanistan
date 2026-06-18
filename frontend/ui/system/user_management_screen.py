@@ -3,11 +3,12 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QAbstractItemView, QComboBox,
                                   QLineEdit,
                                   QCheckBox, QTabWidget,
-                                  QWidget, QTableWidgetItem)
+                                  QWidget)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from ui.screens.base_screen import BaseScreen
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
 from ui.components.forms import FormSection
@@ -36,19 +37,17 @@ class UserManagementScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
-        # Header section
-        header_layout = QHBoxLayout()
+        # Enterprise header
         from theme.style_builder import UIStyleBuilder
-        header = QLabel("User & Role Management")
-        header.setStyleSheet(UIStyleBuilder.get_label_style("title"))
-        header_layout.addWidget(header)
-        
-        header_layout.addStretch()
-        
-        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        header = PageHeader(
+            "User & Role Management",
+            "Manage users, role membership and permission visibility with governed access controls.",
+            "IDENTITY CONTROL",
+        )
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_users)
-        header_layout.addWidget(self.btn_refresh)
-        layout.addLayout(header_layout)
+        header.add_action(self.btn_refresh)
+        layout.addWidget(header)
         
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(UIStyleBuilder.get_tab_style())
@@ -144,16 +143,17 @@ class UserManagementScreen(BaseScreen):
         from ui.role_manager import ROLE_PERMISSIONS
         permissions = ROLE_PERMISSIONS.get(role, [])
         
-        self.permissions_table.setRowCount(len(permissions))
-        for i, perm in enumerate(permissions):
-            # Split "app.permission" string
+        rows = []
+        for perm in permissions:
             parts = perm.split('.')
             module = parts[0].title() if len(parts) > 0 else ""
             action = parts[1].replace('_', ' ').title() if len(parts) > 1 else ""
-            
-            self.permissions_table.setItem(i, 0, QTableWidgetItem(module))
-            self.permissions_table.setItem(i, 1, QTableWidgetItem(action))
-            self.permissions_table.setItem(i, 2, QTableWidgetItem("Full Access" if 'admin' in perm else "Standard"))
+            rows.append({
+                "module": module,
+                "permission": action,
+                "access": "Full Access" if 'admin' in perm else "Standard",
+            })
+        self.permissions_table.set_data(rows)
     
     def load_roles(self):
         """Load roles from API."""
@@ -183,24 +183,20 @@ class UserManagementScreen(BaseScreen):
     
     def populate_table(self):
         """Populate the users table."""
-        self.user_table.setRowCount(0)
-        
+        rows = []
         for user in self._users:
-            row = self.user_table.rowCount()
-            self.user_table.insertRow(row)
-            
-            self.user_table.setItem(row, 0, QTableWidgetItem(str(user.get('id', ''))))
-            self.user_table.setItem(row, 1, QTableWidgetItem(user.get('username', '')))
-            self.user_table.setItem(row, 2, QTableWidgetItem(user.get('email', '')))
-            self.user_table.setItem(row, 3, QTableWidgetItem(user.get('first_name', '')))
-            self.user_table.setItem(row, 4, QTableWidgetItem(user.get('last_name', '')))
-            
             roles = user.get('roles', [])
             role_str = ", ".join(roles) if roles else "General"
-            self.user_table.setItem(row, 5, QTableWidgetItem(role_str))
-            
-            active = "Yes" if user.get('is_active', True) else "No"
-            self.user_table.setItem(row, 6, QTableWidgetItem(active))
+            rows.append({
+                "id": str(user.get('id', '')),
+                "username": user.get('username', ''),
+                "email": user.get('email', ''),
+                "first_name": user.get('first_name', ''),
+                "last_name": user.get('last_name', ''),
+                "role": role_str,
+                "active": "Yes" if user.get('is_active', True) else "No",
+            })
+        self.user_table.set_data(rows)
     
     def add_user(self):
         """Show add user dialog."""
