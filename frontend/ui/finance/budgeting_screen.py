@@ -2,18 +2,18 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel,
                                   QComboBox, QGroupBox, QTabWidget, QFrame,
-                                  QWidget, QTableWidget, QTableWidgetItem)
+                                  QWidget)
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
 from api.client import APIClient
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (SPACING_XS, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
-                           BUTTON_HEIGHT_MD, TABLE_ROW_HEIGHT_MD, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY,
+                           BUTTON_HEIGHT_MD, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.page_header import PageHeader
 from ui.components.dialogs import AlertDialog
-from ui.components.tables import EnterpriseTable, TableColumn, build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.state_helper import StateHelper
 
 
@@ -139,14 +139,15 @@ class BudgetingScreen(BaseScreen):
         
         layout.addLayout(button_layout)
         
-        self.allocations_table = QTableWidget()
-        self.allocations_table.setStyleSheet(build_table_stylesheet())
-        self.allocations_table.setAlternatingRowColors(True)
-        self.allocations_table.setColumnCount(6)
-        self.allocations_table.setHorizontalHeaderLabels(["Budget", "Department", "Account", "Allocated", "Spent", "Remaining"])
-        self.allocations_table.horizontalHeader().setStretchLastSection(True)
-        self.allocations_table.setAlternatingRowColors(True)
-        self.allocations_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        allocation_columns = [
+            TableColumn("budget_name", "Budget", width=180),
+            TableColumn("department", "Department", width=140),
+            TableColumn("account_code", "Account", width=100),
+            TableColumn("allocated", "Allocated", width=110, align="right"),
+            TableColumn("actual", "Spent", width=110, align="right"),
+            TableColumn("remaining", "Remaining", width=110, align="right"),
+        ]
+        self.allocations_table = EnterpriseTable(allocation_columns, density="compact")
         layout.addWidget(self.allocations_table)
         
         self._load_allocations()
@@ -170,14 +171,16 @@ class BudgetingScreen(BaseScreen):
         summary_group.setLayout(summary_layout)
         layout.addWidget(summary_group)
         
-        self.variance_table = QTableWidget()
-        self.variance_table.setStyleSheet(build_table_stylesheet())
-        self.variance_table.setAlternatingRowColors(True)
-        self.variance_table.setColumnCount(7)
-        self.variance_table.setHorizontalHeaderLabels(["Account", "Budget", "Actual", "Variance", "Variance %", "Status", "Notes"])
-        self.variance_table.horizontalHeader().setStretchLastSection(True)
-        self.variance_table.setAlternatingRowColors(True)
-        self.variance_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        variance_columns = [
+            TableColumn("account", "Account", width=220),
+            TableColumn("budget", "Budget", width=110, align="right"),
+            TableColumn("actual", "Actual", width=110, align="right"),
+            TableColumn("variance", "Variance", width=110, align="right"),
+            TableColumn("variance_pct", "Variance %", width=90, align="right"),
+            TableColumn("status", "Status", width=110, align="center"),
+            TableColumn("notes", "Notes", width=160),
+        ]
+        self.variance_table = EnterpriseTable(variance_columns, density="compact")
         layout.addWidget(self.variance_table)
         
         self._load_variance()
@@ -237,7 +240,7 @@ class BudgetingScreen(BaseScreen):
         ]
 
     def _load_budgets(self):
-        self.budgets_table.setRowCount(0)
+        self.budgets_table.set_data([])
         self._show_loading()
         endpoint = get_endpoint("budgets")
         started = self.run_api_request(
@@ -255,20 +258,21 @@ class BudgetingScreen(BaseScreen):
         if not data:
             data = self._get_mock_budgets()
         self._show_data()
+        rows = []
         for item in data:
-            row = self.budgets_table.rowCount()
-            self.budgets_table.insertRow(row)
-            self.budgets_table.setItem(row, 0, QTableWidgetItem(item.get("name", "")))
-            self.budgets_table.setItem(row, 1, QTableWidgetItem(str(item.get("year", ""))))
-            self.budgets_table.setItem(row, 2, QTableWidgetItem(str(item.get("total", item.get("total_budget", "")))))
-            self.budgets_table.setItem(row, 3, QTableWidgetItem(str(item.get("spent", item.get("total_spent", "")))))
-            self.budgets_table.setItem(row, 4, QTableWidgetItem(str(item.get("remaining", ""))))
-            self.budgets_table.setItem(row, 5, QTableWidgetItem(str(item.get("variance", ""))))
-            self.budgets_table.setItem(row, 6, QTableWidgetItem(str(item.get("status", ""))))
-            self.budgets_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
+            rows.append({
+                "name": item.get("name", ""),
+                "year": str(item.get("year", "")),
+                "total_budget": str(item.get("total", item.get("total_budget", ""))),
+                "total_spent": str(item.get("spent", item.get("total_spent", ""))),
+                "remaining": str(item.get("remaining", "")),
+                "variance": str(item.get("variance", "")),
+                "status": str(item.get("status", "")),
+            })
+        self.budgets_table.set_data(rows)
 
     def _load_allocations(self):
-        self.allocations_table.setRowCount(0)
+        self.allocations_table.set_data([])
         endpoint = get_endpoint("budget_lines") or "/api/budgets/lines/"
         self.run_api_request(
             "budgeting:allocations",
@@ -280,22 +284,23 @@ class BudgetingScreen(BaseScreen):
 
     def _on_allocations_loaded(self, response):
         data = self._extract_results(response) or self._fallback_allocations()
+        rows = []
         for item in data:
             allocated = float(item.get("allocated_amount", 0) or 0)
             actual = float(item.get("actual_amount", 0) or 0)
             remaining = allocated - actual
-            row = self.allocations_table.rowCount()
-            self.allocations_table.insertRow(row)
-            self.allocations_table.setItem(row, 0, QTableWidgetItem(item.get("budget_name", "")))
-            self.allocations_table.setItem(row, 1, QTableWidgetItem(item.get("department", "")))
-            self.allocations_table.setItem(row, 2, QTableWidgetItem(item.get("account_code", "")))
-            self.allocations_table.setItem(row, 3, QTableWidgetItem(f"{allocated:,.2f}"))
-            self.allocations_table.setItem(row, 4, QTableWidgetItem(f"{actual:,.2f}"))
-            self.allocations_table.setItem(row, 5, QTableWidgetItem(f"{remaining:,.2f}"))
-            self.allocations_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
+            rows.append({
+                "budget_name": item.get("budget_name", ""),
+                "department": item.get("department", ""),
+                "account_code": item.get("account_code", ""),
+                "allocated": f"{allocated:,.2f}",
+                "actual": f"{actual:,.2f}",
+                "remaining": f"{remaining:,.2f}",
+            })
+        self.allocations_table.set_data(rows)
 
     def _load_variance(self):
-        self.variance_table.setRowCount(0)
+        self.variance_table.set_data([])
         endpoint = get_endpoint("budget_lines") or "/api/budgets/lines/"
         self.run_api_request(
             "budgeting:variance",
@@ -312,22 +317,23 @@ class BudgetingScreen(BaseScreen):
             {"account_code": "5010", "account_name": "IT Expenses", "allocated_amount": "300000.00", "actual_amount": "280000.00"},
             {"account_code": "6010", "account_name": "Capital", "allocated_amount": "800000.00", "actual_amount": "600000.00"},
         ]
+        rows = []
         for item in data:
             budget = float(item.get("allocated_amount", 0) or 0)
             actual = float(item.get("actual_amount", 0) or 0)
             variance = budget - actual
             var_pct = f"{(variance/budget*100):.0f}%" if budget > 0 else "0%"
             status = "Under Budget" if variance >= 0 else "Over Budget"
-            row = self.variance_table.rowCount()
-            self.variance_table.insertRow(row)
-            self.variance_table.setItem(row, 0, QTableWidgetItem(f"{item.get('account_code', '')} - {item.get('account_name', '')}"))
-            self.variance_table.setItem(row, 1, QTableWidgetItem(f"{budget:,.2f}"))
-            self.variance_table.setItem(row, 2, QTableWidgetItem(f"{actual:,.2f}"))
-            self.variance_table.setItem(row, 3, QTableWidgetItem(f"{variance:,.2f}"))
-            self.variance_table.setItem(row, 4, QTableWidgetItem(var_pct))
-            self.variance_table.setItem(row, 5, QTableWidgetItem(status))
-            self.variance_table.setItem(row, 6, QTableWidgetItem(""))
-            self.variance_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
+            rows.append({
+                "account": f"{item.get('account_code', '')} - {item.get('account_name', '')}",
+                "budget": f"{budget:,.2f}",
+                "actual": f"{actual:,.2f}",
+                "variance": f"{variance:,.2f}",
+                "variance_pct": var_pct,
+                "status": status,
+                "notes": "",
+            })
+        self.variance_table.set_data(rows)
 
     def _create_budget(self):
         AlertDialog.info("Create Budget", "Budget creation dialog would open here.")
