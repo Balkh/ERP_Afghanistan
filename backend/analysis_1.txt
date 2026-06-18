@@ -1,0 +1,187 @@
+====================================================================================================
+APP ANALYSIS
+====================================================================================================
+
+accounting: 42 files, 9746 lines, 9 models
+  MODEL Currency | Model representing a currency supported by the system.
+  MODEL ExchangeRate | Model representing exchange rates between currencies.
+  MODEL PaymentTransaction | Model representing a payment transaction supporting mixed payments.
+  MODEL Account | Model representing an account in the chart of accounts.
+  MODEL JournalEntry | Model representing a journal entry in the accounting system.
+  MODEL JournalEventLog | Lightweight event log for journal entry lifecycle.
+  MODEL JournalEntryLine | Model representing a line item in a journal entry.
+  MODEL FiscalPeriod | Model representing a fiscal accounting period with locking capability.
+  MODEL FiscalPeriodCloseLog | Audit trail for all fiscal period closing and reopening actions.
+
+audit: 10 files, 514 lines, 2 models
+  MODEL AuditTrail | Advanced audit trail for all data changes.
+  MODEL AuditRetentionPolicy | Defines retention periods for audit logs.
+
+backup: 32 files, 7370 lines, 5 models
+  MODEL BackupRecord | Tracks backup operations and metadata
+  MODEL BackupSchedule | Stores backup schedule configurations
+  MODEL BackupLog | Logs backup operations for auditing
+  MODEL RestorePoint | Tracks restore operations and validation
+  MODEL RestoreValidation | Stores validation results for restore operations
+
+budgeting: 14 files, 1027 lines, 2 models
+  MODEL Budget | Model representing a budget for a period.
+  MODEL BudgetLine | Model representing a budget line for a specific account.
+
+cashflow: 12 files, 1063 lines, 3 models
+  MODEL CashFlowForecast | Cash flow forecast with projections.
+  MODEL CashFlowItem | Individual cash flow projection item.
+  MODEL CashFlowScenario | Scenario for what-if analysis.
+
+config: 10 files, 855 lines, 0 models
+
+core: 327 files, 61623 lines, 13 models
+  MODEL AuditLog (audit.py) | Lightweight audit log for core operations.
+  MODEL SystemConfig (audit.py) | Key-value system configuration storage.
+  MODEL BaseModel (base.py) | Base model with UUID and timestamps.
+  MODEL TimeStampedUUIDModel (base.py) | TimeStampedUUIDModel - kept for backward compatibility.
+  MODEL DecisionRecord (decision_record.py) | Lightweight policy decision record with lifecycle management.
+  MODEL DriftRecord (drift_prevention.py) | Records a comparison between JournalEngine (source of truth) and JournalGateway 
+  MODEL ModuleDriftState (drift_prevention.py) | Aggregated drift state per module ΓÇö determines Phase 3 blocking.
+  MODEL InvoiceTemplate (invoice_template.py) | Configuration for dynamic invoice templates.
+  MODEL MigrationConfig (migration_config.py) | Per-function migration state for JournalEngine ΓåÆ JournalGateway switchover.
+  MODEL MigrationLog (migration_config.py) | Audit log for every switchover event.
+  MODEL UserCompanyMapping (multitenant.py) | Maps users to companies with company-specific roles.
+  MODEL Company (system.py) | Company model ΓÇö SINGLE SOURCE OF TRUTH for all business configuration.
+  MODEL Currency (system.py) | Currency model for multi-currency support.
+
+cost_centers: 13 files, 857 lines, 4 models
+  MODEL CostCenter | Cost centers for tracking expenses by department/project/branch.
+  MODEL CostAllocation | Allocation rules for distributing costs across cost centers.
+  MODEL CostAllocationLine | Lines for cost allocation rules.
+  MODEL CostTransaction | Records cost transactions linked to journal entries.
+
+coverage_governance: 15 files, 2835 lines, 0 models
+
+entities: 13 files, 951 lines, 3 models
+  MODEL Entity | Represents a business entity (branch, pharmacy, warehouse).
+  MODEL EntityAccount | Maps entity-specific accounts to the main chart of accounts.
+  MODEL InterCompanyTransaction | Tracks transactions between entities (inter-company).
+
+expenses: 9 files, 196 lines, 1 models
+  MODEL Expense | Pharmacy expenses (Rent, Electricity, Supplies, etc.)
+
+fixed_assets: 15 files, 2140 lines, 4 models
+  MODEL AssetCategory | Model representing categories for fixed assets.
+  MODEL FixedAsset | Model representing a fixed asset in the enterprise ERP system.
+  MODEL AssetDepreciation | Model representing depreciation entries for fixed assets.
+  MODEL AssetDisposal | Model representing disposal of fixed assets.
+
+governance: 11 files, 978 lines, 0 models
+
+hr: 13 files, 1981 lines, 6 models
+  MODEL Department | Department/Unit in the organization
+  MODEL Position | Job position/role within a department
+  MODEL Employee | Employee profile - core HR model
+  MODEL Attendance | Daily attendance tracking
+  MODEL Leave | Leave request and tracking
+  MODEL Overtime | Overtime tracking
+
+insurance: 10 files, 870 lines, 5 models
+  MODEL InsuranceProvider | Insurance provider/company (e.g., Afghan Insurance Co, Takaful).
+  MODEL InsurancePolicy | Customer/patient insurance policy linked to a provider.
+  MODEL Claim | Insurance claim linked to a sale invoice and patient policy.
+  MODEL ClaimItem | Individual line item within an insurance claim.
+  MODEL ClaimApproval | Audit trail for claim approval/rejection actions.
+
+inventory: 33 files, 4384 lines, 9 models
+  MODEL Category | Model representing a product category
+  MODEL Unit | Model representing a unit of measurement
+  MODEL Product | Product model representing items in the inventory.
+  MODEL Batch | Model representing a pharmaceutical batch with tracking information
+  MODEL Warehouse | Model representing a warehouse or storage location
+  MODEL StockMovement | Model representing stock movements (in/out/adjustment)
+  MODEL Stock | Model representing stock levels for products at different locations (legacy)
+  MODEL WarehouseTransfer | Model for tracking warehouse-to-warehouse transfers.
+  MODEL WarehouseTransferItem | Individual items in a warehouse transfer.
+
+jobs: 15 files, 2150 lines, 3 models
+  MODEL BackgroundJob | Centralized background job model.
+  MODEL JobAuditLog | Audit trail for job execution
+  MODEL ScheduledTask | Scheduled task configuration
+
+licensing: 22 files, 2033 lines, 2 models
+  MODEL DeviceLicense | 
+  MODEL TrialSession | 
+
+management: 2 files, 2 lines, 0 models
+
+payments: 18 files, 2768 lines, 5 models
+  MODEL PaymentMethod | Payment method configuration.
+  MODEL PaymentAccount | Payment account (cash drawer, bank account, mobile wallet, hawala account).
+  MODEL FinancialTransaction | Core financial transaction model.
+  MODEL TransactionSettlement | Tracks settlement/reconciliation of transactions.
+  MODEL SettlementTransaction | Links individual transactions to a settlement batch.
+
+payroll: 14 files, 1815 lines, 8 models
+  MODEL SalaryStructure | Salary structure with allowances and deductions
+  MODEL Allowance | Salary allowances (transport, housing, food, etc.)
+  MODEL Deduction | Salary deductions (tax, insurance, etc.)
+  MODEL EmployeeSalary | Employee-specific salary configuration
+  MODEL EmployeeAllowance | Through model for employee-specific allowances
+  MODEL EmployeeDeduction | Through model for employee-specific deductions
+  MODEL PayrollCycle | Payroll period/month
+  MODEL PayrollRecord | Individual employee payroll record
+
+pre_production_hardening: 11 files, 1612 lines, 0 models
+
+production_gate: 9 files, 1019 lines, 0 models
+
+production_infrastructure: 13 files, 1478 lines, 0 models
+
+purchases: 20 files, 2220 lines, 5 models
+  MODEL Supplier | Model representing a supplier/vendor for pharmaceutical products.
+  MODEL PurchaseInvoice | Model representing a purchase invoice from a supplier.
+  MODEL PurchaseItem | Model representing a line item in a purchase invoice.
+  MODEL SupplierPayment | Model representing a payment made to a supplier.
+  MODEL SupplierPaymentAllocation | Tracks allocation of unallocated supplier payments to outstanding purchase invoi
+
+returns: 16 files, 2378 lines, 3 models
+  MODEL ReturnOrder | Return order - linked to Invoice, Inventory, and Accounting.
+  MODEL ReturnItem | Individual items in a return order.
+  MODEL ReconciliationEntry | Tracks reconciliation between Invoice, Return, and Accounting Entries.
+
+sales: 25 files, 2770 lines, 6 models
+  MODEL Customer | Model representing a customer for pharmaceutical sales.
+  MODEL SalesInvoice | Model representing a sales invoice to a customer.
+  MODEL SalesItem | Model representing a line item in a sales invoice.
+  MODEL CustomerPayment | Model representing a payment received from a customer.
+  MODEL PaymentAllocation | Tracks allocation of unallocated payments to outstanding invoices.
+  MODEL CreditApprovalRequest | Lightweight credit limit override request for manager approval.
+
+security: 26 files, 4976 lines, 10 models
+  MODEL Role | Role model for RBAC (Role-Based Access Control)
+  MODEL Permission | Permission model for fine-grained access control
+  MODEL RolePermission | Many-to-many relationship between Role and Permission
+  MODEL UserRole | Many-to-many relationship between User and Role
+  MODEL AuditLog | Audit trail for tracking user actions and system events
+  MODEL SecurityEvent | Security-specific events for monitoring threats and anomalies
+  MODEL Notification | User notifications for stock alerts, activity, and system events
+  MODEL PasswordResetToken | Secure password reset token with expiration and single-use enforcement.
+  MODEL TOTPDevice | TOTP (Time-based One-Time Password) device for 2FA.
+  MODEL RevokedToken | Persistent token revocation store.
+
+simulation: 302 files, 21751 lines, 0 models
+
+tax: 13 files, 1111 lines, 5 models
+  MODEL TaxCategory | Categories for tax treatment (e.g., Essential Medicines, Regular Goods).
+  MODEL TaxRate | Configurable tax rates with effective date ranges.
+  MODEL TaxJurisdiction | Tax jurisdictions (national, provincial for Afghanistan context).
+  MODEL TaxReturn | Tax filing periods and tracking.
+  MODEL TaxTransaction | Links tax transactions to journal entries for reporting.
+
+test_governance: 10 files, 1112 lines, 0 models
+
+workflows: 12 files, 1686 lines, 7 models
+  MODEL WorkflowInstance | Centralized workflow instance - Generic model that works with any content type.
+  MODEL WorkflowAuditLog | Audit trail for all workflow actions.
+  MODEL ApprovalChain | Multi-level approval chains with amount-based thresholds.
+  MODEL ApprovalLevel | Single level in an approval chain.
+  MODEL ApprovalRequest | Approval request at specific level.
+  MODEL WorkflowRule | Configurable workflow rules (not hardcoded).
+  MODEL WorkflowPermission | Role-based workflow permissions.
