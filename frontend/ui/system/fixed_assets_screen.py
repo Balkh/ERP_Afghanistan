@@ -3,18 +3,18 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QLineEdit,
                                   QComboBox, QGroupBox,
                                   QTabWidget, QDoubleSpinBox,
-                                  QDateEdit, QWidget, QFrame,
-                                  QTableWidget, QTableWidgetItem)
+                                  QDateEdit, QWidget, QFrame)
 from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtCore import Qt
 from api.endpoints import get_endpoint
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE,
-                           BUTTON_HEIGHT_MD, TABLE_ROW_HEIGHT_MD, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_SUCCESS,
-                           COLOR_DANGER)
+                           BUTTON_HEIGHT_MD, BORDER_RADIUS_MD, BORDER_RADIUS_LG, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_SUCCESS,
+                           COLOR_PRIMARY, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
-from ui.components.tables import EnterpriseTable, TableColumn, build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.forms import FormSection
 
 
@@ -22,8 +22,12 @@ class FixedAssetsScreen(BaseScreen):
     """Screen for managing fixed assets."""
     
     def __init__(self, parent=None, screen_id="fixed_assets", config=None, api_client=None):
-        super().__init__(parent, screen_id, config)
         self._api_client = api_client
+        super().__init__(parent, screen_id, config)
+
+    def _setup_screen(self):
+        super()._setup_screen()
+        self._setup_ui()
     
     def _setup_ui(self):
         """Setup the UI components."""
@@ -31,18 +35,16 @@ class FixedAssetsScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
-        # Header section
-        header_layout = QHBoxLayout()
-        header = QLabel("Fixed Assets Management")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(header)
-        
-        header_layout.addStretch()
-        
-        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        # Enterprise header
+        header = PageHeader(
+            "Fixed Assets Management",
+            "Track asset cost, book value, depreciation and disposal status from one control workspace.",
+            "ASSET CONTROL",
+        )
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self._load_assets)
-        header_layout.addWidget(self.btn_refresh)
-        layout.addLayout(header_layout)
+        header.add_action(self.btn_refresh)
+        layout.addWidget(header)
         
         self.tabs = QTabWidget()
         self.tabs.setStyleSheet(f"""
@@ -74,7 +76,7 @@ class FixedAssetsScreen(BaseScreen):
         layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_bar = QFrame()
-        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}; border: 1px solid {COLOR_BORDER};")
+        filter_bar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY};")
         filter_layout = QHBoxLayout(filter_bar)
         
         self.category_filter = QComboBox()
@@ -134,14 +136,14 @@ class FixedAssetsScreen(BaseScreen):
         
         layout.addLayout(button_layout)
         
-        self.categories_table = QTableWidget()
-        self.categories_table.setStyleSheet(build_table_stylesheet())
-        self.categories_table.setAlternatingRowColors(True)
-        self.categories_table.setColumnCount(5)
-        self.categories_table.setHorizontalHeaderLabels(["Name", "Description", "Depreciation Method", "Useful Life (Years)", "Actions"])
-        self.categories_table.horizontalHeader().setStretchLastSection(True)
-        self.categories_table.setAlternatingRowColors(True)
-        self.categories_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        category_columns = [
+            TableColumn("name", "Name", width=150),
+            TableColumn("description", "Description", width=220),
+            TableColumn("method", "Depreciation Method", width=160),
+            TableColumn("life", "Useful Life (Years)", width=140, align="right"),
+            TableColumn("action", "Action", width=90, align="center"),
+        ]
+        self.categories_table = EnterpriseTable(category_columns, density="compact")
         layout.addWidget(self.categories_table)
         
         self._load_categories()
@@ -174,20 +176,22 @@ class FixedAssetsScreen(BaseScreen):
         
         layout.addLayout(button_layout)
         
-        self.depreciation_table = QTableWidget()
-        self.depreciation_table.setStyleSheet(build_table_stylesheet())
-        self.depreciation_table.setAlternatingRowColors(True)
-        self.depreciation_table.setColumnCount(7)
-        self.depreciation_table.setHorizontalHeaderLabels(["Asset", "Category", "Cost", "Accumulated Depr.", "Current Depr.", "Book Value", "Year"])
-        self.depreciation_table.horizontalHeader().setStretchLastSection(True)
-        self.depreciation_table.setAlternatingRowColors(True)
-        self.depreciation_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        depreciation_columns = [
+            TableColumn("asset", "Asset", width=170),
+            TableColumn("category", "Category", width=120),
+            TableColumn("cost", "Cost", width=110, align="right"),
+            TableColumn("accumulated", "Accumulated Depr.", width=140, align="right"),
+            TableColumn("current", "Current Depr.", width=120, align="right"),
+            TableColumn("book", "Book Value", width=120, align="right"),
+            TableColumn("year", "Year", width=80, align="center"),
+        ]
+        self.depreciation_table = EnterpriseTable(depreciation_columns, density="compact")
         layout.addWidget(self.depreciation_table)
         
         self._load_depreciation()
     
     def _load_assets(self):
-        self.assets_table.setRowCount(0)
+        self.assets_table.set_data([])
         
         if self._api_client:
             try:
@@ -201,22 +205,19 @@ class FixedAssetsScreen(BaseScreen):
                 data = []
         else:
             data = self._get_mock_assets()
-        
+        rows = []
         for item in data:
-            row = self.assets_table.rowCount()
-            self.assets_table.insertRow(row)
-            self.assets_table.setItem(row, 0, QTableWidgetItem(item.get("asset_code", "")))
-            self.assets_table.setItem(row, 1, QTableWidgetItem(item.get("name", "")))
-            self.assets_table.setItem(row, 2, QTableWidgetItem(item.get("category_name", "")))
-            self.assets_table.setItem(row, 3, QTableWidgetItem(str(item.get("purchase_date", ""))[:10]))
-            self.assets_table.setItem(row, 4, QTableWidgetItem(str(item.get("purchase_cost", "0"))))
-            self.assets_table.setItem(row, 5, QTableWidgetItem(str(item.get("accumulated_depreciation", "0"))))
-            self.assets_table.setItem(row, 6, QTableWidgetItem(str(item.get("book_value", "0"))))
-            self.assets_table.setItem(row, 7, QTableWidgetItem(item.get("status", "")))
-            
-            btn = EnterpriseButton("View", variant=ButtonVariant.SECONDARY)
-            self.assets_table.setCellWidget(row, 8, btn)
-            self.assets_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
+            rows.append({
+                "asset_code": item.get("asset_code", ""),
+                "name": item.get("name", ""),
+                "category": item.get("category_name", ""),
+                "purchase_date": str(item.get("purchase_date", ""))[:10],
+                "cost": str(item.get("purchase_cost", "0")),
+                "depreciation": str(item.get("accumulated_depreciation", "0")),
+                "book_value": str(item.get("book_value", "0")),
+                "status": item.get("status", ""),
+            })
+        self.assets_table.set_data(rows)
     
     def _get_mock_assets(self):
         return [
@@ -226,47 +227,22 @@ class FixedAssetsScreen(BaseScreen):
         ]
     
     def _load_categories(self):
-        self.categories_table.setRowCount(0)
-        
         mock_data = [
             {"name": "Vehicles", "description": "Company vehicles", "method": "Straight Line", "life": 5},
             {"name": "Equipment", "description": "Medical equipment", "method": "Straight Line", "life": 7},
             {"name": "Furniture", "description": "Office furniture", "method": "Straight Line", "life": 10},
             {"name": "Computers", "description": "IT equipment", "method": "Declining Balance", "life": 3},
         ]
-        
-        for item in mock_data:
-            row = self.categories_table.rowCount()
-            self.categories_table.insertRow(row)
-            self.categories_table.setItem(row, 0, QTableWidgetItem(item["name"]))
-            self.categories_table.setItem(row, 1, QTableWidgetItem(item["description"]))
-            self.categories_table.setItem(row, 2, QTableWidgetItem(item["method"]))
-            self.categories_table.setItem(row, 3, QTableWidgetItem(str(item["life"])))
-            
-            btn = EnterpriseButton("Edit", variant=ButtonVariant.SECONDARY)
-            self.categories_table.setCellWidget(row, 4, btn)
-            self.categories_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
+        rows = [{**item, "life": str(item["life"]), "action": "Edit"} for item in mock_data]
+        self.categories_table.set_data(rows)
     
     def _load_depreciation(self):
-        self.depreciation_table.setRowCount(0)
-        
         mock_data = [
             {"asset": "Toyota Corolla", "category": "Vehicles", "cost": "450000.00", "accumulated": "90000.00", "current": "90000.00", "book": "360000.00", "year": "2025"},
             {"asset": "Dell Laptop", "category": "Computers", "cost": "85000.00", "accumulated": "8500.00", "current": "28333.00", "book": "56667.00", "year": "2025"},
             {"asset": "Office Desk Set", "category": "Furniture", "cost": "120000.00", "accumulated": "18000.00", "current": "12000.00", "book": "90000.00", "year": "2025"},
         ]
-        
-        for item in mock_data:
-            row = self.depreciation_table.rowCount()
-            self.depreciation_table.insertRow(row)
-            self.depreciation_table.setItem(row, 0, QTableWidgetItem(item["asset"]))
-            self.depreciation_table.setItem(row, 1, QTableWidgetItem(item["category"]))
-            self.depreciation_table.setItem(row, 2, QTableWidgetItem(item["cost"]))
-            self.depreciation_table.setItem(row, 3, QTableWidgetItem(item["accumulated"]))
-            self.depreciation_table.setItem(row, 4, QTableWidgetItem(item["current"]))
-            self.depreciation_table.setItem(row, 5, QTableWidgetItem(item["book"]))
-            self.depreciation_table.setItem(row, 6, QTableWidgetItem(item["year"]))
-            self.depreciation_table.setRowHeight(row, TABLE_ROW_HEIGHT_MD)
+        self.depreciation_table.set_data(mock_data)
     
     def _add_asset(self):
         dialog = AssetDialog(self, api_client=self._api_client)
