@@ -1,5 +1,4 @@
 """Orchestrator - Main runner coordinator."""
-import sys
 from pathlib import Path
 from .startup import StartupManager
 from .health import HealthChecker
@@ -55,6 +54,30 @@ class ERPRunner:
     @property
     def run_integration_tests(self):
         return self.tests.run_integration_tests
+
+    def _demo_env(self) -> dict:
+        return {
+            "PHARMACY_ERP_DEMO_MODE": "true",
+            "PHARMACY_ERP_DEVELOPMENT": "true",
+            "DEBUG": "True",
+            "SECRET_KEY": "demo-local-secret-key-not-for-production-change-me-1234567890",
+            "ALLOWED_HOSTS": "localhost,127.0.0.1,testserver",
+        }
+
+    def start_demo_system(self):
+        """Start a curated customer-demo runtime."""
+        print("=" * 50)
+        print("DEMO Starting ERP Afghanistan Demo Mode")
+        print("=" * 50)
+        env = self._demo_env()
+        if not self.startup.start_backend(env=env):
+            print("[!] Backend did not start; opening frontend demo shell anyway.")
+        self.startup.start_frontend(env=env)
+        print("\n" + "=" * 50)
+        print("[OK] Demo mode requested")
+        print("  Demo navigation: enabled")
+        print("  Development auth bypass: enabled")
+        print("=" * 50)
 
     def start_full_system(self):
         """Start complete system."""

@@ -205,11 +205,17 @@ def main():
         log.warning("DEVELOPMENT MODE — authentication bypassed (set PHARMACY_ERP_DEVELOPMENT to disable)",
                      extra={'extra_fields': {'tags': ['auth']}})
         authenticated = True
-        user_data = {"username": "dev_admin", "role": "admin", "roles": ["Admin"]}
+        demo_mode = os.environ.get('PHARMACY_ERP_DEMO_MODE', '').lower() in ('true', '1', 'yes')
+        user_data = {
+            "username": "demo_admin" if demo_mode else "dev_admin",
+            "role": "admin",
+            "roles": ["Admin"],
+            "ui_scopes": {"sidebar": [], "screens": [], "actions": {}, "hidden": []},
+        }
         dev_token = os.environ.get('PHARMACY_ERP_DEV_TOKEN')
         if dev_token:
             api_client.set_auth_token(dev_token)
-        else:
+        elif not demo_mode:
             log.warning("No PHARMACY_ERP_DEV_TOKEN set — running without auth token (API calls will fail)",
                          extra={'extra_fields': {'tags': ['auth']}})
 

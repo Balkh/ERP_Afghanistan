@@ -1,4 +1,5 @@
 """Startup module - Backend and frontend startup."""
+import os
 import subprocess
 import time
 import socket
@@ -29,7 +30,13 @@ class StartupManager:
         except (ImportError, requests.RequestException, ConnectionError):
             return False
 
-    def start_backend(self, port: int = 8000) -> bool:
+    def _merged_env(self, extra_env: dict = None) -> dict:
+        env = os.environ.copy()
+        if extra_env:
+            env.update({k: str(v) for k, v in extra_env.items()})
+        return env
+
+    def start_backend(self, port: int = 8000, env: dict = None) -> bool:
         """Start Django backend server."""
         if not self.check_port(port):
             print(f"[X] Port {port} already in use. Backend may be running.")
@@ -41,7 +48,8 @@ class StartupManager:
                 [sys.executable, "manage.py", "runserver", str(port)],
                 cwd=str(self.backend_dir),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                env=self._merged_env(env)
             )
             # Wait for backend to be ready
             for _ in range(30):
@@ -62,7 +70,7 @@ class StartupManager:
             self.backend_process.wait()
             print("STOP Backend stopped")
 
-    def start_frontend(self) -> bool:
+    def start_frontend(self, env: dict = None) -> bool:
         """Start PySide6 frontend."""
         frontend_main = self.frontend_dir / "main.py"
         if not frontend_main.exists():
@@ -77,7 +85,8 @@ class StartupManager:
                 [sys.executable, str(frontend_main)],
                 cwd=str(self.frontend_dir),
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                env=self._merged_env(env)
             )
             print("[OK] Frontend started")
             return True

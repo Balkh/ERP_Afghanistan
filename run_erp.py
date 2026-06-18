@@ -12,6 +12,7 @@ Commands:
     test               Run all tests
     test-backend       Run backend tests only
     test-integration   Run integration tests
+    start-demo         Start curated customer demo mode
     status             Show system status
     health             Check system health before startup
     help               Show this help message
@@ -31,6 +32,8 @@ def main():
             runner.start_frontend()
         elif command == "start-full":
             runner.start_full_system()
+        elif command == "start-demo":
+            runner.start_demo_system()
         elif command == "test":
             result = runner.run_tests()
             print(f"\nSTAT Tests completed in {result['elapsed']}s")
