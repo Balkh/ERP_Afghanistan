@@ -287,6 +287,11 @@ class EnterpriseTable(QTableWidget):
 
     def set_data_chunked(self, data: List[Dict], chunk_size: int = 50):
         """Load large datasets in chunks to avoid UI freeze."""
+        existing_timer = getattr(self, '_chunk_timer', None)
+        if existing_timer is not None and existing_timer.isActive():
+            existing_timer.stop()
+            existing_timer.deleteLater()
+            self._chunk_timer = None
         if len(data) <= chunk_size:
             self.set_data(data)
             return
@@ -326,6 +331,8 @@ class EnterpriseTable(QTableWidget):
         self._chunk_index = end
         if self._chunk_index >= len(self._filtered_data):
             self._chunk_timer.stop()
+            self._chunk_timer.deleteLater()
+            self._chunk_timer = None
             self.blockSignals(False)
 
     def _refresh_display(self):

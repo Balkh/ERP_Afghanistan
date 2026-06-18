@@ -2,7 +2,7 @@ from ui.constants import (
     SPACING_NONE, SPACING_SM, SPACING_MD, SPACING_LG,
     COLOR_BG_DIALOG, COLOR_BG_MAIN, COLOR_HEADER_DARK, COLOR_FORM_FOOTER_BORDER,
     COLOR_TEXT_PRIMARY, COLOR_TEXT_ON_PRIMARY, COLOR_TEXT_ON_HEADER,
-    COLOR_BG_SECTION, COLOR_BORDER,
+    COLOR_BG_SECTION, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_PRIMARY,
     BORDER_RADIUS_LG,
     DIALOG_WIDTH_MIN, DIALOG_WIDTH_PREFERRED, DIALOG_WIDTH_MAX,
     TEXT_CARD_TITLE, TEXT_BODY, TEXT_LABEL, MARGIN_CARD, MARGIN_COMPACT_H, MARGIN_COMPACT_V,
@@ -54,6 +54,7 @@ class EnterpriseDialog(AsyncRequestMixin, QDialog):
         flags: Qt.WindowType = None
     ):
         super().__init__(parent)
+        self.setModal(True)
         
         self._title = title
         self._dialog_type = dialog_type
@@ -100,6 +101,14 @@ class EnterpriseDialog(AsyncRequestMixin, QDialog):
             
         # Content area (elevated surface)
         self._content_widget = QWidget()
+        self._content_widget.setObjectName("dialogContent")
+        self._content_widget.setStyleSheet(f"""
+            QWidget#dialogContent {{
+                background-color: {COLOR_BG_SECTION};
+                border-left: 1px solid {COLOR_BORDER_LIGHT};
+                border-right: 1px solid {COLOR_BORDER_LIGHT};
+            }}
+        """)
         self._content_layout = QVBoxLayout(self._content_widget)
         self._content_layout.setSpacing(SPACING_MD)
         self._content_layout.setContentsMargins(MARGIN_CARD, MARGIN_CARD, MARGIN_CARD, MARGIN_CARD)
@@ -127,6 +136,7 @@ class EnterpriseDialog(AsyncRequestMixin, QDialog):
         header.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_HEADER_DARK};
+                border-top: 3px solid {COLOR_PRIMARY};
                 border-top-left-radius: {BORDER_RADIUS_LG}px;
                 border-top-right-radius: {BORDER_RADIUS_LG}px;
             }}

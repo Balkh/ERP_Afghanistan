@@ -468,7 +468,7 @@ class UIStyleBuilder:
         # Re-import constants to ensure theme sync
         from ui.constants import (
             COLOR_FORM_SECTION_TITLE, COLOR_TEXT_SECONDARY, COLOR_BG_SECTION,
-            COLOR_BORDER_SECTION, BORDER_RADIUS_LG, SECTION_TITLE_SPACING,
+            COLOR_BORDER_SECTION, COLOR_PRIMARY, BORDER_RADIUS_LG, SECTION_TITLE_SPACING,
             TEXT_CARD_TITLE, SPACING_MD, SPACING_XS
         )
         
@@ -482,6 +482,7 @@ class UIStyleBuilder:
                 color: {color};
                 background-color: {COLOR_BG_SECTION};
                 border: 1px solid {COLOR_BORDER_SECTION};
+                border-left: 4px solid {COLOR_PRIMARY if primary else COLOR_BORDER_SECTION};
                 border-radius: {BORDER_RADIUS_LG}px;
                 margin-top: {SECTION_TITLE_SPACING}px;
                 padding-top: {SECTION_TITLE_SPACING + 6}px;
