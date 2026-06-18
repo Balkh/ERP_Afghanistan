@@ -17,13 +17,13 @@ class TrialBalanceComprehensiveTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.asset = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+            code='TB1000', name='Cash', account_type='ASSET', is_active=True
         )
         cls.revenue = Account.objects.create(
-            code='4000', name='Sales', account_type='REVENUE', is_active=True
+            code='TB4000', name='Sales', account_type='REVENUE', is_active=True
         )
         cls.expense = Account.objects.create(
-            code='5000', name='Expenses', account_type='EXPENSE', is_active=True
+            code='TB5000', name='Expenses', account_type='EXPENSE', is_active=True
         )
         
     def test_trial_balance_empty(self):
@@ -74,10 +74,10 @@ class ProfitAndLossComprehensiveTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.revenue = Account.objects.create(
-            code='4000', name='Sales Revenue', account_type='REVENUE', is_active=True
+            code='PL4000', name='Sales Revenue', account_type='REVENUE', is_active=True
         )
         cls.expense = Account.objects.create(
-            code='5000', name='Rent Expense', account_type='EXPENSE', is_active=True
+            code='PL5000', name='Rent Expense', account_type='EXPENSE', is_active=True
         )
         
     def test_profit_and_loss_empty(self):
@@ -125,15 +125,15 @@ class BalanceSheetComprehensiveTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.asset = Account.objects.create(
-            code='1100', name='Accounts Receivable', account_type='ASSET', 
+            code='BS1100', name='Accounts Receivable', account_type='ASSET', 
             account_category='CURRENT_ASSET', is_active=True
         )
         cls.liability = Account.objects.create(
-            code='2000', name='Accounts Payable', account_type='LIABILITY',
+            code='BS2000', name='Accounts Payable', account_type='LIABILITY',
             account_category='CURRENT_LIABILITY', is_active=True
         )
         cls.equity = Account.objects.create(
-            code='3000', name='Capital', account_type='EQUITY', is_active=True
+            code='BS3000', name='Capital', account_type='EQUITY', is_active=True
         )
         
     def test_balance_sheet_empty(self):
@@ -175,10 +175,10 @@ class CashFlowComprehensiveTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+            code='CF1000', name='Cash', account_type='ASSET', is_active=True
         )
         cls.revenue = Account.objects.create(
-            code='4000', name='Sales', account_type='REVENUE', is_active=True
+            code='CF4000', name='Sales', account_type='REVENUE', is_active=True
         )
         
     def test_cash_flow_empty(self):
@@ -218,7 +218,7 @@ class AccountLedgerComprehensiveTests(TestCase):
     @classmethod
     def setUpTestData(cls):
         cls.cash = Account.objects.create(
-            code='1000', name='Cash', account_type='ASSET', is_active=True
+            code='AL1000', name='Cash', account_type='ASSET', is_active=True
         )
         
     def test_account_ledger_empty(self):
