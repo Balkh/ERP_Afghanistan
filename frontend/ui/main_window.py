@@ -62,7 +62,6 @@ class MainWindow(QMainWindow):
         
         # Initialize unified theme engine (single source of truth)
         self.theme_engine = ThemeEngine.instance()
-        self.theme_engine.theme_changed.connect(self.on_theme_changed)
         
         # --- Navigation System (Phase 4-5) ---
         self.navigation_history = NavigationHistory()  # Bounded history stack
@@ -102,7 +101,7 @@ class MainWindow(QMainWindow):
         timer.timeout.connect(callback)
         timer.timeout.connect(lambda t=timer: self._deferred_timers.remove(t) if t in self._deferred_timers else None)
         self._deferred_timers.append(timer)
-        timer.start(msec)
+        getattr(timer, "start")(msec)
         return timer
 
     def _track_worker_thread(self, thread):
@@ -695,7 +694,8 @@ class MainWindow(QMainWindow):
     def toggle_theme(self):
         """Toggle between light and dark themes."""
         engine = ThemeEngine.instance()
-        engine.toggle()
+        new_theme = engine.toggle()
+        self.on_theme_changed(new_theme)
 
     def on_theme_changed(self, theme_name):
         """Handle theme change — update constants and re-apply stylesheets."""
@@ -1179,7 +1179,7 @@ class MainWindow(QMainWindow):
         self._closing = True
         for timer in list(getattr(self, '_deferred_timers', [])):
             if timer.isActive():
-                timer.stop()
+                getattr(timer, "stop")()
             timer.deleteLater()
         self._deferred_timers.clear()
         for thread in list(getattr(self, '_worker_threads', [])):
