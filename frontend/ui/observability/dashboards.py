@@ -1,12 +1,12 @@
 import time
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                                QLabel, QFrame, QTableWidgetItem,
+                                QLabel, QFrame,
                                 QComboBox,
                                 QListWidget, QListWidgetItem, QSplitter,
                                 QTextEdit, QAbstractItemView, QTabWidget)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QFont
 
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, MARGIN_PAGE, COLOR_PRIMARY,
                           COLOR_SUCCESS, COLOR_WARNING,
@@ -32,59 +32,22 @@ def _make_styled_table(headers, parent=None):
 
 
 def _table_item(text, color=None):
-    item = QTableWidgetItem(str(text))
-    if color:
-        item.setForeground(QColor(color))
-    return item
+    return str(text)
 
 
 def diff_update_table(table, rows, col_count=None):
-    scroll_bar = table.verticalScrollBar()
-    scroll_pos = scroll_bar.value() if scroll_bar else 0
-    sel_row = table.currentRow()
-    sel_col = table.currentColumn()
-
-    if col_count is None and rows:
-        col_count = max(len(r) for r in rows) if isinstance(rows[0], (list, tuple)) else table.columnCount()
-    elif col_count is None:
-        col_count = table.columnCount()
-
-    table.setUpdatesEnabled(False)
-    old_count = table.rowCount()
-    new_count = len(rows)
-
-    if new_count != old_count:
-        table.setRowCount(new_count)
-
-    for i, row in enumerate(rows):
-        for j in range(col_count):
-            val = row[j] if j < len(row) else ""
-            if isinstance(val, QTableWidgetItem):
-                text = val.text()
-                fg = val.foreground()
-            else:
-                text = str(val)
-                fg = None
-            item = table.item(i, j)
-            if item is None:
-                if isinstance(val, QTableWidgetItem):
-                    new_item = QTableWidgetItem()
-                    new_item.setText(val.text())
-                    new_item.setForeground(val.foreground())
-                    table.setItem(i, j, new_item)
-                else:
-                    table.setItem(i, j, QTableWidgetItem(text))
-            elif item.text() != text:
-                item.setText(text)
-                if fg is not None and fg != item.foreground():
-                    item.setForeground(fg)
-
-    table.setUpdatesEnabled(True)
-    if scroll_bar and scroll_pos > 0:
-        scroll_bar.setValue(min(scroll_pos, scroll_bar.maximum()))
-    if 0 <= sel_row < new_count:
-        table.setCurrentCell(sel_row, max(0, sel_col))
-
+    """Update an EnterpriseTable from row tuples while preserving its column keys."""
+    columns = getattr(table, "_columns", [])
+    if col_count is None:
+        col_count = len(columns)
+    out = []
+    for row in rows:
+        data = {}
+        for idx in range(col_count):
+            key = columns[idx].key if idx < len(columns) else f"col_{idx}"
+            data[key] = row[idx] if idx < len(row) else ""
+        out.append(data)
+    table.set_data(out)
 
 def _severity_to_color(severity):
     s = severity.lower()
@@ -499,17 +462,19 @@ class IncidentIntelligenceView(_BaseDashboard):
         self._populate_table(self._all_incidents)
 
     def _populate_table(self, incidents):
-        self.incident_table.setRowCount(len(incidents))
-        for i, inc in enumerate(incidents):
+        rows = []
+        for inc in incidents:
             sev = inc.get("severity", "info")
-            self.incident_table.setItem(i, 0, QTableWidgetItem(str(inc.get("id", ""))))
-            sev_item = QTableWidgetItem(sev.upper())
-            sev_item.setForeground(QColor(_severity_to_color(sev)))
-            self.incident_table.setItem(i, 1, sev_item)
-            self.incident_table.setItem(i, 2, QTableWidgetItem(inc.get("status", "")))
-            self.incident_table.setItem(i, 3, QTableWidgetItem(f"L{inc.get('escalation', 0)}"))
-            self.incident_table.setItem(i, 4, QTableWidgetItem(str(inc.get("tick", ""))))
-            self.incident_table.setItem(i, 5, QTableWidgetItem(inc.get("description", "")))
+            rows.append({
+                **inc,
+                "id": str(inc.get("id", "")),
+                "severity": sev.upper(),
+                "status": inc.get("status", ""),
+                "escalation": f"L{inc.get('escalation', 0)}",
+                "tick": str(inc.get("tick", "")),
+                "description": inc.get("description", ""),
+            })
+        self.incident_table.set_data(rows)
 
     def _apply_filters(self):
         filtered = self._all_incidents
@@ -522,21 +487,16 @@ class IncidentIntelligenceView(_BaseDashboard):
         self._populate_table(filtered)
 
     def _on_selection_changed(self):
-        rows = self.incident_table.selectedItems()
-        if not rows:
+        selected = self.incident_table.get_selected_data()
+        if not selected:
             return
-        row = rows[0].row()
-        inc = {}
-        for col in range(self.incident_table.columnCount()):
-            item = self.incident_table.item(row, col)
-            if item:
-                inc[self.incident_table.horizontalHeaderItem(col).text()] = item.text()
+        inc = selected[0]
         self.detail_label.setText(
-            f"<b>ID:</b> {inc.get('ID', '')}<br>"
-            f"<b>Severity:</b> {inc.get('Severity', '')}<br>"
-            f"<b>Status:</b> {inc.get('Status', '')}<br>"
-            f"<b>Escalation:</b> {inc.get('Escalation', '')}<br>"
-            f"<b>Description:</b> {inc.get('Description', '')}"
+            f"<b>ID:</b> {inc.get('id', '')}<br>"
+            f"<b>Severity:</b> {inc.get('severity', '')}<br>"
+            f"<b>Status:</b> {inc.get('status', '')}<br>"
+            f"<b>Escalation:</b> {inc.get('escalation', '')}<br>"
+            f"<b>Description:</b> {inc.get('description', '')}"
         )
 
     def _on_error(self, error_msg):
@@ -601,19 +561,20 @@ class PredictiveDriftDashboard(_BaseDashboard):
             color=COLOR_INFO
         )
         details = prediction.get("details", d.get("details", []))
-        self.drift_table.setRowCount(len(details))
-        for i, det in enumerate(details):
+        rows = []
+        for det in details:
             score = det.get("score", 0)
             trend = det.get("trend", "stable")
             arrow = "▲" if trend == "up" else ("▼" if trend == "down" else "◆")
-            arrow_color = COLOR_DANGER if trend == "up" else (COLOR_SUCCESS if trend == "down" else COLOR_INFO)
-            self.drift_table.setItem(i, 0, _table_item(det.get("module", "")))
-            self.drift_table.setItem(i, 1, _table_item(f"{score}%"))
-            trend_item = _table_item(arrow, arrow_color)
-            self.drift_table.setItem(i, 2, trend_item)
-            self.drift_table.setItem(i, 3, _table_item(det.get("status", "")))
             risk = det.get("risk", "low")
-            self.drift_table.setItem(i, 4, _table_item(risk.upper(), _severity_to_color(risk)))
+            rows.append({
+                "module": det.get("module", ""),
+                "drift_score": f"{score}%",
+                "trend": arrow,
+                "status": det.get("status", ""),
+                "risk": risk.upper(),
+            })
+        self.drift_table.set_data(rows)
 
     def _on_error(self, error_msg):
         pass
@@ -822,34 +783,36 @@ class DigitalTwinTelemetryView(_BaseDashboard):
         self.integrity_card.update_value(f"{integrity}%", color=COLOR_INFO)
 
         scenarios = d.get("scenarios", summary.get("scenarios", []))
-        self.scenario_table.setRowCount(len(scenarios))
-        for i, s in enumerate(scenarios):
-            self.scenario_table.setItem(i, 0, _table_item(s.get("name", "")))
-            status = s.get("status", "")
-            c = COLOR_SUCCESS if status == "passed" else COLOR_DANGER
-            self.scenario_table.setItem(i, 1, _table_item(status.upper(), c))
-            self.scenario_table.setItem(i, 2, _table_item(s.get("duration", "")))
-            self.scenario_table.setItem(i, 3, _table_item(s.get("errors", 0)))
+        self.scenario_table.set_data([
+            {
+                "scenario": s.get("name", ""),
+                "status": str(s.get("status", "")).upper(),
+                "duration": s.get("duration", ""),
+                "errors": str(s.get("errors", 0)),
+            }
+            for s in scenarios
+        ])
 
         checks = d.get("integrity_checks", summary.get("integrity_checks", []))
-        self.integrity_table.setRowCount(len(checks))
-        for i, c in enumerate(checks):
-            self.integrity_table.setItem(i, 0, _table_item(c.get("check", "")))
-            st = c.get("status", "")
-            sc = COLOR_SUCCESS if st == "passed" else COLOR_DANGER
-            self.integrity_table.setItem(i, 1, _table_item(st.upper(), sc))
-            self.integrity_table.setItem(i, 2, _table_item(c.get("detail", "")))
+        self.integrity_table.set_data([
+            {
+                "check": c.get("check", ""),
+                "status": str(c.get("status", "")).upper(),
+                "detail": c.get("detail", ""),
+            }
+            for c in checks
+        ])
 
         slas = d.get("sla_violations", summary.get("sla_violations", []))
-        self.sla_table.setRowCount(len(slas))
-        for i, sla in enumerate(slas):
-            self.sla_table.setItem(i, 0, _table_item(sla.get("name", "")))
-            comp = sla.get("compliance", 0)
-            self.sla_table.setItem(i, 1, _table_item(f"{comp}%"))
-            self.sla_table.setItem(i, 2, _table_item(sla.get("violations", 0)))
-            trend = sla.get("trend", "stable")
-            tc = COLOR_SUCCESS if trend == "improving" else (COLOR_DANGER if trend == "degrading" else COLOR_INFO)
-            self.sla_table.setItem(i, 3, _table_item(trend.upper(), tc))
+        self.sla_table.set_data([
+            {
+                "sla": sla.get("name", ""),
+                "compliance": f"{sla.get('compliance', 0)}%",
+                "violations": str(sla.get("violations", 0)),
+                "trend": str(sla.get("trend", "stable")).upper(),
+            }
+            for sla in slas
+        ])
 
     def _on_error(self, error_msg):
         self.last_update.setText("Connection error")
