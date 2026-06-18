@@ -9,6 +9,7 @@ from api.endpoints import get_endpoint, extract_list
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
                             TEXT_LABEL, BORDER_RADIUS_SM, BORDER_RADIUS_LG, COLOR_BORDER, COLOR_TABLE_HEADER_BG_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from utils.format import safe_float
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.state_helper import StateHelper
@@ -37,18 +38,16 @@ class PaymentScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
-        # Header section
-        header_layout = QHBoxLayout()
-        header = QLabel("Payment Transactions")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(header)
-        
-        header_layout.addStretch()
-        
-        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        # Enterprise header
+        header = PageHeader(
+            "Payment Transactions",
+            "Monitor receipts, payments, transfers and refunds without blocking the operator workspace.",
+            "FINANCE OPERATIONS",
+        )
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_payments)
-        header_layout.addWidget(self.btn_refresh)
-        layout.addLayout(header_layout)
+        header.add_action(self.btn_refresh)
+        layout.addWidget(header)
 
         # Filter bar
         filter_bar = self._create_filter_bar()
@@ -66,7 +65,7 @@ class PaymentScreen(BaseScreen):
         bar_font = QFont("Segoe UI", TEXT_LABEL)
         bar_font.setWeight(QFont.Weight.Bold)
         bar.setFont(bar_font)
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -130,11 +129,11 @@ class PaymentScreen(BaseScreen):
         layout.addLayout(btn_layout)
 
         # Apply dark theme to combo boxes
-        combo_style = """
+        combo_style = f"""
             QComboBox {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_XS}px {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
             }}

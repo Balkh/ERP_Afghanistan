@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt, QDate
 from datetime import date
 from api.client import APIClient
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
                            BORDER_RADIUS_MD, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED)
@@ -199,8 +200,11 @@ class ReportBrowser(BaseScreen):
 
         config = REPORT_TYPES.get(self.report_type, REPORT_TYPES["trial_balance"])
 
-        header = QLabel(config["title"])
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header = PageHeader(
+            config["title"],
+            "Generate governed financial, HR and payroll reports with export-ready output.",
+            "REPORTING CONTROL",
+        )
         layout.addWidget(header)
 
         # Toolbar with type selector + date + actions
