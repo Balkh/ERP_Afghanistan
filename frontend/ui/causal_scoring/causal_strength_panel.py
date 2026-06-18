@@ -5,14 +5,13 @@ Shows top 3 strongest causal paths per anomaly/risk/forecast.
 Highlights strong vs weak links, bottleneck nodes, and weighted chains.
 """
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
-                                 QTextEdit, QComboBox, QGroupBox,
-                                 QTableWidget, QTableWidgetItem, QAbstractItemView)
+                                 QTextEdit, QComboBox, QGroupBox)
 from PySide6.QtCore import QTimer
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from api.client import APIClient
 from ui.causal_scoring.causal_scoring_engine import CausalScoringEngine
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.constants import (SPACING_SM, SPACING_MD, SPACING_XL, SPACING_LG, SPACING_6,
                            BORDER_RADIUS_MD, MARGIN_PAGE,
                            COLOR_TEXT_PRIMARY, COLOR_BG_SURFACE, COLOR_BORDER,
@@ -86,13 +85,14 @@ class CausalStrengthPanel(BaseScreen):
             border-radius: {BORDER_RADIUS_MD}; padding: {SPACING_SM}px; padding-top: {SPACING_XL}px; }}
         """)
         summary_layout = QVBoxLayout(summary_group)
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Rank", "Node", "Type", "Impact", "Confidence"])
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setAlternatingRowColors(True)
-        self.table.setStyleSheet(build_table_stylesheet())
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        columns = [
+            TableColumn("rank", "Rank", width=70, align="center"),
+            TableColumn("node", "Node", width=220),
+            TableColumn("type", "Type", width=120),
+            TableColumn("impact", "Impact", width=100, align="right"),
+            TableColumn("confidence", "Confidence", width=110, align="right"),
+        ]
+        self.table = EnterpriseTable(columns, density="compact")
         summary_layout.addWidget(self.table)
         layout.addWidget(summary_group)
 
@@ -120,13 +120,16 @@ class CausalStrengthPanel(BaseScreen):
                     text.setPlainText("No path available")
 
             # Table
-            self.table.setRowCount(len(graph.nodes))
-            for i, n in enumerate(sorted(graph.nodes, key=lambda n: n.rank)):
-                self.table.setItem(i, 0, QTableWidgetItem(str(n.rank)))
-                self.table.setItem(i, 1, QTableWidgetItem(n.label[:30]))
-                self.table.setItem(i, 2, QTableWidgetItem(n.node_type))
-                self.table.setItem(i, 3, QTableWidgetItem(f"{n.impact_score:.0f}/100"))
-                self.table.setItem(i, 4, QTableWidgetItem(f"{n.confidence:.0%}"))
+            rows = []
+            for n in sorted(graph.nodes, key=lambda n: n.rank):
+                rows.append({
+                    "rank": str(n.rank),
+                    "node": n.label[:30],
+                    "type": n.node_type,
+                    "impact": f"{n.impact_score:.0f}/100",
+                    "confidence": f"{n.confidence:.0%}",
+                })
+            self.table.set_data(rows)
 
         except Exception as e:
             for i in range(3):

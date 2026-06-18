@@ -8,15 +8,14 @@ Phase 5B.12 — Decision Intelligence Dashboard.
 4. Decision Comparison Panel
 """
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-                                 QTextEdit, QTabWidget, QTableWidget,
-                                 QTableWidgetItem, QAbstractItemView)
+                                 QTextEdit, QTabWidget)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from api.client import APIClient
 from ui.causal_scoring.causal_scoring_engine import CausalScoringEngine
 from ui.causal_scoring.decision_impact_engine import DecisionImpactEngine
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
 from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED,
                            COLOR_TEXT_PRIMARY, COLOR_PRIMARY, COLOR_BORDER,
@@ -67,14 +66,15 @@ class DecisionIntelligenceDashboard(BaseScreen):
         # Tab 1: Ranked Decisions
         tab1 = QWidget()
         t1l = QVBoxLayout(tab1)
-        self.ranked_table = QTableWidget()
-        self.ranked_table.setColumnCount(6)
-        self.ranked_table.setHorizontalHeaderLabels(
-            ["Rank", "Decision Type", "Action", "Impact", "Risk", "Overall Score"])
-        self.ranked_table.horizontalHeader().setStretchLastSection(True)
-        self.ranked_table.setAlternatingRowColors(True)
-        self.ranked_table.setStyleSheet(build_table_stylesheet())
-        self.ranked_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        columns = [
+            TableColumn("rank", "Rank", width=70, align="center"),
+            TableColumn("decision_type", "Decision Type", width=150),
+            TableColumn("action", "Action", width=260),
+            TableColumn("impact", "Impact", width=90, align="right"),
+            TableColumn("risk", "Risk", width=90, align="right"),
+            TableColumn("overall", "Overall Score", width=120, align="right"),
+        ]
+        self.ranked_table = EnterpriseTable(columns, density="compact")
         t1l.addWidget(self.ranked_table)
         tabs.addTab(tab1, "① Ranked Decisions")
 
@@ -134,16 +134,19 @@ class DecisionIntelligenceDashboard(BaseScreen):
     def _refresh_ranked(self):
         try:
             result = self._ranking.rank_decisions()
-            self.ranked_table.setRowCount(len(result.scores))
-            for i, s in enumerate(result.scores):
-                self.ranked_table.setItem(i, 0, QTableWidgetItem(str(s.overall_rank)))
-                self.ranked_table.setItem(i, 1, QTableWidgetItem(s.decision_type.replace("_", " ").title()))
-                self.ranked_table.setItem(i, 2, QTableWidgetItem(s.action_summary[:40]))
-                self.ranked_table.setItem(i, 3, QTableWidgetItem(f"{s.impact_score:.0f}"))
-                self.ranked_table.setItem(i, 4, QTableWidgetItem(f"{s.risk_score:.0f}"))
-                self.ranked_table.setItem(i, 5, QTableWidgetItem(f"{s.overall_score:.1f}"))
+            rows = []
+            for s in result.scores:
+                rows.append({
+                    "rank": str(s.overall_rank),
+                    "decision_type": s.decision_type.replace("_", " ").title(),
+                    "action": s.action_summary[:40],
+                    "impact": f"{s.impact_score:.0f}",
+                    "risk": f"{s.risk_score:.0f}",
+                    "overall": f"{s.overall_score:.1f}",
+                })
+            self.ranked_table.set_data(rows)
         except Exception as e:
-            self.ranked_table.setRowCount(0)
+            self.ranked_table.set_data([])
 
     def _refresh_causal(self):
         try:
