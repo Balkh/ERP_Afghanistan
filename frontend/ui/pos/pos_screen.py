@@ -14,6 +14,7 @@ from decimal import Decimal
 from datetime import date
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from ui.components.dialogs import AlertDialog
+from ui.components.tables import EnterpriseTable, TableColumn
 
 from ui.common.barcode_search import BarcodeSearchLineEdit as BarcodeScannerInput
 from ui.common.batch_selection import BatchSelectionDialog
@@ -204,22 +205,15 @@ class POSScreen(BaseScreen):
         self.search_input.returnPressed.connect(self._search_products)
         zone_layout.addWidget(self.search_input)
 
-        self.search_results = QTableWidget()
-        self.search_results.setColumnCount(4)
-        self.search_results.setHorizontalHeaderLabels(["Product", "Price", "Stock", ""])
-        self.search_results.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.search_results.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        self.search_results.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        self.search_results.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        self.search_results.verticalHeader().setVisible(False)
-        self.search_results.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.search_results.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.search_results.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.search_results.setAlternatingRowColors(True)
+        search_columns = [
+            TableColumn("name", "Product", width=220),
+            TableColumn("sale_price", "Price", width=90, align="right"),
+            TableColumn("stock", "Stock", width=80, align="right"),
+            TableColumn("action", "Action", width=100, align="center"),
+        ]
+        self.search_results = EnterpriseTable(search_columns, density="compact")
         self.search_results.setMaximumHeight(200)
-        from ui.components.tables import build_table_stylesheet
-        self.search_results.setStyleSheet(build_table_stylesheet())
-        self.search_results.doubleClicked.connect(self._add_search_result_to_cart)
+        self.search_results.row_double_clicked.connect(self._add_search_result_to_cart)
         zone_layout.addWidget(self.search_results)
 
         return zone
@@ -586,26 +580,29 @@ class POSScreen(BaseScreen):
                 data = response.get("results", response.get("data", []))
                 if isinstance(data, list):
                     self.products_cache = data
-                    self.search_results.setRowCount(len(data))
+                    rows = []
                     for i, p in enumerate(data):
                         name = p.get("name", p.get("generic_name", "Unknown"))
-                        price = p.get("sale_price", 0)
+                        price = float(p.get("sale_price", 0) or 0)
                         stock = p.get("quantity", p.get("total_stock", 0))
-                        self.search_results.setItem(i, 0, QTableWidgetItem(name))
-                        self.search_results.setItem(i, 1, QTableWidgetItem(f"{price:.2f}"))
-                        self.search_results.setItem(i, 2, QTableWidgetItem(str(stock)))
-                        add_btn = EnterpriseButton("+", variant=ButtonVariant.SUCCESS)
-                        add_btn.setFixedWidth(30)
-                        add_btn.clicked.connect(lambda checked, idx=i: self._add_search_result_to_cart_by_index(idx))
-                        self.search_results.setCellWidget(i, 3, add_btn)
+                        rows.append({
+                            **p,
+                            "name": name,
+                            "sale_price": f"{price:.2f}",
+                            "stock": str(stock),
+                            "action": "Double-click",
+                            "_cache_index": i,
+                        })
+                    self.search_results.set_data(rows)
         except Exception as e:
             # Phase Recovery: surface the error instead of silently failing
             AlertDialog.error("Search Failed", f"Product search failed: {e}", self)
 
-    def _add_search_result_to_cart(self, index):
-        row = index.row()
-        if 0 <= row < len(self.products_cache):
-            product = self.products_cache[row]
+    def _add_search_result_to_cart(self, row, data=None):
+        if data is None:
+            data = self.search_results.get_row_data(row) if hasattr(self.search_results, "get_row_data") else None
+        if data:
+            product = dict(data)
             product["total_stock"] = product.get("quantity", product.get("total_stock", 0))
             product["batches"] = product.get("batches", [])
             self._add_to_cart(product)
@@ -819,7 +816,7 @@ class POSScreen(BaseScreen):
         self.amount_paid_input.clear()
         self.scan_input.clear()
         self.search_input.clear()
-        self.search_results.setRowCount(0)
+        self.search_results.set_data([])
         self._refresh_cart()
         self.scan_status.setText("")
         self.alerts_label.setText("No alerts")
