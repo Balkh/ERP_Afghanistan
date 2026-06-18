@@ -3,15 +3,15 @@ Phase 5B.6 — Event Store Viewer Screen.
 Browse events, verify claims, and view Event Store state.
 """
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel,
-                                 QTableWidget, QTableWidgetItem,
-                                 QLineEdit, QComboBox, QAbstractItemView)
+                                 QLineEdit, QComboBox)
 from PySide6.QtGui import QFont
 from ui.components.buttons import EnterpriseButton, ButtonVariant
+from ui.components.page_header import PageHeader
 from ui.screens.base_screen import BaseScreen
 
 from api.client import APIClient
 from api.truth_client import TruthAPIClient
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.constants import (COLOR_BG_SURFACE, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY,
                            COLOR_PRIMARY, COLOR_WARNING, COLOR_BORDER,
                            TEXT_LABEL, TEXT_PAGE_TITLE, SPACING_LG,
@@ -33,9 +33,11 @@ class EventStoreScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
 
-        header = QLabel("Event Store Browser")
-        header.setFont(QFont("Segoe UI", TEXT_PAGE_TITLE, QFont.Weight.Bold))
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        header = PageHeader(
+            "Event Store Browser",
+            "Browse event history, filter aggregates and verify operational claims.",
+            "TRUTH CONTROL",
+        )
         layout.addWidget(header)
 
         # Toolbar
@@ -68,13 +70,14 @@ class EventStoreScreen(BaseScreen):
         layout.addWidget(self.summary_label)
 
         # Event table
-        self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Event ID", "Type", "Domain", "Aggregate", "Timestamp"])
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setAlternatingRowColors(True)
-        self.table.setStyleSheet(build_table_stylesheet())
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        columns = [
+            TableColumn("event_id_short", "Event ID", width=110),
+            TableColumn("event_type", "Type", width=160),
+            TableColumn("domain", "Domain", width=120),
+            TableColumn("aggregate_id", "Aggregate", width=180),
+            TableColumn("timestamp_short", "Timestamp", width=160),
+        ]
+        self.table = EnterpriseTable(columns, density="compact")
         layout.addWidget(self.table)
 
     def _on_screen_shown(self):
@@ -88,13 +91,17 @@ class EventStoreScreen(BaseScreen):
             domain = self.domain_combo.currentText() or None
             aggregate = self.agg_input.text().strip() or None
             events = self._api.list_events(domain=domain, aggregate_id=aggregate, limit=200)
-            self.table.setRowCount(len(events))
-            for i, evt in enumerate(events):
-                self.table.setItem(i, 0, QTableWidgetItem(evt.get("event_id", "")[:12]))
-                self.table.setItem(i, 1, QTableWidgetItem(evt.get("event_type", "")))
-                self.table.setItem(i, 2, QTableWidgetItem(evt.get("domain", "")))
-                self.table.setItem(i, 3, QTableWidgetItem(evt.get("aggregate_id", "")))
-                self.table.setItem(i, 4, QTableWidgetItem(evt.get("timestamp", "")[:19]))
+            rows = []
+            for evt in events:
+                rows.append({
+                    **evt,
+                    "event_id_short": evt.get("event_id", "")[:12],
+                    "event_type": evt.get("event_type", ""),
+                    "domain": evt.get("domain", ""),
+                    "aggregate_id": evt.get("aggregate_id", ""),
+                    "timestamp_short": evt.get("timestamp", "")[:19],
+                })
+            self.table.set_data(rows)
             self.summary_label.setText(f"Total events: {len(events)}")
         except Exception as e:
             self.summary_label.setText(f"Error: {e}")
