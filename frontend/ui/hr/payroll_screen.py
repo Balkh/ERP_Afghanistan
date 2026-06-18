@@ -12,6 +12,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                            TEXT_BODY, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_SECONDARY, COLOR_TEXT_MUTED, COLOR_PRIMARY_HOVER,
                            COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 
@@ -30,18 +31,16 @@ class PayrollScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
-        # Header section
-        header_layout = QHBoxLayout()
-        header = QLabel("Payroll Management")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(header)
-        
-        header_layout.addStretch()
-        
-        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        # Enterprise header
+        header = PageHeader(
+            "Payroll Management",
+            "Manage salary structures, payroll cycles and payslip generation with controlled workflows.",
+            "HR PAYROLL CONTROL",
+        )
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_data)
-        header_layout.addWidget(self.btn_refresh)
-        layout.addLayout(header_layout)
+        header.add_action(self.btn_refresh)
+        layout.addWidget(header)
 
         # Loading and Empty states
         self.loading_label = QLabel("Loading payroll data...")
@@ -66,7 +65,7 @@ class PayrollScreen(BaseScreen):
         self.tabs.setStyleSheet(f"""
             QTabWidget::pane {{ 
                 border: 1px solid {COLOR_BORDER}; 
-                border-radius: {BORDER_RADIUS_LG}; 
+                border-radius: {BORDER_RADIUS_LG}px; 
                 background: {COLOR_BG_MAIN}; 
             }}
             QTabBar::tab {{ 
@@ -136,8 +135,9 @@ class PayrollScreen(BaseScreen):
         filter_bar.setStyleSheet(f"""
             QFrame {{
                 background-color: {COLOR_BG_SURFACE};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 border: 1px solid {COLOR_BORDER};
+                border-left: 4px solid {COLOR_PRIMARY_HOVER};
             }}
         """)
         filter_layout = QHBoxLayout(filter_bar)
