@@ -16,6 +16,7 @@ from ui.constants import (
 )
 from utils.format import safe_float
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
 from ui.components.state_helper import StateHelper
@@ -41,18 +42,18 @@ class ReturnsExplainabilityScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
 
-        # Header
-        header_layout = QHBoxLayout()
-        title = QLabel("Returns Explainability")
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(title)
-        header_layout.addStretch()
+        # Enterprise header
+        header = PageHeader(
+            "Returns Explainability",
+            "Review return value, reversal context and reason trails with audit-ready explanations.",
+            "RETURN CONTROL",
+        )
 
-        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_returns)
-        header_layout.addWidget(self.btn_refresh)
+        header.add_action(self.btn_refresh)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(header)
 
         # Loading, empty, and error states (managed by StateHelper)
         self.state_helper = StateHelper(layout)

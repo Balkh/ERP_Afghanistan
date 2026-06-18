@@ -16,6 +16,7 @@ from ui.constants import (
     BORDER_RADIUS_SM, BORDER_RADIUS_LG,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
 from ui.screens.base_screen import BaseScreen
@@ -49,33 +50,31 @@ class CustomerPaymentWorkspace(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
 
-        # Header
-        header_layout = QHBoxLayout()
-        self.title_label = QLabel("Customer Payment Workspace")
-        self.title_label.setStyleSheet(
-            f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;"
+        # Enterprise header
+        header = PageHeader(
+            "Customer Payment Workspace",
+            "Unify customer balance, open invoices and unallocated receipts in one operator workspace.",
+            "CUSTOMER CASH CONTROL",
         )
-        header_layout.addWidget(self.title_label)
-        header_layout.addStretch()
 
         self.customer_combo = QComboBox()
         self.customer_combo.setMinimumWidth(250)
         self.customer_combo.setStyleSheet(combo_stylesheet())
         self.customer_combo.currentIndexChanged.connect(self._on_customer_selected)
-        header_layout.addWidget(QLabel("Customer:"))
-        header_layout.addWidget(self.customer_combo)
+        header.add_action(QLabel("Customer:"))
+        header.add_action(self.customer_combo)
 
-        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.refresh_workspace)
-        header_layout.addWidget(self.btn_refresh)
+        header.add_action(self.btn_refresh)
 
         self.btn_process_payment = EnterpriseButton(
             text="+ Process Payment", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM
         )
         self.btn_process_payment.clicked.connect(self._on_process_payment)
-        header_layout.addWidget(self.btn_process_payment)
+        header.add_action(self.btn_process_payment)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(header)
 
         # Loading, empty, and error states (managed by StateHelper)
         self.state_helper = StateHelper(layout)
@@ -167,7 +166,7 @@ class CustomerPaymentWorkspace(BaseScreen):
         self.btn_allocate.clicked.connect(self._on_allocate_fifo)
         header_layout.addWidget(self.btn_allocate)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(header)
 
         columns = [
             TableColumn("payment_number", "Payment #", width=120),

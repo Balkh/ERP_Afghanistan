@@ -15,6 +15,7 @@ from ui.constants import (
     BORDER_RADIUS_SM,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
 from ui.components.state_helper import StateHelper
@@ -43,33 +44,33 @@ class PaymentAllocationExplorer(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
 
-        # Header
-        header_layout = QHBoxLayout()
-        title = QLabel("Payment Allocation Explorer")
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(title)
-        header_layout.addStretch()
+        # Enterprise header
+        header = PageHeader(
+            "Payment Allocation Explorer",
+            "Trace how receipts and payments are allocated across invoices and operational entities.",
+            "ALLOCATION TRACE",
+        )
 
         self.entity_type_combo = QComboBox()
         self.entity_type_combo.addItem("Customer", "customer")
         self.entity_type_combo.addItem("Supplier", "supplier")
         self.entity_type_combo.currentIndexChanged.connect(self._on_entity_type_changed)
         self.entity_type_combo.setStyleSheet(combo_stylesheet(min_height=30, custom_arrow=False))
-        header_layout.addWidget(QLabel("Type:"))
-        header_layout.addWidget(self.entity_type_combo)
+        header.add_action(QLabel("Type:"))
+        header.add_action(self.entity_type_combo)
 
         self.entity_combo = QComboBox()
         self.entity_combo.setMinimumWidth(250)
         self.entity_combo.setStyleSheet(combo_stylesheet(min_height=30, custom_arrow=False))
         self.entity_combo.currentIndexChanged.connect(self._on_entity_selected)
-        header_layout.addWidget(QLabel("Entity:"))
-        header_layout.addWidget(self.entity_combo)
+        header.add_action(QLabel("Entity:"))
+        header.add_action(self.entity_combo)
 
-        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.refresh)
-        header_layout.addWidget(self.btn_refresh)
+        header.add_action(self.btn_refresh)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(header)
 
         # Loading, empty, and error states (managed by StateHelper)
         self.state_helper = StateHelper(layout)

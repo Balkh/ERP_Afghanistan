@@ -14,6 +14,7 @@ from ui.constants import (
     BORDER_RADIUS_LG,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from utils.format import safe_float
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
 from ui.components.state_helper import StateHelper
@@ -38,18 +39,18 @@ class FinancialOperationsConsole(BaseScreen):
         main_layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         main_layout.setSpacing(SPACING_LG)
 
-        # Header
-        header_layout = QHBoxLayout()
-        title = QLabel("Financial Operations Console")
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(title)
-        header_layout.addStretch()
+        # Enterprise header
+        header = PageHeader(
+            "Financial Operations Console",
+            "Single-pane oversight for payments, allocations, returns and financial health signals.",
+            "FINANCIAL COMMAND",
+        )
 
-        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.load_dashboard)
-        header_layout.addWidget(self.btn_refresh)
+        header.add_action(self.btn_refresh)
 
-        main_layout.addLayout(header_layout)
+        main_layout.addWidget(header)
 
         # Loading, empty, and error states (managed by StateHelper)
         self.state_helper = StateHelper(main_layout)

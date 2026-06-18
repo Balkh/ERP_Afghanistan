@@ -16,6 +16,7 @@ from ui.constants import (
     BORDER_RADIUS_SM, BORDER_RADIUS_LG,
 )
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+from ui.components.page_header import PageHeader
 from ui.components.dialogs import AlertDialog
 from ui.components.kpi_cards import MiniMetricCard, SectionHeader
 from ui.components.state_helper import StateHelper
@@ -49,33 +50,31 @@ class SupplierPaymentWorkspace(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_LG)
 
-        # Header
-        header_layout = QHBoxLayout()
-        self.title_label = QLabel("Supplier Payment Workspace")
-        self.title_label.setStyleSheet(
-            f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;"
+        # Enterprise header
+        header = PageHeader(
+            "Supplier Payment Workspace",
+            "Control supplier balances, outstanding bills and payment allocation from one workspace.",
+            "SUPPLIER CASH CONTROL",
         )
-        header_layout.addWidget(self.title_label)
-        header_layout.addStretch()
 
         self.supplier_combo = QComboBox()
         self.supplier_combo.setMinimumWidth(250)
         self.supplier_combo.setStyleSheet(combo_stylesheet())
         self.supplier_combo.currentIndexChanged.connect(self._on_supplier_selected)
-        header_layout.addWidget(QLabel("Supplier:"))
-        header_layout.addWidget(self.supplier_combo)
+        header.add_action(QLabel("Supplier:"))
+        header.add_action(self.supplier_combo)
 
-        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self.refresh_workspace)
-        header_layout.addWidget(self.btn_refresh)
+        header.add_action(self.btn_refresh)
 
         self.btn_process_payment = EnterpriseButton(
             text="+ Process Payment", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM
         )
         self.btn_process_payment.clicked.connect(self._on_process_payment)
-        header_layout.addWidget(self.btn_process_payment)
+        header.add_action(self.btn_process_payment)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(header)
 
         # Loading, empty, and error states (managed by StateHelper)
         self.state_helper = StateHelper(layout)
@@ -166,7 +165,7 @@ class SupplierPaymentWorkspace(BaseScreen):
         self.btn_allocate.clicked.connect(self._on_allocate_fifo)
         header_layout.addWidget(self.btn_allocate)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(header)
 
         columns = [
             TableColumn("payment_number", "Payment #", width=120),
