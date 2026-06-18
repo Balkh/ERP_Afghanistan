@@ -19,6 +19,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog, ConfirmDialog
 from ui.components.operator_safety import DestructiveActionGuard
+from ui.components.page_header import PageHeader
 from ui.components.tables import DataEntryGrid
 from ui.screens.base_screen import BaseScreen
 
@@ -101,12 +102,11 @@ class PurchaseInvoiceScreen(BaseScreen):
 
     def _build_header(self):
         layout = self.layout()
-        header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, SPACING_SM)
-        title_label = QLabel("Purchase Invoice")
-        title_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(title_label)
-        header_layout.addStretch()
+        header = PageHeader(
+            "Purchase Invoice",
+            "Create and confirm supplier bills with governed receiving and workflow controls.",
+            "PURCHASE CONTROL",
+        )
 
         self.status_label = QLabel("DRAFT")
         self.status_label.setStyleSheet(f"""
@@ -117,13 +117,13 @@ class PurchaseInvoiceScreen(BaseScreen):
             font-weight: bold;
             font-size: {TEXT_TABLE}px;
         """)
-        header_layout.addWidget(self.status_label)
+        header.add_action(self.status_label)
 
         self.workflow_status_label = QLabel("")
         self.workflow_status_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
-        header_layout.addWidget(self.workflow_status_label)
+        header.add_action(self.workflow_status_label)
 
-        layout.addLayout(header_layout)
+        layout.addWidget(header)
 
     def _build_filters(self):
         layout = self.layout()
