@@ -6,10 +6,11 @@ from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
                            BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
-                           COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
+                           COLOR_PRIMARY, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog
 from ui.components.operator_safety import DestructiveActionGuard
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
 from ui.accounting.journal_entry_helpers import (
@@ -42,21 +43,19 @@ class JournalEntryScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
-        # Header section with title and refresh button
-        header_layout = QHBoxLayout()
-        header = QLabel("Journal Entries")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(header)
-        
-        header_layout.addStretch()
-        
+        # Enterprise header
+        header = PageHeader(
+            "Journal Entries",
+            "Review, post, unpost and reverse accounting entries with controlled actions.",
+            "JOURNAL CONTROL",
+        )
         self.btn_refresh = EnterpriseButton(
-            text="\u27f3 Refresh",
-            variant=ButtonVariant.SECONDARY,
+            text="⟳ Refresh",
+            variant=ButtonVariant.PRIMARY,
             size=ButtonSize.MEDIUM
         )
-        header_layout.addWidget(self.btn_refresh)
-        layout.addLayout(header_layout)
+        header.add_action(self.btn_refresh)
+        layout.addWidget(header)
 
         # Toolbar for actions
         toolbar = self._create_toolbar()
@@ -85,12 +84,12 @@ class JournalEntryScreen(BaseScreen):
 
     def _create_toolbar(self):
         toolbar = QFrame()
-        toolbar.setStyleSheet(f"background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG};")
+        toolbar.setStyleSheet(f"background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}px;")
         layout = QHBoxLayout(toolbar)
         layout.setContentsMargins(SPACING_SM, SPACING_SM, SPACING_SM, SPACING_SM)
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
-        self.btn_new = EnterpriseButton(text="New Entry", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.btn_new = EnterpriseButton(text="+ New Entry", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.btn_view = EnterpriseButton(text="View Details", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_post = EnterpriseButton(text="Post", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)
         self.btn_unpost = EnterpriseButton(text="Unpost", variant=ButtonVariant.WARNING, size=ButtonSize.MEDIUM)

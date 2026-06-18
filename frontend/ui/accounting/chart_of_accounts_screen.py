@@ -10,6 +10,7 @@ from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_MD, SPAC
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog
 from ui.components.operator_safety import DestructiveActionGuard
+from ui.components.page_header import PageHeader
 from ui.components.state_helper import StateHelper
 from ui.screens.base_screen import BaseScreen
 
@@ -45,8 +46,11 @@ class ChartOfAccountsScreen(BaseScreen):
         layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
-        header = QLabel("Chart of Accounts")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header = PageHeader(
+            "Chart of Accounts",
+            "Maintain the governed account hierarchy, status and balances for financial control.",
+            "ACCOUNTING CONTROL",
+        )
         layout.addWidget(header)
 
         # Loading, empty, and error states (managed by StateHelper)
@@ -56,8 +60,10 @@ class ChartOfAccountsScreen(BaseScreen):
 
     def _create_toolbar(self):
         toolbar = QFrame()
+        toolbar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_MD}px;")
         toolbar_layout = QHBoxLayout(toolbar)
-        toolbar_layout.setContentsMargins(SPACING_NONE, MARGIN_TOOLBAR, SPACING_NONE, MARGIN_TOOLBAR)
+        toolbar_layout.setContentsMargins(SPACING_MD, MARGIN_TOOLBAR, SPACING_MD, MARGIN_TOOLBAR)
+        toolbar_layout.setSpacing(SPACING_SM)
 
         self.type_filter = QComboBox()
         self.type_filter.addItem("All Types", "")
@@ -90,10 +96,10 @@ class ChartOfAccountsScreen(BaseScreen):
 
         toolbar_layout.addStretch()
 
-        self.btn_add = EnterpriseButton(text="Add Account", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
+        self.btn_add = EnterpriseButton(text="+ Add Account", variant=ButtonVariant.SUCCESS, size=ButtonSize.MEDIUM)
         self.btn_edit = EnterpriseButton(text="Edit", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_delete = EnterpriseButton(text="Delete", variant=ButtonVariant.DANGER, size=ButtonSize.MEDIUM)
-        self.btn_refresh = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
 
         self.btn_edit.setEnabled(False)
         self.btn_delete.setEnabled(False)

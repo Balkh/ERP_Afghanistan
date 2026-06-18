@@ -7,9 +7,10 @@ from api.endpoints import get_endpoint, extract_list
 from utils.company_config import get_cached_config
 from utils.format import safe_float
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, SPACING_XL, TEXT_PAGE_TITLE, TEXT_BODY, COLOR_TEXT_PRIMARY,
-                           COLOR_TEXT_MUTED)
+                           COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_BORDER, BORDER_RADIUS_LG)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog
+from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
 
@@ -33,12 +34,17 @@ class AccountLedgerScreen(BaseScreen):
         layout.setContentsMargins(SPACING_LG,  SPACING_LG,  SPACING_LG,  SPACING_LG)
         layout.setSpacing(SPACING_SM + SPACING_XS)
 
-        header = QLabel("Account Ledger")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header = PageHeader(
+            "Account Ledger",
+            "Inspect account movement, date ranges and running balances in a controlled ledger view.",
+            "LEDGER CONTROL",
+        )
         layout.addWidget(header)
 
         filter_group = QGroupBox("Filters")
+        filter_group.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}")
         filter_layout = QHBoxLayout(filter_group)
+        filter_layout.setSpacing(SPACING_SM)
 
         filter_layout.addWidget(QLabel("Account:"))
         self.account_combo = QComboBox()
@@ -77,6 +83,7 @@ class AccountLedgerScreen(BaseScreen):
         layout.addWidget(filter_group)
 
         info_group = QGroupBox("Account Information")
+        info_group.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}")
         info_layout = QHBoxLayout(info_group)
 
         self.info_code = QLabel("")
