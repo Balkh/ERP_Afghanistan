@@ -496,6 +496,15 @@ class SupplierPayment(TimeStampedUUIDModel):
         verbose_name=_('Reference Number')
     )
     notes = models.TextField(blank=True, verbose_name=_('Notes'))
+    payment_account = models.ForeignKey(
+        'payments.PaymentAccount',
+        on_delete=models.PROTECT,
+        related_name='supplier_payments',
+        verbose_name=_('Payment Account'),
+        null=True,
+        blank=True,
+        help_text=_('Payment account used for this transaction. If not specified, system will select default.')
+    )
 
     class Meta:
         verbose_name = _('Supplier Payment')
@@ -552,9 +561,13 @@ class SupplierPayment(TimeStampedUUIDModel):
         }
         method_code = method_code_map.get(self.payment_method, 'CASH')
 
-        payment_account = PaymentAccount.objects.filter(
-            is_active=True
-        ).order_by('code').first()
+        # Use explicitly assigned payment account or find default
+        if self.payment_account and self.payment_account.is_active:
+            payment_account = self.payment_account
+        else:
+            payment_account = PaymentAccount.objects.filter(
+                is_active=True
+            ).order_by('code').first()
 
         if not payment_account:
             raise ValidationError(

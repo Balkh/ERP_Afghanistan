@@ -233,7 +233,6 @@ class Account(CompanyScopedMixin, TimeStampedUUIDModel):
     name = models.CharField(max_length=255, verbose_name=_('Account Name'))
     code = models.CharField(
         max_length=20,
-        unique=True,
         verbose_name=_('Account Code'),
         help_text=_('Unique account code (e.g., 1000, 1100, 1110)')
     )
@@ -284,6 +283,7 @@ class Account(CompanyScopedMixin, TimeStampedUUIDModel):
         verbose_name = _('Account')
         verbose_name_plural = _('Accounts')
         ordering = ['code']
+        unique_together = ['code', 'company']
         indexes = [
             models.Index(fields=['code']),
             models.Index(fields=['account_type']),
@@ -320,8 +320,12 @@ class Account(CompanyScopedMixin, TimeStampedUUIDModel):
 
     def _validate_code_format(self):
         """Validate account code format."""
-        if not self.code.isdigit():
-            raise ValidationError(_('Account code must contain only digits.'))
+        # Allow alphanumeric codes with optional prefix letters (e.g., TB1000, PL4000)
+        # Extract digits only for validation
+        if self.code:
+            digits_only = ''.join(c for c in self.code if c.isdigit())
+            if not digits_only:
+                raise ValidationError(_('Account code must contain at least one digit.'))
 
     def save(self, *args, **kwargs):
         """Override save to ensure validation."""
