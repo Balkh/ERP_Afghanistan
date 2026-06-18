@@ -1,8 +1,8 @@
 import time
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-                                QLabel, QFrame, QTableWidget, QTableWidgetItem,
-                                QHeaderView, QComboBox,
+                                QLabel, QFrame, QTableWidgetItem,
+                                QComboBox,
                                 QListWidget, QListWidgetItem, QSplitter,
                                 QTextEdit, QAbstractItemView, QTabWidget)
 from PySide6.QtCore import Qt
@@ -16,6 +16,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
                           COLOR_STATUS_VALID, COLOR_STATUS_WARNING, TEXT_LABEL, TEXT_PAGE_TITLE,
                           TEXT_TABLE, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
                            SPACING_6, BORDER_RADIUS_SM)
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.observability.widgets import (StatusIndicator, MetricCard, HealthBar,
                                        SectionHeader, VirtualTimelineWidget)
 from ui.observability.base_view_model import AsyncDataLoader
@@ -23,16 +24,10 @@ from ui.screens.base_screen import BaseScreen
 
 
 def _make_styled_table(headers, parent=None):
-    table = QTableWidget(parent)
-    table.setColumnCount(len(headers))
-    table.setHorizontalHeaderLabels(headers)
-    table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+    columns = [TableColumn(str(header).lower().replace(" ", "_"), str(header), width=140) for header in headers]
+    table = EnterpriseTable(columns, density="compact", parent=parent)
     table.verticalHeader().setVisible(False)
-    table.setEditTriggers(QTableWidget.NoEditTriggers)
     table.setSelectionBehavior(QAbstractItemView.SelectRows)
-    table.setAlternatingRowColors(True)
-    from ui.components.tables import build_table_stylesheet
-    table.setStyleSheet(build_table_stylesheet())
     return table
 
 
