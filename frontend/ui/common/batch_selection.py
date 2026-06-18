@@ -1,10 +1,9 @@
-from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QTableWidget,
-                                QTableWidgetItem, QLineEdit,
-                                QLabel, QHeaderView, QAbstractItemView, QComboBox, QWidget)
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLineEdit,
+                                QLabel, QComboBox, QWidget)
+from PySide6.QtCore import Signal
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from ui.components.dialogs import EnterpriseDialog, DialogType, ConfirmDialog
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 from PySide6.QtGui import QFont
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_LG, TEXT_TABLE, TEXT_CARD_TITLE)
 
@@ -65,18 +64,17 @@ class BatchSelectionDialog(EnterpriseDialog):
         layout.addLayout(filter_layout)
 
         # Batch table
-        self.table = QTableWidget()
-        self.table.setStyleSheet(build_table_stylesheet())
-        self.table.setAlternatingRowColors(True)
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels([
-            "Select", "Batch #", "Expiry Date", "Remaining Qty", "Location", "Unit Cost", "Status"
-        ])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.itemSelectionChanged.connect(self.on_selection_changed)
+        columns = [
+            TableColumn("selected", "Select", width=70, align="center"),
+            TableColumn("batch_number", "Batch #", width=150),
+            TableColumn("expiry_date", "Expiry Date", width=110, align="center"),
+            TableColumn("remaining_quantity", "Remaining Qty", width=110, align="right"),
+            TableColumn("location", "Location", width=140),
+            TableColumn("unit_cost", "Unit Cost", width=100, align="right"),
+            TableColumn("status", "Status", width=120, align="center"),
+        ]
+        self.table = EnterpriseTable(columns, density="compact")
+        self.table.selection_changed.connect(lambda _rows: self.on_selection_changed())
 
         layout.addWidget(self.table, 1)
 
@@ -113,7 +111,7 @@ class BatchSelectionDialog(EnterpriseDialog):
             return
 
         # Sample data - in production, fetch from API
-        self.batches = [
+        self._all_batches = [
             {
                 "id": "batch-1",
                 "batch_number": "BATCH-2024-001",
@@ -145,30 +143,12 @@ class BatchSelectionDialog(EnterpriseDialog):
                 "days_until_expiry": 5,
             },
         ]
+        self.batches = list(self._all_batches)
         self.update_table()
 
     def update_table(self):
-        self.table.setRowCount(len(self.batches))
-        for row, batch in enumerate(self.batches):
-            # Select checkbox
-            select_item = QTableWidgetItem("✓" if batch.get("selected") else "")
-            select_item.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 0, select_item)
-
-            self.table.setItem(row, 1, QTableWidgetItem(batch["batch_number"]))
-            self.table.setItem(row, 2, QTableWidgetItem(batch["expiry_date"]))
-
-            qty_item = QTableWidgetItem(str(batch["remaining_quantity"]))
-            qty_item.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 3, qty_item)
-
-            self.table.setItem(row, 4, QTableWidgetItem(batch["location"]))
-
-            cost_item = QTableWidgetItem(f"${batch['unit_cost']:.2f}")
-            cost_item.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 5, cost_item)
-
-            # Status
+        rows = []
+        for batch in self.batches:
             days = batch.get("days_until_expiry", 0)
             if batch.get("is_expired"):
                 status = "Expired"
@@ -176,24 +156,22 @@ class BatchSelectionDialog(EnterpriseDialog):
                 status = "Expiring Soon"
             else:
                 status = "Active"
-
-            status_item = QTableWidgetItem(status)
-            status_item.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(row, 6, status_item)
-
-            # Highlight expiring soon
-            if days <= 30 and not batch.get("is_expired"):
-                for col in range(7):
-                    item = self.table.item(row, col)
-                    if item:
-                        item.setBackground(Qt.yellow)
+            rows.append({
+                **batch,
+                "selected": "✓" if batch.get("selected") else "",
+                "remaining_quantity": str(batch.get("remaining_quantity", 0)),
+                "unit_cost": f"${float(batch.get('unit_cost', 0) or 0):.2f}",
+                "status": status,
+            })
+        self.table.set_data(rows)
 
     def filter_batches(self):
         search_text = self.search_input.text().lower()
         warehouse = self.warehouse_combo.currentData()
 
         filtered = []
-        for batch in self.batches:
+        source = getattr(self, "_all_batches", self.batches)
+        for batch in source:
             match_search = search_text in batch["batch_number"].lower() or search_text in batch["location"].lower()
             match_warehouse = warehouse is None or batch["location"] == self.warehouse_combo.currentText()
 
@@ -204,16 +182,14 @@ class BatchSelectionDialog(EnterpriseDialog):
         self.update_table()
 
     def on_selection_changed(self):
-        selected_rows = self.table.selectionModel().selectedRows()
-        self.select_button.setEnabled(len(selected_rows) > 0)
+        self.select_button.setEnabled(bool(self.table.get_selected_data()))
 
     def accept_selection(self):
-        selected_rows = self.table.selectionModel().selectedRows()
-        if not selected_rows:
+        selected = self.table.get_selected_data()
+        if not selected:
             return
 
-        row = selected_rows[0].row()
-        batch = self.batches[row]
+        batch = selected[0]
 
         if batch["remaining_quantity"] < self.required_quantity:
             if not ConfirmDialog.confirm(

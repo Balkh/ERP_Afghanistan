@@ -1,11 +1,10 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLineEdit,
-                                QTableWidget, QTableWidgetItem, QHeaderView,
-                                QLabel, QAbstractItemView, QWidget)
-from PySide6.QtCore import Qt, QTimer
+                                QLabel, QWidget)
+from PySide6.QtCore import QTimer
 from ui.constants import COLOR_SUCCESS
 from ui.components.buttons import EnterpriseButton, ButtonVariant
 from ui.components.dialogs import EnterpriseDialog, DialogType
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 
 class ProductSelectionDialog(EnterpriseDialog):
     """Professional product selection dialog with search."""
@@ -18,7 +17,7 @@ class ProductSelectionDialog(EnterpriseDialog):
         self._build_content()
         
         # Search debounce
-        self.search_timer = QTimer()
+        self.search_timer = QTimer(self)
         self.search_timer.setSingleShot(True)
         self.search_timer.timeout.connect(self.perform_search)
         
@@ -42,15 +41,15 @@ class ProductSelectionDialog(EnterpriseDialog):
         layout.addLayout(search_layout)
         
         # Table
-        self.table = QTableWidget()
-        self.table.setStyleSheet(build_table_stylesheet())
-        self.table.setAlternatingRowColors(True)
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Name", "Generic Name", "Barcode", "Price", "Stock"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.table.doubleClicked.connect(self.accept_selection)
+        columns = [
+            TableColumn("name", "Name", width=180),
+            TableColumn("generic_name", "Generic Name", width=150),
+            TableColumn("barcode", "Barcode", width=130),
+            TableColumn("sale_price", "Price", width=90, align="right"),
+            TableColumn("total_stock", "Stock", width=80, align="right"),
+        ]
+        self.table = EnterpriseTable(columns, density="compact")
+        self.table.row_double_clicked.connect(lambda _row, _data: self.accept_selection())
         layout.addWidget(self.table)
         
         # Buttons
@@ -84,23 +83,22 @@ class ProductSelectionDialog(EnterpriseDialog):
             print(f"Product search error: {e}")
 
     def _populate_table(self, products):
-        self.table.setRowCount(0)
+        rows = []
         for p in products:
-            row = self.table.rowCount()
-            self.table.insertRow(row)
-            
-            name_item = QTableWidgetItem(p['name'])
-            name_item.setData(Qt.UserRole, p)
-            self.table.setItem(row, 0, name_item)
-            self.table.setItem(row, 1, QTableWidgetItem(p.get('generic_name', '')))
-            self.table.setItem(row, 2, QTableWidgetItem(p.get('barcode', '')))
-            self.table.setItem(row, 3, QTableWidgetItem(f"{p.get('sale_price', 0):.2f}"))
-            self.table.setItem(row, 4, QTableWidgetItem(str(p.get('total_stock', 0))))
+            rows.append({
+                **p,
+                "name": p.get("name", ""),
+                "generic_name": p.get("generic_name", ""),
+                "barcode": p.get("barcode", ""),
+                "sale_price": f"{float(p.get('sale_price', 0) or 0):.2f}",
+                "total_stock": str(p.get("total_stock", 0)),
+            })
+        self.table.set_data(rows)
 
     def accept_selection(self):
-        current_row = self.table.currentRow()
-        if current_row >= 0:
-            self.selected_product = self.table.item(current_row, 0).data(Qt.UserRole)
+        selected = self.table.get_selected_data()
+        if selected:
+            self.selected_product = selected[0]
             self.accept()
 
     def done(self, result):
