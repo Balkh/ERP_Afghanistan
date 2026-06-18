@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
         
         # Store license validator
         self.license_validator = license_validator
+        self.demo_mode = os.environ.get('PHARMACY_ERP_DEMO_MODE', '').lower() in ('1', 'true', 'yes')
         
         # Initialize AuthManager (primary auth state source)
         self.auth_manager = auth_manager or AuthManager(api_client)
@@ -147,6 +148,11 @@ class MainWindow(QMainWindow):
         self.health_label.setStyleSheet(f"color: {COLOR_WARNING}; margin-right: {SPACING_LG}px; font-weight: bold;")
         self.health_label.setToolTip("Backend health status")
 
+        self.demo_label = QLabel("DEMO MODE")
+        self.demo_label.setVisible(self.demo_mode)
+        self.demo_label.setStyleSheet(f"color: {COLOR_PRIMARY}; margin-right: {SPACING_LG}px; font-weight: bold;")
+
+        self.status_bar.addPermanentWidget(self.demo_label)
         self.status_bar.addPermanentWidget(self.device_id_label)
         self.status_bar.addPermanentWidget(self.license_status_label)
         self.status_bar.addPermanentWidget(self.connection_status_label)
@@ -331,6 +337,8 @@ class MainWindow(QMainWindow):
         self.role_renderer.sidebar = self.sidebar
         self.sidebar.role_renderer = self.role_renderer
         self.role_renderer.apply_scopes()
+        if self.demo_mode:
+            self.sidebar.apply_demo_profile()
 
         content_frame = QFrame()
         content_frame.setFrameStyle(QFrame.NoFrame)
@@ -776,6 +784,7 @@ class MainWindow(QMainWindow):
             ('user_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: {C.SPACING_LG}px;"),
             ('conn_label', f"color: {C.COLOR_STATUS_VALID}; margin-right: {C.SPACING_LG}px; font-weight: bold;"),
             ('time_label', f"color: {C.COLOR_TEXT_SECONDARY}; margin-right: {C.SPACING_LG}px;"),
+            ('demo_label', f"color: {C.COLOR_PRIMARY}; margin-right: {C.SPACING_LG}px; font-weight: bold;"),
             ('device_id_label', f"font-size: {C.TEXT_LABEL}pt; color: {C.COLOR_TEXT_MUTED};"),
             ('license_status_label', f"font-size: {C.TEXT_LABEL}pt; color: {C.COLOR_TEXT_MUTED}; margin-left: {C.SPACING_MD}px;"),
             ('connection_status_label', f"font-size: {C.TEXT_LABEL}pt; color: {C.COLOR_TEXT_MUTED}; margin-left: {C.SPACING_MD}px;"),

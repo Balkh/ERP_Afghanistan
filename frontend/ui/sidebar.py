@@ -142,6 +142,31 @@ class Sidebar(QWidget):
         """Set the RoleRenderer instance for delegated visibility control."""
         self._role_renderer = renderer
 
+    def apply_demo_profile(self) -> None:
+        """Apply a curated customer-demo navigation profile without removing screens."""
+        demo_pages = {
+            "dashboard", "products", "categories", "warehouses", "batches",
+            "sales_invoice", "pos", "customers", "purchase_invoice", "suppliers",
+            "returns", "chart_of_accounts", "journal_entries", "account_ledger",
+            "trial_balance", "profit_loss", "balance_sheet", "payments", "expenses",
+            "budgeting", "cashflow", "employees", "payroll", "backup", "settings",
+            "company_profile",
+        }
+        for page_id, btn in self._navigation_items.items():
+            btn.setVisible(page_id in demo_pages)
+        for group_name, group_widget in self._group_widgets.items():
+            has_visible = any(
+                child.property("page_id") in demo_pages
+                for child in group_widget.findChildren(EnterpriseButton)
+                if child.property("page_id")
+            )
+            header_frame = getattr(self, f"_{group_name}_header", None)
+            if header_frame:
+                header_frame.setVisible(has_visible)
+            group_widget.setVisible(has_visible)
+        if hasattr(self, 'dashboard_btn'):
+            self.dashboard_btn.setVisible(True)
+
     def set_module_visibility(self, module: str, visible: bool) -> None:
         """Show/hide a module group in the sidebar. Used by RoleRenderer."""
         group_widget = self._group_widgets.get(module)
