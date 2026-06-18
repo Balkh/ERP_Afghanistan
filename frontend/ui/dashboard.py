@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout,
-                                  QGridLayout, QApplication, QScrollArea)
-from PySide6.QtCore import QTimer, QThread, Signal, QObject
+                                  QGridLayout, QApplication, QScrollArea, QSizePolicy)
+from PySide6.QtCore import Qt, QTimer, QThread, Signal, QObject
 from PySide6.QtGui import QFont
 from ui.role_manager import UserRole
 from ui.constants import (SPACING_NONE, SPACING_XS, SPACING_SM, SPACING_6, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, BORDER_RADIUS_MD, BORDER_RADIUS_SM, BORDER_RADIUS_LG, TEXT_BODY_SMALL, TEXT_CARD_TITLE, TEXT_HELPER, TEXT_PAGE_TITLE, TEXT_SECTION_TITLE, TEXT_TABLE)
-from ui.constants import (COLOR_BG_MAIN, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_INFO, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
+from ui.constants import (COLOR_BG_MAIN, COLOR_BG_SURFACE, COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_BORDER_LIGHT, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY, COLOR_INFO, COLOR_SUCCESS, COLOR_WARNING, COLOR_DANGER)
 from ui.components.kpi_cards import KPICard
 from theme.theme_engine import ThemeEngine
 from ui.screens.base_screen import BaseScreen
@@ -28,8 +28,12 @@ class Dashboard(BaseScreen):
         self._refresh_timer.timeout.connect(self.refresh_data)
         self._refresh_timer.start(120000)
 
+        self._initial_refresh_timer = None
         if self._api_client:
-            QTimer.singleShot(3500, self.refresh_data)
+            self._initial_refresh_timer = QTimer(self)
+            self._initial_refresh_timer.setSingleShot(True)
+            self._initial_refresh_timer.timeout.connect(self.refresh_data)
+            getattr(self._initial_refresh_timer, "start")(3500)
 
     def set_api_client(self, client):
         self._api_client = client
@@ -60,8 +64,10 @@ class Dashboard(BaseScreen):
     def cleanup(self):
         if self._refresh_timer:
             self._refresh_timer.stop()
+        if self._initial_refresh_timer and self._initial_refresh_timer.isActive():
+            self._initial_refresh_timer.stop()
         self._cancel_refresh_worker()
-        ThemeEngine.instance().unregister(self._theme_token)
+        super().cleanup()
 
     def _cancel_refresh_worker(self):
         """F20: Stop and clean up the background refresh worker if running."""
@@ -112,29 +118,66 @@ class Dashboard(BaseScreen):
         layout.setContentsMargins(SPACING_XXL, SPACING_XL, SPACING_XXL, SPACING_XL)
         layout.setSpacing(SPACING_LG)
 
-        # -- Header row --
-        hdr = QHBoxLayout()
-        title = QLabel("Dashboard")
-        title_font = QFont("Segoe UI", TEXT_PAGE_TITLE)
+        # -- Enterprise command header --
+        from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
+        hero = QFrame()
+        hero.setObjectName("dashboardHero")
+        hero.setMinimumHeight(112)
+        hero.setStyleSheet(f"""
+            QFrame#dashboardHero {{
+                background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_BORDER};
+                border-left: 5px solid {COLOR_PRIMARY};
+                border-radius: {BORDER_RADIUS_LG}px;
+            }}
+        """)
+        hero_layout = QHBoxLayout(hero)
+        hero_layout.setContentsMargins(SPACING_XL, SPACING_MD, SPACING_XL, SPACING_MD)
+        hero_layout.setSpacing(SPACING_LG)
+
+        title_col = QVBoxLayout()
+        eyebrow = QLabel("ENTERPRISE CONTROL CENTER")
+        eyebrow.setFont(QFont("Segoe UI", TEXT_HELPER, QFont.Weight.Bold))
+        eyebrow.setStyleSheet(f"color: {COLOR_PRIMARY}; letter-spacing: 1px;")
+        title_col.addWidget(eyebrow)
+
+        title = QLabel("Pharmacy ERP Dashboard")
+        title_font = QFont("Segoe UI", TEXT_PAGE_TITLE + 2)
         title_font.setWeight(QFont.Weight.Bold)
         title.setFont(title_font)
         title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
-        hdr.addWidget(title)
-        hdr.addStretch()
-        from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-        refresh_btn = EnterpriseButton("Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
-        refresh_btn.clicked.connect(self.refresh_data)
-        hdr.addWidget(refresh_btn)
-        layout.addLayout(hdr)
+        title_col.addWidget(title)
 
-        self._subtitle = QLabel("Loading…")
+        self._subtitle = QLabel("Live operational overview — finance, inventory, customers and execution signals")
         self._subtitle.setFont(QFont("Segoe UI", TEXT_BODY_SMALL))
         self._subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED};")
-        layout.addWidget(self._subtitle)
+        title_col.addWidget(self._subtitle)
+        hero_layout.addLayout(title_col, 1)
+
+        status_pill = QLabel("● LIVE")
+        status_pill.setFont(QFont("Segoe UI", TEXT_BODY_SMALL, QFont.Weight.Bold))
+        status_pill.setAlignment(Qt.AlignCenter)
+        status_pill.setMinimumWidth(86)
+        status_pill.setStyleSheet(f"""
+            QLabel {{
+                color: {COLOR_SUCCESS};
+                background-color: {COLOR_BG_SURFACE};
+                border: 1px solid {COLOR_BORDER_LIGHT};
+                border-radius: {BORDER_RADIUS_LG}px;
+                padding: {SPACING_SM}px {SPACING_MD}px;
+            }}
+        """)
+        hero_layout.addWidget(status_pill)
+
+        refresh_btn = EnterpriseButton("Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        refresh_btn.clicked.connect(self.refresh_data)
+        hero_layout.addWidget(refresh_btn)
+        layout.addWidget(hero)
 
         # -- KPI grid (2 × 3) --
         kg = QGridLayout()
         kg.setSpacing(SPACING_MD)
+        kg.setContentsMargins(0, 0, 0, 0)
 
         specs = [
             (0, 0, "Products",       'info',    'kpi_products'),
@@ -146,6 +189,7 @@ class Dashboard(BaseScreen):
         ]
         for r, c, t, sev, key in specs:
             card = KPICard(t, "\u2014", severity=sev)
+            card.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             kg.addWidget(card, r, c)
             self._kpi_labels[key] = (card.title_label, card.value_label)
 
@@ -157,7 +201,7 @@ class Dashboard(BaseScreen):
 
         self._role_frame = QFrame()
         self._role_frame.setObjectName("roleCard")
-        self._role_frame.setStyleSheet(f"QFrame#roleCard {{ background: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; }}")
+        self._role_frame.setStyleSheet(f"QFrame#roleCard {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
         self._role_stack = QVBoxLayout(self._role_frame)
         self._role_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self._role_stack.setSpacing(SPACING_SM + SPACING_XS)
@@ -165,7 +209,7 @@ class Dashboard(BaseScreen):
 
         self._alert_frame = QFrame()
         self._alert_frame.setObjectName("alertCard")
-        self._alert_frame.setStyleSheet(f"QFrame#alertCard {{ background: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; }}")
+        self._alert_frame.setStyleSheet(f"QFrame#alertCard {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
         self._alert_stack = QVBoxLayout(self._alert_frame)
         self._alert_stack.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         self._alert_stack.setSpacing(SPACING_SM)
@@ -176,7 +220,7 @@ class Dashboard(BaseScreen):
         # -- Quick actions --
         af = QFrame()
         af.setObjectName("actionsCard")
-        af.setStyleSheet(f"QFrame#actionsCard {{ background: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; }}")
+        af.setStyleSheet(f"QFrame#actionsCard {{ background: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; }}")
         al = QHBoxLayout(af)
         al.setContentsMargins(SPACING_XL, SPACING_MD, SPACING_XL, SPACING_MD)
         al.setSpacing(SPACING_MD)
@@ -404,7 +448,7 @@ class Dashboard(BaseScreen):
     def _mini_card(self, label, value, color_key, is_currency):
         c = DashboardColorScheme.get(color_key)
         f = QFrame()
-        f.setStyleSheet(f"QFrame {{ background: {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; }}")
+        f.setStyleSheet(f"QFrame {{ background: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER_LIGHT}; border-radius: {BORDER_RADIUS_MD}px; }}")
         lay = QVBoxLayout(f)
         lay.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_MD, SPACING_SM)
         lay.setSpacing(SPACING_XS)

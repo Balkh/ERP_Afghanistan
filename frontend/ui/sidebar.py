@@ -231,17 +231,36 @@ class Sidebar(QWidget):
         
         # Brand/logo area
         brand_frame = QFrame()
-        brand_frame.setFixedHeight(80)
-        brand_frame.setStyleSheet(f"background-color: {COLOR_PRIMARY};")
+        brand_frame.setFixedHeight(104)
+        brand_frame.setObjectName("sidebarBrand")
+        brand_frame.setStyleSheet(f"""
+            QFrame#sidebarBrand {{
+                background-color: {COLOR_BG_ELEVATED};
+                border-bottom: 1px solid {COLOR_BORDER};
+            }}
+        """)
         brand_layout = QVBoxLayout(brand_frame)
-        brand_layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
+        brand_layout.setContentsMargins(MARGIN_PAGE, SPACING_MD, MARGIN_PAGE, SPACING_MD)
+        brand_layout.setSpacing(SPACING_XS)
         
-        brand_label = QLabel("💊 Pharmacy ERP")
-        brand_label.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
-        brand_label.setStyleSheet(f"color: {COLOR_BG_MAIN};")
+        brand_label = QLabel("✦ ERP Afghanistan")
+        brand_label.setFont(QFont("Segoe UI", TEXT_CARD_TITLE + 1, QFont.Weight.Bold))
+        brand_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
         brand_layout.addWidget(brand_label)
+
+        brand_subtitle = QLabel("Enterprise Operations Suite")
+        brand_subtitle.setFont(QFont("Segoe UI", TEXT_LABEL))
+        brand_subtitle.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
+        brand_layout.addWidget(brand_subtitle)
+
+        brand_badge = QLabel("● SECURE LOCAL")
+        brand_badge.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
+        brand_badge.setStyleSheet(f"color: {COLOR_PRIMARY};")
+        brand_layout.addWidget(brand_badge)
         self._brand_frame = brand_frame
         self._brand_label = brand_label
+        self._brand_subtitle = brand_subtitle
+        self._brand_badge = brand_badge
         
         layout.addWidget(brand_frame)
         
@@ -359,12 +378,12 @@ class Sidebar(QWidget):
         
         # Bottom section
         self._bottom_frame = QFrame()
-        self._bottom_frame.setFixedHeight(60)
-        self._bottom_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE};")
+        self._bottom_frame.setFixedHeight(72)
+        self._bottom_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border-top: 1px solid {COLOR_BORDER};")
         bottom_layout = QVBoxLayout(self._bottom_frame)
         bottom_layout.setContentsMargins(MARGIN_PAGE,  SPACING_SM,  MARGIN_PAGE,  SPACING_SM)
         
-        self.logout_btn = EnterpriseButton("Logout", variant=ButtonVariant.DANGER)
+        self.logout_btn = EnterpriseButton("⎋  Logout", variant=ButtonVariant.DANGER)
         bottom_layout.addWidget(self.logout_btn)
         
         layout.addWidget(self._bottom_frame)
@@ -378,23 +397,35 @@ class Sidebar(QWidget):
         main_layout.setSpacing(SPACING_NONE)
         main_layout.addWidget(self._scroll_area)
     
+    @staticmethod
+    def _nav_icon(page_id):
+        icons = {
+            "dashboard": "◆", "products": "▣", "categories": "▤", "warehouses": "▥", "batches": "◫",
+            "sales_invoice": "↗", "pos": "▦", "customers": "◎", "purchase_invoice": "↙", "suppliers": "◉",
+            "returns": "↺", "reconciliation": "≋", "chart_of_accounts": "☷", "journal_entries": "✎",
+            "account_ledger": "▧", "financial_integrity": "✓", "financial_audit": "⌕", "trial_balance": "⚖",
+            "profit_loss": "↕", "balance_sheet": "▥", "payments": "◈", "expenses": "−", "budgeting": "▨",
+            "tax": "%", "cost_centers": "⌾", "cashflow": "≈", "employees": "♙", "settings": "⚙",
+        }
+        return icons.get(page_id, "•")
+
     def _create_nav_button(self, title, page_id, page_index):
         """Create a navigation button with enhanced hover/active states."""
-        btn = EnterpriseButton(f"  {title}")
+        btn = EnterpriseButton(f"  {self._nav_icon(page_id)}  {title}")
         btn.setFont(QFont("Segoe UI", TEXT_LABEL))
-        btn.setMinimumHeight(34)
+        btn.setMinimumHeight(36)
         btn.setCursor(Qt.PointingHandCursor)
         btn.setStyleSheet(f"""
             EnterpriseButton {{
                 background-color: transparent;
                 color: {COLOR_TEXT_SECONDARY};
                 border: none;
-                border-radius: {BORDER_RADIUS_MD};
+                border-radius: {BORDER_RADIUS_LG}px;
                 text-align: left;
-                padding-left: {SPACING_LG}px;
+                padding-left: {SPACING_MD}px;
                 padding-top: {SPACING_XS}px;
                 padding-bottom: {SPACING_XS}px;
-                font-weight: 400;
+                font-weight: 500;
                 min-height: 20px;
             }}
             EnterpriseButton:hover {{
@@ -665,9 +696,18 @@ class Sidebar(QWidget):
 
         # Brand frame (cached ref)
         if hasattr(self, '_brand_frame'):
-            self._brand_frame.setStyleSheet(f"background-color: {COLOR_PRIMARY};")
+            self._brand_frame.setStyleSheet(f"""
+                QFrame#sidebarBrand {{
+                    background-color: {COLOR_BG_ELEVATED};
+                    border-bottom: 1px solid {COLOR_BORDER};
+                }}
+            """)
         if hasattr(self, '_brand_label'):
-            self._brand_label.setStyleSheet(f"color: {COLOR_BG_MAIN};")
+            self._brand_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        if hasattr(self, '_brand_subtitle'):
+            self._brand_subtitle.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY};")
+        if hasattr(self, '_brand_badge'):
+            self._brand_badge.setStyleSheet(f"color: {COLOR_PRIMARY};")
 
         # Navigation section background (cached ref)
         if hasattr(self, '_nav_section'):
