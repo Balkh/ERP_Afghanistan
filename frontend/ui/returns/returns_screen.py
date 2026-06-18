@@ -1,10 +1,9 @@
 """Returns management screen."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                    QLabel, QLineEdit,
-                                   QHeaderView, QComboBox,
+                                   QComboBox,
                                     QGroupBox, QFormLayout, QWidget,
-                                   QTextEdit, QInputDialog, QFileDialog,
-                                   QTableWidget, QTableWidgetItem, QAbstractItemView)
+                                   QTextEdit, QInputDialog, QFileDialog)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from api.endpoints import get_endpoint
@@ -16,8 +15,9 @@ from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, S
                            COLOR_TEXT_TITLE, COLOR_BORDER_DIALOG, COLOR_BORDER_INPUT)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog, ConfirmDialog, EnterpriseDialog, DialogType
+from ui.components.page_header import PageHeader
 from ui.components.forms import FormSection
-from ui.components.tables import EnterpriseTable, TableColumn, build_table_stylesheet, DataEntryGrid
+from ui.components.tables import EnterpriseTable, TableColumn, DataEntryGrid
 
 
 class ReturnsScreen(BaseScreen):
@@ -35,18 +35,16 @@ class ReturnsScreen(BaseScreen):
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
-        # Header section
-        header_layout = QHBoxLayout()
-        header = QLabel("Returns Management")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
-        header_layout.addWidget(header)
-        
-        header_layout.addStretch()
-        
-        self.btn_refresh = EnterpriseButton(text="\u27f3 Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
+        # Enterprise header
+        header = PageHeader(
+            "Returns Management",
+            "Process sale and purchase returns with controlled approval, voiding and reconciliation context.",
+            "RETURN OPERATIONS",
+        )
+        self.btn_refresh = EnterpriseButton(text="⟳ Refresh", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
         self.btn_refresh.clicked.connect(self._load_returns)
-        header_layout.addWidget(self.btn_refresh)
-        layout.addLayout(header_layout)
+        header.add_action(self.btn_refresh)
+        layout.addWidget(header)
 
         # Filter section
         filter_bar = self._create_filter_bar()
