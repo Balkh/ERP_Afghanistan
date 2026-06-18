@@ -1,8 +1,7 @@
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
-                               QLabel, QTableWidget, QTableWidgetItem, QHeaderView,
-                               QGroupBox, QFrame, QAbstractItemView, QWidget)
+                               QLabel, QGroupBox, QFrame, QWidget)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont, QColor
+from PySide6.QtGui import QFont
 from ui.constants import (
     SPACING_XS,
     SPACING_SM,
@@ -28,7 +27,7 @@ from ui.constants import (
 )
 
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
-from ui.components.tables import build_table_stylesheet
+from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType
 from ui.components.forms import FormSection
 
@@ -106,19 +105,13 @@ class JournalEntryDetailDialog(EnterpriseDialog):
         lines_group = QGroupBox("Journal Lines (Articles)")
         lines_layout = QVBoxLayout(lines_group)
 
-        self.lines_table = QTableWidget()
-        self.lines_table.setColumnCount(4)
-        self.lines_table.setHorizontalHeaderLabels(["Account", "Line Description", "Debit", "Credit"])
-        
-        header = self.lines_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        
-        self.lines_table.setStyleSheet(build_table_stylesheet())
-        self.lines_table.setAlternatingRowColors(True)
-        self.lines_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        columns = [
+            TableColumn("account", "Account", width=220),
+            TableColumn("description", "Line Description", width=260),
+            TableColumn("debit", "Debit", width=110, align="right"),
+            TableColumn("credit", "Credit", width=110, align="right"),
+        ]
+        self.lines_table = EnterpriseTable(columns, density="compact")
         lines_layout.addWidget(self.lines_table)
 
         # Totals
@@ -184,31 +177,25 @@ class JournalEntryDetailDialog(EnterpriseDialog):
             self.lines = self.api_client.get(f"/api/accounting/journal-entries/{entry_id}/")
             lines_data = self.lines.get("lines", []) if isinstance(self.lines, dict) else []
 
-            self.lines_table.setRowCount(len(lines_data))
             total_debit = 0.0
             total_credit = 0.0
+            rows = []
 
-            for row, line in enumerate(lines_data):
+            for line in lines_data:
                 account = line.get("account", {})
                 account_str = f"{account.get('code', '')} - {account.get('name', '')}"
-                self.lines_table.setItem(row, 0, QTableWidgetItem(account_str))
-                self.lines_table.setItem(row, 1, QTableWidgetItem(line.get("description", "")))
-
-                debit = float(line.get("debit", 0))
-                credit = float(line.get("credit", 0))
+                debit = float(line.get("debit", 0) or 0)
+                credit = float(line.get("credit", 0) or 0)
                 total_debit += debit
                 total_credit += credit
+                rows.append({
+                    "account": account_str,
+                    "description": line.get("description", ""),
+                    "debit": f"{debit:,.2f}",
+                    "credit": f"{credit:,.2f}",
+                })
 
-                debit_item = QTableWidgetItem(f"{debit:,.2f}")
-                debit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                debit_item.setForeground(QColor(COLOR_SUCCESS))
-                self.lines_table.setItem(row, 2, debit_item)
-
-                credit_item = QTableWidgetItem(f"{credit:,.2f}")
-                credit_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-                credit_item.setForeground(QColor(COLOR_DANGER))
-                self.lines_table.setItem(row, 3, credit_item)
-
+            self.lines_table.set_data(rows)
             self.total_debit_label.setText(f"{total_debit:,.2f}")
             self.total_credit_label.setText(f"{total_credit:,.2f}")
 
