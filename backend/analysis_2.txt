@@ -1,0 +1,2535 @@
+====================================================================================================
+COMPREHENSIVE APP ANALYSIS
+====================================================================================================
+
+####################################################################################################
+# APP: accounting
+####################################################################################################
+
+Files: 42, Lines: 9746
+
+--- File Summary ---
+      0  __init__.py
+     69  admin.py
+      5  apps.py
+      0  management\__init__.py
+      0  management\commands\__init__.py
+    215  management\commands\seed_accounts.py
+    117  migrations\0001_initial.py
+    129  migrations\0002_account_journalentry_journalentryline_and_more.py
+     18  migrations\0003_fix_account_category_null.py
+     28  migrations\0004_journalentry_entity.py
+    104  migrations\0005_fiscal_period.py
+     25  migrations\0006_account_company_journalentry_company.py
+    118  migrations\0007_add_journal_entry_audit_fields_and_event_log.py
+     18  migrations\0008_add_return_entry_types.py
+     93  migrations\0009_fiscal_period_governance.py
+     25  migrations\0010_journalentry_list_perf_indexes.py
+      0  migrations\__init__.py
+    892  models.py
+    271  serializers\__init__.py
+     13  services\__init__.py
+    413  services\account_hierarchy.py
+    597  services\advanced_reports.py
+    292  services\currency_converter.py
+    189  services\discount_calculator.py
+    599  services\export_engine.py
+    752  services\financial_reports.py
+    508  services\inventory_accounting.py
+    308  services\invoice_calculator.py
+     63  services\journal_calculators.py
+    369  services\journal_engine.py
+     30  services\journal_mappers.py
+     94  services\journal_validators.py
+    394  services\period_closing.py
+    397  services\reconciliation.py
+    357  services\report_exporter.py
+    560  services\report_governance.py
+    286  services\reversal_safety.py
+    243  services\tax_calculator.py
+     34  urls.py
+    287  views.py
+    640  views_account.py
+    194  views_fiscal_period.py
+
+--- MODELS ---
+  - Currency | Model representing a currency supported by the system.
+  - ExchangeRate | Model representing exchange rates between currencies.
+  - PaymentTransaction | Model representing a payment transaction supporting mixed payments.
+  - Account | Model representing an account in the chart of accounts.
+  - JournalEntry | Model representing a journal entry in the accounting system.
+  - JournalEventLog | Lightweight event log for journal entry lifecycle.
+  - JournalEntryLine | Model representing a line item in a journal entry.
+  - FiscalPeriod | Model representing a fiscal accounting period with locking capability.
+  - FiscalPeriodCloseLog | Audit trail for all fiscal period closing and reopening actions.
+
+--- SERIALIZERS ---
+  - InvoiceCalculationRequestSerializer (views.py) | 
+  - AccountSerializer (__init__.py) | 
+  - AccountTreeSerializer (__init__.py) | 
+  - JournalEntryLineSerializer (__init__.py) | 
+  - JournalEventLogSerializer (__init__.py) | 
+  - JournalEntrySerializer (__init__.py) | 
+  - FiscalPeriodSerializer (__init__.py) | 
+  - FiscalPeriodCloseLogSerializer (__init__.py) | 
+  - PeriodClosingReadinessSerializer (__init__.py) | 
+  - PeriodCloseRequestSerializer (__init__.py) | 
+  - PeriodReopenRequestSerializer (__init__.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - JournalEventLogViewSet (views_account.py) | CRUD API for Journal Event Logs (audit trail).
+  - AccountViewSet (views_account.py) | CRUD API for Chart of Accounts management.
+  - JournalEntryViewSet (views_account.py) | CRUD API for Journal Entries.
+  - FiscalPeriodViewSet (views_fiscal_period.py) | ViewSet for fiscal period management.
+  - FiscalPeriodCloseLogViewSet (views_fiscal_period.py) | Read-only ViewSet for fiscal period close logs.
+
+--- SERVICES ---
+  - CLASS AccountHierarchyService (account_hierarchy.py) | Service for managing account hierarchy and chart of accounts operations.
+  - CLASS AdvancedReportsService (advanced_reports.py) | Service for generating advanced analytical reports.
+  - CLASS ReportBuilderService (advanced_reports.py) | Custom report builder service.
+  - CLASS CurrencyConversionError (currency_converter.py) | Custom exception for currency conversion errors.
+  - CLASS CurrencyConverter (currency_converter.py) | Handles currency conversion with exchange rate support.
+  - CLASS DiscountType (discount_calculator.py) | 
+  - CLASS DiscountResult (discount_calculator.py) | 
+  - CLASS DiscountCalculator (discount_calculator.py) | Handles all discount calculations for invoices.
+  - CLASS BaseExporter (export_engine.py) | Base class for export implementations.
+  - CLASS ExcelExporter (export_engine.py) | Export reports to Excel format using openpyxl.
+  - CLASS PDFExporter (export_engine.py) | Export reports to PDF format using ReportLab.
+  - CLASS ExportEngine (export_engine.py) | Unified export engine for all report types.
+  - CLASS FinancialReportEngine (financial_reports.py) | Financial reporting engine.
+  - CLASS InventoryAccountingServiceError (inventory_accounting.py) | Raised when inventory accounting operation fails.
+  - CLASS InventoryAccountingService (inventory_accounting.py) | Centralized service for STANDALONE inventory accounting operations.
+  - CLASS InvoiceLineItem (invoice_calculator.py) | 
+  - CLASS InvoiceCalculationResult (invoice_calculator.py) | 
+  - CLASS InvoiceCalculator (invoice_calculator.py) | Main invoice calculation engine.
+  - DEF compute_account_balance (journal_calculators.py) | Compute the current balance for an account by aggregating
+  - DEF compute_opening_balance (journal_calculators.py) | Compute opening balance for a date range.
+  - DEF apply_running_delta (journal_calculators.py) | Apply a single journal entry line's debit/credit to a running balance
+  - DEF compute_inverse_balance_delta (journal_calculators.py) | Compute the inverse delta to subtract from an account balance
+  - DEF _apply_balance_sign (journal_calculators.py) | 
+  - CLASS AccountingError (journal_engine.py) | Raised when an accounting operation fails and MUST be handled.
+  - CLASS JournalEngine (journal_engine.py) | Double-entry accounting engine.
+  - DEF format_ledger_entry (journal_mappers.py) | Format a journal entry line into a ledger DTO.
+  - DEF validate_lines (journal_validators.py) | Validate journal entry lines.
+  - DEF generate_entry_number (journal_validators.py) | Generate a unique journal entry number.
+  - CLASS PeriodClosingReadiness (period_closing.py) | Result of period closing readiness check.
+  - CLASS PeriodClosingService (period_closing.py) | Validates and executes fiscal period closing.
+  - CLASS ReconciliationResult (reconciliation.py) | Container for reconciliation check results.
+  - CLASS AccountingReconciliationService (reconciliation.py) | Verifies accounting integrity across all modules.
+  - CLASS ReportExporter (report_exporter.py) | Export financial reports to various formats.
+  - CLASS ReportLimits (report_governance.py) | Configuration for report limits.
+  - CLASS ReportClassification (report_governance.py) | Report classification categories.
+  - CLASS ReportAuditLog (report_governance.py) | Audit trail for all report generation.
+  - CLASS AsyncReportJob (report_governance.py) | Async report job tracking.
+  - CLASS QueryGuard (report_governance.py) | Protects against slow/heavy queries.
+  - CLASS ExportGuard (report_governance.py) | Protects against export overload.
+  - CLASS ReportCache (report_governance.py) | Caching layer for frequently accessed reports.
+  - CLASS PerformanceMonitor (report_governance.py) | Monitor report performance.
+  - DEF rate_limit (report_governance.py) | Decorator to rate limit report requests.
+  - DEF timed_report (report_governance.py) | Decorator to time report execution.
+  - CLASS ReportGovernance (report_governance.py) | Main governance class combining all protection layers.
+  - CLASS CustomReportGuard (report_governance.py) | Protection for custom report builder.
+  - CLASS SafeErrorResponse (report_governance.py) | Generate safe error responses without exposing stack traces.
+  - CLASS ReversalImpact (reversal_safety.py) | Result of reversal impact analysis.
+  - CLASS ReversalSafetyService (reversal_safety.py) | Validates and executes safe journal entry reversals.
+  - CLASS TaxType (tax_calculator.py) | 
+  - CLASS TaxResult (tax_calculator.py) | 
+  - CLASS TaxCalculator (tax_calculator.py) | Handles all tax calculations for invoices.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+  calculate-invoice/                                 -> views.calculate_invoice
+  convert-currency/                                  -> views.convert_currency
+  currencies/                                        -> views.get_currencies
+  exchange-rates/                                    -> views.get_exchange_rates
+  calculate-mixed-payment/                           -> views.calculate_mixed_payment
+  calculate-discount/                                -> views.calculate_discount
+  calculate-tax/                                     -> views.calculate_tax
+  export/                                            -> export_report
+  reports/                                           -> advanced_report
+  report-options/                                    -> report_options
+                                                     -> include
+
+####################################################################################################
+# APP: audit
+####################################################################################################
+
+Files: 10, Lines: 514
+
+--- File Summary ---
+      1  __init__.py
+      7  apps.py
+     67  migrations\0001_initial.py
+     33  migrations\0002_alter_auditretentionpolicy_created_at_and_more.py
+      0  migrations\__init__.py
+     81  models.py
+      3  services\__init__.py
+    223  services\audit_service.py
+      8  urls.py
+     91  views.py
+
+--- MODELS ---
+  - AuditTrail | Advanced audit trail for all data changes.
+  - AuditRetentionPolicy | Defines retention periods for audit logs.
+
+--- SERIALIZERS ---
+  - AuditTrailSerializer (views.py) | 
+  - AuditRetentionPolicySerializer (views.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - AuditTrailViewSet (views.py) | Read-only view of audit trail.
+  - AuditRetentionPolicyViewSet (views.py) | CRUD for audit retention policies.
+
+--- SERVICES ---
+  - CLASS AuditService (audit_service.py) | Service for managing audit logs.
+  - CLASS AuditMiddleware (audit_service.py) | Middleware to automatically log requests.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+  - AuditMiddleware (audit_service.py) | Middleware to automatically log requests.
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: backup
+####################################################################################################
+
+Files: 32, Lines: 7370
+
+--- File Summary ---
+      1  __init__.py
+     26  admin.py
+      7  apps.py
+    742  backup_system.py
+     18  extracts\__init__.py
+    173  extracts\create_backup_workflow.py
+    141  extracts\restore_backup_workflow.py
+      0  management\__init__.py
+      0  management\commands\__init__.py
+     57  management\commands\cleanup_backups.py
+     52  management\commands\create_backup.py
+     35  management\commands\restore_backup.py
+    112  migrations\0001_initial.py
+     64  migrations\0002_restorepoint_restorevalidation_and_more.py
+      0  migrations\__init__.py
+    314  models.py
+     75  serializers.py
+      0  services\__init__.py
+    245  services\certification_report.py
+    371  services\control_plane.py
+    379  services\corruption_scanner.py
+    362  services\db_providers.py
+    448  services\failure_injection.py
+    426  services\health_monitor.py
+    363  services\offsite_replication.py
+    287  services\providers.py
+    630  services\recovery_validator.py
+    238  services\restore_lock.py
+    484  services\restore_service.py
+    407  services\restore_testing.py
+     26  urls.py
+    887  views.py
+
+--- MODELS ---
+  - BackupRecord | Tracks backup operations and metadata
+  - BackupSchedule | Stores backup schedule configurations
+  - BackupLog | Logs backup operations for auditing
+  - RestorePoint | Tracks restore operations and validation
+  - RestoreValidation | Stores validation results for restore operations
+
+--- SERIALIZERS ---
+  - BackupRecordSerializer (serializers.py) | 
+  - BackupScheduleSerializer (serializers.py) | 
+  - BackupLogSerializer (serializers.py) | 
+  - CreateBackupSerializer (serializers.py) | 
+  - RestoreBackupSerializer (serializers.py) | 
+  - RestoreValidationSerializer (serializers.py) | 
+  - RestorePointSerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - BackupRecordViewSet (views.py) | View set for viewing backup records
+  - BackupScheduleViewSet (views.py) | View set for managing backup schedules
+  - BackupLogViewSet (views.py) | View set for viewing backup logs
+  - RestorePointViewSet (views.py) | View set for viewing restore points
+  - BackupHealthViewSet (views.py) | View set for backup health monitoring.
+  - RecoveryValidationViewSet (views.py) | View set for post-restore recovery validation.
+  - CertificationViewSet (views.py) | View set for recovery certification reporting.
+  - FailureInjectionViewSet (views.py) | View set for safe failure injection testing.
+  - SafeRestoreTestingViewSet (views.py) | View set for safe automated restore testing.
+  - ControlPlaneViewSet (views.py) | Unified control plane ΓÇö Single Source of Operational Truth (SSOT).
+  - OffsiteReplicationViewSet (views.py) | View set for offsite backup replication.
+
+--- SERVICES ---
+  - CLASS RecoveryCertificationReport (certification_report.py) | Generates a structured recovery certification report.
+  - CLASS UnifiedBackupStatus (control_plane.py) | Lightweight DTO representing the unified system state.
+  - CLASS BackupControlPlane (control_plane.py) | Unified control plane ΓÇö single source of operational truth.
+  - CLASS CorruptionScanner (corruption_scanner.py) | Lightweight integrity scanner for silent corruption detection.
+  - CLASS DatabaseEngineDetector (db_providers.py) | Safely detect the active database engine from Django settings.
+  - CLASS BackupProvider (db_providers.py) | Abstract backup provider interface.
+  - CLASS RestoreProvider (db_providers.py) | Abstract restore provider interface.
+  - CLASS SQLiteBackupProvider (db_providers.py) | SQLite-specific backup provider. Wraps existing file-copy logic.
+  - CLASS PostgreSQLBackupProvider (db_providers.py) | PostgreSQL backup provider using pg_dump.
+  - CLASS SQLiteRestoreProvider (db_providers.py) | SQLite-specific restore provider.
+  - CLASS PostgreSQLRestoreProvider (db_providers.py) | PostgreSQL restore provider using pg_restore/psql.
+  - DEF get_backup_provider (db_providers.py) | Factory: return the correct backup provider for the active engine.
+  - DEF get_restore_provider (db_providers.py) | Factory: return the correct restore provider for the active engine.
+  - CLASS FailureInjectionTester (failure_injection.py) | Safe failure injection tester for disaster recovery validation.
+  - CLASS BackupHealthMonitor (health_monitor.py) | Monitors backup system health and detects anomalies.
+  - CLASS OffsiteReplicationConfig (offsite_replication.py) | Configuration for offsite email replication.
+  - CLASS RetryQueue (offsite_replication.py) | Local retry queue for failed offsite sends.
+  - CLASS OffsiteReplicator (offsite_replication.py) | Handles offsite backup replication via email.
+  - CLASS FileProvider (providers.py) | Abstraction for file system operations.
+  - CLASS ChecksumProvider (providers.py) | Abstraction for checksum operations.
+  - CLASS ArchiveProvider (providers.py) | Abstraction for archive validation operations.
+  - CLASS ProductionFileProvider (providers.py) | Production implementation using actual filesystem.
+  - CLASS ProductionChecksumProvider (providers.py) | Production implementation using hashlib.
+  - CLASS ProductionArchiveProvider (providers.py) | Production implementation using os.path.
+  - CLASS MockFileProvider (providers.py) | Mock implementation for testing - no disk access.
+  - CLASS MockChecksumProvider (providers.py) | Mock implementation for testing - no real checksum computation.
+  - CLASS MockArchiveProvider (providers.py) | Mock implementation for testing - no real archives.
+  - DEF get_default_providers (providers.py) | Get production providers for normal operation.
+  - CLASS AccountingRecoveryValidator (recovery_validator.py) | Validates accounting data integrity after restore.
+  - CLASS InventoryRecoveryValidator (recovery_validator.py) | Validates inventory data integrity after restore.
+  - CLASS RestoreLock (restore_lock.py) | File-based mutex to prevent concurrent restore operations.
+  - DEF restore_lock_context (restore_lock.py) | Context manager for restore lock.
+  - CLASS SafeRestoreExecutor (restore_lock.py) | Executes restore with full safety guarantees:
+  - CLASS RestoreService (restore_service.py) | Orchestration layer for backup validation and restore operations.
+  - CLASS SafeRestoreTester (restore_testing.py) | Safe automated restore tester for disaster recovery validation.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: budgeting
+####################################################################################################
+
+Files: 14, Lines: 1027
+
+--- File Summary ---
+      1  __init__.py
+     18  admin.py
+      7  apps.py
+     82  migrations\0001_initial.py
+     33  migrations\0002_alter_budget_created_at_alter_budget_updated_at_and_more.py
+     19  migrations\0003_alter_budgetline_actual_amount.py
+      0  migrations\__init__.py
+    187  models.py
+     64  serializers\__init__.py
+      4  services\__init__.py
+    183  services\budget_calculator.py
+    221  services\budget_reporting.py
+     11  urls.py
+    197  views.py
+
+--- MODELS ---
+  - Budget | Model representing a budget for a period.
+  - BudgetLine | Model representing a budget line for a specific account.
+
+--- SERIALIZERS ---
+  - BudgetLineSerializer (__init__.py) | 
+  - BudgetSerializer (__init__.py) | 
+  - BudgetListSerializer (__init__.py) | 
+  - BudgetLineCreateSerializer (__init__.py) | 
+  - BudgetUpdateActualsSerializer (__init__.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - BudgetViewSet (views.py) | CRUD API for Budget management.
+  - BudgetLineViewSet (views.py) | CRUD API for Budget Lines.
+
+--- SERVICES ---
+  - CLASS BudgetCalculator (budget_calculator.py) | Service for calculating budget amounts and variances.
+  - CLASS BudgetReportingService (budget_reporting.py) | Service for budget vs actual reporting.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: cashflow
+####################################################################################################
+
+Files: 12, Lines: 1063
+
+--- File Summary ---
+      1  __init__.py
+      7  apps.py
+     83  migrations\0001_initial.py
+     43  migrations\0002_alter_cashflowforecast_created_at_and_more.py
+      0  migrations\__init__.py
+    135  models.py
+     50  serializers.py
+      4  services\__init__.py
+    386  services\cashflow_engine.py
+    230  services\forecasting_service.py
+     11  urls.py
+    113  views.py
+
+--- MODELS ---
+  - CashFlowForecast | Cash flow forecast with projections.
+  - CashFlowItem | Individual cash flow projection item.
+  - CashFlowScenario | Scenario for what-if analysis.
+
+--- SERIALIZERS ---
+  - CashFlowItemSerializer (serializers.py) | 
+  - CashFlowForecastSerializer (serializers.py) | 
+  - CashFlowScenarioSerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - CashFlowForecastViewSet (views.py) | CRUD for cash flow forecasts.
+  - CashFlowItemViewSet (views.py) | CRUD for cash flow items.
+  - CashFlowScenarioViewSet (views.py) | CRUD for cash flow scenarios.
+
+--- SERVICES ---
+  - CLASS CashFlowCategory (cashflow_engine.py) | Cash flow activity categories (IAS 7 format).
+  - CLASS CashFlowEngine (cashflow_engine.py) | Operational Cash Flow Engine.
+  - CLASS CashFlowForecastingService (forecasting_service.py) | Service for cash flow forecasting and analysis.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: config
+####################################################################################################
+
+Files: 10, Lines: 855
+
+--- File Summary ---
+      0  __init__.py
+     16  asgi.py
+     38  celery.py
+    298  settings.py
+    104  settings_environment.py
+     16  settings_minimal.py
+    144  settings_production.py
+     84  tasks.py
+    139  urls.py
+     16  wsgi.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> views.home
+                                                     -> Home.as_view
+  blog/                                              -> include
+  admin/                                             -> admin.site.urls
+  api/health/                                        -> health
+  api/health/db/                                     -> ops_views.health_database
+  api/health/system/                                 -> ops_views.health_system
+  api/ops/health/                                    -> ops_views.health_check
+  api/ops/financial-integrity/                       -> ops_views.financial_integrity
+  api/ops/inventory-integrity/                       -> ops_views.inventory_integrity
+  api/ops/alerts/                                    -> ops_views.alerts_list
+  api/ops/alerts/clear/                              -> ops_views.alerts_clear
+  api/ops/postgres-readiness/                        -> ops_views.postgres_readiness
+  api/ops/summary/                                   -> ops_views.observability_summary
+  api/ops/bad-requests/                              -> ops_views.api_bad_requests
+  api/ops/slow-requests/                             -> ops_views.api_slow_requests
+  api/ops/api-detail/                                -> ops_views.api_observability_detail
+  api/ops/scalability/                               -> ops_views.scalability_audit
+  api/ops/db-records/                                -> ops_views.database_record_counts
+  api/ops/concurrency/                               -> ops_views.concurrency_safety
+  api/ops/integrity/                                 -> ops_views.data_integrity_check
+  api/ops/integrity-summary/                         -> ops_views.data_integrity_summary
+  api/ops/dashboard/                                 -> ops_views.observability_dashboard
+  api/ops/trends/                                    -> ops_views.performance_trends
+  api/ops/anomalies/                                 -> ops_views.anomaly_clusters
+  api/ops/guardrails/                                -> ops_views.guardrail_status
+  api/ops/sampling/                                  -> ops_views.sampling_status
+  api/ops/stability/                                 -> ops_views.stability_status
+  api/control-center/                                -> control_center
+  api/control-center/stats/                          -> quick_stats
+  api/control-center/health/                         -> health_live
+  api/control-center/financial/                      -> financial_summary
+  api/control-center/inventory/                      -> inventory_summary
+  api/control-center/operations/                     -> operations_summary
+  api/control-center/hr/                             -> hr_summary
+  api/control-center/intelligence/                   -> operational_intelligence
+  api/control-center/signals/                        -> signal_summary
+  api/control-center/signals/active/                 -> active_signals
+  api/control-center/signals/register/               -> register_signal
+  api/control-center/decisions/                      -> decisions_list
+  api/control-center/decisions/detail/               -> decisions_detail
+  api/control-center/decisions/evaluate/             -> decisions_evaluate_event
+  api/control-center/jobs/                           -> jobs_dashboard
+  api/control-center/hub-bundle/                     -> hub_bundle
+  api/auth/                                          -> include
+  api/inventory/                                     -> include
+  api/sales/                                         -> include
+  api/purchases/                                     -> include
+  api/returns/                                       -> include
+  api/accounting/                                    -> include
+  api/payments/                                      -> include
+  api/expenses/                                      -> include
+  api/licensing/                                     -> include
+  api/reports/                                       -> include
+  api/backup/                                        -> include
+  api/hr/                                            -> include
+  api/payroll/                                       -> include
+  api/assets/                                        -> include
+  api/budgets/                                       -> include
+  api/tax/                                           -> include
+  api/cost-centers/                                  -> include
+  api/entities/                                      -> include
+  api/audit/                                         -> include
+  api/cashflow/                                      -> include
+  api/dashboard/                                     -> include
+  api/analytics/                                     -> include
+  api/workflows/                                     -> include
+  api/jobs/                                          -> include
+  api/core/                                          -> include
+  api/observability/v1/                              -> include
+  api/insurance/                                     -> include
+  api/v1/governance/                                 -> include
+  api/v1/truth/                                      -> include
+  api/v1/observability/                              -> include
+  api/v1/intelligence/                               -> include
+  api/v1/autonomous/                                 -> include
+  api/v1/financial-intelligence/                     -> include
+  api/financial/control-tower/                       -> include
+  api/v1/payment-operations/                         -> include
+  api/governance/                                    -> include
+
+####################################################################################################
+# APP: core
+####################################################################################################
+
+Files: 327, Lines: 61623
+
+--- File Summary ---
+      1  __init__.py
+    147  accounting_registry.py
+     23  api\__init__.py
+    220  api\errors.py
+     53  api\exception_handler.py
+    110  api\mixins.py
+    107  api\pagination.py
+     81  api\renderers.py
+    147  api\responses.py
+      7  api\v1\__init__.py
+    200  api\v1\autonomous.py
+     13  api\v1\autonomous_urls.py
+     10  api\v1\control_tower_urls.py
+     40  api\v1\ficl_urls.py
+    377  api\v1\ficl_views.py
+    235  api\v1\financial_control_tower.py
+    241  api\v1\governance.py
+     23  api\v1\governance_urls.py
+    277  api\v1\intelligence.py
+     29  api\v1\intelligence_urls.py
+    340  api\v1\observability_api.py
+     33  api\v1\observability_urls.py
+   1111  api\v1\payment_operations.py
+     16  api\v1\payment_operations_urls.py
+    265  api\v1\truth.py
+     28  api\v1\truth_urls.py
+     94  apps.py
+     21  audit\__init__.py
+    150  audit\arap_audit.py
+    304  audit\drift_detector.py
+    111  audit\engine.py
+    201  audit\event_auditor.py
+    158  audit\financial_validator.py
+    151  audit\inventory_audit.py
+    167  audit\ledger_audit.py
+    142  audit\models.py
+    160  audit\replay_verifier.py
+     90  audit_collector.py
+    299  balance_sync.py
+    121  checks.py
+     65  constants\roles.py
+      0  drift_prevention\__init__.py
+    115  drift_prevention\classifier.py
+    322  drift_prevention\comparator.py
+     48  drift_prevention\equilibrium_checker.py
+    149  drift_prevention\gate.py
+    123  drift_prevention\migration_registry.py
+    252  drift_prevention\migration_router.py
+     98  drift_prevention\observability.py
+     98  drift_prevention\pattern_detector.py
+    174  drift_prevention\registry.py
+    192  drift_prevention\report.py
+     69  drift_prevention\rollback_manager.py
+     91  drift_prevention\views.py
+     61  events\__init__.py
+     15  events\apps.py
+     23  events\handlers\__init__.py
+     19  events\handlers\accounting.py
+     19  events\handlers\inventory.py
+     14  events\handlers\payroll.py
+     24  events\handlers\purchases.py
+     19  events\handlers\returns.py
+     24  events\handlers\sales.py
+     35  events\instrumentors.py
+    236  events\safety.py
+    144  governance\__init__.py
+    124  governance\api.py
+    366  governance\backup_recovery.py
+    203  governance\bootstrap.py
+    825  governance\certification_tests.py
+     32  governance\chaos\__init__.py
+    239  governance\chaos\classifications.py
+    309  governance\chaos\engine.py
+    719  governance\chaos\simulations.py
+    598  governance\chaos_tests.py
+    291  governance\contracts.py
+     45  governance\control_plane\__init__.py
+    141  governance\control_plane\certification_scheduler.py
+    191  governance\control_plane\deployment_gate.py
+    157  governance\control_plane\drift_prevention.py
+    119  governance\control_plane\execution_policy.py
+    280  governance\control_plane\health_loop.py
+    193  governance\control_plane\intelligence_engine.py
+    230  governance\control_plane\orchestrator.py
+    272  governance\control_plane\recovery_orchestration.py
+    130  governance\control_plane\schedule_registry.py
+    682  governance\control_plane\tests.py
+    352  governance\deployment.py
+    128  governance\enforcer.py
+    187  governance\events.py
+     59  governance\graceful_degradation.py
+   1351  governance\industrial_test_suite.py
+    246  governance\invariant_validator.py
+    409  governance\kernel.py
+    325  governance\maintainability.py
+    130  governance\metrics.py
+    311  governance\observability.py
+     89  governance\observability_config.py
+    418  governance\offline.py
+    471  governance\operational_certification.py
+     58  governance\query_governance.py
+    426  governance\readiness.py
+    264  governance\registries.py
+     88  governance\runtime_governor.py
+    189  governance\self_health.py
+    306  governance\soak.py
+    156  governance\state_transitions.py
+    601  governance\tests.py
+    671  governance\tests_industrial.py
+    179  governance\ui_governance.py
+    304  governance\upgrade.py
+     58  governance\urls.py
+    649  governance\views.py
+      0  guarantees\__init__.py
+    285  guarantees\adversarial.py
+    121  guarantees\atomic_boundary.py
+    203  guarantees\constraint_handler.py
+    163  guarantees\contract.py
+    735  guarantees\ecek.py
+    251  guarantees\inventory_lineage.py
+    291  guarantees\orchestrator.py
+    183  guarantees\reconciliation.py
+    374  guarantees\regression_immunity.py
+    170  guarantees\replay_determinism.py
+    250  guarantees\report_truth.py
+    114  guarantees\tenant_scope.py
+    341  import_pipeline.py
+     99  import_views.py
+      4  infrastructure\__init__.py
+     99  infrastructure\database.py
+     25  integrity\__init__.py
+    260  integrity\controller.py
+    112  integrity\detector.py
+    250  integrity\engine.py
+    182  integrity\freeze.py
+    157  integrity\gate.py
+    116  integrity\models.py
+    115  inventory_lineage.py
+     23  logging\__init__.py
+    204  logging\audit.py
+    130  logging\config.py
+    148  logging\financial_trace.py
+     79  logging\formatters.py
+     41  logging\handlers.py
+    184  logging\inventory_trace.py
+    113  logging\logger.py
+    154  logging\middleware.py
+    335  logging\tests.py
+      1  management\__init__.py
+      1  management\commands\__init__.py
+     39  management\commands\replay_events.py
+    215  management\commands\seed_erp_data.py
+    268  management\commands\seed_operational_demo.py
+     99  migrations\0001_multitenant.py
+     37  migrations\0002_usercompanymapping.py
+     33  migrations\0003_invoicetemplate.py
+     36  migrations\0004_add_decision_record.py
+     57  migrations\0005_moduledriftstate_driftrecord.py
+     58  migrations\0006_migrationlog_migrationconfig.py
+     28  migrations\0007_add_company_business_config.py
+      0  migrations\__init__.py
+     24  models\__init__.py
+     75  models\audit.py
+     25  models\base.py
+    110  models\decision_record.py
+     79  models\drift_prevention.py
+     35  models\invoice_template.py
+     80  models\migration_config.py
+    117  models\multitenant.py
+     65  models\system.py
+     31  multitenant\__init__.py
+    113  multitenant\context.py
+    271  multitenant\middleware.py
+    115  multitenant\models.py
+    170  multitenant\service.py
+    272  multitenant\views.py
+      3  operations\__init__.py
+    186  operations\alerts.py
+    354  operations\api_observability.py
+     20  operations\approval\__init__.py
+    278  operations\approval\audit.py
+    238  operations\approval\escalation.py
+    370  operations\approval\gateway.py
+    282  operations\approval\models.py
+    252  operations\approval\multisig.py
+    223  operations\approval\notifications.py
+    395  operations\approval\workflow_engine.py
+      0  operations\architecture\__init__.py
+    136  operations\architecture\concurrency.py
+    250  operations\architecture\manifest.py
+    172  operations\architecture\orchestration.py
+    267  operations\concurrency.py
+    388  operations\control_center.py
+    583  operations\decision_engine.py
+      0  operations\execution\__init__.py
+    119  operations\execution\impact_analysis.py
+    110  operations\execution\models.py
+    135  operations\execution\simulation_engine.py
+    167  operations\execution\simulation_plan_builder.py
+     98  operations\execution\simulation_trace.py
+    195  operations\financial.py
+      0  operations\governance\__init__.py
+    168  operations\governance\decision_gate.py
+    100  operations\governance\interceptor.py
+     85  operations\governance\models.py
+     92  operations\governance\policy_evaluator.py
+    109  operations\governance\risk_classifier.py
+    413  operations\guardrails.py
+    159  operations\health.py
+    135  operations\hub_bff.py
+    294  operations\integrity.py
+     13  operations\intelligence\__init__.py
+    196  operations\intelligence\anomaly_graph.py
+    211  operations\intelligence\consistency.py
+    173  operations\intelligence\drift.py
+    151  operations\intelligence\gateway.py
+    218  operations\intelligence\models.py
+    267  operations\intelligence\patterns.py
+    214  operations\intelligence\reconstruction.py
+    176  operations\intelligence\temporal.py
+      9  operations\intelligence_autonomous\__init__.py
+    173  operations\intelligence_autonomous\anomaly_foresight.py
+    164  operations\intelligence_autonomous\decision_suggester.py
+    173  operations\intelligence_autonomous\gateway.py
+    156  operations\intelligence_autonomous\models.py
+    185  operations\intelligence_autonomous\prediction_engine.py
+    232  operations\intelligence_autonomous\reasoning_engine.py
+    193  operations\intelligence_autonomous\risk_engine.py
+      0  operations\interfaces\__init__.py
+     71  operations\interfaces\compatibility.py
+    174  operations\interfaces\schemas.py
+     81  operations\interfaces\serialization.py
+    186  operations\inventory.py
+     17  operations\observability\__init__.py
+    273  operations\observability\correlation.py
+    271  operations\observability\gateway.py
+    227  operations\observability\integrity.py
+    173  operations\observability\models.py
+     27  operations\observability\permissions.py
+    184  operations\observability\replay.py
+    146  operations\observability\stream_monitor.py
+    213  operations\observability\timeline.py
+    233  operations\observability\trace_engine.py
+     17  operations\observability\urls.py
+    352  operations\observability\views.py
+   1254  operations\operational_intelligence.py
+      0  operations\policy\__init__.py
+    161  operations\policy\authority.py
+    216  operations\policy\forbidden.py
+    276  operations\policy\registry.py
+    153  operations\postgres_audit.py
+    244  operations\scalability.py
+    244  operations\signal_coordinator.py
+    296  operations\stability.py
+    224  operations\trends.py
+     13  operations\truth\__init__.py
+    306  operations\truth\event_store.py
+    293  operations\truth\gateway.py
+    224  operations\truth\models.py
+    553  operations\truth\projections.py
+    471  operations\truth\reports.py
+    506  operations\truth\verifier.py
+    269  operations\views.py
+    876  pdf_generator.py
+     51  performance.py
+    309  postgresql_readiness.py
+      1  runner\__init__.py
+    158  runner\accounting_harden.py
+     83  runner\concurrency.py
+    111  runner\daily_cycle.py
+    163  runner\engine.py
+    144  runner\event_reliability.py
+    154  runner\failure_isolation.py
+    121  runner\hardened_engine.py
+    183  runner\integrity_ext.py
+     90  runner\models.py
+    146  runner\modules.py
+    168  runner\self_heal_ext.py
+    145  runner\self_healer.py
+     91  runner\snapshot_manager.py
+    246  runner\validator.py
+    169  runner\workload_generator.py
+     16  sandbox\__init__.py
+    143  sandbox\bridge.py
+    135  sandbox\chaos.py
+    250  sandbox\engine.py
+    105  sandbox\event_bus.py
+    116  sandbox\models.py
+    121  sandbox\observability.py
+    169  sandbox\processor.py
+     20  seeders\__init__.py
+    292  seeders\accounting.py
+     62  seeders\customers.py
+    229  seeders\inventory.py
+    177  seeders\purchases.py
+    177  seeders\returns.py
+    194  seeders\sales.py
+     59  seeders\suppliers.py
+    139  seeders\utils.py
+     35  serializers.py
+      7  services\__init__.py
+    351  services\anomaly_detection.py
+     95  services\base_service.py
+    233  services\cashflow_observability.py
+    213  services\credit_policy_engine.py
+    307  services\credit_risk_intelligence.py
+    282  services\financial_audit.py
+    452  services\financial_diagnostics.py
+    617  services\financial_explainability.py
+    344  services\financial_integrity.py
+    420  services\financial_policy_engine.py
+    171  services\financial_truth_engine.py
+    409  services\journal_gateway.py
+    312  services\payment_reconciliation.py
+    312  services\reconciliation_v2.py
+    319  services\statement_engine.py
+      3  tax\__init__.py
+    100  tax\tax_engine.py
+    194  transition_provenance.py
+    111  urls.py
+     19  utils\__init__.py
+    109  utils\datetime_utils.py
+     69  utils\money_utils.py
+     38  utils\uuid_utils.py
+     69  uuid_safety.py
+     74  view_logging.py
+     49  views_template.py
+
+--- MODELS ---
+  - AuditLog (audit.py) | Lightweight audit log for core operations.
+  - SystemConfig (audit.py) | Key-value system configuration storage.
+  - BaseModel (base.py) | Base model with UUID and timestamps.
+  - TimeStampedUUIDModel (base.py) | TimeStampedUUIDModel - kept for backward compatibility.
+  - DecisionRecord (decision_record.py) | Lightweight policy decision record with lifecycle management.
+  - DriftRecord (drift_prevention.py) | Records a comparison between JournalEngine (source of truth) and JournalGateway (shadow).
+  - ModuleDriftState (drift_prevention.py) | Aggregated drift state per module ΓÇö determines Phase 3 blocking.
+  - InvoiceTemplate (invoice_template.py) | Configuration for dynamic invoice templates.
+  - MigrationConfig (migration_config.py) | Per-function migration state for JournalEngine ΓåÆ JournalGateway switchover.
+  - MigrationLog (migration_config.py) | Audit log for every switchover event.
+  - UserCompanyMapping (multitenant.py) | Maps users to companies with company-specific roles.
+  - Company (system.py) | Company model ΓÇö SINGLE SOURCE OF TRUTH for all business configuration.
+  - Currency (system.py) | Currency model for multi-currency support.
+
+--- SERIALIZERS ---
+  - SystemConfigSerializer (serializers.py) | 
+  - CompanySerializer (serializers.py) | 
+  - InvoiceTemplateSerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - InvoiceTemplateViewSet (views_template.py) | API for managing dynamic invoice templates.
+  - DriftPreventionViewSet (views.py) | API endpoints for monitoring drift prevention system.
+  - CompanyScopedViewSetMixin (views.py) | Mixin for ViewSets that should be scoped by company.
+  - SafeCompanyScopedViewSetMixin (views.py) | Safe tenant enforcement mixin.
+  - UnifiedEnterpriseViewSetMixin (views.py) | Unified enforcement layer combining:
+
+--- SERVICES ---
+  - CLASS AnomalyType (anomaly_detection.py) | 
+  - CLASS Severity (anomaly_detection.py) | 
+  - CLASS AnomalyDetectionEngine (anomaly_detection.py) | Read-only anomaly detection across financial domains.
+  - CLASS BaseService (base_service.py) | Reusable base service class with transaction-safe execution pattern.
+  - CLASS CashflowObservability (cashflow_observability.py) | On-demand cashflow observability ΓÇö lightweight, stateless computation.
+  - CLASS CreditCheckResult (credit_policy_engine.py) | Result of a credit policy check.
+  - CLASS CreditPolicyEngine (credit_policy_engine.py) | Central credit enforcement engine.
+  - CLASS CreditRiskIntelligence (credit_risk_intelligence.py) | Advisory credit risk scoring and predictive signals.
+  - CLASS FinancialAuditService (financial_audit.py) | Structured audit logging for financial events.
+  - CLASS FinancialDiagnostics (financial_diagnostics.py) | Financial system health diagnostics ΓÇö read-only assessment.
+  - CLASS FinancialExplainability (financial_explainability.py) | Read-only financial trace and explainability layer.
+  - CLASS FinancialIntegrityService (financial_integrity.py) | Read-only financial integrity validator.
+  - CLASS PolicyDecision (financial_policy_engine.py) | Single policy decision output.
+  - CLASS FinancialPolicyEngine (financial_policy_engine.py) | Deterministic financial policy governance engine.
+  - CLASS FinancialTruthEngine (financial_truth_engine.py) | Read-only derived financial truth computations.
+  - CLASS JournalGateway (journal_gateway.py) | Mandatory gateway for all journal entry operations.
+  - CLASS PaymentReconciliationService (payment_reconciliation.py) | Read-only payment reconciliation layer.
+  - CLASS ReconciliationAssistanceV2 (reconciliation_v2.py) | Smart reconciliation assistance ΓÇö suggests matches, never auto-applies.
+  - CLASS StatementService (statement_engine.py) | Lightweight statement generator for customers and suppliers.
+
+--- SIGNALS ---
+  - register_intelligence_signal (signal_coordinator.py) | Public interface to register intelligence signals.
+  - get_active_signals (signal_coordinator.py) | Public interface to get active signals.
+  - get_signal_summary (signal_coordinator.py) | Public interface to get signal summary.
+  - clear_old_signals (signal_coordinator.py) | Public interface to clear old signals.
+
+--- PERMISSIONS ---
+  - Permission (roles.py) | Permission action constants.
+  - CompanyPermissionService (multitenant.py) | Service for checking company-scoped permissions.
+  - ApprovalPermission (models.py) | Role-based authority for the approval gateway.
+
+--- MIDDLEWARE ---
+  - RequestTimingMiddleware (performance.py) | Middleware that logs request execution time for all API requests.
+  - ObservabilityMiddleware (middleware.py) | Middleware for API observability.
+  - MiddlewareTests (tests.py) | Test observability middleware.
+  - TenantMiddleware (middleware.py) | Middleware that extracts company context from each request.
+  - ShadowStrictTenantMiddleware (middleware.py) | SHADOW mode strict tenant enforcement.
+  - StrictTenantMiddleware (middleware.py) | Strict version of TenantMiddleware.
+
+--- URL ROUTES ---
+                                                     -> include
+  import/<str:entity_type>/dry-run/                  -> import_views.import_dry_run
+  import/<str:entity_type>/execute/                  -> import_views.import_execute
+
+####################################################################################################
+# APP: cost_centers
+####################################################################################################
+
+Files: 13, Lines: 857
+
+--- File Summary ---
+      1  __init__.py
+     22  admin.py
+      7  apps.py
+    107  migrations\0001_initial.py
+     43  migrations\0002_alter_costallocation_created_at_and_more.py
+      0  migrations\__init__.py
+    191  models.py
+     70  serializers\__init__.py
+      4  services\__init__.py
+    103  services\cost_allocation_service.py
+    140  services\cost_reporting_service.py
+     12  urls.py
+    157  views.py
+
+--- MODELS ---
+  - CostCenter | Cost centers for tracking expenses by department/project/branch.
+  - CostAllocation | Allocation rules for distributing costs across cost centers.
+  - CostAllocationLine | Lines for cost allocation rules.
+  - CostTransaction | Records cost transactions linked to journal entries.
+
+--- SERIALIZERS ---
+  - CostCenterSerializer (__init__.py) | 
+  - CostCenterListSerializer (__init__.py) | 
+  - CostAllocationLineSerializer (__init__.py) | 
+  - CostAllocationSerializer (__init__.py) | 
+  - CostTransactionSerializer (__init__.py) | 
+  - CostAllocationLineCreateSerializer (__init__.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - CostCenterViewSet (views.py) | CRUD for cost centers.
+  - CostAllocationViewSet (views.py) | CRUD for cost allocations.
+  - CostTransactionViewSet (views.py) | CRUD for cost transactions.
+
+--- SERVICES ---
+  - CLASS CostAllocationService (cost_allocation_service.py) | Service for cost allocation calculations.
+  - CLASS CostReportingService (cost_reporting_service.py) | Service for cost center reporting.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: coverage_governance
+####################################################################################################
+
+Files: 15, Lines: 2835
+
+--- File Summary ---
+     17  __init__.py
+    153  certifier.py
+    160  engine.py
+    157  failure_scenario.py
+    317  frontend_validator.py
+    191  models.py
+    157  module_classifier.py
+    129  replay_validator.py
+    166  reporting_validator.py
+    186  risk_scorer.py
+    237  test_quality.py
+      0  tests\__init__.py
+    715  tests\test_coverage_governance.py
+    100  weighted_coverage.py
+    150  workflow_coverage.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: entities
+####################################################################################################
+
+Files: 13, Lines: 951
+
+--- File Summary ---
+      1  __init__.py
+      7  apps.py
+     90  migrations\0001_initial.py
+     43  migrations\0002_alter_entity_created_at_alter_entity_updated_at_and_more.py
+      0  migrations\__init__.py
+    170  models.py
+     49  serializers\__init__.py
+      4  services\__init__.py
+    220  services\company_service.py
+    170  services\consolidated_reporting.py
+     95  services\entity_service.py
+      9  urls.py
+     93  views.py
+
+--- MODELS ---
+  - Entity | Represents a business entity (branch, pharmacy, warehouse).
+  - EntityAccount | Maps entity-specific accounts to the main chart of accounts.
+  - InterCompanyTransaction | Tracks transactions between entities (inter-company).
+
+--- SERIALIZERS ---
+  - EntitySerializer (__init__.py) | 
+  - EntityAccountSerializer (__init__.py) | 
+  - InterCompanyTransactionSerializer (__init__.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - EntityViewSet (views.py) | CRUD for business entities.
+  - EntityAccountViewSet (views.py) | CRUD for entity accounts.
+  - InterCompanyTransactionViewSet (views.py) | CRUD for inter-company transactions.
+
+--- SERVICES ---
+  - CLASS CompanyContext (company_service.py) | Thread-local context for company isolation.
+  - CLASS CompanyService (company_service.py) | Multi-Company Service - manages company-scoped data access.
+  - CLASS CompanyRequiredMixin (company_service.py) | Mixin for views that require company context.
+  - DEF company_required (company_service.py) | Decorator to require company context for views.
+  - CLASS MultiCompanyMiddleware (company_service.py) | Middleware to set company context from request.
+  - CLASS ConsolidatedReportingService (consolidated_reporting.py) | Service for consolidated reporting across entities.
+  - CLASS EntityService (entity_service.py) | Service for managing business entities.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+  - MultiCompanyMiddleware (company_service.py) | Middleware to set company context from request.
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: expenses
+####################################################################################################
+
+Files: 9, Lines: 196
+
+--- File Summary ---
+      0  __init__.py
+      0  admin.py
+      6  apps.py
+     39  migrations\0001_initial.py
+      0  migrations\__init__.py
+    118  models.py
+     11  serializers.py
+     10  urls.py
+     12  views.py
+
+--- MODELS ---
+  - Expense | Pharmacy expenses (Rent, Electricity, Supplies, etc.)
+
+--- SERIALIZERS ---
+  - ExpenseSerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - ExpenseViewSet (views.py) | 
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: fixed_assets
+####################################################################################################
+
+Files: 15, Lines: 2140
+
+--- File Summary ---
+      1  __init__.py
+     37  admin.py
+      7  apps.py
+    153  migrations\0001_initial.py
+     53  migrations\0002_alter_assetcategory_created_at_and_more.py
+      0  migrations\__init__.py
+    338  models.py
+    127  serializers\__init__.py
+      9  services\__init__.py
+    254  services\asset_account_resolver.py
+    347  services\asset_accounting_service.py
+    271  services\asset_lifecycle_service.py
+    245  services\depreciation_service.py
+     18  urls.py
+    280  views.py
+
+--- MODELS ---
+  - AssetCategory | Model representing categories for fixed assets.
+  - FixedAsset | Model representing a fixed asset in the enterprise ERP system.
+  - AssetDepreciation | Model representing depreciation entries for fixed assets.
+  - AssetDisposal | Model representing disposal of fixed assets.
+
+--- SERIALIZERS ---
+  - AssetCategorySerializer (__init__.py) | 
+  - AssetCategorySimpleSerializer (__init__.py) | 
+  - FixedAssetSerializer (__init__.py) | 
+  - FixedAssetListSerializer (__init__.py) | 
+  - AssetDepreciationSerializer (__init__.py) | 
+  - AssetDisposalSerializer (__init__.py) | 
+  - AssetDepreciationCreateSerializer (__init__.py) | 
+  - AssetDisposalCreateSerializer (__init__.py) | 
+  - AssetLifecycleActionSerializer (__init__.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - AssetCategoryViewSet (views.py) | CRUD API for asset categories.
+  - FixedAssetViewSet (views.py) | CRUD API for fixed assets.
+  - AssetDepreciationViewSet (views.py) | CRUD API for asset depreciation entries.
+  - AssetDisposalViewSet (views.py) | CRUD API for asset disposals.
+
+--- SERVICES ---
+  - CLASS AssetAccountResolver (asset_account_resolver.py) | Deterministic resolver for fixed asset accounting accounts.
+  - CLASS AssetAccountingIntegrationService (asset_accounting_service.py) | Service for integrating fixed asset transactions with accounting.
+  - CLASS AssetLifecycleService (asset_lifecycle_service.py) | Service for managing fixed asset lifecycle operations.
+  - CLASS DepreciationResult (depreciation_service.py) | Result of depreciation calculation.
+  - CLASS DepreciationCalculationService (depreciation_service.py) | Service for calculating asset depreciation using various methods.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: governance
+####################################################################################################
+
+Files: 11, Lines: 978
+
+--- File Summary ---
+      4  __init__.py
+     99  change_analyzer.py
+     71  cicd_hooks.py
+     76  contract_guard.py
+     88  feature_flags.py
+    114  invariant_registry.py
+    122  migration_guard.py
+    107  nightly_jobs.py
+     71  observability.py
+    133  release_gates.py
+     93  risk_engine.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: hr
+####################################################################################################
+
+Files: 13, Lines: 1981
+
+--- File Summary ---
+      0  __init__.py
+      3  admin.py
+      6  apps.py
+    123  migrations\0001_initial.py
+     90  migrations\0002_overtime_leave_attendance.py
+      0  migrations\__init__.py
+    474  models.py
+    127  serializers.py
+    246  services\__init__.py
+    223  services\reports.py
+    420  tests.py
+     24  urls.py
+    245  views.py
+
+--- MODELS ---
+  - Department | Department/Unit in the organization
+  - Position | Job position/role within a department
+  - Employee | Employee profile - core HR model
+  - Attendance | Daily attendance tracking
+  - Leave | Leave request and tracking
+  - Overtime | Overtime tracking
+
+--- SERIALIZERS ---
+  - DepartmentSerializer (serializers.py) | Serializer for Department
+  - PositionSerializer (serializers.py) | Serializer for Position
+  - EmployeeSerializer (serializers.py) | Serializer for Employee
+  - EmployeeCreateSerializer (serializers.py) | Serializer for creating Employee
+  - EmployeeListSerializer (serializers.py) | Lightweight serializer for lists
+
+--- VIEWS / VIEWSETS ---
+  - DepartmentViewSet (views.py) | API for Department CRUD
+  - PositionViewSet (views.py) | API for Position CRUD
+  - EmployeeViewSet (views.py) | API for Employee CRUD
+
+--- SERVICES ---
+  - CLASS EmployeeReportService (reports.py) | Employee reporting
+  - CLASS AttendanceReportService (reports.py) | Attendance reporting
+  - CLASS LeaveReportService (reports.py) | Leave reporting
+  - CLASS OvertimeReportService (reports.py) | Overtime reporting
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+  update-status/                                     -> views.update_employee_status
+  department-tree/                                   -> views.department_tree
+  active-employees/                                  -> views.active_employees
+  reports/employee-summary/                          -> views.employee_summary_report
+  reports/department-summary/                        -> views.department_summary_report
+  reports/attendance-summary/                        -> views.attendance_summary_report
+  reports/leave-summary/                             -> views.leave_summary_report
+  reports/overtime-summary/                          -> views.overtime_summary_report
+
+####################################################################################################
+# APP: insurance
+####################################################################################################
+
+Files: 10, Lines: 870
+
+--- File Summary ---
+      0  __init__.py
+     36  admin.py
+      7  apps.py
+    159  migrations\0001_initial.py
+      0  migrations\__init__.py
+    289  models.py
+     89  serializers.py
+     98  services.py
+     13  urls.py
+    179  views.py
+
+--- MODELS ---
+  - InsuranceProvider | Insurance provider/company (e.g., Afghan Insurance Co, Takaful).
+  - InsurancePolicy | Customer/patient insurance policy linked to a provider.
+  - Claim | Insurance claim linked to a sale invoice and patient policy.
+  - ClaimItem | Individual line item within an insurance claim.
+  - ClaimApproval | Audit trail for claim approval/rejection actions.
+
+--- SERIALIZERS ---
+  - InsuranceProviderSerializer (serializers.py) | 
+  - InsurancePolicySerializer (serializers.py) | 
+  - ClaimItemSerializer (serializers.py) | 
+  - ClaimListSerializer (serializers.py) | 
+  - ClaimDetailSerializer (serializers.py) | 
+  - ClaimCreateSerializer (serializers.py) | 
+  - ClaimApprovalSerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - InsuranceProviderViewSet (views.py) | 
+  - InsurancePolicyViewSet (views.py) | 
+  - ClaimViewSet (views.py) | 
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: inventory
+####################################################################################################
+
+Files: 33, Lines: 4384
+
+--- File Summary ---
+      0  __init__.py
+      3  admin.py
+      5  apps.py
+    169  filters.py
+     97  migrations\0001_initial.py
+     23  migrations\0002_category_parent_alter_category_unique_together.py
+     39  migrations\0003_batch.py
+     60  migrations\0004_warehouse_stockmovement.py
+     57  migrations\0005_batch_inventory_b_batch_n_6c5580_idx_and_more.py
+     71  migrations\0006_add_warehouse_transfer.py
+     28  migrations\0007_stockmovement_entity.py
+    107  migrations\0008_remove_stockmovement_entity_alter_batch_created_at_and_more.py
+     25  migrations\0009_product_company_warehouse_company.py
+     18  migrations\0010_add_batch_barcode.py
+     23  migrations\0011_add_return_movement_types.py
+     21  migrations\0012_stockmovement_created_by.py
+      0  migrations\__init__.py
+    632  models.py
+    134  models_transfer.py
+     21  serializers\__init__.py
+     72  serializers\batch_serializers.py
+     83  serializers\product_serializers.py
+     81  serializers\warehouse_serializers.py
+     18  service\__init__.py
+    841  service\stock_integration.py
+      6  service\stock_transfer.py
+    144  service\transfer_service.py
+     34  service\types.py
+    182  services\barcode_generator.py
+    377  services\costing_service.py
+     32  urls.py
+    602  views.py
+    379  views_integration.py
+
+--- MODELS ---
+  - Category | Model representing a product category
+  - Unit | Model representing a unit of measurement
+  - Product | Product model representing items in the inventory.
+  - Batch | Model representing a pharmaceutical batch with tracking information
+  - Warehouse | Model representing a warehouse or storage location
+  - StockMovement | Model representing stock movements (in/out/adjustment)
+  - Stock | Model representing stock levels for products at different locations (legacy)
+  - WarehouseTransfer | Model for tracking warehouse-to-warehouse transfers.
+  - WarehouseTransferItem | Individual items in a warehouse transfer.
+
+--- SERIALIZERS ---
+  - BatchSerializer (batch_serializers.py) | Serializer for the Batch model
+  - CategorySerializer (product_serializers.py) | Serializer for the Category model
+  - UnitSerializer (product_serializers.py) | Serializer for the Unit model
+  - ProductSerializer (product_serializers.py) | Serializer for the Product model
+  - WarehouseSerializer (warehouse_serializers.py) | Serializer for the Warehouse model
+  - StockMovementSerializer (warehouse_serializers.py) | Serializer for the StockMovement model
+
+--- VIEWS / VIEWSETS ---
+  - CategoryViewSet (views.py) | Category CRUD.
+  - UnitViewSet (views.py) | Unit of measure CRUD.
+  - ProductViewSet (views.py) | Product CRUD with filtering and search.
+  - BatchViewSet (views.py) | Batch CRUD with filtering.
+  - WarehouseViewSet (views.py) | Warehouse CRUD.
+  - StockMovementViewSet (views.py) | ViewSet for managing stock movements
+
+--- SERVICES ---
+  - CLASS BarcodeFormat (barcode_generator.py) | Supported barcode formats.
+  - CLASS BarcodeGenerationError (barcode_generator.py) | Raised when barcode generation fails.
+  - CLASS BarcodeGenerator (barcode_generator.py) | Generates barcodes as base64-encoded images for products and batches.
+  - CLASS CostingMethod (costing_service.py) | Costing method constants.
+  - CLASS LandedCostType (costing_service.py) | Landed cost type constants.
+  - CLASS CostingService (costing_service.py) | Advanced Costing Engine - extends StockIntegrationService.
+  - CLASS LandedCostService (costing_service.py) | Landed Cost Allocation Service.
+  - CLASS CostFlowIntegrityService (costing_service.py) | Ensures cost flows correctly from:
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+  stock/allocate/                                    -> allocate_stock
+  stock/process-sale/                                -> process_sale_stock
+  stock/process-purchase/                            -> process_purchase_stock
+  stock/check-availability/                          -> check_stock_availability
+  stock/levels/                                      -> get_stock_levels
+  stock/products/<uuid:product_id>/available-batches/ -> get_available_batches
+
+####################################################################################################
+# APP: jobs
+####################################################################################################
+
+Files: 15, Lines: 2150
+
+--- File Summary ---
+      2  __init__.py
+     16  apps.py
+    512  handlers.py
+    253  integration.py
+    123  job_registry.py
+      0  management\__init__.py
+      0  management\commands\__init__.py
+     98  management\commands\run_scheduled_tasks.py
+    110  migrations\0001_initial.py
+      0  migrations\__init__.py
+    298  models.py
+    548  services.py
+     13  signals.py
+     22  urls.py
+    155  views.py
+
+--- MODELS ---
+  - BackgroundJob | Centralized background job model.
+  - JobAuditLog | Audit trail for job execution
+  - ScheduledTask | Scheduled task configuration
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+  - BackgroundJobViewSet (views.py) | Background jobs CRUD
+  - JobStatusView (views.py) | Get job status
+  - JobActionView (views.py) | Job actions: cancel, retry, pause
+  - JobStatsView (views.py) | Get job statistics
+  - ScheduledTaskViewSet (views.py) | Scheduled tasks CRUD
+  - RunScheduledTasksView (views.py) | Run pending scheduled tasks
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+  job/<int:job_id>/                                  -> JobStatusView.as_view
+  job/<int:job_id>/action/                           -> JobActionView.as_view
+  stats/                                             -> JobStatsView.as_view
+  run-scheduled/                                     -> RunScheduledTasksView.as_view
+
+####################################################################################################
+# APP: licensing
+####################################################################################################
+
+Files: 22, Lines: 2033
+
+--- File Summary ---
+      0  __init__.py
+     19  admin.py
+      5  apps.py
+    112  crypto.py
+    109  fingerprint.py
+    104  management\commands\generate_license.py
+     86  middleware.py
+     39  migrations\0001_initial.py
+     18  migrations\0002_devicelicense_signed_license.py
+     31  migrations\0003_add_trialsession_model.py
+     50  migrations\0004_add_antitamper_fields.py
+    114  migrations\0005_simplify_models.py
+     28  migrations\0006_add_vendor_license_fields.py
+      0  migrations\__init__.py
+    123  models.py
+    160  providers.py
+    212  rsa.py
+    123  services.py
+     13  urls.py
+    324  utils.py
+    204  validator.py
+    159  views.py
+
+--- MODELS ---
+  - DeviceLicense | 
+  - TrialSession | 
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+  - LicenseInfoView (views.py) | GET /licensing/info/ ΓÇö Current license state (exempt from middleware).
+  - LicenseValidateView (views.py) | POST /licensing/validate/ ΓÇö Validate a specific license key.
+  - LicenseCreateView (views.py) | POST /licensing/create/ ΓÇö Admin: create a new device license.
+  - LicenseActivationRequestView (views.py) | GET /licensing/activation-request/ ΓÇö Generate activation_request.json.
+  - LicenseImportView (views.py) | POST /licensing/import-license/ ΓÇö Import a signed .lic file.
+  - LicenseStatusView (views.py) | GET /licensing/status/ ΓÇö Detailed license state (same as info).
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+  - LicenseMiddleware (middleware.py) | Lightweight license middleware.
+
+--- URL ROUTES ---
+  info/                                              -> views.LicenseInfoView.as_view
+  validate/                                          -> views.LicenseValidateView.as_view
+  create/                                            -> views.LicenseCreateView.as_view
+  activation-request/                                -> views.LicenseActivationRequestView.as_view
+  import-license/                                    -> views.LicenseImportView.as_view
+  status/                                            -> views.LicenseStatusView.as_view
+
+####################################################################################################
+# APP: management
+####################################################################################################
+
+Files: 2, Lines: 2
+
+--- File Summary ---
+      1  __init__.py
+      1  commands\__init__.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: payments
+####################################################################################################
+
+Files: 18, Lines: 2768
+
+--- File Summary ---
+      0  __init__.py
+     48  admin.py
+      7  apps.py
+      0  management\__init__.py
+      0  management\commands\__init__.py
+    239  management\commands\seed_payments.py
+    219  migrations\0001_initial.py
+     63  migrations\0002_alter_financialtransaction_created_at_and_more.py
+     21  migrations\0003_financialtransaction_created_by.py
+      0  migrations\__init__.py
+    777  models.py
+     77  serializers.py
+    779  services.py
+     73  services_calculators.py
+     44  services_mappers.py
+     65  services_validators.py
+     20  urls.py
+    336  views.py
+
+--- MODELS ---
+  - PaymentMethod | Payment method configuration.
+  - PaymentAccount | Payment account (cash drawer, bank account, mobile wallet, hawala account).
+  - FinancialTransaction | Core financial transaction model.
+  - TransactionSettlement | Tracks settlement/reconciliation of transactions.
+  - SettlementTransaction | Links individual transactions to a settlement batch.
+
+--- SERIALIZERS ---
+  - PaymentMethodSerializer (serializers.py) | 
+  - PaymentAccountSerializer (serializers.py) | 
+  - FinancialTransactionSerializer (serializers.py) | 
+  - TransactionSettlementSerializer (serializers.py) | 
+  - SettlementTransactionSerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - PaymentMethodViewSet (views.py) | CRUD API for payment methods.
+  - PaymentAccountViewSet (views.py) | CRUD API for payment accounts.
+  - FinancialTransactionViewSet (views.py) | CRUD API for financial transactions.
+  - SettlementViewSet (views.py) | CRUD API for transaction settlements.
+  - PaymentDashboardViewSet (views.py) | Dashboard endpoints for payment overview.
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: payroll
+####################################################################################################
+
+Files: 14, Lines: 1815
+
+--- File Summary ---
+      0  __init__.py
+      3  admin.py
+      6  apps.py
+    179  migrations\0001_initial.py
+     18  migrations\0002_payrollcycle_accounting_entry_id.py
+      0  migrations\__init__.py
+    276  models.py
+     65  serializers.py
+    278  services\__init__.py
+    266  services\accounting.py
+    199  services\reports.py
+    251  tests.py
+     26  urls.py
+    248  views.py
+
+--- MODELS ---
+  - SalaryStructure | Salary structure with allowances and deductions
+  - Allowance | Salary allowances (transport, housing, food, etc.)
+  - Deduction | Salary deductions (tax, insurance, etc.)
+  - EmployeeSalary | Employee-specific salary configuration
+  - EmployeeAllowance | Through model for employee-specific allowances
+  - EmployeeDeduction | Through model for employee-specific deductions
+  - PayrollCycle | Payroll period/month
+  - PayrollRecord | Individual employee payroll record
+
+--- SERIALIZERS ---
+  - AllowanceSerializer (serializers.py) | 
+  - DeductionSerializer (serializers.py) | 
+  - SalaryStructureSerializer (serializers.py) | 
+  - EmployeeSalarySerializer (serializers.py) | 
+  - PayrollRecordSerializer (serializers.py) | 
+  - PayrollCycleSerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - PayrollCycleViewSet (views.py) | API for Payroll Cycle CRUD
+  - PayrollRecordViewSet (views.py) | API for Payroll Record CRUD
+  - AllowanceViewSet (views.py) | API for Allowance CRUD
+  - DeductionViewSet (views.py) | API for Deduction CRUD
+
+--- SERVICES ---
+  - CLASS PayrollAccountingService (accounting.py) | Service for payroll-accounting integration.
+  - CLASS PayrollReportService (reports.py) | Payroll reporting
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+  generate/                                          -> views.generate_payroll
+  approve/                                           -> views.approve_payroll
+  summary/                                           -> views.payroll_summary
+  reports/yearly-summary/                            -> views.payroll_yearly_summary
+  reports/monthly-detail/                            -> views.payroll_monthly_detail
+  reports/department-cost/                           -> views.payroll_department_cost
+  reports/employee-history/                          -> views.payroll_employee_history
+  reports/trend/                                     -> views.payroll_trend
+
+####################################################################################################
+# APP: pre_production_hardening
+####################################################################################################
+
+Files: 11, Lines: 1612
+
+--- File Summary ---
+      0  __init__.py
+    176  hardening_validator.py
+     31  sections\__init__.py
+    124  sections\database.py
+    153  sections\deployment.py
+    180  sections\export.py
+    263  sections\multi_user.py
+    184  sections\operator.py
+    206  sections\performance.py
+     98  sections\report.py
+    197  sections\session.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: production_gate
+####################################################################################################
+
+Files: 9, Lines: 1019
+
+--- File Summary ---
+      0  __init__.py
+    197  gate_validator.py
+     20  sections\__init__.py
+     82  sections\backup_restore.py
+     85  sections\concurrency.py
+    141  sections\failure_injection.py
+     80  sections\frontend.py
+    100  sections\long_run.py
+    314  sections\workflows.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: production_infrastructure
+####################################################################################################
+
+Files: 13, Lines: 1478
+
+--- File Summary ---
+      0  __init__.py
+    189  migration_validator.py
+     28  sections\__init__.py
+     94  sections\backup_automation.py
+     92  sections\celery_execution.py
+     95  sections\certification.py
+     96  sections\connection_pooling.py
+    137  sections\observability.py
+    127  sections\performance.py
+    159  sections\postgresql.py
+    129  sections\redis_event_layer.py
+    145  sections\security_hardening.py
+    187  sections\transaction_isolation.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: purchases
+####################################################################################################
+
+Files: 20, Lines: 2220
+
+--- File Summary ---
+      0  __init__.py
+     55  admin.py
+      5  apps.py
+    171  migrations\0001_initial.py
+     18  migrations\0002_purchaseinvoice_journal_entry_id.py
+     28  migrations\0003_purchaseinvoice_entity.py
+    179  migrations\0004_remove_purchaseinvoice_entity_and_more.py
+     25  migrations\0005_purchaseinvoice_company_supplier_company.py
+     21  migrations\0006_purchaseinvoice_created_by.py
+     34  migrations\0007_add_supplier_payment_allocation.py
+     24  migrations\0008_purchaseinvoice_tax_enabled_purchaseinvoice_tax_rate.py
+      0  migrations\__init__.py
+    644  models.py
+      9  serializers\__init__.py
+    152  serializers\purchase_invoice.py
+     64  serializers\supplier.py
+      0  services\__init__.py
+    255  services\fifo_allocation.py
+     18  urls.py
+    518  views.py
+
+--- MODELS ---
+  - Supplier | Model representing a supplier/vendor for pharmaceutical products.
+  - PurchaseInvoice | Model representing a purchase invoice from a supplier.
+  - PurchaseItem | Model representing a line item in a purchase invoice.
+  - SupplierPayment | Model representing a payment made to a supplier.
+  - SupplierPaymentAllocation | Tracks allocation of unallocated supplier payments to outstanding purchase invoices.
+
+--- SERIALIZERS ---
+  - PurchaseItemSerializer (purchase_invoice.py) | 
+  - PurchaseInvoiceSerializer (purchase_invoice.py) | 
+  - SupplierSerializer (supplier.py) | 
+  - SupplierPaymentSerializer (supplier.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - SupplierViewSet (views.py) | CRUD API for Supplier management.
+  - PurchaseInvoiceViewSet (views.py) | CRUD API for Purchase Invoice management.
+  - PurchaseItemViewSet (views.py) | CRUD API for Purchase Items.
+  - SupplierPaymentViewSet (views.py) | CRUD API for Supplier Payments.
+
+--- SERVICES ---
+  - CLASS SupplierFIFOAllocationService (fifo_allocation.py) | FIFO payment allocation for suppliers.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: returns
+####################################################################################################
+
+Files: 16, Lines: 2378
+
+--- File Summary ---
+      0  __init__.py
+     11  apps.py
+     90  migrations\0001_initial.py
+     48  migrations\0002_reconciliationentry.py
+     29  migrations\0003_returnitem_condition_returnitem_discount_amount_and_more.py
+     41  migrations\0004_add_void_fields.py
+     21  migrations\0005_returnorder_created_by.py
+      0  migrations\__init__.py
+    824  models.py
+    115  serializers.py
+     19  services\__init__.py
+    574  services\reconciliation_service.py
+    189  services\refund_service.py
+     47  signals.py
+     12  urls.py
+    358  views.py
+
+--- MODELS ---
+  - ReturnOrder | Return order - linked to Invoice, Inventory, and Accounting.
+  - ReturnItem | Individual items in a return order.
+  - ReconciliationEntry | Tracks reconciliation between Invoice, Return, and Accounting Entries.
+
+--- SERIALIZERS ---
+  - ReturnItemSerializer (serializers.py) | 
+  - ReturnOrderSerializer (serializers.py) | 
+  - ReturnOrderCreateSerializer (serializers.py) | 
+  - ReconciliationEntrySerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - ReturnOrderViewSet (views.py) | ViewSet for Return Orders.
+  - ReconciliationEntryViewSet (views.py) | ViewSet for Reconciliation Entries.
+
+--- SERVICES ---
+  - CLASS ReconciliationStatus (reconciliation_service.py) | Reconciliation status constants.
+  - CLASS TransactionType (reconciliation_service.py) | Transaction type constants.
+  - CLASS ReconciliationResult (reconciliation_service.py) | Result of reconciliation operation.
+  - CLASS ReconciliationService (reconciliation_service.py) | Core reconciliation engine.
+  - CLASS MismatchDetector (reconciliation_service.py) | Dedicated mismatch detection engine.
+  - CLASS RefundRequest (refund_service.py) | Encapsulates a refund request from a return approval.
+  - CLASS RefundExecutionService (refund_service.py) | Orchestrates refund execution for approved returns.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: sales
+####################################################################################################
+
+Files: 25, Lines: 2770
+
+--- File Summary ---
+      0  __init__.py
+     54  admin.py
+      5  apps.py
+    167  migrations\0001_initial.py
+     18  migrations\0002_salesinvoice_journal_entry_id.py
+     29  migrations\0003_salesinvoice_entity.py
+    153  migrations\0004_remove_customer_payment_terms_and_more.py
+     25  migrations\0005_customer_company_salesinvoice_company.py
+     21  migrations\0006_salesinvoice_created_by.py
+     34  migrations\0007_add_payment_allocation.py
+     47  migrations\0008_add_credit_approval_request.py
+     24  migrations\0009_salesinvoice_tax_enabled_salesinvoice_tax_rate.py
+     18  migrations\0010_salesinvoice_list_perf_indexes.py
+      0  migrations\__init__.py
+    742  models.py
+      9  serializers\__init__.py
+     26  serializers\credit_approval.py
+     67  serializers\customer.py
+    151  serializers\sales_invoice.py
+      3  services\__init__.py
+    252  services\fifo_allocation.py
+     55  services_calculators.py
+     25  services_mappers.py
+     18  urls.py
+    827  views.py
+
+--- MODELS ---
+  - Customer | Model representing a customer for pharmaceutical sales.
+  - SalesInvoice | Model representing a sales invoice to a customer.
+  - SalesItem | Model representing a line item in a sales invoice.
+  - CustomerPayment | Model representing a payment received from a customer.
+  - PaymentAllocation | Tracks allocation of unallocated payments to outstanding invoices.
+  - CreditApprovalRequest | Lightweight credit limit override request for manager approval.
+
+--- SERIALIZERS ---
+  - CreditApprovalRequestSerializer (credit_approval.py) | Serializer for credit approval requests.
+  - CustomerSerializer (customer.py) | 
+  - CustomerPaymentSerializer (customer.py) | 
+  - SalesItemSerializer (sales_invoice.py) | 
+  - SalesInvoiceSerializer (sales_invoice.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - CustomerViewSet (views.py) | CRUD API for Customer management.
+  - SalesInvoiceViewSet (views.py) | CRUD API for Sales Invoice management.
+  - SalesItemViewSet (views.py) | CRUD API for Sales Items.
+  - CustomerPaymentViewSet (views.py) | CRUD API for Customer Payments.
+
+--- SERVICES ---
+  - CLASS FIFOAllocationService (fifo_allocation.py) | Lightweight FIFO payment allocation.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: security
+####################################################################################################
+
+Files: 26, Lines: 4976
+
+--- File Summary ---
+      0  __init__.py
+      3  admin.py
+      6  apps.py
+    205  authentication.py
+    216  email_password_reset.py
+     32  management\commands\cleanup_revoked_tokens.py
+    188  management\commands\seed_roles.py
+    137  migrations\0001_initial.py
+     44  migrations\0002_add_notification.py
+     18  migrations\0003_fix_notification_object_id.py
+     58  migrations\0004_add_2fa_and_password_reset.py
+     35  migrations\0005_add_revoked_token.py
+     22  migrations\0006_password_reset_token_hash.py
+      0  migrations\__init__.py
+    398  models.py
+    264  notification_service.py
+     70  password_reset_service.py
+    164  password_utils.py
+    108  permissions.py
+    193  rate_limiter.py
+    954  tests.py
+    121  totp_service.py
+    102  ui_scopes.py
+     37  urls.py
+    567  utils.py
+   1034  views.py
+
+--- MODELS ---
+  - Role | Role model for RBAC (Role-Based Access Control)
+  - Permission | Permission model for fine-grained access control
+  - RolePermission | Many-to-many relationship between Role and Permission
+  - UserRole | Many-to-many relationship between User and Role
+  - AuditLog | Audit trail for tracking user actions and system events
+  - SecurityEvent | Security-specific events for monitoring threats and anomalies
+  - Notification | User notifications for stock alerts, activity, and system events
+  - PasswordResetToken | Secure password reset token with expiration and single-use enforcement.
+  - TOTPDevice | TOTP (Time-based One-Time Password) device for 2FA.
+  - RevokedToken | Persistent token revocation store.
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+  - Permission (models.py) | Permission model for fine-grained access control
+  - RolePermission (models.py) | Many-to-many relationship between Role and Permission
+  - RoleBasedPermission (permissions.py) | Custom permission class that checks user roles and permissions.
+  - LicenseRequiredPermission (permissions.py) | Permission that requires a valid license
+  - PermissionModelTests (tests.py) | Tests for Permission model.
+  - RolePermissionTests (tests.py) | Tests for RolePermission model.
+  - RoleBasedPermissionTests (tests.py) | Tests for RoleBasedPermission DRF permission class.
+  - LicenseRequiredPermissionTests (tests.py) | Tests for LicenseRequiredPermission.
+
+--- MIDDLEWARE ---
+  - RateLimitMiddleware (rate_limiter.py) | Django middleware that enforces rate limits on API requests.
+
+--- URL ROUTES ---
+  login/                                             -> login_view
+  logout/                                            -> logout_view
+  token/refresh/                                     -> refresh_token_view
+  profile/                                           -> user_profile
+  change-password/                                   -> change_password
+  notifications/                                     -> notifications_list
+  notifications/read/                                -> notifications_mark_read
+  notifications/unread-count/                        -> notifications_unread_count
+  users/                                             -> users_list
+  users/<uuid:user_id>/                              -> users_detail
+  roles/                                             -> roles_list
+  roles/<int:role_id>/                               -> roles_detail
+  permissions/                                       -> permissions_list
+  users/<uuid:user_id>/reset-password/               -> admin_reset_password
+  password-reset/request/                            -> password_reset_request
+  password-reset/confirm/                            -> password_reset_confirm
+  totp/setup/                                        -> totp_setup
+  totp/verify/                                       -> totp_verify
+  totp/disable/                                      -> totp_disable
+  totp/status/                                       -> totp_status
+
+####################################################################################################
+# APP: simulation
+####################################################################################################
+
+Files: 302, Lines: 21751
+
+--- File Summary ---
+      0  __init__.py
+      0  agents\__init__.py
+     66  agents\agent.py
+      0  agents\employees\__init__.py
+     40  agents\employees\accountant_bot.py
+     40  agents\employees\hr_bot.py
+     40  agents\employees\inventory_bot.py
+     40  agents\employees\purchasing_bot.py
+     40  agents\employees\sales_bot.py
+      0  agents\registry\__init__.py
+     65  agents\registry\registry.py
+      0  agents\runtime\__init__.py
+     39  agents\runtime\runtime.py
+      0  audit\__init__.py
+      0  audit\dependencies\__init__.py
+     79  audit\dependencies\analyzer.py
+     39  audit\dependencies\reporter.py
+     71  audit\dependencies\validator.py
+      0  audit\event_lifecycle\__init__.py
+     91  audit\event_lifecycle\analyzer.py
+     46  audit\event_lifecycle\reporter.py
+     38  audit\event_lifecycle\validator.py
+      0  audit\graph\__init__.py
+     59  audit\graph\analyzer.py
+     33  audit\graph\auditor.py
+     88  audit\graph\validator.py
+      0  audit\memory\__init__.py
+     34  audit\memory\analyzer.py
+     43  audit\memory\validator.py
+     33  audit\memory\verifier.py
+      0  audit\performance\__init__.py
+     56  audit\performance\analyzer.py
+     34  audit\performance\estimator.py
+     35  audit\performance\validator.py
+      0  audit\reporting\__init__.py
+     80  audit\reporting\generator.py
+      0  clocks\__init__.py
+     70  clocks\clock.py
+      0  context\__init__.py
+     69  context\context.py
+      0  control_center\__init__.py
+      0  control_center\dashboard\__init__.py
+    155  control_center\dashboard\dashboard_models.py
+    134  control_center\dashboard\drift_visualization.py
+    134  control_center\dashboard\health_summary.py
+    118  control_center\dashboard\operational_heatmap.py
+    143  control_center\dashboard\stability_widgets.py
+      0  control_center\incidents\__init__.py
+    126  control_center\incidents\escalation_engine.py
+     68  control_center\incidents\incident_classifier.py
+     94  control_center\incidents\incident_lifecycle.py
+    107  control_center\incidents\incident_registry.py
+    154  control_center\models.py
+      0  control_center\orchestrator\__init__.py
+    632  control_center\orchestrator\control_center_engine.py
+    385  control_center\orchestrator\control_center_router.py
+    386  control_center\orchestrator\operational_command_orchestrator.py
+      0  control_center\reporting\__init__.py
+     70  control_center\reporting\executive_summary.py
+    132  control_center\reporting\intelligence_digest.py
+    152  control_center\reporting\operational_risk_report.py
+    153  control_center\reporting\system_stability_report.py
+      0  control_center\safety\__init__.py
+    136  control_center\safety\graph_explosion_guard.py
+     82  control_center\safety\memory_pressure_guard.py
+    140  control_center\safety\orchestration_safety_monitor.py
+     56  control_center\safety\recursion_guard.py
+      0  control_center\state\__init__.py
+     71  control_center\state\intelligence_state_classifier.py
+     48  control_center\state\operational_priority_engine.py
+     94  control_center\state\operational_state_aggregator.py
+     50  control_center\state\system_health_matrix.py
+      0  control_center\timeline\__init__.py
+    105  control_center\timeline\cross_phase_correlator.py
+     77  control_center\timeline\intelligence_timeline_builder.py
+     68  control_center\timeline\operational_sequence_tracker.py
+     68  control_center\timeline\unified_timeline.py
+      0  digital_twin\__init__.py
+      0  digital_twin\external\__init__.py
+     67  digital_twin\external\banking_api.py
+     75  digital_twin\external\base_simulator.py
+    216  digital_twin\external\coordinator.py
+     89  digital_twin\external\credit_api.py
+    103  digital_twin\external\payment_gateway.py
+     66  digital_twin\external\supplier_system.py
+     78  digital_twin\external\tax_authority.py
+      0  digital_twin\integrity\__init__.py
+     80  digital_twin\integrity\accounting_validator.py
+     74  digital_twin\integrity\audit_validator.py
+     93  digital_twin\integrity\inventory_validator.py
+    229  digital_twin\integrity\matrix.py
+    107  digital_twin\integrity\replay_validator.py
+     74  digital_twin\integrity\transaction_validator.py
+    146  digital_twin\models.py
+      0  digital_twin\pipeline\__init__.py
+    274  digital_twin\pipeline\digital_twin.py
+    340  digital_twin\pipeline\orchestrator.py
+      0  digital_twin\scenarios\__init__.py
+     46  digital_twin\scenarios\base.py
+    659  digital_twin\scenarios\core_business.py
+    236  digital_twin\scenarios\external_scenarios.py
+    267  digital_twin\scenarios\failure_modes.py
+    243  digital_twin\scenarios\time_scenarios.py
+      0  digital_twin\time_engine\__init__.py
+     90  digital_twin\time_engine\clock_drift.py
+    130  digital_twin\time_engine\queue_backlog.py
+    147  digital_twin\time_engine\sla_monitor.py
+    164  digital_twin\time_engine\timer.py
+      0  engine\__init__.py
+    289  engine\engine.py
+      0  events\__init__.py
+    100  events\bus.py
+      0  metrics\__init__.py
+     81  metrics\collector.py
+      5  predictive\__init__.py
+      0  predictive\dashboard\__init__.py
+    179  predictive\dashboard\predictive_health_report_generator.py
+     61  predictive\dashboard\predictive_stability_score.py
+     81  predictive\dashboard\predictive_timeline.py
+     86  predictive\dashboard\report.py
+     75  predictive\dashboard\score.py
+     61  predictive\dashboard\timeline.py
+    306  predictive\engine.py
+      0  predictive\integration\__init__.py
+     88  predictive\integration\root_cause_bridge.py
+     97  predictive\integration\root_cause_integration.py
+    145  predictive\models.py
+      0  predictive\probability\__init__.py
+    134  predictive\probability\engine.py
+    128  predictive\probability\failure_probability_engine.py
+     53  predictive\probability\probability_threshold_manager.py
+     41  predictive\probability\probability_weight_registry.py
+     37  predictive\probability\thresholds.py
+     38  predictive\probability\weights.py
+      0  predictive\safety\__init__.py
+     45  predictive\safety\isolation.py
+     38  predictive\safety\memory_guard.py
+     67  predictive\safety\performance.py
+     63  predictive\safety\prediction_failure_isolation.py
+     58  predictive\safety\predictive_memory_guard.py
+     72  predictive\safety\predictive_performance_monitor.py
+      0  predictive\trends\__init__.py
+     94  predictive\trends\analyzer.py
+    131  predictive\trends\drift_forecast_window.py
+    147  predictive\trends\drift_trend_analyzer.py
+    125  predictive\trends\drift_velocity_tracker.py
+     79  predictive\trends\forecast.py
+     76  predictive\trends\velocity.py
+      0  predictive\warnings\__init__.py
+     25  predictive\warnings\classifier.py
+     28  predictive\warnings\deduplicator.py
+    210  predictive\warnings\early_warning_engine.py
+    129  predictive\warnings\engine.py
+     46  predictive\warnings\retention.py
+     35  predictive\warnings\warning_deduplicator.py
+     57  predictive\warnings\warning_retention_manager.py
+     41  predictive\warnings\warning_severity_classifier.py
+      0  predictive\workflows\__init__.py
+     68  predictive\workflows\history.py
+     84  predictive\workflows\predictor.py
+     72  predictive\workflows\scorer.py
+      3  recovery\__init__.py
+      0  recovery\blast_radius\__init__.py
+     57  recovery\blast_radius\blast_radius_engine.py
+     47  recovery\blast_radius\dependency_impact_map.py
+     43  recovery\blast_radius\financial_risk_estimator.py
+     47  recovery\blast_radius\inventory_risk_estimator.py
+      0  recovery\containment\__init__.py
+     96  recovery\containment\containment_engine.py
+    107  recovery\containment\containment_rules.py
+     53  recovery\containment\quarantine_manager.py
+     54  recovery\containment\workflow_isolator.py
+      0  recovery\degradation\__init__.py
+     66  recovery\degradation\degradation_levels.py
+     78  recovery\degradation\graceful_degradation.py
+     45  recovery\degradation\operational_fallbacks.py
+     51  recovery\degradation\service_reduction_policy.py
+      0  recovery\escalation\__init__.py
+     89  recovery\escalation\escalation_engine.py
+     85  recovery\escalation\escalation_policy.py
+     36  recovery\escalation\notification_priority.py
+     35  recovery\escalation\severity_classifier.py
+      0  recovery\execution\__init__.py
+    118  recovery\execution\execution_engine.py
+    109  recovery\execution\external_rollback.py
+     97  recovery\execution\partial_rollback.py
+    107  recovery\execution\user_override.py
+      0  recovery\integrity\__init__.py
+     86  recovery\integrity\consistency_verifier.py
+     78  recovery\integrity\corruption_detector.py
+     45  recovery\integrity\integrity_guard.py
+     54  recovery\integrity\partial_state_detector.py
+    300  recovery\models.py
+      0  recovery\orchestration\__init__.py
+     74  recovery\orchestration\containment_router.py
+    296  recovery\orchestration\recovery_orchestrator.py
+     97  recovery\orchestration\recovery_pipeline.py
+      0  recovery\recommendations\__init__.py
+     92  recovery\recommendations\operational_playbooks.py
+     53  recovery\recommendations\recovery_paths.py
+     85  recovery\recommendations\recovery_recommender.py
+     33  recovery\recommendations\remediation_priority.py
+      0  recovery\rollback\__init__.py
+     54  recovery\rollback\dependency_rollback_map.py
+     50  recovery\rollback\rollback_risk_analyzer.py
+     48  recovery\rollback\rollback_simulator.py
+     44  recovery\rollback\rollback_validator.py
+      3  replay\__init__.py
+      0  replay\determinism\__init__.py
+     65  replay\determinism\divergence_detector.py
+     36  replay\determinism\replay_consistency.py
+     42  replay\determinism\replay_determinism.py
+     45  replay\determinism\replay_hashing.py
+      0  replay\forensics\__init__.py
+     61  replay\forensics\causal_forensics.py
+     48  replay\forensics\forensic_analyzer.py
+     38  replay\forensics\incident_forensics.py
+     40  replay\forensics\operational_evidence.py
+    172  replay\models.py
+      0  replay\navigation\__init__.py
+     45  replay\navigation\replay_bookmarks.py
+     46  replay\navigation\replay_navigation.py
+     44  replay\navigation\replay_windows.py
+     44  replay\navigation\time_travel.py
+      0  replay\orchestration\__init__.py
+    249  replay\orchestration\replay_orchestrator.py
+     89  replay\orchestration\replay_pipeline.py
+     35  replay\orchestration\replay_router.py
+      0  replay\reconstruction\__init__.py
+     60  replay\reconstruction\event_chain_builder.py
+     36  replay\reconstruction\incident_reconstructor.py
+     41  replay\reconstruction\state_reconstructor.py
+     37  replay\reconstruction\workflow_reconstructor.py
+      0  replay\replay_engine\__init__.py
+     51  replay\replay_engine\replay_controller.py
+     56  replay\replay_engine\replay_engine.py
+     43  replay\replay_engine\replay_safety_guard.py
+     75  replay\replay_engine\replay_session.py
+      0  replay\snapshots\__init__.py
+     41  replay\snapshots\snapshot_history.py
+     47  replay\snapshots\snapshot_integrity.py
+     47  replay\snapshots\snapshot_loader.py
+     43  replay\snapshots\snapshot_reconstructor.py
+      0  replay\timeline\__init__.py
+     44  replay\timeline\timeline_builder.py
+     51  replay\timeline\timeline_cursor.py
+     40  replay\timeline\timeline_indexer.py
+     54  replay\timeline\timeline_validator.py
+      0  replay\validation\__init__.py
+     65  replay\validation\causal_integrity.py
+     40  replay\validation\replay_validator.py
+     32  replay\validation\snapshot_validator.py
+     52  replay\validation\timeline_integrity.py
+      0  scheduler\__init__.py
+    150  scheduler\scheduler.py
+      0  truth_engine\__init__.py
+      0  truth_engine\collector\__init__.py
+    192  truth_engine\collector\actual.py
+    111  truth_engine\collector\expected.py
+      0  truth_engine\comparator\__init__.py
+    193  truth_engine\comparator\comparator.py
+    111  truth_engine\engine.py
+      0  truth_engine\models\__init__.py
+    259  truth_engine\models\models.py
+      0  truth_engine\reports\__init__.py
+    148  truth_engine\reports\reporter.py
+      0  truth_engine\root_cause\__init__.py
+      0  truth_engine\root_cause\analyzer\__init__.py
+     93  truth_engine\root_cause\analyzer\causal_analyzer.py
+      0  truth_engine\root_cause\classifier\__init__.py
+    143  truth_engine\root_cause\classifier\root_cause_classifier.py
+      0  truth_engine\root_cause\correlator\__init__.py
+    123  truth_engine\root_cause\correlator\event_correlator.py
+    193  truth_engine\root_cause\engine.py
+      0  truth_engine\root_cause\explainer\__init__.py
+    139  truth_engine\root_cause\explainer\explanation_engine.py
+      0  truth_engine\root_cause\graph\__init__.py
+     81  truth_engine\root_cause\graph\causal_graph_builder.py
+      0  truth_engine\root_cause\history\__init__.py
+     91  truth_engine\root_cause\history\drift_memory.py
+    257  truth_engine\root_cause\models.py
+      0  truth_engine\root_cause\patterns\__init__.py
+    185  truth_engine\root_cause\patterns\drift_pattern_detector.py
+      0  truth_engine\scoring\__init__.py
+    143  truth_engine\scoring\scorer.py
+      0  truth_engine\snapshot\__init__.py
+     77  truth_engine\snapshot\snapshot.py
+      0  validators\__init__.py
+      0  workflows\__init__.py
+      0  workflows\definitions\__init__.py
+     87  workflows\definitions\base.py
+     22  workflows\definitions\hr_workflow.py
+     26  workflows\definitions\inventory_workflow.py
+     29  workflows\definitions\purchase_workflow.py
+     31  workflows\definitions\return_workflow.py
+     29  workflows\definitions\sales_workflow.py
+      0  workflows\orchestrator\__init__.py
+    136  workflows\orchestrator\orchestrator.py
+      0  workflows\policies\__init__.py
+    131  workflows\policies\policies.py
+      0  workflows\scenarios\__init__.py
+    128  workflows\scenarios\scenarios.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: tax
+####################################################################################################
+
+Files: 13, Lines: 1111
+
+--- File Summary ---
+      1  __init__.py
+     39  admin.py
+      7  apps.py
+    141  migrations\0001_initial.py
+     63  migrations\0002_alter_taxcategory_created_at_and_more.py
+      0  migrations\__init__.py
+    247  models.py
+     71  serializers\__init__.py
+      4  services\__init__.py
+    127  services\tax_calculator.py
+    207  services\tax_reporting.py
+     17  urls.py
+    187  views.py
+
+--- MODELS ---
+  - TaxCategory | Categories for tax treatment (e.g., Essential Medicines, Regular Goods).
+  - TaxRate | Configurable tax rates with effective date ranges.
+  - TaxJurisdiction | Tax jurisdictions (national, provincial for Afghanistan context).
+  - TaxReturn | Tax filing periods and tracking.
+  - TaxTransaction | Links tax transactions to journal entries for reporting.
+
+--- SERIALIZERS ---
+  - TaxCategorySerializer (__init__.py) | 
+  - TaxRateSerializer (__init__.py) | 
+  - TaxJurisdictionSerializer (__init__.py) | 
+  - TaxReturnSerializer (__init__.py) | 
+  - TaxTransactionSerializer (__init__.py) | 
+  - TaxReturnCreateSerializer (__init__.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - TaxCategoryViewSet (views.py) | CRUD for tax categories.
+  - TaxRateViewSet (views.py) | CRUD for tax rates.
+  - TaxJurisdictionViewSet (views.py) | CRUD for tax jurisdictions.
+  - TaxReturnViewSet (views.py) | CRUD for tax returns.
+  - TaxTransactionViewSet (views.py) | CRUD for tax transactions.
+
+--- SERVICES ---
+  - CLASS TaxCalculationService (tax_calculator.py) | Service for tax calculations using configured tax rates.
+  - CLASS TaxReportingService (tax_reporting.py) | Service for tax reporting and return preparation.
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+                                                     -> include
+
+####################################################################################################
+# APP: test_governance
+####################################################################################################
+
+Files: 10, Lines: 1112
+
+--- File Summary ---
+      0  __init__.py
+     93  baseline_tracker.py
+    131  cicd_integration.py
+    132  confidence_engine.py
+     90  coverage_policy.py
+    172  critical_registry.py
+    106  incremental_ci.py
+    139  quality_analyzer.py
+     77  regression_priority.py
+    172  weighted_coverage.py
+
+--- MODELS ---
+
+--- SERIALIZERS ---
+
+--- VIEWS / VIEWSETS ---
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+
+####################################################################################################
+# APP: workflows
+####################################################################################################
+
+Files: 12, Lines: 1686
+
+--- File Summary ---
+      2  __init__.py
+     12  apps.py
+    207  migrations\0001_initial.py
+     20  migrations\0002_alter_workflowpermission_role.py
+     17  migrations\0003_alter_workflowinstance_unique_together.py
+      0  migrations\__init__.py
+    420  models.py
+     76  serializers.py
+    517  services.py
+    147  signals.py
+     24  urls.py
+    244  views.py
+
+--- MODELS ---
+  - WorkflowInstance | Centralized workflow instance - Generic model that works with any content type.
+  - WorkflowAuditLog | Audit trail for all workflow actions.
+  - ApprovalChain | Multi-level approval chains with amount-based thresholds.
+  - ApprovalLevel | Single level in an approval chain.
+  - ApprovalRequest | Approval request at specific level.
+  - WorkflowRule | Configurable workflow rules (not hardcoded).
+  - WorkflowPermission | Role-based workflow permissions.
+
+--- SERIALIZERS ---
+  - WorkflowInstanceSerializer (serializers.py) | Full workflow instance for CRUD.
+  - WorkflowInstanceListSerializer (serializers.py) | Lightweight serializer for intelligence dashboards.
+  - ApprovalChainSerializer (serializers.py) | 
+  - ApprovalRequestSerializer (serializers.py) | 
+
+--- VIEWS / VIEWSETS ---
+  - WorkflowInstanceViewSet (views.py) | Workflow instances CRUD
+  - ApprovalChainViewSet (views.py) | Approval chains CRUD
+  - ApprovalRequestViewSet (views.py) | Approval requests CRUD
+  - WorkflowStatusView (views.py) | Get workflow status for an entity
+  - WorkflowActionView (views.py) | Perform workflow action (submit, approve, reject, post, cancel)
+  - MyPendingApprovalsView (views.py) | Get pending approval requests for current user
+  - ApprovalRequestActionView (views.py) | Approve or reject an approval request
+
+--- SERVICES ---
+
+--- SIGNALS ---
+
+--- PERMISSIONS ---
+  - WorkflowPermission (models.py) | Role-based workflow permissions.
+
+--- MIDDLEWARE ---
+
+--- URL ROUTES ---
+  status/<str:entity_type>/<int:entity_id>/          -> WorkflowStatusView.as_view
+  action/<int:workflow_id>/                          -> WorkflowActionView.as_view
+  my-pending/                                        -> MyPendingApprovalsView.as_view
+  request/<int:request_id>/action/                   -> ApprovalRequestActionView.as_view
