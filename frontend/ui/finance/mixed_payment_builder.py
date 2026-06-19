@@ -72,7 +72,7 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
         splits_group = QGroupBox("Payment Splits")
         splits_group.setFont(QFont("Segoe UI", TEXT_LABEL))
         splits_group.setStyleSheet(
-            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         splits_layout = QVBoxLayout(splits_group)
@@ -98,7 +98,7 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
         self.validation_group = QGroupBox("Validation")
         self.validation_group.setFont(QFont("Segoe UI", TEXT_LABEL))
         self.validation_group.setStyleSheet(
-            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         validation_layout = QGridLayout(self.validation_group)
@@ -192,7 +192,7 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
             EnterpriseButton {{
                 background-color: transparent;
                 color: {COLOR_DANGER};
-                font-size: 16pt;
+                font-size: {TEXT_CARD_TITLE}pt;
                 font-weight: bold;
                 border: none;
             }}
@@ -329,7 +329,7 @@ class MixedPaymentBuilderDialog(EnterpriseDialog):
             QLineEdit {{
                 background-color: {COLOR_BG_INPUT};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_XS}px {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
                 min-height: 28px;

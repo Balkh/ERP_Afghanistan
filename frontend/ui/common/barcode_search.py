@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QLineEdit, QVBoxLayout, QFrame,
                                QListWidget, QListWidgetItem, QLabel)
 from PySide6.QtCore import Qt, Signal, QTimer, QEvent
@@ -126,7 +127,7 @@ class BarcodeSearchLineEdit(QLineEdit):
                 if products:
                     self.product_selected.emit(products[0])
         except Exception as e:
-            print(f"Product search error: {e}")
+            logging.getLogger(__name__).warning(f"Product search error: {e}")
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):

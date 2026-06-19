@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFrame, QWidget,
                                 QLineEdit, QTextEdit, QComboBox, QLabel)
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -116,7 +117,7 @@ class CategoryFormDialog(EnterpriseDialog):
                 self.description_input.setPlainText(category.get("description") or "")
                 self.active_check.setCurrentIndex(1 if category.get("is_active") else 0)
         except Exception as e:
-            print(f"Error loading category data: {e}")
+            logging.getLogger(__name__).warning(f"Error loading category data: {e}")
 
     def get_form_data(self):
         return {

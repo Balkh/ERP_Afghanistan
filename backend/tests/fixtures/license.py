@@ -17,7 +17,8 @@ from licensing.providers import (
     TestFingerprintProvider,
     set_fingerprint_provider,
 )
-from licensing.services import LicenseService
+from licensing.providers import ProductionFingerprintProvider
+from licensing.services import LicenseService, get_fingerprint_provider_instance
 
 
 # Standard test fingerprint values

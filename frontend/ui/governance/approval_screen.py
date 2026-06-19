@@ -43,7 +43,7 @@ class ApprovalWorkflowScreen(BaseScreen):
         layout.addWidget(header)
 
         splitter = QSplitter(Qt.Horizontal)
-        splitter.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG};")
+        splitter.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px;")
 
         # Left: Workflow list
         left_panel = QWidget()
@@ -82,7 +82,7 @@ class ApprovalWorkflowScreen(BaseScreen):
         self.detail_text.setReadOnly(True)
         self.detail_text.setStyleSheet(f"""
             QTextEdit {{ background-color: {COLOR_BG_MAIN}; color: {COLOR_TEXT_PRIMARY};
-            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_SM}px; }}
+            border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_SM}px; padding: {SPACING_SM}px; }}
         """)
         right_layout.addWidget(self.detail_text)
 

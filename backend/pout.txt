@@ -1,0 +1,18 @@
+=== Current DB state ===
+  Products: 164
+  Customers: 0
+  Stock Movements: 0
+  Sales Invoices: 0
+  Accounts: 31
+  Journal Entries: 100
+
+=== Query timing ===
+  List products[:50]: returned 50, 3.0ms
+  List products[:100]: returned 100, 3.4ms
+  List products[:500]: returned 164, 4.9ms
+  Count all products: returned 0, 0.5ms
+  List customers[:50]: returned 0, 23.8ms
+  List stock_movements[:50]: returned 0, 6.0ms
+  List sales_invoices[:50]: returned 0, 13.4ms
+  List journal_entries[:50]: returned 50, 3.7ms
+  Count journal_entries: returned 0, 0.6ms

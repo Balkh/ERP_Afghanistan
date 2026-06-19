@@ -229,11 +229,16 @@ class Command(BaseCommand):
         for account_data in accounts:
             if not account_data['accounting_account']:
                 continue
-            _, created = PaymentAccount.objects.get_or_create(
+            pa, created = PaymentAccount.objects.get_or_create(
                 code=account_data['code'],
                 defaults=account_data
             )
             if created:
                 created_count += 1
+            else:
+                # Ensure existing accounts have sufficient balance for testing
+                pa.current_balance = Decimal('100000.00')
+                pa.save()
 
         self.stdout.write(f'  Created {created_count} payment accounts')
+        self.stdout.write(self.style.SUCCESS('All payment accounts seeded with initial balance of 100,000 AFN'))

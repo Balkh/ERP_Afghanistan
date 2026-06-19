@@ -1,4 +1,5 @@
 """Phase 20: Customer Payment Workspace screen."""
+import logging
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QComboBox, QGroupBox, QApplication,
@@ -187,7 +188,7 @@ class CustomerPaymentWorkspace(BaseScreen):
         section = QGroupBox("Allocation Summary")
         section.setFont(QFont("Segoe UI", TEXT_LABEL))
         section.setStyleSheet(
-            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
         )
         layout = QGridLayout(section)
@@ -260,7 +261,7 @@ class CustomerPaymentWorkspace(BaseScreen):
             for c in customers:
                 self.customer_combo.addItem(c.get("name", ""), c.get("id"))
         except Exception as e:
-            print(f"Error loading customers: {e}")
+            logging.getLogger(__name__).warning(f"Error loading customers: {e}")
 
     def _on_customer_selected(self, index):
         """Handle customer selection."""
@@ -288,7 +289,7 @@ class CustomerPaymentWorkspace(BaseScreen):
             else:
                 self._show_error("Failed to load workspace")
         except Exception as e:
-            print(f"Error loading workspace: {e}")
+            logging.getLogger(__name__).warning(f"Error loading workspace: {e}")
             self._show_error(f"Error: {e}")
         self._show_data()
 

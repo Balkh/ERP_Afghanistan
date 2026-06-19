@@ -8,7 +8,7 @@ Detects drift, missing entries, and balance discrepancies.
 from decimal import Decimal
 from datetime import date
 from typing import Optional, Dict, List
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 
 from accounting.models import Account, JournalEntry, JournalEntryLine
 from inventory.models import Batch, StockMovement

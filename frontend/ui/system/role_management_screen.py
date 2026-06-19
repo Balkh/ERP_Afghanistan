@@ -1,4 +1,5 @@
 """Role Management Screen for ERP — CRUD for roles + permission assignment."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLabel, QAbstractItemView,
                                 QLineEdit, QGroupBox,
                                 QCheckBox, QScrollArea, QWidget,
@@ -16,6 +17,9 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_
                           BORDER_RADIUS_MD, COLOR_BG_MAIN, COLOR_BG_SURFACE,
                           COLOR_BG_ELEVATED, COLOR_BORDER, COLOR_TEXT_PRIMARY,
                           COLOR_TEXT_SECONDARY, COLOR_SUCCESS)
+
+
+logger = logging.getLogger(__name__)
 
 
 class RoleManagementScreen(BaseScreen):
@@ -110,7 +114,7 @@ class RoleManagementScreen(BaseScreen):
         self.perm_desc.setMaximumHeight(60)
         self.perm_desc.setStyleSheet(f"""
             QTextEdit {{ background: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_SECONDARY};
-                        border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
+                        border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px;
                         padding: {SPACING_SM}; font-size: {TEXT_BODY_SMALL}pt; }}
         """)
         layout.addWidget(self.perm_desc)
@@ -141,15 +145,13 @@ class RoleManagementScreen(BaseScreen):
                 self._roles = result.get("data", [])
                 self._populate_role_table()
         except Exception as e:
-            # TODO: Replace with user-facing error state (no error_label/empty_label available)
-            print(f"Error loading roles: {e}")
+            logger.error(f"Error loading roles: {e}")
         try:
             result = self._api_client.get_permissions()
             if result.get("success"):
                 self._permissions = result.get("data", [])
         except Exception as e:
-            # TODO: Replace with user-facing error state (no error_label/empty_label available)
-            print(f"Error loading permissions: {e}")
+            logger.error(f"Error loading permissions: {e}")
 
     def _populate_role_table(self):
         rows = []
@@ -214,7 +216,7 @@ class RoleManagementScreen(BaseScreen):
             group = QGroupBox(f"{module_name} ({len(modules[module_name])})")
             group.setStyleSheet(f"""
                 QGroupBox {{ font-weight: bold; font-size: {TEXT_BODY}pt;
-                    border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
+                    border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px;
                     margin-top: {SPACING_SM}; padding-top: {SPACING_MD}; padding-left: {SPACING_MD};
                     color: {COLOR_TEXT_PRIMARY}; }}
                 QGroupBox::title {{ subcontrol-origin: margin; left: {SPACING_SM}px;
@@ -329,11 +331,11 @@ class RoleDialog(EnterpriseDialog):
             QLabel {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt; }}
             QLineEdit, QTextEdit {{
                 background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};
+                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px;
                 padding: {SPACING_SM}; font-size: {TEXT_BODY}pt;
             }}
             QCheckBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt; spacing: {SPACING_SM}; }}
-            QCheckBox::indicator {{ width: 18px; height: 18px; border-radius: {BORDER_RADIUS_SM};
+            QCheckBox::indicator {{ width: 18px; height: 18px; border-radius: {BORDER_RADIUS_SM}px;
                 border: 2px solid {COLOR_BORDER}; background-color: {COLOR_BG_SURFACE}; }}
             QCheckBox::indicator:checked {{ background-color: {COLOR_SUCCESS}; border-color: {COLOR_SUCCESS}; }}
         """)

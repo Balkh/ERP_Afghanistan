@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional
-from ui.constants import SPACING_XL, SPACING_SM, FONT_SIZE_LG, FONT_SIZE_24, FONT_SIZE_16, FONT_SIZE_SM, FONT_SIZE_8, FONT_SIZE_MD, FONT_SIZE_XXL, FONT_SIZE_XL
+from ui.constants import SPACING_XL, SPACING_SM, FONT_SIZE_LG, FONT_SIZE_24, FONT_SIZE_16, FONT_SIZE_SM, FONT_SIZE_8, FONT_SIZE_MD, FONT_SIZE_XXL, FONT_SIZE_XL, COLOR_TEXT_ON_PRIMARY
 from utils.qr_generator import QRCodeGenerator
 
 class InvoiceTemplateEngine:
@@ -51,7 +51,7 @@ class InvoiceTemplateEngine:
         return f"""
             <style>
                 body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: {SPACING_XL}px; font-size: {FONT_SIZE_LG}px; color: {colors['text']}; background: {colors['background']}; }}
-                .header {{ background-color: {colors['primary']}; color: white; padding: {SPACING_XL}px; border-radius: 5px; position: relative; }}
+                .header {{ background-color: {colors['primary']}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_XL}px; border-radius: 5px; position: relative; }}
                 .header h1 {{ margin: 0; font-size: {FONT_SIZE_24}px; }}
                 .header p {{ margin: 5px 0; opacity: 0.9; }}
                 .logo-container {{ position: absolute; top: 20px; right: 20px; }}
@@ -59,7 +59,7 @@ class InvoiceTemplateEngine:
                 .invoice-info {{ display: flex; justify-content: space-between; margin: 20px 0; border-bottom: 2px solid {colors['accent']}; padding-bottom: 10px; }}
                 .invoice-info div {{ width: 48%; }}
                 table {{ width: 100%; border-collapse: collapse; margin: 20px 0; table-layout: fixed; }}
-                th {{ background-color: {colors['accent']}; color: white; padding: 10px; text-align: left; }}
+                th {{ background-color: {colors['accent']}; color: {COLOR_TEXT_ON_PRIMARY}; padding: 10px; text-align: left; }}
                 td {{ padding: {SPACING_SM}px 10px; border-bottom: 1px solid #ddd; word-wrap: break-word; overflow: hidden; }}
                 .col-id {{ width: 30px; }}
                 .col-product {{ width: auto; }}
@@ -71,7 +71,7 @@ class InvoiceTemplateEngine:
                 .totals table {{ width: 300px; margin-left: auto; }}
                 .totals th {{ text-align: right; border-bottom: none; }}
                 .totals td {{ text-align: right; border-bottom: none; }}
-                .grand-total {{ font-size: {FONT_SIZE_16}px; font-weight: bold; background-color: {colors['primary']}; color: white; }}
+                .grand-total {{ font-size: {FONT_SIZE_16}px; font-weight: bold; background-color: {colors['primary']}; color: {COLOR_TEXT_ON_PRIMARY}; }}
                 .footer {{ text-align: center; margin-top: 40px; color: #666; font-size: {FONT_SIZE_SM}px; border-top: 1px solid #ddd; padding-top: 10px; }}
                 .status {{ display: inline-block; padding: 5px 10px; border-radius: 3px; font-weight: bold; text-transform: uppercase; }}
                 .qr-code {{ margin-top: 10px; text-align: center; }}

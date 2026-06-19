@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QFrame, QVBoxLayout, QHBoxLayout, QLabel,
                                QComboBox, QDateEdit,
                                QGroupBox)
@@ -13,6 +14,7 @@ from ui.components.dialogs import AlertDialog
 from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
+from theme.style_builder import UIStyleBuilder
 
 
 class AccountLedgerScreen(BaseScreen):
@@ -104,13 +106,13 @@ class AccountLedgerScreen(BaseScreen):
         # Loading and Empty states
         self.loading_label = QLabel("Loading ledger...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("Select an account and load the ledger.")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL}px;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -170,7 +172,7 @@ class AccountLedgerScreen(BaseScreen):
                 if acc_id:
                     self.account_combo.addItem(f"{code} - {name}", acc_id)
         except Exception as e:
-            print(f"Error loading accounts: {e}")
+            logging.getLogger(__name__).warning(f"Error loading accounts: {e}")
             self.accounts = []
 
     def load_ledger(self):

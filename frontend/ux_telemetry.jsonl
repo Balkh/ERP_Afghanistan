@@ -198,3 +198,4 @@
 {"type": "navigation", "screen": "Products", "duration_ms": 2163.9, "ts": 1780202841.8131335}
 {"type": "dialog", "dialog_type": "custom", "duration_ms": 8916.3, "ts": 1780202859.0795078}
 {"type": "exit", "point": "close", "ts": 1780202953.4345636}
+{"type": "exit", "point": "close", "ts": 1781562327.9179332}

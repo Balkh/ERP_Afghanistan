@@ -125,7 +125,7 @@ class ExcelExporter(BaseExporter):
             cell = ws.cell(row=self.current_row, column=col)
             if isinstance(value, (int, float, Decimal)):
                 cell.value = float(value)
-                cell.alignment = Alignment(horizontal='right')
+                cell.alignment = self.Alignment(horizontal='right')
             else:
                 cell.value = str(value) if value else ''
             if bold:
@@ -408,6 +408,14 @@ class PDFExporter(BaseExporter):
             from reportlab.pdfgen import canvas
             from io import BytesIO
             
+            # Store reportlab references for use in _build_* methods
+            self._rl_colors = colors
+            self._rl_inch = inch
+            self._rl_Paragraph = Paragraph
+            self._rl_Spacer = Spacer
+            self._rl_Table = Table
+            self._rl_TableStyle = TableStyle
+
             buffer = BytesIO()
             doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=0.5*inch, bottomMargin=0.5*inch)
             story = []
@@ -444,6 +452,7 @@ class PDFExporter(BaseExporter):
             story.append(Paragraph(f'Generated: {date.today()}', normal_style))
             
             # QR Code for verification
+            from accounting.services.report_exporter import ReportExporter
             qr_b64 = ReportExporter.generate_qr_code_base64(data, report_type)
             if qr_b64:
                 from reportlab.platypus import Image
@@ -465,6 +474,10 @@ class PDFExporter(BaseExporter):
     
     def _build_trial_balance_table(self, story, data, style):
         """Build trial balance table."""
+        Table = self._rl_Table
+        TableStyle = self._rl_TableStyle
+        colors = self._rl_colors
+
         table_data = [['Account Code', 'Account Name', 'Debit', 'Credit']]
         
         for row in data.get('accounts', []):
@@ -492,6 +505,10 @@ class PDFExporter(BaseExporter):
     
     def _build_profit_loss_table(self, story, data, style):
         """Build P&L table."""
+        Paragraph = self._rl_Paragraph
+        Spacer = self._rl_Spacer
+        inch = self._rl_inch
+
         story.append(Paragraph(f'Revenue: {self._fmt(data.get("total_revenue", 0))}', style))
         story.append(Paragraph(f'COGS: {self._fmt(data.get("total_cogs", 0))}', style))
         story.append(Paragraph(f'Gross Profit: {self._fmt(data.get("gross_profit", 0))}', style))
@@ -501,6 +518,8 @@ class PDFExporter(BaseExporter):
     
     def _build_balance_sheet_table(self, story, data, style):
         """Build Balance Sheet table."""
+        Paragraph = self._rl_Paragraph
+
         assets = data.get('assets', {})
         story.append(Paragraph(f'Total Assets: {self._fmt(assets.get("total", 0))}', style))
         
@@ -512,6 +531,10 @@ class PDFExporter(BaseExporter):
     
     def _build_aging_table(self, story, data, style):
         """Build aging table."""
+        Table = self._rl_Table
+        TableStyle = self._rl_TableStyle
+        colors = self._rl_colors
+
         table_data = [['Party', 'Current', '1-30', '31-60', '61-90', '90+', 'Total']]
         
         for row in data.get('aging_rows', []):

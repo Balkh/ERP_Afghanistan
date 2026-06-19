@@ -238,7 +238,7 @@ class Sidebar(QWidget):
             }}
             QScrollArea>QWidget>QScrollBar::handle:vertical {{
                 background: {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
             }}
             QScrollArea>QWidget>QScrollBar::add-line:vertical, 
             QScrollArea>QWidget>QScrollBar::sub-line:vertical {{
@@ -490,7 +490,7 @@ class Sidebar(QWidget):
                 padding-bottom: {SPACING_XS}px;
                 color: {COLOR_PRIMARY};
                 font-weight: bold;
-                font-size: {TEXT_CARD_TITLE}px;
+                font-size: {TEXT_CARD_TITLE}pt;
                 min-height: 24px;
             }}
             EnterpriseButton:hover {{
@@ -601,7 +601,7 @@ class Sidebar(QWidget):
                     color: {COLOR_TEXT_PRIMARY};
                     border: none;
                     border-left: 3px solid {COLOR_SIDEBAR_ACTIVE_BORDER};
-                    border-radius: {BORDER_RADIUS_MD};
+                    border-radius: {BORDER_RADIUS_MD}px;
                     text-align: left;
                     padding-left: {SPACING_LG - 3}px;
                     font-weight: 600;
@@ -617,7 +617,7 @@ class Sidebar(QWidget):
                     background-color: transparent;
                     color: {COLOR_TEXT_SECONDARY};
                     border: none;
-                    border-radius: {BORDER_RADIUS_MD};
+                    border-radius: {BORDER_RADIUS_MD}px;
                     text-align: left;
                     padding-left: {SPACING_LG}px;
                     font-weight: 400;
@@ -709,7 +709,7 @@ class Sidebar(QWidget):
                 }}
                 QScrollArea>QWidget>QScrollBar::handle:vertical {{
                     background: {COLOR_BORDER};
-                    border-radius: {BORDER_RADIUS_SM};
+                    border-radius: {BORDER_RADIUS_SM}px;
                 }}
                 QScrollArea>QWidget>QScrollBar::add-line:vertical, 
                 QScrollArea>QWidget>QScrollBar::sub-line:vertical {{
@@ -745,7 +745,7 @@ class Sidebar(QWidget):
                     background-color: transparent;
                     color: {COLOR_TEXT_SECONDARY};
                     border: none;
-                    border-radius: {BORDER_RADIUS_MD};
+                    border-radius: {BORDER_RADIUS_MD}px;
                     text-align: left;
                     padding-left: {SPACING_LG}px;
                     font-weight: 400;
@@ -772,7 +772,7 @@ class Sidebar(QWidget):
                         padding-left: {SPACING_SM}px;
                         color: {COLOR_TEXT_PRIMARY};
                         font-weight: bold;
-                        font-size: {TEXT_CARD_TITLE}px;
+                        font-size: {TEXT_CARD_TITLE}pt;
                     }}
                     EnterpriseButton:hover {{
                         background-color: {COLOR_BG_HOVER};
@@ -780,7 +780,7 @@ class Sidebar(QWidget):
                 """)
                 arrow = getattr(header_btn, '_arrow', None)
                 if arrow:
-                    arrow.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_BODY}px;")
+                    arrow.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_BODY}pt;")
                 for c in header_btn.findChildren(QLabel):
                     if c is not arrow:
                         c.setStyleSheet(f"color: {COLOR_PRIMARY};")
@@ -792,7 +792,7 @@ class Sidebar(QWidget):
                     background-color: {COLOR_DANGER};
                     color: {COLOR_TEXT_ON_PRIMARY};
                     border: none;
-                    border-radius: {BORDER_RADIUS_LG};
+                    border-radius: {BORDER_RADIUS_LG}px;
                     padding: {SPACING_MD}px;
                 }}
                 EnterpriseButton:hover {{

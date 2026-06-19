@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QTextEdit,
                                 QHBoxLayout, QLabel, QFileDialog, QWidget)
 from PySide6.QtGui import QFont
@@ -127,7 +128,7 @@ class PrintableInvoiceDialog(EnterpriseDialog):
                 self.preview.setHtml(html)
                 return
         except Exception as e:
-            print(f"Dynamic template failed: {e}")
+            logging.getLogger(__name__).warning(f"Dynamic template failed: {e}")
             
         # Fallback to static HTML
         html = self.generate_invoice_html()
@@ -184,7 +185,7 @@ class PrintableInvoiceDialog(EnterpriseDialog):
                 .totals td {{ text-align: right; font-weight: 500; }}
                 .grand-total {{ font-size: {TEXT_CARD_TITLE}px; font-weight: bold; background-color: {header_color} !important; color: {COLOR_TEXT_ON_PRIMARY} !important; }}
                 .footer {{ text-align: center; margin-top: 40px; color: {footer_text_color}; font-size: {TEXT_TABLE}px; border-top: 1px solid {footer_border_color}; padding-top: 10px; }}
-                .status {{ display: inline-block; padding: {SPACING_XS}px 10px; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: 10px; }}
+                .status {{ display: inline-block; padding: {SPACING_XS}px 10px; border-radius: 4px; font-weight: bold; text-transform: uppercase; font-size: {TEXT_TABLE}px; }}
                 .status-paid {{ background-color: {status_paid_bg}; color: {COLOR_TEXT_ON_PRIMARY}; }}
                 .status-unpaid {{ background-color: {status_unpaid_bg}; color: {COLOR_TEXT_ON_PRIMARY}; }}
                 .status-partial {{ background-color: {status_partial_bg}; color: {COLOR_TEXT_ON_PRIMARY}; }}

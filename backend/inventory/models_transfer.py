@@ -1,6 +1,7 @@
 """
 Warehouse Transfer models for multi-warehouse inventory transfers.
 """
+from decimal import Decimal
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User

@@ -109,25 +109,25 @@ class PayslipDialog(EnterpriseDialog):
         <html>
         <head>
             <style>
-                body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: {SPACING_XL}px; font-size: {TEXT_BODY}px; color: {COLOR_TEXT_PRIMARY}; background-color: {COLOR_BG_SURFACE}; }}
+                body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: {SPACING_XL}px; font-size: {TEXT_BODY}pt; color: {COLOR_TEXT_PRIMARY}; background-color: {COLOR_BG_SURFACE}; }}
                 .header {{ background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_XL}px; border-radius: {BORDER_RADIUS_LG}px; text-align: center; }}
-                .header h1 {{ margin: 0; font-size: {TEXT_SECTION_TITLE}px; }}
+                .header h1 {{ margin: 0; font-size: {TEXT_SECTION_TITLE}pt; }}
                 .header p {{ margin: {SPACING_SM}px 0 0 0; opacity: 0.9; }}
                 .info-grid {{ display: flex; justify-content: space-between; margin: {SPACING_XL}px 0; gap: {SPACING_LG}px; }}
                 .info-grid .info-box {{ flex: 1; background: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; padding: {SPACING_MD}px {SPACING_LG}px; }}
-                .info-grid .info-box p {{ margin: {SPACING_SM}px 0; font-size: {TEXT_BODY}px; }}
+                .info-grid .info-box p {{ margin: {SPACING_SM}px 0; font-size: {TEXT_BODY}pt; }}
                 .info-grid .info-box strong {{ color: {COLOR_TEXT_SECONDARY}; }}
                 .columns {{ display: flex; gap: {SPACING_LG}px; margin: {SPACING_XL}px 0; }}
                 .columns .col {{ flex: 1; background: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; overflow: hidden; }}
-                .col-header {{ background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; font-weight: 700; font-size: {TEXT_BODY}px; }}
+                .col-header {{ background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; font-weight: 700; font-size: {TEXT_BODY}pt; }}
                 table {{ width: 100%; border-collapse: collapse; }}
-                th {{ background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px 10px; text-align: left; font-weight: 600; font-size: {TEXT_BODY}px; }}
-                td {{ padding: 8px 10px; border-bottom: 1px solid {COLOR_BORDER}; color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}px; }}
+                th {{ background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px 10px; text-align: left; font-weight: 600; font-size: {TEXT_BODY}pt; }}
+                td {{ padding: 8px 10px; border-bottom: 1px solid {COLOR_BORDER}; color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt; }}
                 .total-row td {{ font-weight: 700; background-color: {COLOR_BG_SURFACE}; border-top: 2px solid {COLOR_BORDER}; }}
                 .net-pay {{ background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; text-align: center; padding: {SPACING_MD}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_LG}px; margin: {SPACING_XL}px 0; }}
-                .net-pay h2 {{ margin: 0; font-size: {TEXT_SECTION_TITLE}px; }}
-                .net-pay .amount {{ font-size: {TEXT_SECTION_TITLE}px; font-weight: 700; margin-top: {SPACING_SM}px; }}
-                .footer {{ text-align: center; margin-top: {SPACING_XL}px; color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}px; border-top: 1px solid {COLOR_BORDER}; padding-top: {SPACING_MD}px; }}
+                .net-pay h2 {{ margin: 0; font-size: {TEXT_SECTION_TITLE}pt; }}
+                .net-pay .amount {{ font-size: {TEXT_SECTION_TITLE}pt; font-weight: 700; margin-top: {SPACING_SM}px; }}
+                .footer {{ text-align: center; margin-top: {SPACING_XL}px; color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; border-top: 1px solid {COLOR_BORDER}; padding-top: {SPACING_MD}px; }}
             </style>
         </head>
         <body>

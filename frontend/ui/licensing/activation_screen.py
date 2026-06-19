@@ -67,7 +67,7 @@ class ActivationScreen(QWidget):
 
         device_id_label = QLabel(f"Device ID: {self.device_id}")
         device_id_label.setStyleSheet(f"font-family: Consolas; font-size: {TEXT_BODY}pt; color: {COLOR_TEXT_PRIMARY};")
-        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_SM}px; border-radius: {BORDER_RADIUS_SM};")
+        device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_SM}px; border-radius: {BORDER_RADIUS_SM}px;")
         device_layout.addWidget(device_id_label)
         
         device_group.setLayout(device_layout)
@@ -144,7 +144,7 @@ class ActivationScreen(QWidget):
             self.selected_license_file = file_path
             file_name = os.path.basename(file_path)
             self.file_label.setText(f"Selected: {file_name}")
-            self.file_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-family: Consolas; font-size: {TEXT_HELPER}px; padding: {SPACING_SM}px;")
+            self.file_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-family: Consolas; font-size: {TEXT_HELPER}pt; padding: {SPACING_SM}px;")
             self.activate_button.setEnabled(True)
             self.status_label.setText("License file selected. Ready to activate.")
             self.status_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-weight: bold; padding: {SPACING_SM}px;")

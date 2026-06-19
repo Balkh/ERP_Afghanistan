@@ -21,6 +21,8 @@ class EndToEndFlowTest(TransactionTestCase):
         from purchases.models import Supplier
         from inventory.models import Product, Warehouse, Category, Unit
         from core.models import Company
+        from payments.models import PaymentAccount, PaymentMethod
+        from accounting.models import Account
 
         # Create company
         company = Company.objects.create(
@@ -60,6 +62,26 @@ class EndToEndFlowTest(TransactionTestCase):
             form="Tablet",
             manufacturer="Test Mfg",
             sku="SKU-001"
+        )
+
+        # Create payment account for supplier payments
+        cash_account = Account.objects.filter(code='1000', company=company).first()
+        if not cash_account:
+            cash_account = Account.objects.create(
+                code='1000',
+                name='Cash',
+                account_type='ASSET',
+                is_active=True,
+                company=company
+            )
+        
+        payment_account = PaymentAccount.objects.create(
+            code='CASH-001',
+            name='Test Cash Account',
+            account_type='CASH',
+            accounting_account=cash_account,
+            current_balance=Decimal('10000.00'),
+            is_active=True
         )
 
         # Create purchase invoice
@@ -120,13 +142,38 @@ class EndToEndFlowTest(TransactionTestCase):
         supplier.refresh_from_db()
         self.assertEqual(supplier.balance, Decimal('0.00'))
 
-        # Create payment
+        # Create payment account for the test
+        cash_method = PaymentMethod.objects.filter(name='Cash').first()
+        if not cash_method:
+            cash_method = PaymentMethod.objects.create(name='Cash', code='CASH')
+        
+        cash_account = Account.objects.filter(code='1000').first()
+        if not cash_account:
+            cash_account = Account.objects.create(
+                company=company,
+                name='Cash',
+                code='1000',
+                account_type='ASSET',
+                is_active=True
+            )
+        
+        payment_account = PaymentAccount.objects.create(
+            name='Test Cash Account',
+            code='TEST-CASH-001',
+            account_type='CASH',
+            accounting_account=cash_account,
+            is_active=True,
+            current_balance=Decimal('10000.00')  # Seed with sufficient funds
+        )
+
+        # Create payment - SupplierPayment now supports explicit payment_account
         payment = SupplierPayment.objects.create(
             supplier=supplier,
             invoice=invoice,
             amount=Decimal('1000.00'),
             payment_date=date.today(),
-            payment_method='CASH'
+            payment_method='CASH',
+            payment_account=payment_account  # Explicitly assign the seeded account
         )
 
         # Verify payment recorded

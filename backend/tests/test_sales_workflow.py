@@ -108,7 +108,7 @@ class SalesInvoiceCreationWorkflowTests(BaseTestCase):
 
         from django.db import connection
         with self.assertRaises(Exception):
-            invoice2 = SalesInvoice(invoice_number="INV-UNIQUE-001", customer=customer, order_date=date.today(), invoice_date=date.today(), due_date=date.today())
+            invoice2 = SalesInvoice(invoice_number="INV-UNIQUE-001", customer=invoice1.customer, order_date=date.today(), invoice_date=date.today(), due_date=date.today())
             invoice2.save()
 
     def test_invoice_persists_to_database(self):

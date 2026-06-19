@@ -1,0 +1,772 @@
+{
+  "nodes": [
+    {
+      "id": "design_enforcement_phased_yml",
+      "label": "Design System CI Enforcement Workflow",
+      "file_type": "document",
+      "source_file": "frontend/.github/workflows/design_enforcement_phased.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "pre_commit_config_yaml",
+      "label": "Pre-commit Hooks Configuration",
+      "file_type": "document",
+      "source_file": "frontend/.pre-commit-config.yaml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "frontend_forensic_audit_md",
+      "label": "Enterprise Frontend Forensic Audit",
+      "file_type": "document",
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-30",
+      "author": "Principal Enterprise UX Architect",
+      "contributor": null
+    },
+    {
+      "id": "installer_readme_md",
+      "label": "Installer System Documentation",
+      "file_type": "document",
+      "source_file": "installer/README.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "requirements_dev_txt",
+      "label": "Development Dependencies",
+      "file_type": "document",
+      "source_file": "requirements-dev.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "requirements_txt",
+      "label": "Production Dependencies",
+      "file_type": "document",
+      "source_file": "requirements.txt",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "vendor_licensing_readme_md",
+      "label": "Vendor License Generator Documentation",
+      "file_type": "document",
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "phased_ci_enforcement_script",
+      "label": "Phased CI Enforcement Script",
+      "file_type": "code",
+      "source_file": "frontend/scripts/phased_ci_enforcement.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "pre_commit_enforcer_script",
+      "label": "Pre-commit Design System Enforcer",
+      "file_type": "code",
+      "source_file": "frontend/scripts/pre_commit_enforcer.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "pre_commit_certifier_script",
+      "label": "Pre-commit Enterprise UX Certifier",
+      "file_type": "code",
+      "source_file": "frontend/scripts/pre_commit_certifier.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "enterprise_table_component",
+      "label": "EnterpriseTable",
+      "file_type": "code",
+      "source_file": "frontend/ui/components/tables.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "enterprise_dialog_component",
+      "label": "EnterpriseDialog",
+      "file_type": "code",
+      "source_file": "frontend/ui/components/dialogs.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "enterprise_button_component",
+      "label": "EnterpriseButton",
+      "file_type": "code",
+      "source_file": "frontend/ui/components/buttons.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "theme_engine_component",
+      "label": "ThemeEngine",
+      "file_type": "code",
+      "source_file": "frontend/ui/theme.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "base_screen_component",
+      "label": "BaseScreen",
+      "file_type": "code",
+      "source_file": "frontend/ui/screens/base_screen.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "form_section_component",
+      "label": "FormSection",
+      "file_type": "code",
+      "source_file": "frontend/ui/components/forms.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "form_field_component",
+      "label": "FormField",
+      "file_type": "code",
+      "source_file": "frontend/ui/components/forms.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "confirm_dialog_component",
+      "label": "ConfirmDialog",
+      "file_type": "code",
+      "source_file": "frontend/ui/components/dialogs.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "notification_manager_component",
+      "label": "NotificationManager",
+      "file_type": "code",
+      "source_file": "frontend/ui/components/notifications.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "nsis_installer",
+      "label": "NSIS Installer",
+      "file_type": "code",
+      "source_file": "installer/build_installer.bat",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "python_installer",
+      "label": "Python Installer",
+      "file_type": "code",
+      "source_file": "installer/python_installer.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "first_run_setup",
+      "label": "First-Run Setup Script",
+      "file_type": "code",
+      "source_file": "installer/first_run_setup.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "license_generator_tool",
+      "label": "License Generator Tool",
+      "file_type": "code",
+      "source_file": "vendor_tools/license_generator.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "rsa_license_signing",
+      "label": "RSA License Signing Mechanism",
+      "file_type": "rationale",
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Private keys never leave vendor machine; public key ships with ERP; licenses are RSA-signed .lic files validated by device fingerprint"
+    },
+    {
+      "id": "design_system_governance",
+      "label": "Design System Governance",
+      "file_type": "rationale",
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Design system is well-architected with comprehensive tokens and enterprise components but catastrophically under-adopted (~50-70% bypass rate). Governance failure is adoption failure, not design failure."
+    },
+    {
+      "id": "component_adoption_failure",
+      "label": "Component Adoption Failure",
+      "file_type": "rationale",
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "71% of dialogs, 55% of tables, 95% of forms, and 80+ notification instances bypass the design system. Two parallel implementation paths exist."
+    },
+    {
+      "id": "theme_engine_registration_failure",
+      "label": "ThemeEngine Registration Failure",
+      "file_type": "rationale",
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Only 3 widgets register with ThemeEngine for theme switching. ~40+ screens do not register, meaning runtime theme switching will not update these screens."
+    },
+    {
+      "id": "information_architecture_chaos",
+      "label": "Information Architecture Chaos",
+      "file_type": "rationale",
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "67 sidebar entries, 12 groups, 3 levels of nested tabs, duplicate implementations, enterprise debugging tools visible to pharmacy staff, 7 orphaned screens."
+    },
+    {
+      "id": "phased_enforcement_model",
+      "label": "Phased Enforcement Model",
+      "file_type": "rationale",
+      "source_file": "frontend/.github/workflows/design_enforcement_phased.yml",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null,
+      "rationale": "Three-phase CI enforcement: Phase 1 (Observability, continue-on-error), Phase 2 (Soft, blocking), Phase 3 (Hard, blocking). Default to Phase 2 for both main and develop branches."
+    },
+    {
+      "id": "license_type_monthly",
+      "label": "Monthly License",
+      "file_type": "document",
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "license_type_annual",
+      "label": "Annual License",
+      "file_type": "document",
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "license_type_lifetime",
+      "label": "Lifetime License",
+      "file_type": "document",
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "installer_config",
+      "label": "Installer Configuration",
+      "file_type": "code",
+      "source_file": "installer/installer_config.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "pyinstaller_build",
+      "label": "PyInstaller Build",
+      "file_type": "code",
+      "source_file": "build_exe.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "design_enforcement_phased_yml",
+      "target": "phased_ci_enforcement_script",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/.github/workflows/design_enforcement_phased.yml",
+      "source_location": "line:55",
+      "weight": 1.0
+    },
+    {
+      "source": "design_enforcement_phased_yml",
+      "target": "enterprise_table_component",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "frontend/.github/workflows/design_enforcement_phased.yml",
+      "source_location": "line:33",
+      "weight": 1.0
+    },
+    {
+      "source": "pre_commit_config_yaml",
+      "target": "pre_commit_enforcer_script",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/.pre-commit-config.yaml",
+      "source_location": "line:9",
+      "weight": 1.0
+    },
+    {
+      "source": "pre_commit_config_yaml",
+      "target": "pre_commit_certifier_script",
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/.pre-commit-config.yaml",
+      "source_location": "line:20",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "enterprise_table_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:217",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "enterprise_dialog_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:262",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "enterprise_button_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:286",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "theme_engine_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:146",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "base_screen_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:76",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "form_section_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:298",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "form_field_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:300",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "confirm_dialog_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:278",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "notification_manager_component",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:278",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "design_system_governance",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:619",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "component_adoption_failure",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:617",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "theme_engine_registration_failure",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:150",
+      "weight": 1.0
+    },
+    {
+      "source": "frontend_forensic_audit_md",
+      "target": "information_architecture_chaos",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md",
+      "source_location": "line:344",
+      "weight": 1.0
+    },
+    {
+      "source": "design_enforcement_phased_yml",
+      "target": "phased_enforcement_model",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/.github/workflows/design_enforcement_phased.yml",
+      "source_location": "line:36",
+      "weight": 1.0
+    },
+    {
+      "source": "installer_readme_md",
+      "target": "nsis_installer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "installer/README.md",
+      "source_location": "line:9",
+      "weight": 1.0
+    },
+    {
+      "source": "installer_readme_md",
+      "target": "python_installer",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "installer/README.md",
+      "source_location": "line:25",
+      "weight": 1.0
+    },
+    {
+      "source": "installer_readme_md",
+      "target": "first_run_setup",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "installer/README.md",
+      "source_location": "line:99",
+      "weight": 1.0
+    },
+    {
+      "source": "installer_readme_md",
+      "target": "installer_config",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "installer/README.md",
+      "source_location": "line:258",
+      "weight": 1.0
+    },
+    {
+      "source": "nsis_installer",
+      "target": "pyinstaller_build",
+      "relation": "depends_on",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "installer/README.md",
+      "source_location": "line:15",
+      "weight": 1.0
+    },
+    {
+      "source": "python_installer",
+      "target": "pyinstaller_build",
+      "relation": "depends_on",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "installer/README.md",
+      "source_location": "line:31",
+      "weight": 1.0
+    },
+    {
+      "source": "vendor_licensing_readme_md",
+      "target": "license_generator_tool",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": "line:18",
+      "weight": 1.0
+    },
+    {
+      "source": "vendor_licensing_readme_md",
+      "target": "rsa_license_signing",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": "line:6",
+      "weight": 1.0
+    },
+    {
+      "source": "vendor_licensing_readme_md",
+      "target": "license_type_monthly",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": "line:89",
+      "weight": 1.0
+    },
+    {
+      "source": "vendor_licensing_readme_md",
+      "target": "license_type_annual",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": "line:92",
+      "weight": 1.0
+    },
+    {
+      "source": "vendor_licensing_readme_md",
+      "target": "license_type_lifetime",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "vendor_tools/README_VENDOR_LICENSING.md",
+      "source_location": "line:93",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_txt",
+      "target": "enterprise_dialog_component",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "requirements.txt",
+      "source_location": "line:19",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_dev_txt",
+      "target": "frontend_forensic_audit_md",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "requirements-dev.txt",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "pre_commit_enforcer_script",
+      "target": "enterprise_button_component",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "frontend/.pre-commit-config.yaml",
+      "source_location": "line:16",
+      "weight": 1.0
+    },
+    {
+      "source": "pre_commit_enforcer_script",
+      "target": "enterprise_dialog_component",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "frontend/.pre-commit-config.yaml",
+      "source_location": "line:16",
+      "weight": 1.0
+    },
+    {
+      "source": "phased_ci_enforcement_script",
+      "target": "enterprise_table_component",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "frontend/.github/workflows/design_enforcement_phased.yml",
+      "source_location": "line:55",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "design_system_enforcement_pipeline",
+      "label": "Design System Enforcement Pipeline",
+      "nodes": [
+        "design_enforcement_phased_yml",
+        "phased_ci_enforcement_script",
+        "pre_commit_config_yaml",
+        "pre_commit_enforcer_script"
+      ],
+      "relation": "implement",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "frontend/.github/workflows/design_enforcement_phased.yml"
+    },
+    {
+      "id": "enterprise_component_governance",
+      "label": "Enterprise Component Governance",
+      "nodes": [
+        "enterprise_table_component",
+        "enterprise_dialog_component",
+        "enterprise_button_component",
+        "theme_engine_component"
+      ],
+      "relation": "form",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "frontend/ENTERPRISE_FRONTEND_FORENSIC_AUDIT.md"
+    },
+    {
+      "id": "installer_deployment_stack",
+      "label": "Installer Deployment Stack",
+      "nodes": [
+        "nsis_installer",
+        "python_installer",
+        "first_run_setup",
+        "pyinstaller_build"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 0.95,
+      "source_file": "installer/README.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

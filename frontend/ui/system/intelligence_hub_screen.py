@@ -46,7 +46,7 @@ class IntelligenceHubScreen(BaseScreen):
         self.health_indicator = QLabel("ERP HEALTH: 100%")
         self.health_indicator.setStyleSheet(
             f"background: {COLOR_BG_ELEVATED}; color: {COLOR_STATUS_VALID}; "
-            f"padding: {SPACING_6}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_PILL}px; font-weight: bold; font-size: {TEXT_LABEL}px; "
+            f"padding: {SPACING_6}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_PILL}px; font-weight: bold; font-size: {TEXT_LABEL}pt; "
             f"border: 1px solid {COLOR_STATUS_VALID};"
         )
 

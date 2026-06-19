@@ -1,4 +1,5 @@
 """Audit log screen."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
                                   QLabel, QLineEdit,
                                   QComboBox, QGroupBox, QDateEdit)
@@ -39,7 +40,7 @@ class AuditScreen(BaseScreen):
         layout.addLayout(header_layout)
         
         filter_bar = QGroupBox("Filter Logs")
-        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; font-size: {TEXT_LABEL}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}")
+        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; font-size: {TEXT_LABEL}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}")
         filter_layout = QGridLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
@@ -133,7 +134,7 @@ class AuditScreen(BaseScreen):
             response = self._api_client.get('/api/audit/logs/', params=params)
             
             if response and 'data' in response:
-                data = response['data']
+                data = response.get('data', {})
                 logs = data.get('results', data) if isinstance(data, dict) else data
                 
                 log_data = []
@@ -163,7 +164,7 @@ class AuditScreen(BaseScreen):
                 
         except Exception as e:
             self.status_label.setText(f"Error: {str(e)}")
-            print(f"Audit log load error: {e}")
+            logging.getLogger(__name__).warning(f"Audit log load error: {e}")
 
     def _show_details(self, item):
         row = item.row()

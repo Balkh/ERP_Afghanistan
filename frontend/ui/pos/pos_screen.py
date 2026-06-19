@@ -83,7 +83,7 @@ class POSScreen(BaseScreen):
 
     def _setup_screen(self):
         super()._setup_screen()
-        layout = QVBoxLayout(self)
+        layout = self.layout() or QVBoxLayout(self)
         layout.setContentsMargins(SPACING_LG, SPACING_LG, SPACING_LG, SPACING_LG)
         layout.setSpacing(SPACING_MD)
 
@@ -104,8 +104,8 @@ class POSScreen(BaseScreen):
         self.status_label = QLabel("READY")
         self.status_label.setStyleSheet(
             f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
-            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}px;"
+            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
         )
         header.addWidget(self.status_label)
 
@@ -153,7 +153,7 @@ class POSScreen(BaseScreen):
         zone = QGroupBox("Scan Barcode")
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_MEDIUM}px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_MEDIUM}px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; color: {COLOR_PRIMARY}; }}"
@@ -166,7 +166,7 @@ class POSScreen(BaseScreen):
         self.scan_input.setFont(QFont("Consolas", TEXT_CARD_TITLE))
         self.scan_input.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: {BORDER_WIDTH_MEDIUM}px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_MD}; "
+            f"border: {BORDER_WIDTH_MEDIUM}px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_MD}px; "
             f"padding: 0 {SPACING_MD}px;"
         )
         self.scan_input.barcode_scanned.connect(self._on_barcode_scanned)
@@ -184,7 +184,7 @@ class POSScreen(BaseScreen):
         zone = QGroupBox("Product Search")
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
@@ -197,7 +197,7 @@ class POSScreen(BaseScreen):
         self.search_input.setFixedHeight(INPUT_HEIGHT_MD)
         self.search_input.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; "
+            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; "
             f"padding: 0 {SPACING_MD}px;"
         )
         self.search_input.returnPressed.connect(self._search_products)
@@ -220,7 +220,7 @@ class POSScreen(BaseScreen):
         zone = QGroupBox("Customer")
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
@@ -235,14 +235,14 @@ class POSScreen(BaseScreen):
         self.customer_combo.setFixedHeight(INPUT_HEIGHT_MD)
         self.customer_combo.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; "
+            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; "
             f"padding: 0 {SPACING_SM}px;"
         )
         self.customer_combo.addItem("Walk-in Customer", None)
         customer_layout.addWidget(self.customer_combo, 1)
 
         self.customer_balance_label = QLabel("Balance: 0.00 AFN")
-        self.customer_balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
+        self.customer_balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}pt;")
         customer_layout.addWidget(self.customer_balance_label)
 
         zone_layout.addLayout(customer_layout)
@@ -255,7 +255,7 @@ class POSScreen(BaseScreen):
         zone = QGroupBox("Alerts")
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
@@ -264,7 +264,7 @@ class POSScreen(BaseScreen):
         zone_layout.setSpacing(SPACING_XS)
 
         self.alerts_label = QLabel("No alerts")
-        self.alerts_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
+        self.alerts_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}pt;")
         self.alerts_label.setWordWrap(True)
         zone_layout.addWidget(self.alerts_label)
 
@@ -286,7 +286,7 @@ class POSScreen(BaseScreen):
         zone = QGroupBox("Cart")
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
@@ -312,7 +312,7 @@ class POSScreen(BaseScreen):
     def _build_totals_panel(self):
         zone = QFrame()
         zone.setStyleSheet(
-            f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}; "
+            f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_LG}px; "
             f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER};"
         )
         zone.setFixedHeight(120)
@@ -355,7 +355,7 @@ class POSScreen(BaseScreen):
         zone = QGroupBox("Payment")
         zone.setStyleSheet(
             f"QGroupBox {{ color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_CARD_TITLE}pt; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
             f"margin-top: {SPACING_MD}px; padding-top: {SPACING_LG}px; }}"
             f"QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; "
             f"padding: 0 {SPACING_SM}px; }}"
@@ -373,7 +373,7 @@ class POSScreen(BaseScreen):
         self.discount_input.setFixedWidth(110)
         self.discount_input.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; "
+            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; "
             f"padding: 0 {SPACING_SM}px;"
         )
         self.discount_input.setText("0")
@@ -386,7 +386,7 @@ class POSScreen(BaseScreen):
         self.tax_input.setFixedWidth(110)
         self.tax_input.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; "
+            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; "
             f"padding: 0 {SPACING_SM}px;"
         )
         self.tax_input.setText("0")
@@ -398,7 +398,7 @@ class POSScreen(BaseScreen):
         self.payment_method.setFixedHeight(BUTTON_HEIGHT_LG)
         self.payment_method.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD};"
+            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px;"
         )
         payment_row.addWidget(self.payment_method, 1)
 
@@ -407,7 +407,7 @@ class POSScreen(BaseScreen):
         self.amount_paid_input.setFixedHeight(BUTTON_HEIGHT_LG)
         self.amount_paid_input.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}; "
+            f"border: {BORDER_WIDTH_HAIRLINE}px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; "
             f"padding: 0 {SPACING_SM}px;"
         )
         self.amount_paid_input.returnPressed.connect(self._process_payment)
@@ -445,13 +445,13 @@ class POSScreen(BaseScreen):
         ]
         for key, action in shortcuts:
             lbl = QLabel(f"<b>{key}</b> {action}")
-            lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
+            lbl.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}pt;")
             footer.addWidget(lbl)
 
         footer.addStretch()
 
         self.item_count_label = QLabel("Items: 0")
-        self.item_count_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
+        self.item_count_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}pt;")
         footer.addWidget(self.item_count_label)
 
         self.layout().addLayout(footer)
@@ -462,7 +462,7 @@ class POSScreen(BaseScreen):
         btn.setFixedHeight(height)
         btn.setStyleSheet(
             f"font-weight: {FONT_WEIGHT_BOLD}; "
-            f"border-radius: {BORDER_RADIUS_MD}; padding: 0 {SPACING_MD}px;"
+            f"border-radius: {BORDER_RADIUS_MD}px; padding: 0 {SPACING_MD}px;"
         )
         btn.clicked.connect(callback)
         return btn
@@ -494,7 +494,7 @@ class POSScreen(BaseScreen):
 
     def _on_barcode_scanned(self, barcode):
         self.scan_status.setText(f"Scanning: {barcode}")
-        self.scan_status.setStyleSheet(f"color: {COLOR_INFO}; font-size: {TEXT_TABLE}px;")
+        self.scan_status.setStyleSheet(f"color: {COLOR_INFO}; font-size: {TEXT_TABLE}pt;")
 
     def _add_to_cart(self, product):
         if not product:
@@ -711,8 +711,8 @@ class POSScreen(BaseScreen):
         self.status_label.setText("PROCESSING...")
         self.status_label.setStyleSheet(
             f"background-color: {COLOR_WARNING}; color: {COLOR_TEXT_ON_WARNING}; "
-            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}px;"
+            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
         )
 
         try:
@@ -744,8 +744,8 @@ class POSScreen(BaseScreen):
                 self.status_label.setText("COMPLETED")
                 self.status_label.setStyleSheet(
                     f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
-                    f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
-                    f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}px;"
+                    f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+                    f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
                 )
                 self._show_invoice_preview(invoice)
                 self.new_sale()
@@ -754,15 +754,15 @@ class POSScreen(BaseScreen):
                 self.status_label.setText("FAILED")
                 self.status_label.setStyleSheet(
                     f"background-color: {COLOR_DANGER}; color: {COLOR_TEXT_ON_PRIMARY}; "
-                    f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
-                    f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}px;"
+                    f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+                    f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
                 )
         except Exception as e:
             self.status_label.setText("ERROR")
             self.status_label.setStyleSheet(
                 f"background-color: {COLOR_DANGER}; color: {COLOR_TEXT_ON_PRIMARY}; "
-                f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
-                f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}px;"
+                f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+                f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
             )
 
     def _show_invoice_preview(self, invoice):
@@ -807,12 +807,12 @@ class POSScreen(BaseScreen):
         self._refresh_cart()
         self.scan_status.setText("")
         self.alerts_label.setText("No alerts")
-        self.alerts_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}px;")
+        self.alerts_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_TABLE}pt;")
         self.status_label.setText("READY")
         self.status_label.setStyleSheet(
             f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
-            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}px;"
+            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
         )
         self.scan_input.setFocus()
 
@@ -830,8 +830,8 @@ class POSScreen(BaseScreen):
         self.status_label.setText(f"SALE HELD ({len(self._held_sales)} held)")
         self.status_label.setStyleSheet(
             f"background-color: {COLOR_WARNING}; color: {COLOR_TEXT_ON_PRIMARY}; "
-            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}px;"
+            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
         )
 
     def recall_sale(self):
@@ -850,8 +850,8 @@ class POSScreen(BaseScreen):
         self.status_label.setText("READY")
         self.status_label.setStyleSheet(
             f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
-            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; "
-            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}px;"
+            f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+            f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
         )
 
     def _remove_selected_item(self):
@@ -867,7 +867,7 @@ class POSScreen(BaseScreen):
 
     def _show_scan_error(self, message):
         self.scan_status.setText(message)
-        self.scan_status.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}px;")
+        self.scan_status.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}pt;")
         QTimer.singleShot(3000, lambda: self.scan_status.setText(""))
 
     def _show_alert(self, message, level="info"):
@@ -877,4 +877,4 @@ class POSScreen(BaseScreen):
             "success": COLOR_SUCCESS,
         }.get(level, COLOR_INFO)
         self.alerts_label.setText(message)
-        self.alerts_label.setStyleSheet(f"color: {color}; font-size: {TEXT_TABLE}px; font-weight: {FONT_WEIGHT_BOLD};")
+        self.alerts_label.setStyleSheet(f"color: {color}; font-size: {TEXT_TABLE}pt; font-weight: {FONT_WEIGHT_BOLD};")

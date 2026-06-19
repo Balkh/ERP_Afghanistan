@@ -154,7 +154,7 @@ class AccountFormDialog(EnterpriseDialog):
             self.parent_combo.clear()
             self.parent_combo.addItem("None (Top Level)", None)
             for acc in sorted(self.parent_accounts, key=lambda x: x.get("code", "")):
-                self.parent_combo.addItem(f"{acc['code']} - {acc['name']}", acc["id"])
+                self.parent_combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get("id"))
         except Exception:
             pass
 

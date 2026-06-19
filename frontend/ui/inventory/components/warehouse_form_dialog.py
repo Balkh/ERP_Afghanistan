@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFrame, QWidget,
                                 QLineEdit, QSpinBox, QLabel, QComboBox)
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -108,7 +109,7 @@ class WarehouseFormDialog(EnterpriseDialog):
                 self.capacity_input.setValue(warehouse.get("capacity") or 0)
                 self.active_check.setCurrentIndex(1 if warehouse.get("is_active") else 0)
         except Exception as e:
-            print(f"Error loading warehouse data: {e}")
+            logging.getLogger(__name__).warning(f"Error loading warehouse data: {e}")
 
     def get_form_data(self):
         return {

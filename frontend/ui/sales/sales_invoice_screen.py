@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
                                 QTableWidget, QTableWidgetItem,
                                 QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
@@ -6,6 +7,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
 from PySide6.QtCore import Qt, QDate, Signal
 from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
+from utils.format import safe_float
 
 from ui.common.batch_selection import BatchSelectionDialog
 from ui.common.barcode_search import BarcodeSearchLineEdit
@@ -91,7 +93,7 @@ class SalesInvoiceScreen(BaseScreen):
 
     def _setup_screen(self):
         super()._setup_screen()
-        layout = QVBoxLayout(self)
+        layout = self.layout() or QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD)
 
@@ -115,9 +117,9 @@ class SalesInvoiceScreen(BaseScreen):
             background-color: {COLOR_TEXT_MUTED};
             color: {COLOR_TEXT_PRIMARY};
             padding: {SPACING_XS}px {SPACING_MD}px;
-            border-radius: {BORDER_RADIUS_SM};
+            border-radius: {BORDER_RADIUS_SM}px;
             font-weight: bold;
-            font-size: {TEXT_TABLE}px;
+            font-size: {TEXT_TABLE}pt;
         """)
         header.add_action(self.status_label)
 
@@ -261,21 +263,21 @@ class SalesInvoiceScreen(BaseScreen):
         details_form.setLabelAlignment(Qt.AlignRight)
 
         self.customer_phone = QLabel("—")
-        self.customer_phone.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        self.customer_phone.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}pt;")
         details_form.addRow("Phone:", self.customer_phone)
 
         self.credit_limit_label = QLabel("—")
-        self.credit_limit_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        self.credit_limit_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}pt;")
         details_form.addRow("Credit Limit:", self.credit_limit_label)
 
         self.balance_label = QLabel("0.00")
-        self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}px; font-weight: bold;")
+        self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_TABLE}pt; font-weight: bold;")
         details_form.addRow("Balance:", self.balance_label)
 
         self.customer_address = QTextEdit()
         self.customer_address.setReadOnly(True)
         self.customer_address.setMaximumHeight(40)
-        self.customer_address.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px; border: none; background: transparent;")
+        self.customer_address.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}pt; border: none; background: transparent;")
         details_form.addRow("Address:", self.customer_address)
 
         zone3_layout.addLayout(details_form)
@@ -288,7 +290,7 @@ class SalesInvoiceScreen(BaseScreen):
         totals_layout.setLabelAlignment(Qt.AlignRight)
 
         self.subtotal_label = QLabel("0.00")
-        self.subtotal_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}px;")
+        self.subtotal_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
         totals_layout.addRow("Subtotal:", self.subtotal_label)
 
         self.discount_input = QDoubleSpinBox()
@@ -310,11 +312,11 @@ class SalesInvoiceScreen(BaseScreen):
         totals_layout.addRow("Tax Rate:", self.tax_input)
 
         self.tax_amount_label = QLabel("0.00")
-        self.tax_amount_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}px;")
+        self.tax_amount_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_TABLE}pt;")
         totals_layout.addRow("Tax Amt:", self.tax_amount_label)
 
         self.total_label = QLabel("0.00")
-        self.total_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_CARD_TITLE}px; font-weight: 700;")
+        self.total_label.setStyleSheet(f"color: {COLOR_SUCCESS}; font-size: {TEXT_CARD_TITLE}pt; font-weight: 700;")
         totals_layout.addRow("Total:", self.total_label)
 
         self.paid_input = QDoubleSpinBox()
@@ -327,7 +329,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.notes_input.setPlaceholderText("Notes...")
         self.notes_input.setMaximumHeight(40)
         self.notes_input.setMaximumWidth(120)
-        self.notes_input.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_TABLE}px;")
+        self.notes_input.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_TABLE}pt;")
         totals_layout.addRow("Notes:", self.notes_input)
 
         zone3_layout.addLayout(totals_layout)
@@ -449,7 +451,7 @@ class SalesInvoiceScreen(BaseScreen):
                 if api_customers:
                     self.customers = api_customers
             except Exception as e:
-                print(f"Failed to load customers: {e}")
+                logging.getLogger(__name__).warning(f"Failed to load customers: {e}")
 
         self.customer_combo.clear()
         self.customer_combo.addItem("Select Customer...", None)
@@ -457,7 +459,10 @@ class SalesInvoiceScreen(BaseScreen):
             if isinstance(customer, dict):
                 self.customer_combo.addItem(customer.get("name", "Unknown"), customer.get("id", ""))
 
-        self.customer_combo.currentIndexChanged.connect(self.on_customer_selected)
+        # Guard: connect only once (load_customers is called from _on_screen_shown)
+        if not getattr(self, '_customer_combo_connected', False):
+            self.customer_combo.currentIndexChanged.connect(self.on_customer_selected)
+            self._customer_combo_connected = True
 
     def on_customer_selected(self, index):
         """Handle customer selection."""
@@ -670,12 +675,12 @@ class SalesInvoiceScreen(BaseScreen):
             "invoice_date": self.invoice_date.date().toString("yyyy-MM-dd"),
             "due_date": self.due_date.date().toString("yyyy-MM-dd"),
             "currency": self.currency_combo.currentText(),
-            "subtotal": float(self.subtotal_label.text()),
+            "subtotal": safe_float(self.subtotal_label.text()),
             "discount": float(self.discount_input.value()),
             "tax_enabled": self.tax_enabled_cb.isChecked(),
             "tax_rate": float(self.tax_input.value()),
-            "tax": float(self.tax_amount_label.text()),
-            "total_amount": float(self.total_label.text()),
+            "tax": safe_float(self.tax_amount_label.text()),
+            "total_amount": safe_float(self.total_label.text()),
             "paid_amount": float(self.paid_input.value()),
             "notes": self.notes_input.toPlainText(),
             "items": items,
@@ -735,7 +740,7 @@ class SalesInvoiceScreen(BaseScreen):
             res = self.api_client.post(endpoint, {})
             if res:
                 self.status_label.setText("CONFIRMED")
-                self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+                self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
                 self.update_button_states("CONFIRMED")
                 AlertDialog.info("Success", "Invoice confirmed successfully.", self)
             else:
@@ -766,7 +771,7 @@ class SalesInvoiceScreen(BaseScreen):
             res = self.api_client.post(endpoint, {})
             if res:
                 self.status_label.setText("DISPATCHED")
-                self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+                self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
                 self.update_button_states("DISPATCHED")
                 AlertDialog.info("Success", "Invoice dispatched and stock deducted.", self)
             else:
@@ -821,7 +826,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.items_table.setRowCount(0)
         self.recalculate_totals()
         self.status_label.setText("DRAFT")
-        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM};")
+        self.status_label.setStyleSheet(f"background-color: {COLOR_TEXT_MUTED}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
         self.current_invoice_id = None
         self.workflow_status_label.setText("")
         self.submit_wf_btn.setVisible(True)
@@ -865,7 +870,7 @@ class SalesInvoiceScreen(BaseScreen):
                 self.reject_wf_btn.setVisible(data.get('can_approve', False))
                 self.post_wf_btn.setVisible(data.get('can_post', False))
         except Exception as e:
-            print(f"Error loading workflow status: {e}")
+            logging.getLogger(__name__).warning(f"Error loading workflow status: {e}")
     
     def perform_workflow_action(self, action: str):
         """Perform workflow action on current invoice."""

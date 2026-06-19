@@ -1,4 +1,5 @@
 """Cashflow management screen."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                   QLabel, QComboBox,
                                   QGroupBox, QTabWidget, QProgressBar,
@@ -90,7 +91,7 @@ class CashflowScreen(BaseScreen):
             QFrame {{
                 background-color: {COLOR_BG_SURFACE};
                 border-left: 5px solid {color};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 border-top: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-right: 1px solid {COLOR_TABLE_BORDER_LIGHT};
                 border-bottom: 1px solid {COLOR_TABLE_BORDER_LIGHT};
@@ -182,7 +183,7 @@ class CashflowScreen(BaseScreen):
             self._load_position()
             self._show_data()
         except Exception as e:
-            print(f"Error loading cashflow: {e}")
+            logging.getLogger(__name__).warning(f"Error loading cashflow: {e}")
             self._cashflow_data = []
             self._show_empty(f"Error loading cash flow data: {e}")
 

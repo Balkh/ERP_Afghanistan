@@ -1,4 +1,5 @@
 """Payroll management screen."""
+import logging
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout,
                                  QLabel, QLineEdit,
                                  QComboBox, QFormLayout,
@@ -15,6 +16,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.page_header import PageHeader
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from theme.style_builder import UIStyleBuilder
 
 
 class PayrollScreen(BaseScreen):
@@ -45,19 +47,19 @@ class PayrollScreen(BaseScreen):
         # Loading and Empty states
         self.loading_label = QLabel("Loading payroll data...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No payroll records found")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
         self.error_label = QLabel("Error loading payroll data")
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XXL + SPACING_LG}px;")
+        self.error_label.setStyleSheet(UIStyleBuilder.get_state_label_style("error"))
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
         
@@ -237,7 +239,7 @@ class PayrollScreen(BaseScreen):
             self.set_state(ScreenState.READY)
             self._update_state_indicators(True, True)
         except Exception as e:
-            print(f"Error loading salary structures: {e}")
+            logging.getLogger(__name__).warning(f"Error loading salary structures: {e}")
             data = self._get_mock_salary_structures()
             self.set_state(ScreenState.READY)
             self._update_state_indicators(True, True)
@@ -278,7 +280,7 @@ class PayrollScreen(BaseScreen):
             if not data:
                 data = self._get_mock_payroll_cycles()
         except Exception as e:
-            print(f"Error loading payroll cycles: {e}")
+            logging.getLogger(__name__).warning(f"Error loading payroll cycles: {e}")
             data = self._get_mock_payroll_cycles()
         
         cycle_data = []
@@ -317,7 +319,7 @@ class PayrollScreen(BaseScreen):
             if not data or not isinstance(data, list):
                 data = self._get_mock_payroll_records()
         except Exception as e:
-            print(f"Error loading payroll records: {e}")
+            logging.getLogger(__name__).warning(f"Error loading payroll records: {e}")
             data = self._get_mock_payroll_records()
         
         records_data = []

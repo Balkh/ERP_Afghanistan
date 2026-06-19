@@ -46,7 +46,7 @@ class LicenseManagerDialog(EnterpriseDialog):
             QGroupBox {{
                 color: {COLOR_PRIMARY};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 margin-top: {SPACING_MD}px;
                 padding-top: {SPACING_MD}px;
             }}

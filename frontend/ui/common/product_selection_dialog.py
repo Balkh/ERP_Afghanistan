@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QLineEdit,
                                 QLabel, QWidget)
 from PySide6.QtCore import QTimer
@@ -77,10 +78,11 @@ class ProductSelectionDialog(EnterpriseDialog):
             # We use the search endpoint
             result = self._api_client.get("/api/inventory/products/", params={'search': query})
             if result and result.get('success'):
-                products = result['data'].get('results', [])
+                data = result.get('data', {})
+                products = data.get('results', []) if isinstance(data, dict) else data if isinstance(data, list) else []
                 self._populate_table(products)
         except Exception as e:
-            print(f"Product search error: {e}")
+            logging.getLogger(__name__).warning(f"Product search error: {e}")
 
     def _populate_table(self, products):
         rows = []

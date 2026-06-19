@@ -1,6 +1,7 @@
 """Leave management screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                  QLabel, QLineEdit)
+from theme.style_builder import UIStyleBuilder
 from PySide6.QtCore import Qt
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list

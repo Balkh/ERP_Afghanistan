@@ -12,6 +12,7 @@ Features:
 - Audit trail
 """
 
+import logging
 from enum import Enum
 from typing import Dict, List, Set, Optional, Tuple
 from datetime import datetime
@@ -225,7 +226,7 @@ class AuthorizationFallback:
     def log_async(message: str):
         """Log authorization error asynchronously (placeholder)."""
         # In production, use proper async logging
-        print(f"[AUTH WARNING] {message}")
+        logging.getLogger(__name__).warning(f"[AUTH] {message}")
     
     @staticmethod
     def safe_deny() -> Set[str]:

@@ -1,0 +1,1121 @@
+{
+  "nodes": [
+    {
+      "id": "doc_MAIN_WINDOW_FORENSIC_REPORT",
+      "label": "MainWindow Forensic Analysis Report",
+      "file_type": "document",
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "label": "MainWindow Decomposition Report (Phase 5 Workstream C)",
+      "file_type": "document",
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_INLINE_STYLE_REPORT",
+      "label": "Inline Style Report (Phase 2 Audit)",
+      "file_type": "document",
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_INLINE_STYLE_REDUCTION_REPORT",
+      "label": "Inline Style Reduction Report (Phase 5 Workstream B)",
+      "file_type": "document",
+      "source_file": "docs/INLINE_STYLE_REDUCTION_REPORT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_FINANCIAL_RECERTIFICATION",
+      "label": "Financial Recertification (Phase 5.6 WS-F)",
+      "file_type": "document",
+      "source_file": "docs/FINANCIAL_RECERTIFICATION.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_FRONTEND_TEST_BASELINE_REPORT",
+      "label": "Frontend Test Baseline Report",
+      "file_type": "document",
+      "source_file": "docs/FRONTEND_TEST_BASELINE_REPORT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_MEMORY_CERTIFICATION",
+      "label": "Memory Certification (Phase 5.8 WS-E)",
+      "file_type": "document",
+      "source_file": "docs/MEMORY_CERTIFICATION.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-02",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_NETWORK_RETRY_POLICY",
+      "label": "Network Retry Policy (Performance Sprint V1)",
+      "file_type": "document",
+      "source_file": "docs/NETWORK_RETRY_POLICY.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_OPERATIONAL_RECERTIFICATION",
+      "label": "Operational Risk Recertification (Phase 5.6 WS-G)",
+      "file_type": "document",
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_PERFORMANCE_SIMULATION_REPORT",
+      "label": "Performance Simulation Report (Phase 5.5 WS-D)",
+      "file_type": "document",
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "doc_PERFORMANCE_SPRINT_IMPACT_ANALYSIS",
+      "label": "Performance Sprint V1 Impact Analysis",
+      "file_type": "document",
+      "source_file": "docs/PERFORMANCE_SPRINT_IMPACT_ANALYSIS.md",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-05-30",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "rationale_MainWindow_GodObject",
+      "label": "MainWindow God Object Pattern",
+      "file_type": "rationale",
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "sections 2-5",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "rationale_extraction_discipline",
+      "label": "One-Extraction-Per-Release Decomposition Discipline",
+      "file_type": "rationale",
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Per-Extraction Discipline",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "rationale_CSS_literal_tokenization",
+      "label": "CSS Literal-to-Token Substitution Strategy",
+      "file_type": "rationale",
+      "source_file": "docs/INLINE_STYLE_REDUCTION_REPORT.md",
+      "source_location": "section: Investigation Methodology",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "rationale_fail_fast_retry",
+      "label": "Fail-Fast on HTTP Semantics Retry Principle",
+      "file_type": "rationale",
+      "source_file": "docs/NETWORK_RETRY_POLICY.md",
+      "source_location": "section: Principles",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "rationale_timer_lifecycle_cleanup",
+      "label": "Timer Lifecycle Cleanup via _BaseDashboard._on_screen_hidden",
+      "file_type": "rationale",
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: F-30 Timer Leak Re-Audit",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "code_NavigationHistory",
+      "label": "NavigationHistory Class",
+      "file_type": "code",
+      "source_file": "frontend/ui/navigation_history.py",
+      "source_location": "94 LOC",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "code_AccountFactory_get_or_create",
+      "label": "AccountFactory get_or_create Pattern",
+      "file_type": "code",
+      "source_file": "backend/tests/factories.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "code_SCREEN_STATE_LIFECYCLE",
+      "label": "Screen State Lifecycle Pattern (_on_screen_shown/_on_screen_hidden)",
+      "file_type": "code",
+      "source_file": "frontend/ui/screens/base_screen.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "code_NAVIGATION_HISTORY",
+      "label": "NavigationHistory Class (P1 extraction from MainWindow)",
+      "file_type": "code",
+      "source_file": "frontend/ui/navigation_history.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_PAGE_REGISTRY",
+      "label": "PageRegistry Data-Only Extraction Candidate",
+      "file_type": "rationale",
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Extraction Details - P1",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_STATUS_BAR_CONTROLLER",
+      "label": "StatusBarController Extraction Candidate (P2)",
+      "file_type": "rationale",
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_SESSION_CONTROLLER",
+      "label": "SessionController Extraction Candidate (P4)",
+      "file_type": "rationale",
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_MENU_BAR_BUILDER",
+      "label": "MenuBarBuilder Extraction Candidate (P3)",
+      "file_type": "rationale",
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_MAIN_WINDOW_TELEMETRY",
+      "label": "MainWindowTelemetry Extraction Candidate (P5)",
+      "file_type": "rationale",
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_BUTTON_AREA_HEIGHT",
+      "label": "BUTTON_AREA_HEIGHT Missing Token Pattern",
+      "file_type": "rationale",
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": "section 3.2.1",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_QT_MAX_SIZE_SENTINEL",
+      "label": "Qt Max Size Sentinel (16777215) Pattern",
+      "file_type": "rationale",
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": "section 3.2.2",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_FONT_FAMILY_PRIMARY",
+      "label": "FONT_FAMILY_PRIMARY Missing Token Category",
+      "file_type": "rationale",
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": "section 6",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_BORDER_WIDTH_TOKEN_CATEGORY",
+      "label": "BORDER_WIDTH Token Category Gap",
+      "file_type": "rationale",
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": "section 6",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_COVERAGE_CONFIDENCE_SCORE",
+      "label": "Coverage Confidence Score (62/100 Structural Regression Framing)",
+      "file_type": "rationale",
+      "source_file": "docs/FRONTEND_TEST_BASELINE_REPORT.md",
+      "source_location": "section 6",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_TEST_MATURITY_SCORE",
+      "label": "Test Maturity Score (6.2/10)",
+      "file_type": "rationale",
+      "source_file": "docs/FRONTEND_TEST_BASELINE_REPORT.md",
+      "source_location": "section 5",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_LCOM_COHESION",
+      "label": "LCOM-style Cohesion Analysis (2.3/5 avg)",
+      "file_type": "rationale",
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "section 3",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_DETERMINISTIC_SIMULATION",
+      "label": "Deterministic Simulation (Operation-Count Proxies)",
+      "file_type": "rationale",
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": "section 1",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_MEMORY_BUDGET_PRODUCTION",
+      "label": "Memory Budget for Production Deployment",
+      "file_type": "rationale",
+      "source_file": "docs/MEMORY_CERTIFICATION.md",
+      "source_location": "section 10",
+      "source_url": null,
+      "captured_at": "2026-06-02",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_SCREEN_IMPORT_MATRIX",
+      "label": "Screen Import Matrix (Before vs After Sprint)",
+      "file_type": "rationale",
+      "source_file": "docs/PERFORMANCE_SPRINT_IMPACT_ANALYSIS.md",
+      "source_location": "section: Screen import matrix",
+      "source_url": null,
+      "captured_at": "2026-05-30",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_STALE_THREAD_GUARD",
+      "label": "Stale Thread Guard (_load_generation counter)",
+      "file_type": "rationale",
+      "source_file": "docs/PERFORMANCE_SPRINT_IMPACT_ANALYSIS.md",
+      "source_location": "section: Risk register",
+      "source_url": null,
+      "captured_at": "2026-05-30",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_IDEMPOTENT_TEST_FIXTURES",
+      "label": "Idempotent Test Fixtures (get_or_create Pattern)",
+      "file_type": "rationale",
+      "source_file": "docs/FINANCIAL_RECERTIFICATION.md",
+      "source_location": "section: Why the Factory Fix Unblocked Everything",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "test_F26_TIMER_IMBALANCE",
+      "label": "F-26 Timer Imbalance Finding",
+      "file_type": "document",
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: F-26 Timer Imbalance Re-Audit",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "test_F30_TIMER_LEAK",
+      "label": "F-30 Timer Leak Finding",
+      "file_type": "document",
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: F-30 Timer Leak Re-Audit",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "test_FILE_test_f26_timer_balance",
+      "label": "test_f26_timer_balance.py (8 tests)",
+      "file_type": "document",
+      "source_file": "tests/ui/test_f26_timer_balance.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "test_FILE_test_f30_timer_leak",
+      "label": "test_f30_timer_leak.py (8 tests)",
+      "file_type": "document",
+      "source_file": "tests/ui/test_f30_timer_leak.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "test_FILE_test_memory_profiling",
+      "label": "test_memory_profiling.py (13 tests)",
+      "file_type": "document",
+      "source_file": "simulation/tests/test_runtime_stability/test_memory_profiling.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "test_FILE_test_endurance",
+      "label": "test_endurance.py (12 tests)",
+      "file_type": "document",
+      "source_file": "simulation/tests/test_runtime_stability/test_endurance.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "test_FILE_test_rendering_performance",
+      "label": "test_rendering_performance.py (9 tests)",
+      "file_type": "document",
+      "source_file": "simulation/tests/test_runtime_stability/test_rendering_performance.py",
+      "source_location": null,
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_FINANCIAL_RECERTIFICATION_SCORE",
+      "label": "Financial Recertification Score (99.4%)",
+      "file_type": "rationale",
+      "source_file": "docs/FINANCIAL_RECERTIFICATION.md",
+      "source_location": "section: Executive Summary",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_OPERATIONAL_RISK_SCORE",
+      "label": "Operational Risk Recertification Score (95/100)",
+      "file_type": "rationale",
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: Executive Summary",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_MEMORY_CERTIFICATION_SCORE",
+      "label": "Memory Certification Score (100/100)",
+      "file_type": "rationale",
+      "source_file": "docs/MEMORY_CERTIFICATION.md",
+      "source_location": "section: Executive Summary",
+      "source_url": null,
+      "captured_at": "2026-06-02",
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "concept_PERFORMANCE_HEALTH_SCORE",
+      "label": "Performance Health Score (84%)",
+      "file_type": "rationale",
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": "section: Performance Health Score",
+      "source_url": null,
+      "captured_at": "2026-06-01",
+      "author": null,
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "target": "doc_MAIN_WINDOW_FORENSIC_REPORT",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Executive Summary",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "target": "code_NavigationHistory",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Extraction Details",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "target": "concept_PAGE_REGISTRY",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "target": "concept_STATUS_BAR_CONTROLLER",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "target": "concept_SESSION_CONTROLLER",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "target": "concept_MENU_BAR_BUILDER",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "target": "concept_MAIN_WINDOW_TELEMETRY",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Remaining Decomposition Candidates",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_DECOMPOSITION_REPORT",
+      "target": "rationale_extraction_discipline",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md",
+      "source_location": "section: Per-Extraction Discipline",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_FORENSIC_REPORT",
+      "target": "rationale_MainWindow_GodObject",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "section 2-5",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MAIN_WINDOW_FORENSIC_REPORT",
+      "target": "concept_LCOM_COHESION",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "section 3",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_INLINE_STYLE_REDUCTION_REPORT",
+      "target": "doc_INLINE_STYLE_REPORT",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/INLINE_STYLE_REDUCTION_REPORT.md",
+      "source_location": "section: Executive Summary",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_INLINE_STYLE_REDUCTION_REPORT",
+      "target": "rationale_CSS_literal_tokenization",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/INLINE_STYLE_REDUCTION_REPORT.md",
+      "source_location": "section: Investigation Methodology",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_INLINE_STYLE_REPORT",
+      "target": "concept_BUTTON_AREA_HEIGHT",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": "section 3.2.1",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_INLINE_STYLE_REPORT",
+      "target": "concept_QT_MAX_SIZE_SENTINEL",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": "section 3.2.2",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_INLINE_STYLE_REPORT",
+      "target": "concept_FONT_FAMILY_PRIMARY",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": "section 6",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_INLINE_STYLE_REPORT",
+      "target": "concept_BORDER_WIDTH_TOKEN_CATEGORY",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": "section 6",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_FINANCIAL_RECERTIFICATION",
+      "target": "code_AccountFactory_get_or_create",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/FINANCIAL_RECERTIFICATION.md",
+      "source_location": "section: Why the Factory Fix Unblocked Everything",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_FINANCIAL_RECERTIFICATION",
+      "target": "concept_IDEMPOTENT_TEST_FIXTURES",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/FINANCIAL_RECERTIFICATION.md",
+      "source_location": "section: Why the Factory Fix Unblocked Everything",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_FINANCIAL_RECERTIFICATION",
+      "target": "concept_FINANCIAL_RECERTIFICATION_SCORE",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/FINANCIAL_RECERTIFICATION.md",
+      "source_location": "section: Executive Summary",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_FRONTEND_TEST_BASELINE_REPORT",
+      "target": "concept_COVERAGE_CONFIDENCE_SCORE",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/FRONTEND_TEST_BASELINE_REPORT.md",
+      "source_location": "section 6",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_FRONTEND_TEST_BASELINE_REPORT",
+      "target": "concept_TEST_MATURITY_SCORE",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/FRONTEND_TEST_BASELINE_REPORT.md",
+      "source_location": "section 5",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MEMORY_CERTIFICATION",
+      "target": "concept_MEMORY_CERTIFICATION_SCORE",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MEMORY_CERTIFICATION.md",
+      "source_location": "section: Executive Summary",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MEMORY_CERTIFICATION",
+      "target": "concept_MEMORY_BUDGET_PRODUCTION",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MEMORY_CERTIFICATION.md",
+      "source_location": "section 10",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_NETWORK_RETRY_POLICY",
+      "target": "rationale_fail_fast_retry",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/NETWORK_RETRY_POLICY.md",
+      "source_location": "section: Principles",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_OPERATIONAL_RECERTIFICATION",
+      "target": "test_F26_TIMER_IMBALANCE",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: F-26 Timer Imbalance Re-Audit",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_OPERATIONAL_RECERTIFICATION",
+      "target": "test_F30_TIMER_LEAK",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: F-30 Timer Leak Re-Audit",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_OPERATIONAL_RECERTIFICATION",
+      "target": "rationale_timer_lifecycle_cleanup",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: F-30 Timer Leak Re-Audit",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_OPERATIONAL_RECERTIFICATION",
+      "target": "concept_OPERATIONAL_RISK_SCORE",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: Executive Summary",
+      "weight": 1.0
+    },
+    {
+      "source": "test_F26_TIMER_IMBALANCE",
+      "target": "test_FILE_test_f26_timer_balance",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: Verification",
+      "weight": 1.0
+    },
+    {
+      "source": "test_F30_TIMER_LEAK",
+      "target": "test_FILE_test_f30_timer_leak",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: Verification",
+      "weight": 1.0
+    },
+    {
+      "source": "test_F30_TIMER_LEAK",
+      "target": "code_SCREEN_STATE_LIFECYCLE",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/OPERATIONAL_RECERTIFICATION.md",
+      "source_location": "section: F-30 Timer Leak Re-Audit",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SIMULATION_REPORT",
+      "target": "test_FILE_test_memory_profiling",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": "section: Simulation Infrastructure",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SIMULATION_REPORT",
+      "target": "test_FILE_test_endurance",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": "section: Simulation Infrastructure",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SIMULATION_REPORT",
+      "target": "test_FILE_test_rendering_performance",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": "section: Simulation Infrastructure",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SIMULATION_REPORT",
+      "target": "concept_DETERMINISTIC_SIMULATION",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": "section 1",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SIMULATION_REPORT",
+      "target": "concept_PERFORMANCE_HEALTH_SCORE",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": "section: Performance Health Score",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SPRINT_IMPACT_ANALYSIS",
+      "target": "concept_SCREEN_IMPORT_MATRIX",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SPRINT_IMPACT_ANALYSIS.md",
+      "source_location": "section: Screen import matrix",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SPRINT_IMPACT_ANALYSIS",
+      "target": "concept_STALE_THREAD_GUARD",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SPRINT_IMPACT_ANALYSIS.md",
+      "source_location": "section: Risk register",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SPRINT_IMPACT_ANALYSIS",
+      "target": "doc_NETWORK_RETRY_POLICY",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SPRINT_IMPACT_ANALYSIS.md",
+      "source_location": "section: Components touched",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SPRINT_IMPACT_ANALYSIS",
+      "target": "code_SCREEN_STATE_LIFECYCLE",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/PERFORMANCE_SPRINT_IMPACT_ANALYSIS.md",
+      "source_location": "section: Screen lifecycle",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_MainWindow_GodObject",
+      "target": "concept_PAGE_REGISTRY",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "section 6.1",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_MainWindow_GodObject",
+      "target": "concept_STATUS_BAR_CONTROLLER",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "section 6.2",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_MainWindow_GodObject",
+      "target": "concept_SESSION_CONTROLLER",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "section 6.4",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_MainWindow_GodObject",
+      "target": "concept_MENU_BAR_BUILDER",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "section 6.3",
+      "weight": 1.0
+    },
+    {
+      "source": "rationale_MainWindow_GodObject",
+      "target": "concept_MAIN_WINDOW_TELEMETRY",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_FORENSIC_REPORT.md",
+      "source_location": "section 6.5",
+      "weight": 1.0
+    },
+    {
+      "source": "doc_FRONTEND_TEST_BASELINE_REPORT",
+      "target": "doc_FINANCIAL_RECERTIFICATION",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/FRONTEND_TEST_BASELINE_REPORT.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "doc_MEMORY_CERTIFICATION",
+      "target": "doc_OPERATIONAL_RECERTIFICATION",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/MEMORY_CERTIFICATION.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SIMULATION_REPORT",
+      "target": "doc_MEMORY_CERTIFICATION",
+      "relation": "references",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "doc_PERFORMANCE_SIMULATION_REPORT",
+      "target": "doc_OPERATIONAL_RECERTIFICATION",
+      "relation": "conceptually_related_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/PERFORMANCE_SIMULATION_REPORT.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_FINANCIAL_RECERTIFICATION_SCORE",
+      "target": "concept_OPERATIONAL_RISK_SCORE",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.75,
+      "source_file": "docs/FINANCIAL_RECERTIFICATION.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_MEMORY_CERTIFICATION_SCORE",
+      "target": "concept_PERFORMANCE_HEALTH_SCORE",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/MEMORY_CERTIFICATION.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_BORDER_WIDTH_TOKEN_CATEGORY",
+      "target": "concept_BUTTON_AREA_HEIGHT",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_FONT_FAMILY_PRIMARY",
+      "target": "concept_QT_MAX_SIZE_SENTINEL",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.65,
+      "source_file": "docs/INLINE_STYLE_REPORT.md",
+      "source_location": null,
+      "weight": 1.0
+    },
+    {
+      "source": "concept_COVERAGE_CONFIDENCE_SCORE",
+      "target": "concept_TEST_MATURITY_SCORE",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/FRONTEND_TEST_BASELINE_REPORT.md",
+      "source_location": null,
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "decomposition_candidates_group",
+      "label": "MainWindow Decomposition Extraction Candidates (P1-P6)",
+      "nodes": [
+        "concept_PAGE_REGISTRY",
+        "concept_STATUS_BAR_CONTROLLER",
+        "concept_SESSION_CONTROLLER",
+        "concept_MENU_BAR_BUILDER",
+        "concept_MAIN_WINDOW_TELEMETRY"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/MAIN_WINDOW_DECOMPOSITION_REPORT.md"
+    },
+    {
+      "id": "missing_token_categories_group",
+      "label": "Missing Design Token Categories (Phase 2 Audit)",
+      "nodes": [
+        "concept_BORDER_WIDTH_TOKEN_CATEGORY",
+        "concept_FONT_FAMILY_PRIMARY",
+        "concept_BUTTON_AREA_HEIGHT",
+        "concept_QT_MAX_SIZE_SENTINEL"
+      ],
+      "relation": "participate_in",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/INLINE_STYLE_REPORT.md"
+    },
+    {
+      "id": "phase5_recertification_scores",
+      "label": "Phase 5 Recertification Scores",
+      "nodes": [
+        "concept_FINANCIAL_RECERTIFICATION_SCORE",
+        "concept_OPERATIONAL_RISK_SCORE",
+        "concept_MEMORY_CERTIFICATION_SCORE",
+        "concept_PERFORMANCE_HEALTH_SCORE"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "docs/FINANCIAL_RECERTIFICATION.md"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

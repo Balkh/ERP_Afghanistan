@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
                                QLabel, QGroupBox, QFrame, QWidget)
 from PySide6.QtCore import Qt
@@ -54,7 +55,7 @@ class JournalEntryDetailDialog(EnterpriseDialog):
             QGroupBox {{ 
                 font-weight: bold; 
                 border: 1px solid {COLOR_BORDER}; 
-                border-radius: {BORDER_RADIUS_LG}; 
+                border-radius: {BORDER_RADIUS_LG}px; 
                 margin-top: {SPACING_LG}px;
                 padding-top: {SPACING_LG}px;
                 background-color: {COLOR_BG_SURFACE};
@@ -116,7 +117,7 @@ class JournalEntryDetailDialog(EnterpriseDialog):
 
         # Totals
         totals_frame = QFrame()
-        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_SM}; padding: {SPACING_XS}px;")
+        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_SM}px; padding: {SPACING_XS}px;")
         totals_layout = QHBoxLayout(totals_frame)
         totals_layout.addStretch()
         
@@ -200,4 +201,4 @@ class JournalEntryDetailDialog(EnterpriseDialog):
             self.total_credit_label.setText(f"{total_credit:,.2f}")
 
         except Exception as e:
-            print(f"Error loading journal lines: {e}")
+            logging.getLogger(__name__).warning(f"Error loading journal lines: {e}")

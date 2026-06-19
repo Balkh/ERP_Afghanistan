@@ -15,6 +15,7 @@ from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
 from ui.accounting.journal_entry_helpers import (
     build_filter_bar, build_filter_params, transform_entries)
+from theme.style_builder import UIStyleBuilder
 
 
 class JournalEntryScreen(BaseScreen):
@@ -32,7 +33,7 @@ class JournalEntryScreen(BaseScreen):
             self.load_entries()
         except Exception as e:
             self.empty_label.setText(f"Initial load failed: {e}")
-            self.empty_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+            self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("error"))
             self.empty_label.setVisible(True)
 
     def _on_screen_shown(self):
@@ -68,13 +69,13 @@ class JournalEntryScreen(BaseScreen):
         # Loading and Empty states
         self.loading_label = QLabel("Loading journal entries...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No journal entries found")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 
@@ -191,7 +192,7 @@ class JournalEntryScreen(BaseScreen):
             self.entries = []
             self._populate_table()
             self.empty_label.setText(f"Error loading entries: {e}")
-            self.empty_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+            self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("error"))
             self.empty_label.setVisible(True)
 
     def _populate_table(self):

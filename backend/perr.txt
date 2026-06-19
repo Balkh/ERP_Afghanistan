@@ -1,0 +1,19 @@
+C:\Users\Reza Faizi\AppData\Local\Programs\Python\Python312\Lib\importlib\__init__.py:90: RuntimeWarning: SECRET_KEY is still set to the insecure default. Set the SECRET_KEY environment variable in production.
+  return _bootstrap._gcd_import(name[level:], package, level)
+INFO === Startup Diagnostics ===
+INFO   DB health: healthy (latency: 5.19ms)
+INFO   System health: healthy
+INFO   Services health: healthy
+INFO   Overall: DB=healthy, System=healthy, Services=healthy
+INFO === Startup Diagnostics Complete ===
+DEBUG Enterprise governance checks registered
+DEBUG Post-migrate hooks connected: auto-bootstrap + readiness
+INFO All event handlers registered (13 event types)
+INFO Registered job handler: report_generation
+INFO Registered job handler: export_generation
+INFO Registered job handler: financial_reconciliation
+INFO Registered job handler: anomaly_scan
+INFO Registered job handler: inventory_expiry_scan
+INFO Registered job handler: notification_dispatch
+INFO Registered job handler: cleanup_task
+INFO Registered job handler: overdue_scan

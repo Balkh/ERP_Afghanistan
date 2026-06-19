@@ -66,7 +66,7 @@ class EventStoreScreen(BaseScreen):
 
         # Summary bar
         self.summary_label = QLabel("Loading...")
-        self.summary_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_LABEL}px;")
+        self.summary_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_LABEL}pt;")
         layout.addWidget(self.summary_label)
 
         # Event table

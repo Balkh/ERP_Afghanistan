@@ -105,7 +105,7 @@ def get_mac_address() -> str:
                 check=True
             )
             # Extract MAC address from output like: "00-1A-2B-3C-4D-5E \t\t\"Connection Name\""
-            lines = stdout.strip().split('\n')
+            lines = result.stdout.strip().split('\n')
             for line in lines:
                 if line.strip():
                     # Take the first MAC address found

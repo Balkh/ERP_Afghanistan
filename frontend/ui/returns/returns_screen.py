@@ -1,4 +1,5 @@
 """Returns management screen."""
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
                                    QLabel, QLineEdit,
                                    QComboBox,
@@ -17,7 +18,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import AlertDialog, ConfirmDialog, EnterpriseDialog, DialogType
 from ui.components.page_header import PageHeader
 from ui.components.forms import FormSection
-from ui.components.tables import EnterpriseTable, TableColumn, DataEntryGrid
+from ui.components.tables import EnterpriseTable, TableColumn, build_table_stylesheet, DataEntryGrid
 
 
 class ReturnsScreen(BaseScreen):
@@ -94,13 +95,13 @@ class ReturnsScreen(BaseScreen):
         # Loading and Empty states
         self.loading_label = QLabel("Loading return orders...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         self.empty_label = QLabel("No return orders found\n\nUse '+ New Return' to create a return order.\nReturns are used to handle damaged, expired, or returned goods from customers or to suppliers.")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY}pt; padding: {SPACING_XL + SPACING_MD}px; line-height: 1.6;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setWordWrap(True)
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
@@ -151,7 +152,7 @@ class ReturnsScreen(BaseScreen):
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
         bar.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -260,7 +261,13 @@ class ReturnsScreen(BaseScreen):
                 response = self._api_client.get(endpoint, params=params)
                 
                 if response and isinstance(response, dict) and response.get("success"):
-                    self.returns_data = response.get("data", [])
+                    data = response.get("data", [])
+                    if isinstance(data, dict):
+                        self.returns_data = data.get("results", [])
+                    elif isinstance(data, list):
+                        self.returns_data = data
+                    else:
+                        self.returns_data = []
                 elif isinstance(response, list):
                     self.returns_data = response
                 else:
@@ -272,7 +279,7 @@ class ReturnsScreen(BaseScreen):
                     self._populate_table()
                     self._load_summary()
             except Exception as e:
-                print(f"Error loading returns: {e}")
+                logging.getLogger(__name__).warning(f"Error loading returns: {e}")
                 self.returns_data = self._get_mock_returns()
                 self._populate_table()
         else:
@@ -630,7 +637,7 @@ class ReturnOrderDialog(EnterpriseDialog):
         self.invoice_search.setMinimumHeight(30)
         self.invoice_search.setStyleSheet(
             f"background-color: {COLOR_BG_INPUT}; color: {COLOR_TEXT_PRIMARY}; "
-            f"border: 1px solid {COLOR_BORDER_INPUT}; border-radius: {BORDER_RADIUS_MD}; "
+            f"border: 1px solid {COLOR_BORDER_INPUT}; border-radius: {BORDER_RADIUS_MD}px; "
             f"padding: 0 {SPACING_SM}px;"
         )
         self.invoice_search.returnPressed.connect(self._load_invoice)
@@ -659,7 +666,7 @@ class ReturnOrderDialog(EnterpriseDialog):
         items_group = QGroupBox("Return Items")
         items_group.setStyleSheet(
             f"QGroupBox {{ font-weight: bold; border: 1px solid {COLOR_BORDER_DIALOG}; "
-            f"border-radius: {BORDER_RADIUS_LG}; margin-top: {SPACING_LG}px; padding-top: {SPACING_LG}px; }}"
+            f"border-radius: {BORDER_RADIUS_LG}px; margin-top: {SPACING_LG}px; padding-top: {SPACING_LG}px; }}"
         )
         items_layout = QVBoxLayout(items_group)
 

@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFrame, QWidget,
                                 QLineEdit, QComboBox, QDateEdit, QSpinBox, QLabel)
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -112,7 +113,7 @@ class BatchFormDialog(EnterpriseDialog):
                 if isinstance(p, dict):
                     self.product_combo.addItem(p.get('name'), p.get('id'))
         except Exception as e:
-            print(f"Error fetching products: {e}")
+            logging.getLogger(__name__).warning(f"Error fetching products: {e}")
 
     def populate_warehouses(self):
         self.warehouse_combo.addItem("Select Warehouse", None)
@@ -127,11 +128,13 @@ class BatchFormDialog(EnterpriseDialog):
                 if isinstance(w, dict):
                     self.warehouse_combo.addItem(w.get('name'), w.get('id'))
         except Exception as e:
-            print(f"Error fetching warehouses: {e}")
+            logging.getLogger(__name__).warning(f"Error fetching warehouses: {e}")
 
     def load_batch_data(self):
         try:
             response = self.api_client.get(f"/api/inventory/batches/{self.batch_id}/")
+            if not response:
+                return
             batch = response.get('data') if isinstance(response, dict) and response.get('success') else response
             if batch:
                 self.batch_number_input.setText(batch.get("batch_number") or "")
@@ -148,7 +151,7 @@ class BatchFormDialog(EnterpriseDialog):
                 if idx >= 0:
                     self.warehouse_combo.setCurrentIndex(idx)
         except Exception as e:
-            print(f"Error loading batch data: {e}")
+            logging.getLogger(__name__).warning(f"Error loading batch data: {e}")
 
     def get_form_data(self):
         return {

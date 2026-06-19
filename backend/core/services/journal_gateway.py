@@ -23,7 +23,7 @@ from django.utils import timezone
 from accounting.models import JournalEntry, JournalEntryLine, Account
 from accounting.services.journal_engine import JournalEngine
 from core.services.financial_audit import FinancialAuditService
-from accounting.models import is_period_locked, get_period_for_date
+from accounting.models import is_period_locked, get_open_period_for_date
 
 logger = logging.getLogger('erp.journal_gateway')
 
@@ -81,7 +81,7 @@ class JournalGateway:
             entry_date = timezone.now().date()
 
         if is_period_locked(entry_date):
-            period = get_period_for_date(entry_date)
+            period = get_open_period_for_date(entry_date)
             period_info = f' (period: {period.code})' if period else ''
             raise ValidationError(
                 f'Cannot create journal entry in a locked/closed period{period_info}. '
@@ -162,7 +162,7 @@ class JournalGateway:
             raise ValidationError(f'Journal entry {entry.entry_number} is already posted.')
 
         if is_period_locked(entry.entry_date):
-            period = get_period_for_date(entry.entry_date)
+            period = get_open_period_for_date(entry.entry_date)
             period_info = f' (period: {period.code})' if period else ''
             raise ValidationError(
                 f'Cannot post journal entry in a locked/closed period{period_info}. '
@@ -245,7 +245,7 @@ class JournalGateway:
             )
 
         if is_period_locked(entry.entry_date):
-            period = get_period_for_date(entry.entry_date)
+            period = get_open_period_for_date(entry.entry_date)
             period_info = f' (period: {period.code})' if period else ''
             raise ValidationError(
                 f'Cannot reverse journal entry in a locked/closed period{period_info}. '

@@ -119,7 +119,7 @@ class NotificationItem(QWidget):
         layout.setSpacing(SPACING_SM)
 
         if self._simple_message:
-            msg_label = QLabel(self._message if self._message else self._title)
+            msg_label = QLabel(str(self._message) if self._message else str(self._title or ""))
             msg_label.setFont(QFont("Segoe UI", TEXT_BODY))
             msg_label.setStyleSheet(f"color: {text_color}; background: transparent; border: none;")
             msg_label.setWordWrap(True)
@@ -134,7 +134,7 @@ class NotificationItem(QWidget):
             title_label.setStyleSheet(f"color: {text_color}; background: transparent; border: none;")
             content.addWidget(title_label)
 
-            message_label = QLabel(self._message)
+            message_label = QLabel(str(self._message) if self._message else "")
             message_label.setFont(QFont("Segoe UI", TEXT_TABLE))
             message_label.setStyleSheet(f"color: {text_color}; background: transparent; border: none;")
             message_label.setWordWrap(True)
@@ -158,11 +158,11 @@ class NotificationItem(QWidget):
                 background-color: transparent;
                 border: none;
                 color: {text_color};
-                font-size: {TEXT_CARD_TITLE}px;
+                font-size: {TEXT_CARD_TITLE}pt;
             }}
             IconButton:hover {{
                 background-color: {COLOR_BG_ELEVATED};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
             }}
         """)
         close_btn.clicked.connect(self.close)

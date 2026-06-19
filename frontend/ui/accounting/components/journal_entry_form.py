@@ -91,7 +91,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
                 font-size: {TEXT_LABEL}pt;
                 color: {COLOR_FORM_SECTION_TITLE};
                 border: 1px solid {COLOR_FORM_SECTION_DIVIDER};
-                border-radius: {BORDER_RADIUS_LG};
+                border-radius: {BORDER_RADIUS_LG}px;
                 margin-top: {SECTION_TITLE_SPACING}px;
                 padding-top: {SECTION_TITLE_SPACING + 6}px;
                 background-color: {COLOR_BG_SURFACE};
@@ -129,7 +129,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
         bottom_layout = QHBoxLayout()
 
         totals_frame = QFrame()
-        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG};")
+        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px;")
         totals_layout = QHBoxLayout(totals_frame)
 
         totals_layout.addWidget(QLabel("Total Debit:"))
@@ -156,7 +156,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
         balance_font = QFont("Segoe UI", TEXT_CARD_TITLE)
         balance_font.setWeight(QFont.Weight.Bold)
         self.balance_label.setFont(balance_font)
-        self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_SUCCESS_BG};")
+        self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; background-color: {COLOR_SUCCESS_BG};")
         totals_layout.addWidget(self.balance_label)
 
         bottom_layout.addWidget(totals_frame)
@@ -199,7 +199,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
                     combo.clear()
                     combo.addItem("Select Account...", None)
                     for acc in sorted(self.accounts, key=lambda x: x.get("code", "")):
-                        combo.addItem(f"{acc['code']} - {acc['name']}", acc["id"])
+                        combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get('id'))
                     combo.setCurrentIndex(current_idx)
         except Exception:
             self.accounts = []
@@ -212,7 +212,7 @@ class JournalEntryFormDialog(EnterpriseDialog):
         account_combo = QComboBox()
         account_combo.addItem("Select Account...", None)
         for acc in sorted(self.accounts, key=lambda x: x.get("code", "")):
-            account_combo.addItem(f"{acc['code']} - {acc['name']}", acc["id"])
+            account_combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get('id'))
         self.lines_table.set_cell_widget(row, 0, account_combo)
 
         desc_input = QLineEdit()
@@ -274,14 +274,14 @@ class JournalEntryFormDialog(EnterpriseDialog):
 
         if total_debit == total_credit and total_debit > 0:
             self.balance_label.setText("BALANCED")
-            self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_SUCCESS_BG};")
+            self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px; background-color: {COLOR_SUCCESS_BG};")
         elif total_debit == 0 and total_credit == 0:
             self.balance_label.setText("EMPTY")
-            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_BG_SURFACE};")
+            self.balance_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px; background-color: {COLOR_BG_SURFACE};")
         else:
             diff = abs(total_debit - total_credit)
             self.balance_label.setText(f"UNBALANCED ({diff:,.2f})")
-            self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}; background-color: {COLOR_DANGER_BG};")
+            self.balance_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: {SPACING_XS}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px; background-color: {COLOR_DANGER_BG};")
 
     def get_entry_data(self):
         data = {

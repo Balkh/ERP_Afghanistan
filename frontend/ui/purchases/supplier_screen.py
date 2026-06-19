@@ -13,6 +13,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.forms import FormSection
+from theme.style_builder import UIStyleBuilder
 
 
 class SupplierScreen(BaseScreen):
@@ -69,21 +70,21 @@ class SupplierScreen(BaseScreen):
         # Loading indicator
         self.loading_label = QLabel("Loading suppliers...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
 
         # Error indicator
         self.error_label = QLabel()
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
+        self.error_label.setStyleSheet(UIStyleBuilder.get_state_label_style("error"))
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
 
         # Empty state indicator
         self.empty_label = QLabel("No suppliers found")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; font-size: {TEXT_BODY}pt; padding: {SPACING_MD}px;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
 

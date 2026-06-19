@@ -34,7 +34,7 @@ class PaymentScreen(BaseScreen):
 
     def _setup_screen(self):
         super()._setup_screen()
-        layout = QVBoxLayout(self)
+        layout = self.layout() or QVBoxLayout(self)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -105,7 +105,7 @@ class PaymentScreen(BaseScreen):
             QLineEdit {{
                 background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
                 border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM};
+                border-radius: {BORDER_RADIUS_SM}px;
                 padding: {SPACING_XS}px {SPACING_SM}px;
                 color: {COLOR_TEXT_PRIMARY};
             }}

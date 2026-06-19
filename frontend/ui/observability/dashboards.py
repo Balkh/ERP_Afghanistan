@@ -593,7 +593,7 @@ class ReplayTimeTravelView(_BaseDashboard):
         header.addWidget(title)
         header.addStretch()
         readonly_tag = QLabel("VIEW ONLY")
-        readonly_tag.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_MUTED}; padding: {SPACING_XS}px {SPACING_SM}px; border-radius: {BORDER_RADIUS_SM}; font-size: {TEXT_TABLE}px; font-weight: bold;")
+        readonly_tag.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_MUTED}; padding: {SPACING_XS}px {SPACING_SM}px; border-radius: {BORDER_RADIUS_SM}px; font-size: {TEXT_TABLE}pt; font-weight: bold;")
         header.addWidget(readonly_tag)
 
         self.last_update = QLabel("")
@@ -733,7 +733,7 @@ class DigitalTwinTelemetryView(_BaseDashboard):
                 color: {COLOR_TEXT_SECONDARY};
                 padding: {SPACING_6}px {SPACING_LG}px;
                 border: none;
-                font-size: {TEXT_LABEL}px;
+                font-size: {TEXT_LABEL}pt;
             }}
             QTabBar::tab:selected {{
                 background-color: {COLOR_BG_SURFACE};

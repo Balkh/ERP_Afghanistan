@@ -11,7 +11,7 @@ def build_filter_bar():
     bar = QFrame()
     bar.setStyleSheet(
         f"background-color: {COLOR_BG_MAIN}; border: 1px solid {COLOR_BORDER}; "
-        f"border-radius: {BORDER_RADIUS_LG};"
+        f"border-radius: {BORDER_RADIUS_LG}px;"
     )
     layout = QHBoxLayout(bar)
     layout.setContentsMargins(SPACING_SM, SPACING_SM, SPACING_SM, SPACING_SM)
