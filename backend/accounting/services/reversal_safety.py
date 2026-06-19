@@ -23,7 +23,7 @@ from accounting.models import (
     JournalEntryLine,
     Account,
     is_period_locked,
-    get_period_for_date,
+    get_open_period_for_date,
 )
 from core.services.journal_gateway import JournalGateway
 
@@ -164,7 +164,7 @@ class ReversalSafetyService:
     def _check_period_lock(cls, entry: JournalEntry, impact: ReversalImpact):
         """Check if the entry's period is locked."""
         if is_period_locked(entry.entry_date):
-            period = get_period_for_date(entry.entry_date)
+            period = get_open_period_for_date(entry.entry_date)
             period_info = f' (period: {period.code})' if period else ''
             impact.add_blocker(
                 'PERIOD_LOCKED',

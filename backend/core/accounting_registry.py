@@ -143,5 +143,10 @@ ACC.register('payroll_salary',      '7010', 'Payroll Salary Expense',      'EXPE
 ACC.register('ar', '1200',  'Accounts Receivable (alias)',   'ASSET')
 ACC.register('ap', '2100',  'Accounts Payable (alias)',      'LIABILITY')
 
+# Inventory adjustments
+ACC.register('inventory_gain',       '5200', 'Inventory Gain',                'EXPENSE')
+ACC.register('inventory_loss',       '5210', 'Inventory Loss',                'EXPENSE')
+ACC.register('inventory_write_off',  '5220', 'Inventory Write-Off',           'EXPENSE')
+
 # Lock the registry — no more changes
 ACC.freeze()

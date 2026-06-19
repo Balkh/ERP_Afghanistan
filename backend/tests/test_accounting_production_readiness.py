@@ -20,7 +20,7 @@ from django.utils import timezone
 
 from accounting.models import (
     Account, JournalEntry, JournalEntryLine, JournalEventLog,
-    FiscalPeriod, FiscalPeriodCloseLog, is_period_locked, get_period_for_date,
+    FiscalPeriod, FiscalPeriodCloseLog, is_period_locked, get_open_period_for_date,
 )
 from accounting.services.journal_engine import JournalEngine
 from accounting.services.journal_validators import validate_lines, generate_entry_number
@@ -168,7 +168,7 @@ class JournalEnginePostUnpostReverseTest(TransactionTestCase):
 
 
 class PeriodLockHelperTest(TestCase):
-    """Test is_period_locked and get_period_for_date helpers."""
+    """Test is_period_locked and get_open_period_for_date helpers."""
 
     def setUp(self):
         self.open_period = FiscalPeriod.objects.create(
@@ -193,13 +193,12 @@ class PeriodLockHelperTest(TestCase):
         result = is_period_locked(date(2024, 6, 15))
         self.assertIsNotNone(result)
 
-    def test_get_period_for_date_locked(self):
-        period = get_period_for_date(date(2025, 6, 15))
-        self.assertIsNotNone(period)
-        self.assertEqual(period.code, 'LOCKED')
+    def test_get_open_period_for_date_locked(self):
+        period = get_open_period_for_date(date(2025, 6, 15))
+        self.assertIsNone(period)
 
-    def test_get_period_for_date_open(self):
-        period = get_period_for_date(date(2026, 6, 15))
+    def test_get_open_period_for_date_open(self):
+        period = get_open_period_for_date(date(2026, 6, 15))
         self.assertIsNotNone(period)
         self.assertEqual(period.code, 'OPEN')
 

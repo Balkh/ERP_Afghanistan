@@ -28,6 +28,7 @@ coverage.xml
 *.pot
 *.mo
 *.orig
+security_baseline.json
 *.rej
 *~
 .DS_Store

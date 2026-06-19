@@ -16,7 +16,7 @@ from accounting.models import (
     JournalEntryLine,
     is_period_locked,
     get_open_period_for_date,
-    get_period_for_date,
+    get_open_period_for_date,
 )
 from accounting.services.period_closing import PeriodClosingService
 
@@ -119,9 +119,9 @@ class PeriodHelperFunctionsTest(TestCase):
         period = get_open_period_for_date(date(2026, 6, 15))
         self.assertEqual(period, self.open_period)
 
-    def test_get_period_for_date(self):
-        period = get_period_for_date(date(2025, 6, 15))
-        self.assertEqual(period, self.locked_period)
+    def test_get_open_period_for_date_locked_returns_none(self):
+        period = get_open_period_for_date(date(2025, 6, 15))
+        self.assertIsNone(period, "get_open_period_for_date should return None for LOCKED periods")
 
 
 class PeriodClosingReadinessTest(TestCase):
