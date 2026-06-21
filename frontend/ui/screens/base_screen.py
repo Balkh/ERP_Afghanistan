@@ -47,6 +47,7 @@ class BaseScreen(AsyncRequestMixin, QWidget):
         self._navigation_manager = None
         self._data_cache: Dict[str, Any] = {}
         self._is_visible = False
+        self._data_loaded_once: bool = False  # P-REC: load_data fires once, not on every navigation
         self._refresh_timer: Optional[QTimer] = None
         self._auto_refresh_interval = 0
         self._dirty: bool = False
@@ -137,7 +138,15 @@ class BaseScreen(AsyncRequestMixin, QWidget):
             self.screen_hidden.emit()
             
     def _on_screen_shown(self):
-        """Handle screen shown. Override in subclasses."""
+        """Handle screen shown. Override in subclasses.
+
+        P-REC: default implementation loads data ONCE on first show.
+        Subclasses that override this and still call load_data() must honor the
+        `_data_loaded_once` flag to avoid reloading on every navigation.
+        """
+        if self._data_loaded_once:
+            return
+        self._data_loaded_once = True
         self.load_data()
         
     def _on_screen_hidden(self):
@@ -148,7 +157,8 @@ class BaseScreen(AsyncRequestMixin, QWidget):
         self.set_state(ScreenState.READY)
         
     def refresh_data(self):
-        """Refresh screen data."""
+        """Refresh screen data (forces a reload regardless of the once-guard)."""
+        self._data_loaded_once = True  # mark loaded so a subsequent _on_screen_shown won't double-fire
         self.load_data()
         
     def set_auto_refresh(self, interval_seconds: int):

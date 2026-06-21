@@ -199,3 +199,16 @@
 {"type": "dialog", "dialog_type": "custom", "duration_ms": 8916.3, "ts": 1780202859.0795078}
 {"type": "exit", "point": "close", "ts": 1780202953.4345636}
 {"type": "exit", "point": "close", "ts": 1781562327.9179332}
+{"type": "table_render", "rows": 0, "duration_ms": 1.0, "ts": 1782031434.5932367}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782031446.9478285}
+{"type": "navigation", "screen": "Products", "duration_ms": 25704.9, "ts": 1782031446.9478285}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 25540.4, "ts": 1782031511.2060971}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782031533.7898839}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 38763.0, "ts": 1782031597.4476206}
+{"type": "navigation", "screen": "Sales Invoice", "duration_ms": 4342.3, "ts": 1782031653.700166}
+{"type": "table_render", "rows": 4, "duration_ms": 44.2, "ts": 1782031699.279353}
+{"type": "table_render", "rows": 4, "duration_ms": 0.0, "ts": 1782031699.2904866}
+{"type": "navigation", "screen": "Customers", "duration_ms": 323.2, "ts": 1782031699.2904866}
+{"type": "navigation", "screen": "Chart of Accounts", "duration_ms": 12895.1, "ts": 1782031769.667427}
+{"type": "dialog", "dialog_type": "custom", "duration_ms": 28924.7, "ts": 1782031824.5430586}
+{"type": "exit", "point": "close", "ts": 1782031827.1512764}

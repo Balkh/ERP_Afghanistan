@@ -312,11 +312,11 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(SPACING_NONE)
         self._outer_layout.addLayout(main_layout)
-        
+
         # Create loading overlay
         self.loading_overlay = LoadingOverlay(self)
         self.loading_overlay.setGeometry(0, 0, self.width(), self.height())
-        
+
         # Connection check timer (throttled to reduce UI thread pressure)
         self.connection_timer = QTimer(self)
         self.connection_timer.timeout.connect(self.check_connection)
@@ -324,9 +324,15 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(4000, self.check_connection)
         self.update_device_id_display()
-        self.create_menu_bar()
-        
-        # Update license status display
+
+        # P-REC: menu bar construction (40+ QAction widgets) deferred to next
+        # event-loop tick so it does not block first paint. It is built before the
+        # user can interact with the window in any case. Tracked for cancellation
+        # on close via a no-op guard (menu is cheap to skip if closing already).
+        self._schedule_deferred(0, self.create_menu_bar)
+
+        # Update license status display (cheap, runs synchronously — single call here;
+        # the duplicate call previously at end of _build_ui removed)
         self.update_license_status_display()
 
         # Create sidebar with role-based navigation
@@ -422,10 +428,9 @@ class MainWindow(QMainWindow):
         self.sidebar.page_changed.connect(self.change_page)
         self.signals_to_methods.setdefault('page_changed', []).append(self.change_page)
         self.sidebar.set_active_item(0, emit_signal=False)
-        
-        # Update device ID display in status bar
-        self.update_device_id_display()
-        self.update_license_status_display()
+
+        # P-REC: device-id + license-status displays were already updated earlier in
+        # _build_ui. The duplicate calls here ran identical code twice at startup.
 
     def change_page(self, index, page_title):
         """Change the current page based on sidebar selection."""
