@@ -1,0 +1,14 @@
+# Local design-system enforcement.
+#   Install once:   pip install pre-commit && pre-commit install
+#   Runs on commit whenever a frontend/ui/*.py file is staged.
+# The enforcer resolves the frontend dir from its own path, so it works
+# regardless of the working directory pre-commit invokes it from.
+repos:
+  - repo: local
+    hooks:
+      - id: design-system-enforcer
+        name: Design System Enforcer (tokens / pt-units / theme colors)
+        entry: python frontend/scripts/pre_commit_enforcer.py --full-scan
+        language: system
+        pass_filenames: false
+        files: ^frontend/ui/.*\.py$
