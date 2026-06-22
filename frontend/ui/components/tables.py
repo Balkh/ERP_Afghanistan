@@ -337,36 +337,29 @@ class EnterpriseTable(QTableWidget):
 
     def _refresh_display(self):
         self.blockSignals(True)
-        # P-REC: suspend widget updates for the duration of the bulk repopulate.
-        # Without this, each setItem() triggers an independent viewport repaint;
-        # for a 200-row table this means ~200 repaints collapsed into one.
-        self.setUpdatesEnabled(False)
-        try:
-            self.setRowCount(0)
+        self.setRowCount(0)
 
-            for row_idx, row_data in enumerate(self._filtered_data):
-                self.insertRow(row_idx)
-                for col_idx, col in enumerate(self._columns):
-                    value = row_data.get(col.key, "")
-                    if col.format_func:
-                        display_value = col.format_func(value)
-                    else:
-                        display_value = str(value) if value is not None else ""
+        for row_idx, row_data in enumerate(self._filtered_data):
+            self.insertRow(row_idx)
+            for col_idx, col in enumerate(self._columns):
+                value = row_data.get(col.key, "")
+                if col.format_func:
+                    display_value = col.format_func(value)
+                else:
+                    display_value = str(value) if value is not None else ""
 
-                    item = QTableWidgetItem(display_value)
-                    # Numeric auto-detect: right-align numeric-like values
-                    if col.align == "right" or _looks_numeric(display_value):
-                        align = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-                    elif col.align == "center":
-                        align = Qt.AlignmentFlag.AlignCenter
-                    else:
-                        align = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-                    item.setTextAlignment(align)
-                    item.setData(Qt.ItemDataRole.UserRole, row_data)
-                    self.setItem(row_idx, col_idx, item)
-        finally:
-            self.setUpdatesEnabled(True)
-            self.viewport().update()
+                item = QTableWidgetItem(display_value)
+                # Numeric auto-detect: right-align numeric-like values
+                if col.align == "right" or _looks_numeric(display_value):
+                    align = Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+                elif col.align == "center":
+                    align = Qt.AlignmentFlag.AlignCenter
+                else:
+                    align = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+                item.setTextAlignment(align)
+                item.setData(Qt.ItemDataRole.UserRole, row_data)
+                self.setItem(row_idx, col_idx, item)
+
         self.blockSignals(False)
 
     def keyPressEvent(self, event):

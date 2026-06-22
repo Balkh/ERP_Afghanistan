@@ -188,15 +188,26 @@ class ReconciliationService:
         original_invoice = return_order.invoice or return_order.purchase_invoice
         invoice_total = original_invoice.total_amount if original_invoice else Decimal('0')
         
-        # Get total returns for this invoice
+        # Get total returns for this invoice (handle both invoice types)
         from returns.models import ReturnOrder
-        total_returns = ReturnOrder.objects.filter(
-            invoice=original_invoice
-        ).exclude(
-            status='REJECTED'
-        ).aggregate(
-            total=models.Sum('total_amount')
-        )['total'] or Decimal('0')
+        if return_order.invoice:
+            total_returns = ReturnOrder.objects.filter(
+                invoice=return_order.invoice
+            ).exclude(
+                status='REJECTED'
+            ).aggregate(
+                total=models.Sum('total_amount')
+            )['total'] or Decimal('0')
+        elif return_order.purchase_invoice:
+            total_returns = ReturnOrder.objects.filter(
+                purchase_invoice=return_order.purchase_invoice
+            ).exclude(
+                status='REJECTED'
+            ).aggregate(
+                total=models.Sum('total_amount')
+            )['total'] or Decimal('0')
+        else:
+            total_returns = Decimal('0')
         
         total_returns += return_order.total_amount
         

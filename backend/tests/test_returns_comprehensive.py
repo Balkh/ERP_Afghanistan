@@ -29,7 +29,7 @@ def _setup_common(self):
     self.company = Company.objects.create(name="Test Company", code=f"TC-{uuid.uuid4().hex[:8]}")
     self.category = Category.objects.create(name="Test Category", is_active=True)
     self.unit = Unit.objects.create(name="Piece", symbol="PCS", is_active=True)
-    self.warehouse = Warehouse.objects.create(name="Main Warehouse", code="MW001", is_active=True)
+    self.warehouse = Warehouse.objects.create(name="Main Warehouse", code=f"MW001-{uuid.uuid4().hex[:8]}", is_active=True)
     self.product1 = Product.objects.create(
         name="Test Product 1", sku="TP001", barcode="BAR_TP001",
         category=self.category, unit=self.unit, is_active=True
@@ -571,6 +571,9 @@ class TestReturnAccountingIntegrity(TransactionTestCase):
 
     def test_supplier_balance_reduced_on_purchase_return(self):
         """Supplier balance should decrease when purchase return is approved."""
+        from purchases.models import PurchaseInvoice
+        from django.db.models import Sum
+        
         invoice = PurchaseInvoice.objects.create(
             supplier=self.supplier, company=self.company,
             subtotal=Decimal("700.00"), tax=Decimal("35.00"),
@@ -591,7 +594,25 @@ class TestReturnAccountingIntegrity(TransactionTestCase):
             movement_type='IN', quantity=Decimal("10.00"),
             reference_type='PURCHASE', reference_id=invoice.invoice_number,
         )
+        # Debug: check what the query finds
+        total_invoices = PurchaseInvoice.objects.filter(
+            supplier=self.supplier,
+            status__in=['CONFIRMED', 'RECEIVED', 'PARTIAL_PAID', 'PAID'],
+            is_active=True,
+        ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+        print(f"DEBUG: total_invoices query result = {total_invoices}")
+        print(f"DEBUG: supplier = {self.supplier}, supplier.company = {self.supplier.company}")
+        print(f"DEBUG: invoice = {invoice}, invoice.status = {invoice.status}, invoice.is_active = {invoice.is_active}")
+        
+        # Sync supplier to establish initial balance from the invoice
+        from core.balance_sync import BalanceSyncService
+        BalanceSyncService.sync_supplier(self.supplier)
+        # Must refresh to get the updated balance (sync_supplier operates on a fresh instance)
+        self.supplier.refresh_from_db()
         initial_balance = self.supplier.balance
+        print(f"DEBUG: initial_balance = {initial_balance}")
+        self.assertEqual(initial_balance, Decimal("735.00"))
+        
         return_order = ReturnOrder.objects.create(
             return_type='PURCHASE_RETURN', purchase_invoice=invoice, supplier=self.supplier,
             status='PENDING', reason='Test', total_amount=Decimal("735.00")
@@ -604,7 +625,9 @@ class TestReturnAccountingIntegrity(TransactionTestCase):
         )
         return_order.approve(self.employee)
         self.supplier.refresh_from_db()
-        self.assertEqual(self.supplier.balance, initial_balance - Decimal("735.00"))
+        print(f"DEBUG: final balance = {self.supplier.balance}")
+        # After full return, balance should be 0 (invoice - return = 735 - 735 = 0)
+        self.assertEqual(self.supplier.balance, Decimal("0.00"))
 
     def test_reconciliation_mismatch_when_returns_exceed_invoice(self):
         """Reconciliation should be marked MISMATCHED when returns exceed invoice value."""

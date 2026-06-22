@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
                                 QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
                                 QDateEdit, QHeaderView, QAbstractItemView,
                                 QFrame, QMenu, QCheckBox, QTextEdit)
-from PySide6.QtCore import Qt, QDate, Signal, QTimer
+from PySide6.QtCore import Qt, QDate, Signal
 from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
 from utils.format import safe_float
@@ -50,8 +50,6 @@ class SalesInvoiceScreen(BaseScreen):
         self.customers = []
         self.products = []
         self._date_format = self._load_date_format()
-        self._signals_connected = False  # P-REC: guard against duplicate _wire_signals() calls
-        self._recalc_timer = None  # P-REC: debounce recalculate_totals (set up after widgets exist)
         super().__init__(parent)
         self._apply_date_format()
         self.setup_shortcuts()
@@ -79,19 +77,10 @@ class SalesInvoiceScreen(BaseScreen):
                 w.setDisplayFormat("yyyy-MM-dd")
 
     def _on_screen_shown(self):
-        # P-REC: load customers once on first reveal, non-blocking.
-        # Honors BaseScreen._data_loaded_once via load_data() guard below.
-        if not self._data_loaded_once:
-            self.load_data()
+        pass
 
     def load_data(self, params=None):
-        # P-REC: prevent duplicate concurrent loads. The async path returns
-        # immediately and populates the combo from the worker callback.
-        if getattr(self, '_customers_loading', False):
-            super().load_data(params)
-            return
-        self._customers_loading = True
-        self._load_customers_async()
+        self.load_customers()
         super().load_data(params)
 
     def _check_action(self, action: str) -> bool:
@@ -395,12 +384,6 @@ class SalesInvoiceScreen(BaseScreen):
         layout.addWidget(zone3)
 
     def _wire_signals(self):
-        # P-REC: idempotency guard — _wire_signals may be invoked multiple times
-        # (e.g. by tests calling _setup_screen twice). Without this guard Qt connects
-        # duplicate handlers, so a single click fires N actions.
-        if self._signals_connected:
-            return
-
         # Toolbar (search + add/remove)
         self.barcode_search.barcode_scanned.connect(self.on_barcode_scanned)
         self.barcode_search.product_selected.connect(self.on_product_selected)
@@ -411,10 +394,10 @@ class SalesInvoiceScreen(BaseScreen):
         self.items_table.itemChanged.connect(self.on_item_changed)
 
         # Totals
-        self.discount_input.valueChanged.connect(self._schedule_recalc)
+        self.discount_input.valueChanged.connect(self.recalculate_totals)
         self.tax_enabled_cb.stateChanged.connect(self.on_tax_enabled_changed)
-        self.tax_input.valueChanged.connect(self._schedule_recalc)
-        self.paid_input.valueChanged.connect(self._schedule_recalc)
+        self.tax_input.valueChanged.connect(self.recalculate_totals)
+        self.paid_input.valueChanged.connect(self.recalculate_totals)
 
         # Primary actions
         self.save_btn.clicked.connect(self.save_draft)
@@ -426,8 +409,6 @@ class SalesInvoiceScreen(BaseScreen):
         self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
         self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
         self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
-
-        self._signals_connected = True
 
     def setup_shortcuts(self):
         """Setup keyboard shortcuts."""
@@ -441,77 +422,8 @@ class SalesInvoiceScreen(BaseScreen):
         QShortcut(QKeySequence("F2"), self).activated.connect(self.show_product_selector)
         QShortcut(QKeySequence("Delete"), self).activated.connect(self.remove_selected_item)
 
-    def _load_customers_async(self):
-        """P-REC: fetch customers off the UI thread.
-
-        Falls back to defaults immediately so the combo is usable, then replaces
-        with API data when the worker returns. Uses the existing
-        AsyncRequestMixin.run_api_request infrastructure (no new framework).
-        """
-        # Populate defaults synchronously so the customer combo is immediately usable
-        self.customers = [
-            {"id": "cust-1", "name": "Ahmad Pharmacy", "phone": "+93 70 111 1111", "address": "Kabul", "credit_limit": 50000, "balance": 12000},
-            {"id": "cust-2", "name": "Kabul Hospital", "phone": "+93 70 222 2222", "address": "Kabul", "credit_limit": 200000, "balance": 85000},
-            {"id": "cust-3", "name": "Walk-in Customer", "phone": "N/A", "address": "N/A", "credit_limit": 0, "balance": 0},
-        ]
-        self._populate_customer_combo()
-
-        if not self.api_client:
-            self._customers_loading = False
-            return
-
-        endpoint = get_endpoint("customers")
-
-        def _on_success(response):
-            try:
-                api_customers = []
-                if isinstance(response, list):
-                    api_customers = [c for c in response if isinstance(c, dict)]
-                elif isinstance(response, dict) and response.get('success'):
-                    data = response.get('data', [])
-                    if isinstance(data, list):
-                        api_customers = [c for c in data if isinstance(c, dict)]
-                    elif isinstance(data, dict):
-                        if 'results' in data:
-                            api_customers = [c for c in data.get('results', []) if isinstance(c, dict)]
-                        elif 'id' in data:
-                            api_customers = [data]
-                if api_customers:
-                    self.customers = api_customers
-                    self._populate_customer_combo()
-            except Exception as e:
-                logging.getLogger(__name__).warning(f"Failed to process customers response: {e}")
-            finally:
-                self._customers_loading = False
-
-        def _on_error(_message):
-            self._customers_loading = False
-
-        # run_api_request deduplicates by key — safe to call repeatedly.
-        self.run_api_request(
-            "customers", "GET", endpoint,
-            on_success=_on_success, on_error=_on_error,
-        )
-
-    def _populate_customer_combo(self):
-        """Populate the customer combo from self.customers. Idempotent."""
-        self.customer_combo.clear()
-        self.customer_combo.addItem("Select Customer...", None)
-        for customer in self.customers:
-            if isinstance(customer, dict):
-                self.customer_combo.addItem(customer.get("name", "Unknown"), customer.get("id", ""))
-
-        # Guard: connect only once
-        if not getattr(self, '_customer_combo_connected', False):
-            self.customer_combo.currentIndexChanged.connect(self.on_customer_selected)
-            self._customer_combo_connected = True
-
     def load_customers(self):
-        """Load customers from API (synchronous — kept for tests / explicit refresh).
-
-        NOTE: the live screen uses _load_customers_async() to avoid blocking the UI
-        thread. This synchronous variant is retained for backwards compatibility.
-        """
+        """Load customers from API."""
         # Default customers
         self.customers = [
             {"id": "cust-1", "name": "Ahmad Pharmacy", "phone": "+93 70 111 1111", "address": "Kabul", "credit_limit": 50000, "balance": 12000},
@@ -541,7 +453,16 @@ class SalesInvoiceScreen(BaseScreen):
             except Exception as e:
                 logging.getLogger(__name__).warning(f"Failed to load customers: {e}")
 
-        self._populate_customer_combo()
+        self.customer_combo.clear()
+        self.customer_combo.addItem("Select Customer...", None)
+        for customer in self.customers:
+            if isinstance(customer, dict):
+                self.customer_combo.addItem(customer.get("name", "Unknown"), customer.get("id", ""))
+
+        # Guard: connect only once (load_customers is called from _on_screen_shown)
+        if not getattr(self, '_customer_combo_connected', False):
+            self.customer_combo.currentIndexChanged.connect(self.on_customer_selected)
+            self._customer_combo_connected = True
 
     def on_customer_selected(self, index):
         """Handle customer selection."""
@@ -681,7 +602,7 @@ class SalesInvoiceScreen(BaseScreen):
     def on_item_changed(self, item):
         """Handle item change in table."""
         __row = item.row()
-        self._schedule_recalc()
+        self.recalculate_totals()
 
     def on_tax_enabled_changed(self, state):
         """Enable/disable tax rate input when tax toggle changes."""
@@ -689,19 +610,7 @@ class SalesInvoiceScreen(BaseScreen):
         self.tax_input.setEnabled(enabled)
         if not enabled:
             self.tax_input.setValue(0)
-        self._schedule_recalc()
-
-    # P-REC: debounce recalculation. The table and 3 spinboxes all fire on every
-    # edit; without coalescing, typing "1", "2", "5" in a qty cell triggers 3
-    # full-table rescans. A 180ms timer collapses a burst of edits into one pass.
-    _RECALC_DEBOUNCE_MS = 180
-
-    def _schedule_recalc(self):
-        if self._recalc_timer is None:
-            self._recalc_timer = QTimer(self)
-            self._recalc_timer.setSingleShot(True)
-            self._recalc_timer.timeout.connect(self.recalculate_totals)
-        self._recalc_timer.start(self._RECALC_DEBOUNCE_MS)
+        self.recalculate_totals()
 
     def recalculate_totals(self):
         """Recalculate invoice totals."""
