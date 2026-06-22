@@ -618,6 +618,7 @@
   "frontend/tests/ui/test_screen_integration.py::TestSidebarScreen::test_sidebar_navigates_to_settings",
   "frontend/tests/ui/test_screen_integration.py::TestThemeScreen::test_dark_theme_switch",
   "frontend/tests/ui/test_screen_integration.py::TestThemeScreen::test_light_theme_switch",
+  "frontend/tests/ui/test_screen_registry_imports.py::test_screen_registry_targets_importable",
   "frontend/tests/ui/test_screens.py::TestAccountLedgerScreenComponent::test_screen_exists",
   "frontend/tests/ui/test_screens.py::TestBatchScreenComponent::test_has_load_method",
   "frontend/tests/ui/test_screens.py::TestBatchScreenComponent::test_screen_exists",

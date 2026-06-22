@@ -212,3 +212,5 @@
 {"type": "navigation", "screen": "Chart of Accounts", "duration_ms": 12895.1, "ts": 1782031769.667427}
 {"type": "dialog", "dialog_type": "custom", "duration_ms": 28924.7, "ts": 1782031824.5430586}
 {"type": "exit", "point": "close", "ts": 1782031827.1512764}
+{"type": "exit", "point": "close", "ts": 1782090883.236662}
+{"type": "exit", "point": "close", "ts": 1782090883.2380555}
