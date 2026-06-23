@@ -214,3 +214,209 @@
 {"type": "exit", "point": "close", "ts": 1782031827.1512764}
 {"type": "exit", "point": "close", "ts": 1782090883.236662}
 {"type": "exit", "point": "close", "ts": 1782090883.2380555}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175534.4615443}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175546.7444587}
+{"type": "navigation", "screen": "Products", "duration_ms": 25185.0, "ts": 1782175546.7451243}
+{"type": "exit", "point": "close", "ts": 1782175546.893533}
+{"type": "exit", "point": "close", "ts": 1782175546.9198213}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175559.5608883}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175571.927923}
+{"type": "navigation", "screen": "Products", "duration_ms": 24702.8, "ts": 1782175571.927923}
+{"type": "exit", "point": "close", "ts": 1782175571.9451516}
+{"type": "exit", "point": "close", "ts": 1782175571.9493103}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175584.4100916}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175596.6812184}
+{"type": "navigation", "screen": "Categories", "duration_ms": 24538.9, "ts": 1782175596.6827092}
+{"type": "exit", "point": "close", "ts": 1782175596.6985161}
+{"type": "exit", "point": "close", "ts": 1782175596.7004297}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175609.2997556}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175621.6245182}
+{"type": "navigation", "screen": "Warehouses", "duration_ms": 24732.6, "ts": 1782175621.625339}
+{"type": "exit", "point": "close", "ts": 1782175621.6313405}
+{"type": "exit", "point": "close", "ts": 1782175621.6327496}
+{"type": "navigation", "screen": "Chart of Accounts", "duration_ms": 13335.5, "ts": 1782175635.1443164}
+{"type": "exit", "point": "close", "ts": 1782175635.1521306}
+{"type": "exit", "point": "close", "ts": 1782175635.1541255}
+{"type": "navigation", "screen": "Trial Balance", "duration_ms": 237.9, "ts": 1782175635.611718}
+{"type": "exit", "point": "close", "ts": 1782175635.611718}
+{"type": "exit", "point": "close", "ts": 1782175635.6162846}
+{"type": "navigation", "screen": "Sales Invoice", "duration_ms": 1803.0, "ts": 1782175637.6115932}
+{"type": "exit", "point": "close", "ts": 1782175637.6115932}
+{"type": "exit", "point": "close", "ts": 1782175637.6115932}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175650.2100844}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175662.4444618}
+{"type": "navigation", "screen": "Batches", "duration_ms": 24652.2, "ts": 1782175662.4444618}
+{"type": "exit", "point": "close", "ts": 1782175662.4653223}
+{"type": "exit", "point": "close", "ts": 1782175662.4677284}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175674.8898878}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175687.1938515}
+{"type": "navigation", "screen": "Products", "duration_ms": 24537.1, "ts": 1782175687.1938515}
+{"type": "exit", "point": "close", "ts": 1782175687.2126846}
+{"type": "exit", "point": "close", "ts": 1782175687.214964}
+{"type": "exit", "point": "close", "ts": 1782175687.4265246}
+{"type": "exit", "point": "close", "ts": 1782175687.4265246}
+{"type": "exit", "point": "close", "ts": 1782175687.6403465}
+{"type": "exit", "point": "close", "ts": 1782175687.6403465}
+{"type": "exit", "point": "close", "ts": 1782175687.8246338}
+{"type": "exit", "point": "close", "ts": 1782175687.8246338}
+{"type": "exit", "point": "close", "ts": 1782175715.9850001}
+{"type": "exit", "point": "close", "ts": 1782175715.9861658}
+{"type": "exit", "point": "close", "ts": 1782175716.1926515}
+{"type": "exit", "point": "close", "ts": 1782175716.1926515}
+{"type": "exit", "point": "close", "ts": 1782175716.6839294}
+{"type": "exit", "point": "close", "ts": 1782175716.9431946}
+{"type": "exit", "point": "close", "ts": 1782175716.9431946}
+{"type": "exit", "point": "close", "ts": 1782175717.1432586}
+{"type": "exit", "point": "close", "ts": 1782175717.1432586}
+{"type": "exit", "point": "close", "ts": 1782175717.3606188}
+{"type": "exit", "point": "close", "ts": 1782175717.3606188}
+{"type": "exit", "point": "close", "ts": 1782175717.5599213}
+{"type": "exit", "point": "close", "ts": 1782175717.5725732}
+{"type": "exit", "point": "close", "ts": 1782175717.775736}
+{"type": "exit", "point": "close", "ts": 1782175717.7767541}
+{"type": "table_render", "rows": 0, "duration_ms": 1.0, "ts": 1782175730.3017676}
+{"type": "exit", "point": "close", "ts": 1782175730.3400714}
+{"type": "exit", "point": "close", "ts": 1782175730.342065}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175742.811078}
+{"type": "exit", "point": "close", "ts": 1782175742.8310754}
+{"type": "exit", "point": "close", "ts": 1782175742.8342056}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175755.309283}
+{"type": "exit", "point": "close", "ts": 1782175755.3222961}
+{"type": "exit", "point": "close", "ts": 1782175755.324256}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175767.8300974}
+{"type": "exit", "point": "close", "ts": 1782175767.8598354}
+{"type": "exit", "point": "close", "ts": 1782175767.861839}
+{"type": "exit", "point": "close", "ts": 1782175768.2488902}
+{"type": "exit", "point": "close", "ts": 1782175768.2498956}
+{"type": "exit", "point": "close", "ts": 1782175768.7002833}
+{"type": "exit", "point": "close", "ts": 1782175768.7002833}
+{"type": "exit", "point": "close", "ts": 1782175781.3435178}
+{"type": "exit", "point": "close", "ts": 1782175781.3445172}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175793.9463718}
+{"type": "exit", "point": "close", "ts": 1782175793.9746509}
+{"type": "exit", "point": "close", "ts": 1782175793.9766538}
+{"type": "exit", "point": "close", "ts": 1782175806.6927185}
+{"type": "exit", "point": "close", "ts": 1782175806.6937172}
+{"type": "exit", "point": "close", "ts": 1782175806.944874}
+{"type": "exit", "point": "close", "ts": 1782175806.945891}
+{"type": "exit", "point": "close", "ts": 1782175807.182343}
+{"type": "exit", "point": "close", "ts": 1782175807.183692}
+{"type": "exit", "point": "close", "ts": 1782175807.4194713}
+{"type": "exit", "point": "close", "ts": 1782175807.4211962}
+{"type": "exit", "point": "close", "ts": 1782175807.609925}
+{"type": "exit", "point": "close", "ts": 1782175807.6109517}
+{"type": "exit", "point": "close", "ts": 1782175807.7902195}
+{"type": "exit", "point": "close", "ts": 1782175807.7911696}
+{"type": "exit", "point": "close", "ts": 1782175807.9686978}
+{"type": "exit", "point": "close", "ts": 1782175807.9686978}
+{"type": "exit", "point": "close", "ts": 1782175808.1576278}
+{"type": "exit", "point": "close", "ts": 1782175808.1576278}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175820.628648}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175832.917988}
+{"type": "navigation", "screen": "Products", "duration_ms": 24576.0, "ts": 1782175832.918984}
+{"type": "exit", "point": "close", "ts": 1782175832.939189}
+{"type": "exit", "point": "close", "ts": 1782175832.942191}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175845.4511774}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175857.7195818}
+{"type": "navigation", "screen": "Products", "duration_ms": 24578.3, "ts": 1782175857.7195818}
+{"type": "exit", "point": "close", "ts": 1782175857.728974}
+{"type": "exit", "point": "close", "ts": 1782175857.7308297}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175870.1583476}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175882.4854774}
+{"type": "navigation", "screen": "Categories", "duration_ms": 24592.4, "ts": 1782175882.4854774}
+{"type": "exit", "point": "close", "ts": 1782175882.4914916}
+{"type": "exit", "point": "close", "ts": 1782175882.493176}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175894.9581666}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175907.222529}
+{"type": "navigation", "screen": "Warehouses", "duration_ms": 24586.3, "ts": 1782175907.222529}
+{"type": "exit", "point": "close", "ts": 1782175907.2275252}
+{"type": "exit", "point": "close", "ts": 1782175907.2296374}
+{"type": "navigation", "screen": "Chart of Accounts", "duration_ms": 12466.0, "ts": 1782175919.8529358}
+{"type": "exit", "point": "close", "ts": 1782175919.8735604}
+{"type": "exit", "point": "close", "ts": 1782175919.87456}
+{"type": "navigation", "screen": "Trial Balance", "duration_ms": 61.1, "ts": 1782175920.1116695}
+{"type": "exit", "point": "close", "ts": 1782175920.1129692}
+{"type": "exit", "point": "close", "ts": 1782175920.1136217}
+{"type": "navigation", "screen": "Sales Invoice", "duration_ms": 77.2, "ts": 1782175920.3551073}
+{"type": "exit", "point": "close", "ts": 1782175920.356974}
+{"type": "exit", "point": "close", "ts": 1782175920.3589747}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175932.801632}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175945.1208394}
+{"type": "navigation", "screen": "Batches", "duration_ms": 24608.9, "ts": 1782175945.1208394}
+{"type": "exit", "point": "close", "ts": 1782175945.1289024}
+{"type": "exit", "point": "close", "ts": 1782175945.1303556}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175957.6825686}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175969.9702463}
+{"type": "navigation", "screen": "Products", "duration_ms": 24607.6, "ts": 1782175969.9702463}
+{"type": "exit", "point": "close", "ts": 1782175969.9806733}
+{"type": "exit", "point": "close", "ts": 1782175969.9827993}
+{"type": "exit", "point": "close", "ts": 1782175970.1441965}
+{"type": "exit", "point": "close", "ts": 1782175970.1441965}
+{"type": "exit", "point": "close", "ts": 1782175970.2920945}
+{"type": "exit", "point": "close", "ts": 1782175970.2920945}
+{"type": "exit", "point": "close", "ts": 1782175970.4560125}
+{"type": "exit", "point": "close", "ts": 1782175970.4560125}
+{"type": "exit", "point": "close", "ts": 1782175970.6544406}
+{"type": "exit", "point": "close", "ts": 1782175970.655242}
+{"type": "exit", "point": "close", "ts": 1782175970.8256788}
+{"type": "exit", "point": "close", "ts": 1782175970.8263927}
+{"type": "exit", "point": "close", "ts": 1782175970.981367}
+{"type": "exit", "point": "close", "ts": 1782175970.9826868}
+{"type": "exit", "point": "close", "ts": 1782175970.9826868}
+{"type": "exit", "point": "close", "ts": 1782175971.1647081}
+{"type": "exit", "point": "close", "ts": 1782175971.16583}
+{"type": "exit", "point": "close", "ts": 1782175971.3778763}
+{"type": "exit", "point": "close", "ts": 1782175971.3778763}
+{"type": "exit", "point": "close", "ts": 1782175971.58273}
+{"type": "exit", "point": "close", "ts": 1782175971.758912}
+{"type": "exit", "point": "close", "ts": 1782175971.7647548}
+{"type": "exit", "point": "close", "ts": 1782175971.9269419}
+{"type": "exit", "point": "close", "ts": 1782175971.9279387}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175984.4170783}
+{"type": "exit", "point": "close", "ts": 1782175984.4522202}
+{"type": "exit", "point": "close", "ts": 1782175984.454234}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782175996.918382}
+{"type": "exit", "point": "close", "ts": 1782175996.9523346}
+{"type": "exit", "point": "close", "ts": 1782175996.9533253}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176009.3964949}
+{"type": "exit", "point": "close", "ts": 1782176009.4233723}
+{"type": "exit", "point": "close", "ts": 1782176009.4257417}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176021.9765098}
+{"type": "exit", "point": "close", "ts": 1782176021.9957044}
+{"type": "exit", "point": "close", "ts": 1782176021.9977028}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176034.6180937}
+{"type": "exit", "point": "close", "ts": 1782176034.6477385}
+{"type": "exit", "point": "close", "ts": 1782176034.6487427}
+{"type": "exit", "point": "close", "ts": 1782176047.1472611}
+{"type": "exit", "point": "close", "ts": 1782176047.148248}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176059.709961}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176072.0291235}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176084.3284285}
+{"type": "exit", "point": "close", "ts": 1782176084.3662107}
+{"type": "exit", "point": "close", "ts": 1782176084.3672128}
+{"type": "exit", "point": "close", "ts": 1782176084.542345}
+{"type": "exit", "point": "close", "ts": 1782176084.542345}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176097.035675}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176109.3561637}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176121.712487}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176134.0498717}
+{"type": "exit", "point": "close", "ts": 1782176134.0881019}
+{"type": "exit", "point": "close", "ts": 1782176134.0899372}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782176158.963061}
+{"type": "exit", "point": "close", "ts": 1782176171.3735235}
+{"type": "exit", "point": "close", "ts": 1782176171.3754678}
+{"type": "exit", "point": "close", "ts": 1782176171.918294}
+{"type": "exit", "point": "close", "ts": 1782176171.9192944}
+{"type": "exit", "point": "close", "ts": 1782176172.3519387}
+{"type": "exit", "point": "close", "ts": 1782176172.3529398}
+{"type": "exit", "point": "close", "ts": 1782176172.5968611}
+{"type": "exit", "point": "close", "ts": 1782176172.600701}
+{"type": "exit", "point": "close", "ts": 1782176172.8215432}
+{"type": "exit", "point": "close", "ts": 1782176172.8244164}
+{"type": "exit", "point": "close", "ts": 1782176173.0286772}
+{"type": "exit", "point": "close", "ts": 1782176173.0338051}
+{"type": "exit", "point": "close", "ts": 1782176173.0338051}
+{"type": "exit", "point": "close", "ts": 1782176173.245344}
+{"type": "exit", "point": "close", "ts": 1782176173.2460473}
+{"type": "exit", "point": "close", "ts": 1782176173.463442}
+{"type": "exit", "point": "close", "ts": 1782176173.463442}

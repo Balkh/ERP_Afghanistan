@@ -69,6 +69,5 @@
   "frontend/tests/test_invoice_form_mixin.py::TestBuildFilters::test_creates_currency_combo": true,
   "frontend/tests/test_invoice_form_mixin.py::TestRemoveRow::test_default_removes_via_remove_row": true,
   "frontend/tests/test_sidebar_modules.py::TestStyleFunctions::test_all_styles_contain_color_tokens": true,
-  "frontend/tests/test_sidebar_modules.py::TestStyleFunctions::test_scrollers_style_no_hardcoded_hex": true,
-  "frontend/tests/ui/test_main_window.py::TestUIStatePersistence::test_page_state_tracked": true
+  "frontend/tests/test_sidebar_modules.py::TestStyleFunctions::test_scrollers_style_no_hardcoded_hex": true
 }

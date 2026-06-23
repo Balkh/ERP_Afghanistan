@@ -13,6 +13,17 @@ from unittest.mock import MagicMock, patch
 
 pytestmark = pytest.mark.qt
 
+# Authenticated admin user_data — mirrors what the production login flow injects
+# into MainWindow. Without this the AuthManager is unauthenticated and has_access()
+# correctly denies navigation, causing page-switch assertions to fail. All fixtures
+# below use this so tests exercise the real navigation path (not the deny path).
+ADMIN_USER_DATA = {
+    "username": "admin",
+    "role": "admin",
+    "roles": ["Admin"],
+    "ui_scopes": {"sidebar": [], "screens": [], "actions": {}, "hidden": []},
+}
+
 
 class TestMainWindowInitialization:
     """Test MainWindow initialization and page registration."""
@@ -32,7 +43,7 @@ class TestMainWindowInitialization:
                 mock_client.batches = MagicMock(return_value=[])
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -85,7 +96,7 @@ class TestPageRegistration:
                 mock_client.batches = MagicMock(return_value=[])
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -182,7 +193,7 @@ class TestSidebarIntegration:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -216,7 +227,7 @@ class TestPageSwitching:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -272,7 +283,7 @@ class TestUIStatePersistence:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -314,7 +325,7 @@ class TestResourceLifecycle:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -353,7 +364,7 @@ class TestMemorySafety:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -399,7 +410,7 @@ class TestBackendConnectedWidgets:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -449,7 +460,7 @@ class TestScreenValidation:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -499,7 +510,7 @@ class TestMenuBar:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -530,7 +541,7 @@ class TestSignalCleanup:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -555,7 +566,7 @@ class TestLicenseIntegration:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=None)
+                window = MainWindow(license_validator=None, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
@@ -575,7 +586,7 @@ class TestLicenseIntegration:
                 mock_client.get = MagicMock(return_value={"results": []})
                 mock_api.return_value = mock_client
 
-                window = MainWindow(license_validator=mock_license_validator)
+                window = MainWindow(license_validator=mock_license_validator, user_data=ADMIN_USER_DATA)
                 qtbot.addWidget(window)
                 yield window
                 window.close()
