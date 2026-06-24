@@ -420,9 +420,14 @@ class PayrollScreen(BaseScreen):
             AlertDialog.error("Error", f"Failed to approve payroll: {e}", self)
     
     def _on_screen_shown(self):
-        """Called when screen is shown (overrides BaseScreen)."""
+        """Called when screen is shown (overrides BaseScreen).
+
+        P-REC: super()._on_screen_shown() already loads data ONCE (via the
+        _data_loaded_once guard in BaseScreen). The previous explicit
+        self.load_data() here re-fetched payroll on every navigation visit.
+        Use refresh_data() to force a reload.
+        """
         super()._on_screen_shown()
-        self.load_data()
 
 
 class SalaryStructureDialog(EnterpriseDialog):

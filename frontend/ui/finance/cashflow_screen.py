@@ -350,6 +350,11 @@ class CashflowScreen(BaseScreen):
         self.position_table.set_data(table_data)
 
     def _on_screen_shown(self):
-        """Called when screen is shown."""
+        """Called when screen is shown.
+
+        P-REC: super()._on_screen_shown() already loads data ONCE (via the
+        _data_loaded_once guard in BaseScreen). The previous explicit
+        self.load_data() here re-fetched cashflow on every navigation visit.
+        Use refresh_data() to force a reload.
+        """
         super()._on_screen_shown()
-        self.load_data()
