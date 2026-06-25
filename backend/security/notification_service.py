@@ -181,7 +181,7 @@ def check_low_stock():
         remaining_quantity__lte=threshold,
         is_active=True,
         product__is_active=True,
-    ).select_related('product', 'warehouse')
+    ).select_related('product')
     
     notifications_created = 0
     
@@ -239,7 +239,7 @@ def check_expiring_batches():
             is_active=True,
             product__is_active=True,
             remaining_quantity__gt=0,
-        ).select_related('product', 'warehouse')
+        ).select_related('product')
         
         for batch in expiring_batches:
             recent_notification = Notification.objects.filter(

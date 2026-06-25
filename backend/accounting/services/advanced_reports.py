@@ -47,7 +47,7 @@ class AdvancedReportsService:
         total_value = Decimal('0')
         total_items = 0
         
-        for batch in queryset.select_related('product', 'product__category', 'warehouse'):
+        for batch in queryset.select_related('product', 'product__category'):
             product = batch.product
             product_id = str(product.id)
             
@@ -57,7 +57,7 @@ class AdvancedReportsService:
                     'product_code': product.sku or '',
                     'product_name': product.name,
                     'category': product.category.name if product.category else '',
-                    'warehouse': batch.warehouse.name if batch.warehouse else '',
+                    'warehouse': batch.location or '',
                     'total_quantity': 0,
                     'total_value': Decimal('0'),
                     'avg_cost': Decimal('0'),
@@ -65,7 +65,7 @@ class AdvancedReportsService:
                 }
             
             # Calculate batch value (using purchase price or cost price)
-            batch_value = batch.remaining_quantity * (batch.cost_price or Decimal('0'))
+            batch_value = batch.remaining_quantity * (batch.purchase_price or Decimal('0'))
             
             product_values[product_id]['total_quantity'] += batch.remaining_quantity
             product_values[product_id]['total_value'] += batch_value
@@ -73,7 +73,7 @@ class AdvancedReportsService:
                 'batch_number': batch.batch_number,
                 'expiry_date': batch.expiry_date.isoformat() if batch.expiry_date else '',
                 'quantity': float(batch.remaining_quantity),
-                'cost_price': float(batch.cost_price or 0),
+                'cost_price': float(batch.purchase_price or 0),
                 'value': float(batch_value)
             })
             

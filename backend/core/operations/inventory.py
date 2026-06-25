@@ -124,7 +124,7 @@ class InventoryIntegrityMonitor:
 
                 expected_balance = total_in - total_out
 
-                batches = Batch.objects.filter(warehouse=warehouse)
+                batches = Batch.objects.filter(location=str(warehouse.id))
                 actual_balance = sum(b.remaining_quantity for b in batches)
 
                 if abs(expected_balance - actual_balance) > Decimal('0.01'):

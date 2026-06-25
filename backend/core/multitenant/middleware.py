@@ -52,6 +52,36 @@ def get_company_from_query(request, param: str) -> Optional[str]:
     return request.query_params.get(param) if hasattr(request, 'query_params') else request.GET.get(param)
 
 
+def _resolve_jwt_user(request):
+    """Resolve the authenticated user from a Bearer JWT, if present.
+
+    DRF JWT authentication runs at the view layer, AFTER middleware, so
+    ``request.user`` is AnonymousUser while TenantMiddleware executes. To enforce
+    company membership for the authenticated identity (and not silently skip it
+    for API/Bearer requests), we read and verify the signed token here. Fails
+    safe — returns None on any missing/invalid token so request handling is
+    unaffected; the actual authentication decision still belongs to DRF.
+    """
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    if not auth_header.startswith('Bearer '):
+        return None
+    token = auth_header.split(' ', 1)[1].strip()
+    if not token:
+        return None
+    try:
+        from security.authentication import verify_jwt_token
+        from django.contrib.auth import get_user_model
+        payload = verify_jwt_token(token)
+        user_id = payload.get('user_id')
+        if not user_id:
+            return None
+        return get_user_model().objects.filter(id=user_id, is_active=True).first()
+    except Exception:
+        # Invalid/expired/revoked token, or any lookup error: do not enforce or
+        # crash here — let DRF reject it at the view layer.
+        return None
+
+
 def resolve_company(company_id: Optional[str] = None, company_code: Optional[str] = None):
     """
     Resolve company from ID or code.
@@ -121,15 +151,28 @@ class TenantMiddleware:
         # Resolve company
         company = resolve_company(company_id, company_code)
 
-        # Set context — validate membership for authenticated users
+        # Set context — validate membership for authenticated users.
         if company:
+            # Resolve the effective user. For DRF/JWT (Bearer) API requests,
+            # authentication runs at the VIEW layer (after middleware), so
+            # request.user is AnonymousUser here. We therefore also resolve the
+            # user from the Bearer token's signed claims so the membership check
+            # is enforced for the authenticated identity, not skipped. This
+            # closes the X-Company-ID tenant-pivot bypass. Single-tenant behavior
+            # is preserved: a user whose only mapping is the active company still
+            # passes, and unauthenticated/no-token requests are unaffected.
             user = getattr(request, 'user', None)
-            if user and user.is_authenticated and not user.is_superuser:
-                # Validate user actually belongs to this company
+            effective_user = user if (user and user.is_authenticated) else _resolve_jwt_user(request)
+            if effective_user is not None and not getattr(effective_user, 'is_superuser', False):
                 from core.models.multitenant import UserCompanyMapping
-                if not UserCompanyMapping.objects.filter(
-                    user=user, company=company, is_active=True
-                ).exists():
+                user_mappings = UserCompanyMapping.objects.filter(
+                    user=effective_user, is_active=True
+                )
+                # Backward compatible / single-tenant: a user with NO active
+                # company mappings is not blocked (legacy behavior preserved).
+                # Only a user who HAS mappings but NOT to the requested company
+                # is a tenant-pivot attempt and is denied.
+                if user_mappings.exists() and not user_mappings.filter(company=company).exists():
                     return JsonResponse(
                         {
                             'error': 'Access denied: you are not a member of the requested company.',
