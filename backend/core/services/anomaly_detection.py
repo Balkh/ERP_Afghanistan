@@ -223,7 +223,7 @@ class AnomalyDetectionEngine:
         - Missing allocation traces
         - Negative balance anomalies
         """
-        from accounting.models import JournalEntry, JournalLine
+        from accounting.models import JournalEntry, JournalEntryLine
         from sales.models import SalesInvoice, CustomerPayment, PaymentAllocation, Customer
         from purchases.models import PurchaseInvoice, SupplierPayment, SupplierPaymentAllocation, Supplier
         from django.db.models import Sum, Q
@@ -240,14 +240,22 @@ class AnomalyDetectionEngine:
         
         invoice_ids = [str(inv.pk) for inv in invoices]
         
-        # Aggregate journal lines in bulk
-        je_sums = JournalLine.objects.filter(
-            journal_entry__source_type='SalesInvoice',
-            journal_entry__source_id__in=invoice_ids,
-            journal_entry__is_active=True
-        ).values('journal_entry__source_id').annotate(total_dr=Sum('debit'))
+        # Aggregate journal lines in bulk.
+        # Business-correct comparison: an invoice's ledger value is recorded on
+        # the Accounts Receivable DEBIT line, NOT the sum of every debit line.
+        # Summing all debits incorrectly includes the COGS debit of a normal
+        # inventory sale (Dr AR, Dr COGS / Cr Revenue, Cr Inventory) and would
+        # false-positive on perfectly valid entries. Restrict to the AR account.
+        from core.accounting_registry import ACC
+        ar_code = ACC['ar']
+        je_sums = JournalEntryLine.objects.filter(
+            entry__source_module='sales',
+            entry__source_document__in=invoice_ids,
+            entry__is_active=True,
+            account__code=ar_code,
+        ).values('entry__source_document').annotate(total_dr=Sum('debit'))
         
-        je_map = {item['journal_entry__source_id']: item['total_dr'] for item in je_sums}
+        je_map = {item['entry__source_document']: item['total_dr'] for item in je_sums}
         
         for invoice in invoices:
             total_dr = je_map.get(str(invoice.pk), Decimal('0.00'))

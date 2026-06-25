@@ -30,25 +30,25 @@ class InsuranceAccountingService:
             entry_type='RECEIPT',
             description=_('Insurance claim receivable: ') + claim.claim_number,
             entry_date=timezone.now().date(),
-            is_posted=True,
+            is_posted=False,
         )
 
         JournalEntryLine.objects.create(
-            journal_entry=entry,
+            entry=entry,
             account=receivable_acct,
             debit=claim.covered_amount,
             credit=Decimal('0.00'),
             description=_('Insurance receivable'),
         )
         JournalEntryLine.objects.create(
-            journal_entry=entry,
+            entry=entry,
             account=revenue_acct,
             debit=Decimal('0.00'),
             credit=claim.covered_amount,
             description=_('Claim covered amount'),
         )
 
-        JournalEngine.post(entry)
+        JournalEngine.post_entry(entry.id)
         claim.journal_entry = entry
         claim.save(update_fields=['journal_entry'])
         return entry
@@ -73,25 +73,25 @@ class InsuranceAccountingService:
             entry_type='RECEIPT',
             description=_('Insurance payment received: ') + claim.claim_number,
             entry_date=timezone.now().date(),
-            is_posted=True,
+            is_posted=False,
         )
 
         JournalEntryLine.objects.create(
-            journal_entry=entry,
+            entry=entry,
             account=cash_acct,
             debit=claim.covered_amount,
             credit=Decimal('0.00'),
             description=_('Insurance payment'),
         )
         JournalEntryLine.objects.create(
-            journal_entry=entry,
+            entry=entry,
             account=receivable_acct,
             debit=Decimal('0.00'),
             credit=claim.covered_amount,
             description=_('Receivable settled'),
         )
 
-        JournalEngine.post(entry)
+        JournalEngine.post_entry(entry.id)
         claim.status = 'PAID'
         claim.paid_at = timezone.now()
         claim.save(update_fields=['status', 'paid_at'])

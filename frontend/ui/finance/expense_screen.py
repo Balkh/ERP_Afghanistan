@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
 from PySide6.QtCore import Qt, QDate
 from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from ui.screens.base_screen import BaseScreen
+from theme.style_builder import UIStyleBuilder
 from ui.utils.debounce import Debouncer
 from ui.constants import (PADDING_INPUT_H, SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, MARGIN_PAGE, TEXT_PAGE_TITLE, TEXT_BODY,
                            TEXT_LABEL, BORDER_RADIUS_LG, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)

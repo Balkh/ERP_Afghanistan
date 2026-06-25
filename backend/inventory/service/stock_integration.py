@@ -104,7 +104,8 @@ class StockIntegrationService:
                 is_active=True
             )
             if warehouse is not None:
-                batch_qs = batch_qs.filter(warehouse=warehouse)
+                warehouse_id = warehouse.id if hasattr(warehouse, 'id') else warehouse
+                batch_qs = batch_qs.filter(location=str(warehouse_id))
             batches = batch_qs
         else:
             batches = StockIntegrationService.get_available_batches(

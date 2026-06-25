@@ -39,6 +39,28 @@ class JournalGateway:
     - No partial financial states
     """
 
+    # Maps originating entity types to the canonical lowercase source_module
+    # used by the ENGINE path (MigrationRouter passes module='sales'/'purchases').
+    # Keeping these identical guarantees diagnostics return the same results
+    # regardless of ENGINE vs GATEWAY routing.
+    _ENTITY_TYPE_TO_MODULE = {
+        'SalesInvoice': 'sales',
+        'CustomerPayment': 'sales',
+        'PurchaseInvoice': 'purchases',
+        'SupplierPayment': 'purchases',
+    }
+
+    @classmethod
+    def _entity_type_to_source_module(cls, entity_type: str) -> str:
+        """Resolve a gateway entity_type to the engine-path source_module value.
+
+        Falls back to a lowercased entity_type so any future entity type still
+        yields a non-empty, deterministic source_module rather than ''.
+        """
+        if not entity_type:
+            return ''
+        return cls._ENTITY_TYPE_TO_MODULE.get(entity_type, entity_type.lower())
+
     @classmethod
     @transaction.atomic
     def create_entry(
@@ -88,6 +110,16 @@ class JournalGateway:
                 f'Date: {entry_date}. Transaction ID: {transaction_id}'
             )
 
+        # Populate source_module / source_document identically to the ENGINE path
+        # (MigrationRouter -> JournalEngine.create_entry(source_module=module,
+        #  source_document=source_document or entity_id)). Without this, entries
+        # created via the GATEWAY route carry empty source fields and downstream
+        # diagnostics that filter on source_module/source_document would silently
+        # miss them (false negatives). The gateway only receives entity_type/
+        # entity_id, so map entity_type -> the canonical lowercase module name.
+        source_module = cls._entity_type_to_source_module(entity_type)
+        source_document = entity_id or reference
+
         result = JournalEngine.create_entry(
             entry_type=entry_type,
             description=description,
@@ -95,6 +127,8 @@ class JournalGateway:
             entry_date=entry_date,
             reference=reference,
             auto_post=auto_post,
+            source_module=source_module,
+            source_document=source_document,
         )
 
         if not result.get('success'):

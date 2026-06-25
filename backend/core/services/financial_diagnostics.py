@@ -115,9 +115,31 @@ class FinancialDiagnostics:
         
         Verifies that journal entries match invoice totals.
         """
-        from accounting.models import JournalEntry, JournalLine
+        from accounting.models import JournalEntry
         from sales.models import SalesInvoice
         from purchases.models import PurchaseInvoice
+        from core.accounting_registry import ACC
+
+        ar_code = ACC['ar']   # Accounts Receivable — sales invoice value lands here (debit)
+        ap_code = ACC['ap']   # Accounts Payable — purchase invoice value lands here (credit)
+
+        def _sum_account_debit(jes, code):
+            """Sum DEBIT amounts of lines posted to a specific account across entries."""
+            return sum(
+                line.debit
+                for je in jes
+                for line in je.lines.all()
+                if line.account.code == code
+            )
+
+        def _sum_account_credit(jes, code):
+            """Sum CREDIT amounts of lines posted to a specific account across entries."""
+            return sum(
+                line.credit
+                for je in jes
+                for line in je.lines.all()
+                if line.account.code == code
+            )
 
         issues = []
 
@@ -130,19 +152,20 @@ class FinancialDiagnostics:
         
         # Get all related journal entries in one go
         jes = JournalEntry.objects.filter(
-            source_type='SalesInvoice',
-            source_id__in=sales_ids,
+            source_module='sales',
+            source_document__in=sales_ids,
         ).prefetch_related('lines')
         
         je_map = {}
         for je in jes:
-            je_map.setdefault(je.source_id, []).append(je)
+            je_map.setdefault(je.source_document, []).append(je)
             
         for inv in active_sales:
             inv_jes = je_map.get(str(inv.id), [])
             if inv_jes:
                 total_dr = sum(je.total_debit for je in inv_jes)
                 total_cr = sum(je.total_credit for je in inv_jes)
+                # Balance check uses the FULL entry (every debit must equal every credit).
                 if abs(total_dr - total_cr) > Decimal('0.01'):
                     issues.append({
                         'type': 'UNBALANCED_JOURNAL',
@@ -150,11 +173,16 @@ class FinancialDiagnostics:
                         'detail': f'Debit ({total_dr}) != Credit ({total_cr})',
                         'severity': 'CRITICAL',
                     })
-                if abs(total_dr - inv.total_amount) > Decimal('0.01'):
+                # Invoice-vs-ledger check compares ONLY the Accounts Receivable debit
+                # (the line that represents the invoice value) to the invoice total.
+                # Summing all debits would wrongly include the COGS debit of a valid
+                # inventory sale and produce a false positive.
+                ar_debit = _sum_account_debit(inv_jes, ar_code)
+                if abs(ar_debit - inv.total_amount) > Decimal('0.01'):
                     issues.append({
                         'type': 'INVOICE_JOURNAL_MISMATCH',
                         'entity': f'SalesInvoice {inv.invoice_number}',
-                        'detail': f'Invoice total ({inv.total_amount}) != Journal sum ({total_dr})',
+                        'detail': f'Invoice total ({inv.total_amount}) != AR debit ({ar_debit})',
                         'severity': 'HIGH',
                     })
         
@@ -166,25 +194,36 @@ class FinancialDiagnostics:
         purchase_ids = [str(p.id) for p in active_purchases]
         
         p_jes = JournalEntry.objects.filter(
-            source_type='PurchaseInvoice',
-            source_id__in=purchase_ids,
+            source_module='purchases',
+            source_document__in=purchase_ids,
         ).prefetch_related('lines')
         
         p_je_map = {}
         for je in p_jes:
-            p_je_map.setdefault(je.source_id, []).append(je)
+            p_je_map.setdefault(je.source_document, []).append(je)
             
         for inv in active_purchases:
             inv_jes = p_je_map.get(str(inv.id), [])
             if inv_jes:
                 total_dr = sum(je.total_debit for je in inv_jes)
                 total_cr = sum(je.total_credit for je in inv_jes)
+                # Balance check uses the FULL entry.
                 if abs(total_dr - total_cr) > Decimal('0.01'):
                     issues.append({
                         'type': 'UNBALANCED_JOURNAL',
                         'entity': f'PurchaseInvoice {inv.invoice_number}',
                         'detail': f'Debit ({total_dr}) != Credit ({total_cr})',
                         'severity': 'CRITICAL',
+                    })
+                # Invoice-vs-ledger check compares ONLY the Accounts Payable credit
+                # (the line representing the invoice value) to the invoice total.
+                ap_credit = _sum_account_credit(inv_jes, ap_code)
+                if abs(ap_credit - inv.total_amount) > Decimal('0.01'):
+                    issues.append({
+                        'type': 'INVOICE_JOURNAL_MISMATCH',
+                        'entity': f'PurchaseInvoice {inv.invoice_number}',
+                        'detail': f'Invoice total ({inv.total_amount}) != AP credit ({ap_credit})',
+                        'severity': 'HIGH',
                     })
 
         return {

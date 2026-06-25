@@ -7,6 +7,7 @@ from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.forms import FormSection
+from theme.style_builder import UIStyleBuilder
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL,
                            TEXT_CARD_TITLE, TEXT_BODY,
                            BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG,
@@ -88,7 +89,7 @@ class UserDialog(EnterpriseDialog):
         section = FormSection("User Details", primary=True)
 
         self.username = _make_field("Enter username")
-        self.password = _make_field("Enter password", QLineEdit.EchoMode.Password)
+        self.password = _make_field("Enter password", echo_mode=QLineEdit.EchoMode.Password)
         self.email = _make_field("Enter email address")
         self.first_name = _make_field("First name")
         self.last_name = _make_field("Last name")

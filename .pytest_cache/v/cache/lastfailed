@@ -1,5 +1,4 @@
 {
-  "frontend/tests/utils/test_helpers.py": true,
   "frontend/utils/test_device_fingerprint.py": true,
   "frontend/tests/ui/test_sidebar.py::TestSidebarNavigation::test_sidebar_creates_navigation_items": true,
   "frontend/tests/ui/test_sidebar.py::TestSidebarNavigation::test_navigation_items_count": true,
@@ -69,5 +68,9 @@
   "frontend/tests/test_invoice_form_mixin.py::TestBuildFilters::test_creates_currency_combo": true,
   "frontend/tests/test_invoice_form_mixin.py::TestRemoveRow::test_default_removes_via_remove_row": true,
   "frontend/tests/test_sidebar_modules.py::TestStyleFunctions::test_all_styles_contain_color_tokens": true,
-  "frontend/tests/test_sidebar_modules.py::TestStyleFunctions::test_scrollers_style_no_hardcoded_hex": true
+  "frontend/tests/test_sidebar_modules.py::TestStyleFunctions::test_scrollers_style_no_hardcoded_hex": true,
+  "frontend/tests/test_backup_health_report.py": true,
+  "frontend/tests/test_p0_p1_regression.py::TestLicenseDetailsDialogAST::test_inherits_qdialog": true,
+  "frontend/tests/test_sidebar_modules.py::TestNavigationGroups::test_specific_group_sizes": true,
+  "frontend/tests/test_invoice_form_mixin.py::TestLoadWarehouses::test_loads_warehouses_from_api": true
 }

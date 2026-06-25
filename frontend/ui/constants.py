@@ -808,6 +808,11 @@ FONT_FAMILY_PRIMARY = "'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, s
 FONT_FAMILY_SECONDARY = "'Inter', 'Segoe UI', sans-serif"
 FONT_FAMILY_MONOSPACE = "'Consolas', 'Monaco', 'Courier New', monospace"
 
+# Plain QFont family name (single family, no CSS fallback stack).
+# Used by ``QFont(FONT_NAME_PRIMARY, size)`` call sites which expect a
+# single family string rather than the CSS stack in FONT_FAMILY_PRIMARY.
+FONT_NAME_PRIMARY = "Segoe UI"
+
 # ── FONT WEIGHT ────────────────────────────────────────────────
 # Standardized weights. LIGHT/RARE for hero text; REGULAR for body;
 # MEDIUM for labels; SEMIBOLD for sub-headings; BOLD for emphasis.

@@ -94,3 +94,1539 @@
 {"type": "dialog", "dialog_type": "alert", "duration_ms": 2366.5, "ts": 1780482941.6869867}
 {"type": "dialog", "dialog_type": "alert", "duration_ms": 3028.4, "ts": 1780482952.4741633}
 {"type": "dialog", "dialog_type": "alert", "duration_ms": 2737.6, "ts": 1780482976.8725061}
+{"type": "table_render", "rows": 2, "duration_ms": 0.2, "ts": 1782373427.1349595}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373427.1380064}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782373427.1407943}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1408453}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1408772}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.140906}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1409328}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1409602}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1409864}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1410136}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1410396}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1410677}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1410944}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1411207}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1411467}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1411722}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1411984}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1412249}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1412506}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1412761}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782373427.141348}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1413836}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1414118}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1414387}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141466}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1414921}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1415193}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1415455}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141571}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1415966}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141622}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141647}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141672}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141697}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1417222}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141747}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141778}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1418045}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.14183}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1418552}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1418805}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1419055}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141931}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.141956}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1419816}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1420066}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1420317}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1420562}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1420805}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1421049}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1421294}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142154}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142179}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142204}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1422288}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142254}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1422784}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142339}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142373}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142402}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1424296}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1424556}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142481}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1425066}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1425323}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1425574}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1425822}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1426067}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1426315}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1426563}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1426811}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1427066}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1427324}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1427572}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1427886}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1428142}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142839}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1428635}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1428878}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1429126}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.142937}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1429613}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782373427.1430407}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1430786}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1431065}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1431332}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1431596}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1431854}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1432111}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1432366}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1432683}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1433184}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.143361}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1433902}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1434176}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1434443}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1434705}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.143497}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1435232}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1435487}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.143574}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782373427.1436005}
+{"type": "table_render", "rows": 2, "duration_ms": 0.2, "ts": 1782373428.0493968}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782373428.052387}
+{"type": "exit", "point": "close", "ts": 1782373428.5593867}
+{"type": "exit", "point": "close", "ts": 1782373428.560541}
+{"type": "exit", "point": "close", "ts": 1782373428.6937933}
+{"type": "exit", "point": "close", "ts": 1782373428.693999}
+{"type": "exit", "point": "close", "ts": 1782373428.8165617}
+{"type": "exit", "point": "close", "ts": 1782373428.9281135}
+{"type": "exit", "point": "close", "ts": 1782373428.9285488}
+{"type": "exit", "point": "close", "ts": 1782373429.0416777}
+{"type": "exit", "point": "close", "ts": 1782373429.0420766}
+{"type": "exit", "point": "close", "ts": 1782373429.1511595}
+{"type": "exit", "point": "close", "ts": 1782373429.1516154}
+{"type": "exit", "point": "close", "ts": 1782373429.2631907}
+{"type": "exit", "point": "close", "ts": 1782373429.26361}
+{"type": "exit", "point": "close", "ts": 1782373429.3768678}
+{"type": "exit", "point": "close", "ts": 1782373429.377307}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373429.5018284}
+{"type": "exit", "point": "close", "ts": 1782373429.5040007}
+{"type": "exit", "point": "close", "ts": 1782373429.504462}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373429.6221678}
+{"type": "exit", "point": "close", "ts": 1782373429.6244035}
+{"type": "exit", "point": "close", "ts": 1782373429.6249008}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373429.74892}
+{"type": "exit", "point": "close", "ts": 1782373429.7514067}
+{"type": "exit", "point": "close", "ts": 1782373429.7518806}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373429.873828}
+{"type": "exit", "point": "close", "ts": 1782373429.8789382}
+{"type": "exit", "point": "close", "ts": 1782373429.879301}
+{"type": "exit", "point": "close", "ts": 1782373430.01398}
+{"type": "exit", "point": "close", "ts": 1782373430.0144587}
+{"type": "exit", "point": "close", "ts": 1782373430.1514804}
+{"type": "exit", "point": "close", "ts": 1782373430.1519496}
+{"type": "exit", "point": "close", "ts": 1782373430.2786112}
+{"type": "exit", "point": "close", "ts": 1782373430.2791219}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373430.3995535}
+{"type": "exit", "point": "close", "ts": 1782373430.4008803}
+{"type": "exit", "point": "close", "ts": 1782373430.4014292}
+{"type": "exit", "point": "close", "ts": 1782373430.525819}
+{"type": "exit", "point": "close", "ts": 1782373430.5263255}
+{"type": "exit", "point": "close", "ts": 1782373430.6543002}
+{"type": "exit", "point": "close", "ts": 1782373430.6547878}
+{"type": "exit", "point": "close", "ts": 1782373430.7985308}
+{"type": "exit", "point": "close", "ts": 1782373430.7990525}
+{"type": "exit", "point": "close", "ts": 1782373430.924886}
+{"type": "exit", "point": "close", "ts": 1782373430.9254751}
+{"type": "exit", "point": "close", "ts": 1782373431.0364478}
+{"type": "exit", "point": "close", "ts": 1782373431.0369575}
+{"type": "exit", "point": "close", "ts": 1782373431.1508121}
+{"type": "exit", "point": "close", "ts": 1782373431.1513407}
+{"type": "exit", "point": "close", "ts": 1782373431.2599747}
+{"type": "exit", "point": "close", "ts": 1782373431.260337}
+{"type": "exit", "point": "close", "ts": 1782373431.3686056}
+{"type": "exit", "point": "close", "ts": 1782373431.3689437}
+{"type": "exit", "point": "close", "ts": 1782373431.4884887}
+{"type": "exit", "point": "close", "ts": 1782373431.4888358}
+{"type": "exit", "point": "close", "ts": 1782373431.6063192}
+{"type": "exit", "point": "close", "ts": 1782373431.6068377}
+{"type": "exit", "point": "close", "ts": 1782373431.7763019}
+{"type": "exit", "point": "close", "ts": 1782373431.7768102}
+{"type": "exit", "point": "close", "ts": 1782373431.9001598}
+{"type": "exit", "point": "close", "ts": 1782373431.900715}
+{"type": "exit", "point": "close", "ts": 1782373432.0227575}
+{"type": "exit", "point": "close", "ts": 1782373432.0233767}
+{"type": "exit", "point": "close", "ts": 1782373432.1461706}
+{"type": "exit", "point": "close", "ts": 1782373432.1467266}
+{"type": "exit", "point": "close", "ts": 1782373432.26623}
+{"type": "exit", "point": "close", "ts": 1782373432.2667692}
+{"type": "exit", "point": "close", "ts": 1782373432.3927283}
+{"type": "exit", "point": "close", "ts": 1782373432.3932328}
+{"type": "exit", "point": "close", "ts": 1782373432.5340104}
+{"type": "exit", "point": "close", "ts": 1782373432.53455}
+{"type": "exit", "point": "close", "ts": 1782373432.642209}
+{"type": "exit", "point": "close", "ts": 1782373432.6425962}
+{"type": "exit", "point": "close", "ts": 1782373432.7507312}
+{"type": "exit", "point": "close", "ts": 1782373432.7511625}
+{"type": "exit", "point": "close", "ts": 1782373432.857744}
+{"type": "exit", "point": "close", "ts": 1782373432.85812}
+{"type": "exit", "point": "close", "ts": 1782373432.9667134}
+{"type": "exit", "point": "close", "ts": 1782373432.967127}
+{"type": "exit", "point": "close", "ts": 1782373433.0761676}
+{"type": "exit", "point": "close", "ts": 1782373433.0765793}
+{"type": "exit", "point": "close", "ts": 1782373433.1862144}
+{"type": "exit", "point": "close", "ts": 1782373433.1869035}
+{"type": "exit", "point": "close", "ts": 1782373433.187076}
+{"type": "exit", "point": "close", "ts": 1782373433.3035963}
+{"type": "exit", "point": "close", "ts": 1782373433.303971}
+{"type": "exit", "point": "close", "ts": 1782373433.4133227}
+{"type": "exit", "point": "close", "ts": 1782373433.4137}
+{"type": "exit", "point": "close", "ts": 1782373433.5382054}
+{"type": "exit", "point": "close", "ts": 1782373433.650849}
+{"type": "exit", "point": "close", "ts": 1782373433.6513503}
+{"type": "exit", "point": "close", "ts": 1782373433.7626116}
+{"type": "exit", "point": "close", "ts": 1782373433.7631032}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373433.8829756}
+{"type": "exit", "point": "close", "ts": 1782373433.8851223}
+{"type": "exit", "point": "close", "ts": 1782373433.8856075}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.0075047}
+{"type": "exit", "point": "close", "ts": 1782373434.00952}
+{"type": "exit", "point": "close", "ts": 1782373434.0099943}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.130799}
+{"type": "exit", "point": "close", "ts": 1782373434.1329405}
+{"type": "exit", "point": "close", "ts": 1782373434.1334457}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.3246126}
+{"type": "exit", "point": "close", "ts": 1782373434.3267815}
+{"type": "exit", "point": "close", "ts": 1782373434.3272953}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.4445102}
+{"type": "exit", "point": "close", "ts": 1782373434.4459126}
+{"type": "exit", "point": "close", "ts": 1782373434.4464235}
+{"type": "exit", "point": "close", "ts": 1782373434.5629516}
+{"type": "exit", "point": "close", "ts": 1782373434.563482}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.6805656}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.6913128}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.6976497}
+{"type": "exit", "point": "close", "ts": 1782373434.7035203}
+{"type": "exit", "point": "close", "ts": 1782373434.7039993}
+{"type": "exit", "point": "close", "ts": 1782373434.8110583}
+{"type": "exit", "point": "close", "ts": 1782373434.8115592}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.931983}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.9411132}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.9474037}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373434.9557147}
+{"type": "exit", "point": "close", "ts": 1782373434.9615905}
+{"type": "exit", "point": "close", "ts": 1782373434.9621177}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782373435.0940993}
+{"type": "exit", "point": "close", "ts": 1782373435.107145}
+{"type": "exit", "point": "close", "ts": 1782373435.1076603}
+{"type": "exit", "point": "close", "ts": 1782373435.255262}
+{"type": "exit", "point": "close", "ts": 1782373435.2557814}
+{"type": "exit", "point": "close", "ts": 1782373435.404664}
+{"type": "exit", "point": "close", "ts": 1782373435.4051945}
+{"type": "exit", "point": "close", "ts": 1782373435.5139663}
+{"type": "exit", "point": "close", "ts": 1782373435.514504}
+{"type": "exit", "point": "close", "ts": 1782373435.6226685}
+{"type": "exit", "point": "close", "ts": 1782373435.6232085}
+{"type": "exit", "point": "close", "ts": 1782373435.7306716}
+{"type": "exit", "point": "close", "ts": 1782373435.7314956}
+{"type": "exit", "point": "close", "ts": 1782373435.7316225}
+{"type": "exit", "point": "close", "ts": 1782373435.8395123}
+{"type": "exit", "point": "close", "ts": 1782373435.8402138}
+{"type": "exit", "point": "close", "ts": 1782373435.9519982}
+{"type": "exit", "point": "close", "ts": 1782373435.952744}
+{"type": "table_render", "rows": 2, "duration_ms": 0.2, "ts": 1782374637.5020337}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374637.5056715}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782374637.5087302}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5087793}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.508812}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5088518}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5088806}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5089083}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5089355}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.508963}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5089898}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5090177}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.509045}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5091193}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5091507}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5091794}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5092072}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5092344}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.509261}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.509287}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5093133}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.509341}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.509367}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5093927}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5094187}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5094452}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5094717}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.509498}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5095234}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5095491}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.509575}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5096009}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5096264}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5096524}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5096781}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.509704}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5097296}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5097551}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5097806}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5098066}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5098388}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5098662}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5098927}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5099182}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5099435}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5099692}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5099952}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5100205}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.510046}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5101106}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.51014}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5101676}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.510195}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5102224}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5102484}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5102751}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5103016}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.510329}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5103557}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5103824}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5104084}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5104344}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.51046}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5104856}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5105114}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5105367}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5105634}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5105903}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5106165}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5106428}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.510668}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.510693}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5107183}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5107439}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5107691}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5107942}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5108202}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.510852}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5108795}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5109055}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5109315}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5109568}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782374637.5110269}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782374637.5110946}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.51113}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5111587}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5111866}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.511214}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5112407}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5112672}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5112932}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5113196}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5113456}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5113716}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5113974}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5114224}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.511448}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5114737}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5114994}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5115247}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.51155}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782374637.5115755}
+{"type": "table_render", "rows": 2, "duration_ms": 0.1, "ts": 1782374638.4425302}
+{"type": "table_render", "rows": 1, "duration_ms": 0.2, "ts": 1782374638.4479418}
+{"type": "exit", "point": "close", "ts": 1782374638.9752674}
+{"type": "exit", "point": "close", "ts": 1782374638.9761755}
+{"type": "exit", "point": "close", "ts": 1782374639.0841553}
+{"type": "exit", "point": "close", "ts": 1782374639.084369}
+{"type": "exit", "point": "close", "ts": 1782374639.2079086}
+{"type": "exit", "point": "close", "ts": 1782374639.3253329}
+{"type": "exit", "point": "close", "ts": 1782374639.3255563}
+{"type": "exit", "point": "close", "ts": 1782374639.4375727}
+{"type": "exit", "point": "close", "ts": 1782374639.4378035}
+{"type": "exit", "point": "close", "ts": 1782374639.5489492}
+{"type": "exit", "point": "close", "ts": 1782374639.5493996}
+{"type": "exit", "point": "close", "ts": 1782374639.6621158}
+{"type": "exit", "point": "close", "ts": 1782374639.662548}
+{"type": "exit", "point": "close", "ts": 1782374639.7747262}
+{"type": "exit", "point": "close", "ts": 1782374639.7750528}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374639.9097447}
+{"type": "exit", "point": "close", "ts": 1782374639.9120836}
+{"type": "exit", "point": "close", "ts": 1782374639.9123774}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374640.037444}
+{"type": "exit", "point": "close", "ts": 1782374640.0397308}
+{"type": "exit", "point": "close", "ts": 1782374640.0400085}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374640.160361}
+{"type": "exit", "point": "close", "ts": 1782374640.1627564}
+{"type": "exit", "point": "close", "ts": 1782374640.163263}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374640.2852035}
+{"type": "exit", "point": "close", "ts": 1782374640.287406}
+{"type": "exit", "point": "close", "ts": 1782374640.287698}
+{"type": "exit", "point": "close", "ts": 1782374640.419418}
+{"type": "exit", "point": "close", "ts": 1782374640.4197261}
+{"type": "exit", "point": "close", "ts": 1782374640.5559964}
+{"type": "exit", "point": "close", "ts": 1782374640.5563426}
+{"type": "exit", "point": "close", "ts": 1782374640.7076411}
+{"type": "exit", "point": "close", "ts": 1782374640.7080925}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374640.835762}
+{"type": "exit", "point": "close", "ts": 1782374640.838087}
+{"type": "exit", "point": "close", "ts": 1782374640.8384068}
+{"type": "exit", "point": "close", "ts": 1782374640.967254}
+{"type": "exit", "point": "close", "ts": 1782374640.9675813}
+{"type": "exit", "point": "close", "ts": 1782374641.0986378}
+{"type": "exit", "point": "close", "ts": 1782374641.0992742}
+{"type": "exit", "point": "close", "ts": 1782374641.2218935}
+{"type": "exit", "point": "close", "ts": 1782374641.2222488}
+{"type": "exit", "point": "close", "ts": 1782374641.344627}
+{"type": "exit", "point": "close", "ts": 1782374641.344963}
+{"type": "exit", "point": "close", "ts": 1782374641.455769}
+{"type": "exit", "point": "close", "ts": 1782374641.4561472}
+{"type": "exit", "point": "close", "ts": 1782374641.574886}
+{"type": "exit", "point": "close", "ts": 1782374641.5754735}
+{"type": "exit", "point": "close", "ts": 1782374641.7001338}
+{"type": "exit", "point": "close", "ts": 1782374641.700722}
+{"type": "exit", "point": "close", "ts": 1782374641.815179}
+{"type": "exit", "point": "close", "ts": 1782374641.8157296}
+{"type": "exit", "point": "close", "ts": 1782374641.9345012}
+{"type": "exit", "point": "close", "ts": 1782374641.9348536}
+{"type": "exit", "point": "close", "ts": 1782374642.0527925}
+{"type": "exit", "point": "close", "ts": 1782374642.0533035}
+{"type": "exit", "point": "close", "ts": 1782374642.176235}
+{"type": "exit", "point": "close", "ts": 1782374642.176715}
+{"type": "exit", "point": "close", "ts": 1782374642.2943616}
+{"type": "exit", "point": "close", "ts": 1782374642.2948623}
+{"type": "exit", "point": "close", "ts": 1782374642.4168863}
+{"type": "exit", "point": "close", "ts": 1782374642.417432}
+{"type": "exit", "point": "close", "ts": 1782374642.534227}
+{"type": "exit", "point": "close", "ts": 1782374642.5347579}
+{"type": "exit", "point": "close", "ts": 1782374642.6507406}
+{"type": "exit", "point": "close", "ts": 1782374642.6515613}
+{"type": "exit", "point": "close", "ts": 1782374642.766264}
+{"type": "exit", "point": "close", "ts": 1782374642.7667704}
+{"type": "exit", "point": "close", "ts": 1782374642.8816078}
+{"type": "exit", "point": "close", "ts": 1782374642.8821478}
+{"type": "exit", "point": "close", "ts": 1782374642.9944863}
+{"type": "exit", "point": "close", "ts": 1782374642.9948876}
+{"type": "exit", "point": "close", "ts": 1782374643.1068125}
+{"type": "exit", "point": "close", "ts": 1782374643.107289}
+{"type": "exit", "point": "close", "ts": 1782374643.2228897}
+{"type": "exit", "point": "close", "ts": 1782374643.223323}
+{"type": "exit", "point": "close", "ts": 1782374643.3399081}
+{"type": "exit", "point": "close", "ts": 1782374643.340322}
+{"type": "exit", "point": "close", "ts": 1782374643.460529}
+{"type": "exit", "point": "close", "ts": 1782374643.4608836}
+{"type": "exit", "point": "close", "ts": 1782374643.5739508}
+{"type": "exit", "point": "close", "ts": 1782374643.5746982}
+{"type": "exit", "point": "close", "ts": 1782374643.5752816}
+{"type": "exit", "point": "close", "ts": 1782374643.6852698}
+{"type": "exit", "point": "close", "ts": 1782374643.6858788}
+{"type": "exit", "point": "close", "ts": 1782374643.800359}
+{"type": "exit", "point": "close", "ts": 1782374643.8007293}
+{"type": "exit", "point": "close", "ts": 1782374643.9283662}
+{"type": "exit", "point": "close", "ts": 1782374644.0469527}
+{"type": "exit", "point": "close", "ts": 1782374644.0474496}
+{"type": "exit", "point": "close", "ts": 1782374644.1632357}
+{"type": "exit", "point": "close", "ts": 1782374644.1636813}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374644.2841613}
+{"type": "exit", "point": "close", "ts": 1782374644.2866337}
+{"type": "exit", "point": "close", "ts": 1782374644.2871532}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374644.4051454}
+{"type": "exit", "point": "close", "ts": 1782374644.407546}
+{"type": "exit", "point": "close", "ts": 1782374644.408023}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374644.5274026}
+{"type": "exit", "point": "close", "ts": 1782374644.5299633}
+{"type": "exit", "point": "close", "ts": 1782374644.5304668}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374644.6495516}
+{"type": "exit", "point": "close", "ts": 1782374644.6519365}
+{"type": "exit", "point": "close", "ts": 1782374644.6524463}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374644.774678}
+{"type": "exit", "point": "close", "ts": 1782374644.7761106}
+{"type": "exit", "point": "close", "ts": 1782374644.7766032}
+{"type": "exit", "point": "close", "ts": 1782374644.9012833}
+{"type": "exit", "point": "close", "ts": 1782374644.9017358}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374645.0248833}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374645.0341277}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374645.0377507}
+{"type": "exit", "point": "close", "ts": 1782374645.043373}
+{"type": "exit", "point": "close", "ts": 1782374645.0439198}
+{"type": "exit", "point": "close", "ts": 1782374645.1563842}
+{"type": "exit", "point": "close", "ts": 1782374645.1568432}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374645.309689}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374645.3155367}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374645.3276646}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374645.335737}
+{"type": "exit", "point": "close", "ts": 1782374645.344616}
+{"type": "exit", "point": "close", "ts": 1782374645.3451679}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374645.5017557}
+{"type": "exit", "point": "close", "ts": 1782374645.5167005}
+{"type": "exit", "point": "close", "ts": 1782374645.5173225}
+{"type": "exit", "point": "close", "ts": 1782374645.6755648}
+{"type": "exit", "point": "close", "ts": 1782374645.6760926}
+{"type": "exit", "point": "close", "ts": 1782374645.8339295}
+{"type": "exit", "point": "close", "ts": 1782374645.834467}
+{"type": "exit", "point": "close", "ts": 1782374646.038011}
+{"type": "exit", "point": "close", "ts": 1782374646.038506}
+{"type": "exit", "point": "close", "ts": 1782374646.151877}
+{"type": "exit", "point": "close", "ts": 1782374646.1524336}
+{"type": "exit", "point": "close", "ts": 1782374646.2645292}
+{"type": "exit", "point": "close", "ts": 1782374646.265309}
+{"type": "exit", "point": "close", "ts": 1782374646.265441}
+{"type": "exit", "point": "close", "ts": 1782374646.3833249}
+{"type": "exit", "point": "close", "ts": 1782374646.3840823}
+{"type": "exit", "point": "close", "ts": 1782374646.4961822}
+{"type": "exit", "point": "close", "ts": 1782374646.496891}
+{"type": "exit", "point": "close", "ts": 1782374686.1789198}
+{"type": "exit", "point": "close", "ts": 1782374686.179211}
+{"type": "exit", "point": "close", "ts": 1782374686.2929273}
+{"type": "exit", "point": "close", "ts": 1782374686.293154}
+{"type": "exit", "point": "close", "ts": 1782374686.4245563}
+{"type": "exit", "point": "close", "ts": 1782374686.5357838}
+{"type": "exit", "point": "close", "ts": 1782374686.5360165}
+{"type": "exit", "point": "close", "ts": 1782374686.651663}
+{"type": "exit", "point": "close", "ts": 1782374686.651902}
+{"type": "exit", "point": "close", "ts": 1782374686.7650895}
+{"type": "exit", "point": "close", "ts": 1782374686.7653446}
+{"type": "exit", "point": "close", "ts": 1782374686.8754833}
+{"type": "exit", "point": "close", "ts": 1782374686.875746}
+{"type": "exit", "point": "close", "ts": 1782374686.9832118}
+{"type": "exit", "point": "close", "ts": 1782374686.9834445}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374687.1077297}
+{"type": "exit", "point": "close", "ts": 1782374687.1098316}
+{"type": "exit", "point": "close", "ts": 1782374687.1100726}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374687.2278438}
+{"type": "exit", "point": "close", "ts": 1782374687.2299268}
+{"type": "exit", "point": "close", "ts": 1782374687.230257}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374687.3504071}
+{"type": "exit", "point": "close", "ts": 1782374687.35256}
+{"type": "exit", "point": "close", "ts": 1782374687.3528478}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374687.4739056}
+{"type": "exit", "point": "close", "ts": 1782374687.4760532}
+{"type": "exit", "point": "close", "ts": 1782374687.4763267}
+{"type": "exit", "point": "close", "ts": 1782374687.6548047}
+{"type": "exit", "point": "close", "ts": 1782374687.6551976}
+{"type": "exit", "point": "close", "ts": 1782374687.7882495}
+{"type": "exit", "point": "close", "ts": 1782374687.7885168}
+{"type": "exit", "point": "close", "ts": 1782374687.9116971}
+{"type": "exit", "point": "close", "ts": 1782374687.9119608}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374688.0369928}
+{"type": "exit", "point": "close", "ts": 1782374688.0392358}
+{"type": "exit", "point": "close", "ts": 1782374688.039519}
+{"type": "exit", "point": "close", "ts": 1782374688.159946}
+{"type": "exit", "point": "close", "ts": 1782374688.1602132}
+{"type": "exit", "point": "close", "ts": 1782374688.2753882}
+{"type": "exit", "point": "close", "ts": 1782374688.27575}
+{"type": "exit", "point": "close", "ts": 1782374688.3998754}
+{"type": "exit", "point": "close", "ts": 1782374688.4001667}
+{"type": "exit", "point": "close", "ts": 1782374688.5165718}
+{"type": "exit", "point": "close", "ts": 1782374688.5169091}
+{"type": "exit", "point": "close", "ts": 1782374688.625501}
+{"type": "exit", "point": "close", "ts": 1782374688.6258564}
+{"type": "exit", "point": "close", "ts": 1782374688.735986}
+{"type": "exit", "point": "close", "ts": 1782374688.7362926}
+{"type": "exit", "point": "close", "ts": 1782374688.8494468}
+{"type": "exit", "point": "close", "ts": 1782374688.849801}
+{"type": "exit", "point": "close", "ts": 1782374688.9610307}
+{"type": "exit", "point": "close", "ts": 1782374688.961375}
+{"type": "exit", "point": "close", "ts": 1782374689.083826}
+{"type": "exit", "point": "close", "ts": 1782374689.0841935}
+{"type": "exit", "point": "close", "ts": 1782374689.1998591}
+{"type": "exit", "point": "close", "ts": 1782374689.2003348}
+{"type": "exit", "point": "close", "ts": 1782374689.3129623}
+{"type": "exit", "point": "close", "ts": 1782374689.3134406}
+{"type": "exit", "point": "close", "ts": 1782374689.4259539}
+{"type": "exit", "point": "close", "ts": 1782374689.4264266}
+{"type": "exit", "point": "close", "ts": 1782374689.5392196}
+{"type": "exit", "point": "close", "ts": 1782374689.539758}
+{"type": "exit", "point": "close", "ts": 1782374689.6497447}
+{"type": "exit", "point": "close", "ts": 1782374689.6502225}
+{"type": "exit", "point": "close", "ts": 1782374689.7601762}
+{"type": "exit", "point": "close", "ts": 1782374689.760673}
+{"type": "exit", "point": "close", "ts": 1782374689.87014}
+{"type": "exit", "point": "close", "ts": 1782374689.8706582}
+{"type": "exit", "point": "close", "ts": 1782374689.986036}
+{"type": "exit", "point": "close", "ts": 1782374689.9865263}
+{"type": "exit", "point": "close", "ts": 1782374690.095489}
+{"type": "exit", "point": "close", "ts": 1782374690.0958853}
+{"type": "exit", "point": "close", "ts": 1782374690.211129}
+{"type": "exit", "point": "close", "ts": 1782374690.211495}
+{"type": "exit", "point": "close", "ts": 1782374690.3186693}
+{"type": "exit", "point": "close", "ts": 1782374690.3191493}
+{"type": "exit", "point": "close", "ts": 1782374690.4291425}
+{"type": "exit", "point": "close", "ts": 1782374690.4294999}
+{"type": "exit", "point": "close", "ts": 1782374690.5397105}
+{"type": "exit", "point": "close", "ts": 1782374690.540082}
+{"type": "exit", "point": "close", "ts": 1782374690.6470864}
+{"type": "exit", "point": "close", "ts": 1782374690.647752}
+{"type": "exit", "point": "close", "ts": 1782374690.6478732}
+{"type": "exit", "point": "close", "ts": 1782374690.755469}
+{"type": "exit", "point": "close", "ts": 1782374690.7559123}
+{"type": "exit", "point": "close", "ts": 1782374690.9281352}
+{"type": "exit", "point": "close", "ts": 1782374690.9285052}
+{"type": "exit", "point": "close", "ts": 1782374691.0478683}
+{"type": "exit", "point": "close", "ts": 1782374691.1579015}
+{"type": "exit", "point": "close", "ts": 1782374691.1582782}
+{"type": "exit", "point": "close", "ts": 1782374691.2670784}
+{"type": "exit", "point": "close", "ts": 1782374691.267467}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374691.3827636}
+{"type": "exit", "point": "close", "ts": 1782374691.3849282}
+{"type": "exit", "point": "close", "ts": 1782374691.3853483}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374691.50275}
+{"type": "exit", "point": "close", "ts": 1782374691.5047724}
+{"type": "exit", "point": "close", "ts": 1782374691.5052097}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374691.6282883}
+{"type": "exit", "point": "close", "ts": 1782374691.6304848}
+{"type": "exit", "point": "close", "ts": 1782374691.6309571}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374691.748776}
+{"type": "exit", "point": "close", "ts": 1782374691.750941}
+{"type": "exit", "point": "close", "ts": 1782374691.7514403}
+{"type": "exit", "point": "close", "ts": 1782374691.8714015}
+{"type": "exit", "point": "close", "ts": 1782374691.8719027}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374691.8744164}
+{"type": "exit", "point": "close", "ts": 1782374691.990799}
+{"type": "exit", "point": "close", "ts": 1782374691.991307}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374692.1160533}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374692.1197689}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374692.1265075}
+{"type": "exit", "point": "close", "ts": 1782374692.132223}
+{"type": "exit", "point": "close", "ts": 1782374692.1327274}
+{"type": "exit", "point": "close", "ts": 1782374692.24325}
+{"type": "exit", "point": "close", "ts": 1782374692.2437296}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374692.3661366}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374692.3672338}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374692.3751607}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374692.3837726}
+{"type": "exit", "point": "close", "ts": 1782374692.3906662}
+{"type": "exit", "point": "close", "ts": 1782374692.3911974}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374692.5179422}
+{"type": "exit", "point": "close", "ts": 1782374692.5322258}
+{"type": "exit", "point": "close", "ts": 1782374692.5327623}
+{"type": "exit", "point": "close", "ts": 1782374692.6839452}
+{"type": "exit", "point": "close", "ts": 1782374692.6844673}
+{"type": "exit", "point": "close", "ts": 1782374692.8313608}
+{"type": "exit", "point": "close", "ts": 1782374692.8319085}
+{"type": "exit", "point": "close", "ts": 1782374692.940233}
+{"type": "exit", "point": "close", "ts": 1782374692.9407544}
+{"type": "exit", "point": "close", "ts": 1782374693.0482943}
+{"type": "exit", "point": "close", "ts": 1782374693.048825}
+{"type": "exit", "point": "close", "ts": 1782374693.1568332}
+{"type": "exit", "point": "close", "ts": 1782374693.1575649}
+{"type": "exit", "point": "close", "ts": 1782374693.157722}
+{"type": "exit", "point": "close", "ts": 1782374693.2631693}
+{"type": "exit", "point": "close", "ts": 1782374693.263704}
+{"type": "exit", "point": "close", "ts": 1782374693.3733194}
+{"type": "exit", "point": "close", "ts": 1782374693.3738475}
+{"type": "exit", "point": "close", "ts": 1782374757.8766263}
+{"type": "exit", "point": "close", "ts": 1782374757.8768396}
+{"type": "exit", "point": "close", "ts": 1782374757.9834864}
+{"type": "exit", "point": "close", "ts": 1782374757.983718}
+{"type": "exit", "point": "close", "ts": 1782374758.1069267}
+{"type": "exit", "point": "close", "ts": 1782374758.218132}
+{"type": "exit", "point": "close", "ts": 1782374758.2183826}
+{"type": "exit", "point": "close", "ts": 1782374758.3284833}
+{"type": "exit", "point": "close", "ts": 1782374758.328729}
+{"type": "exit", "point": "close", "ts": 1782374758.4381945}
+{"type": "exit", "point": "close", "ts": 1782374758.4384496}
+{"type": "exit", "point": "close", "ts": 1782374758.5465598}
+{"type": "exit", "point": "close", "ts": 1782374758.5468102}
+{"type": "exit", "point": "close", "ts": 1782374758.6708467}
+{"type": "exit", "point": "close", "ts": 1782374758.6711655}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374758.7957783}
+{"type": "exit", "point": "close", "ts": 1782374758.7980137}
+{"type": "exit", "point": "close", "ts": 1782374758.7983098}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374758.9190807}
+{"type": "exit", "point": "close", "ts": 1782374758.921278}
+{"type": "exit", "point": "close", "ts": 1782374758.9215605}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374759.041301}
+{"type": "exit", "point": "close", "ts": 1782374759.0435731}
+{"type": "exit", "point": "close", "ts": 1782374759.0438557}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374759.162915}
+{"type": "exit", "point": "close", "ts": 1782374759.165095}
+{"type": "exit", "point": "close", "ts": 1782374759.1654482}
+{"type": "exit", "point": "close", "ts": 1782374759.3380823}
+{"type": "exit", "point": "close", "ts": 1782374759.3384283}
+{"type": "exit", "point": "close", "ts": 1782374759.4706514}
+{"type": "exit", "point": "close", "ts": 1782374759.4710917}
+{"type": "exit", "point": "close", "ts": 1782374759.593371}
+{"type": "exit", "point": "close", "ts": 1782374759.593678}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374759.7163203}
+{"type": "exit", "point": "close", "ts": 1782374759.7176611}
+{"type": "exit", "point": "close", "ts": 1782374759.7179663}
+{"type": "exit", "point": "close", "ts": 1782374759.8419123}
+{"type": "exit", "point": "close", "ts": 1782374759.8422532}
+{"type": "exit", "point": "close", "ts": 1782374759.9612453}
+{"type": "exit", "point": "close", "ts": 1782374759.9615386}
+{"type": "exit", "point": "close", "ts": 1782374760.0847821}
+{"type": "exit", "point": "close", "ts": 1782374760.0851479}
+{"type": "exit", "point": "close", "ts": 1782374760.2081957}
+{"type": "exit", "point": "close", "ts": 1782374760.208527}
+{"type": "exit", "point": "close", "ts": 1782374760.3243291}
+{"type": "exit", "point": "close", "ts": 1782374760.3246167}
+{"type": "exit", "point": "close", "ts": 1782374760.4360034}
+{"type": "exit", "point": "close", "ts": 1782374760.4365041}
+{"type": "exit", "point": "close", "ts": 1782374760.5496633}
+{"type": "exit", "point": "close", "ts": 1782374760.5500026}
+{"type": "exit", "point": "close", "ts": 1782374760.6596496}
+{"type": "exit", "point": "close", "ts": 1782374760.6600327}
+{"type": "exit", "point": "close", "ts": 1782374760.773511}
+{"type": "exit", "point": "close", "ts": 1782374760.7738597}
+{"type": "exit", "point": "close", "ts": 1782374760.8896039}
+{"type": "exit", "point": "close", "ts": 1782374760.8901527}
+{"type": "exit", "point": "close", "ts": 1782374761.0011928}
+{"type": "exit", "point": "close", "ts": 1782374761.001676}
+{"type": "exit", "point": "close", "ts": 1782374761.1128602}
+{"type": "exit", "point": "close", "ts": 1782374761.1134253}
+{"type": "exit", "point": "close", "ts": 1782374761.224119}
+{"type": "exit", "point": "close", "ts": 1782374761.2246153}
+{"type": "exit", "point": "close", "ts": 1782374761.3393252}
+{"type": "exit", "point": "close", "ts": 1782374761.3398335}
+{"type": "exit", "point": "close", "ts": 1782374761.4516559}
+{"type": "exit", "point": "close", "ts": 1782374761.4522011}
+{"type": "exit", "point": "close", "ts": 1782374761.564121}
+{"type": "exit", "point": "close", "ts": 1782374761.5646098}
+{"type": "exit", "point": "close", "ts": 1782374761.6783824}
+{"type": "exit", "point": "close", "ts": 1782374761.678887}
+{"type": "exit", "point": "close", "ts": 1782374761.7885282}
+{"type": "exit", "point": "close", "ts": 1782374761.7888894}
+{"type": "exit", "point": "close", "ts": 1782374761.897184}
+{"type": "exit", "point": "close", "ts": 1782374761.8975654}
+{"type": "exit", "point": "close", "ts": 1782374762.0042756}
+{"type": "exit", "point": "close", "ts": 1782374762.004645}
+{"type": "exit", "point": "close", "ts": 1782374762.1115963}
+{"type": "exit", "point": "close", "ts": 1782374762.1119893}
+{"type": "exit", "point": "close", "ts": 1782374762.2201698}
+{"type": "exit", "point": "close", "ts": 1782374762.220544}
+{"type": "exit", "point": "close", "ts": 1782374762.3330445}
+{"type": "exit", "point": "close", "ts": 1782374762.333752}
+{"type": "exit", "point": "close", "ts": 1782374762.333882}
+{"type": "exit", "point": "close", "ts": 1782374762.4453657}
+{"type": "exit", "point": "close", "ts": 1782374762.4457426}
+{"type": "exit", "point": "close", "ts": 1782374762.6179686}
+{"type": "exit", "point": "close", "ts": 1782374762.6183794}
+{"type": "exit", "point": "close", "ts": 1782374762.7387283}
+{"type": "exit", "point": "close", "ts": 1782374762.846557}
+{"type": "exit", "point": "close", "ts": 1782374762.846952}
+{"type": "exit", "point": "close", "ts": 1782374762.9563215}
+{"type": "exit", "point": "close", "ts": 1782374762.9567246}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374763.0725813}
+{"type": "exit", "point": "close", "ts": 1782374763.0747669}
+{"type": "exit", "point": "close", "ts": 1782374763.075292}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374763.1918666}
+{"type": "exit", "point": "close", "ts": 1782374763.1940918}
+{"type": "exit", "point": "close", "ts": 1782374763.1945553}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374763.3170147}
+{"type": "exit", "point": "close", "ts": 1782374763.3191729}
+{"type": "exit", "point": "close", "ts": 1782374763.3196137}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374763.442754}
+{"type": "exit", "point": "close", "ts": 1782374763.445036}
+{"type": "exit", "point": "close", "ts": 1782374763.445495}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374763.5638866}
+{"type": "exit", "point": "close", "ts": 1782374763.5661688}
+{"type": "exit", "point": "close", "ts": 1782374763.566613}
+{"type": "exit", "point": "close", "ts": 1782374763.6850648}
+{"type": "exit", "point": "close", "ts": 1782374763.6855214}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374763.8055482}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374763.8152814}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374763.8221576}
+{"type": "exit", "point": "close", "ts": 1782374763.8279607}
+{"type": "exit", "point": "close", "ts": 1782374763.828492}
+{"type": "exit", "point": "close", "ts": 1782374763.9360602}
+{"type": "exit", "point": "close", "ts": 1782374763.936536}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374764.0600915}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374764.0668142}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374764.0728316}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374764.0793173}
+{"type": "exit", "point": "close", "ts": 1782374764.0868607}
+{"type": "exit", "point": "close", "ts": 1782374764.0874338}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782374764.2178218}
+{"type": "exit", "point": "close", "ts": 1782374764.2311406}
+{"type": "exit", "point": "close", "ts": 1782374764.2316253}
+{"type": "exit", "point": "close", "ts": 1782374764.40105}
+{"type": "exit", "point": "close", "ts": 1782374764.4018319}
+{"type": "exit", "point": "close", "ts": 1782374764.5612535}
+{"type": "exit", "point": "close", "ts": 1782374764.5617843}
+{"type": "exit", "point": "close", "ts": 1782374764.6730552}
+{"type": "exit", "point": "close", "ts": 1782374764.6735253}
+{"type": "exit", "point": "close", "ts": 1782374764.7831955}
+{"type": "exit", "point": "close", "ts": 1782374764.7837083}
+{"type": "exit", "point": "close", "ts": 1782374764.8935165}
+{"type": "exit", "point": "close", "ts": 1782374764.894325}
+{"type": "exit", "point": "close", "ts": 1782374764.89445}
+{"type": "exit", "point": "close", "ts": 1782374765.002197}
+{"type": "exit", "point": "close", "ts": 1782374765.0026948}
+{"type": "exit", "point": "close", "ts": 1782374765.1140199}
+{"type": "exit", "point": "close", "ts": 1782374765.1145205}
+{"type": "exit", "point": "close", "ts": 1782378656.8780763}
+{"type": "exit", "point": "close", "ts": 1782378656.8782957}
+{"type": "exit", "point": "close", "ts": 1782378656.985905}
+{"type": "exit", "point": "close", "ts": 1782378656.986144}
+{"type": "exit", "point": "close", "ts": 1782378657.109147}
+{"type": "exit", "point": "close", "ts": 1782378657.2324657}
+{"type": "exit", "point": "close", "ts": 1782378657.232764}
+{"type": "exit", "point": "close", "ts": 1782378657.3420665}
+{"type": "exit", "point": "close", "ts": 1782378657.3422718}
+{"type": "exit", "point": "close", "ts": 1782378657.4504848}
+{"type": "exit", "point": "close", "ts": 1782378657.4506962}
+{"type": "exit", "point": "close", "ts": 1782378657.5572696}
+{"type": "exit", "point": "close", "ts": 1782378657.5575454}
+{"type": "exit", "point": "close", "ts": 1782378657.6624625}
+{"type": "exit", "point": "close", "ts": 1782378657.662708}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378657.7807596}
+{"type": "exit", "point": "close", "ts": 1782378657.7827935}
+{"type": "exit", "point": "close", "ts": 1782378657.7830155}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378657.8972058}
+{"type": "exit", "point": "close", "ts": 1782378657.8993676}
+{"type": "exit", "point": "close", "ts": 1782378657.8996274}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378658.0169704}
+{"type": "exit", "point": "close", "ts": 1782378658.0191624}
+{"type": "exit", "point": "close", "ts": 1782378658.0194464}
+{"type": "exit", "point": "close", "ts": 1782378658.1365516}
+{"type": "exit", "point": "close", "ts": 1782378658.1367962}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378658.1401017}
+{"type": "exit", "point": "close", "ts": 1782378658.3517609}
+{"type": "exit", "point": "close", "ts": 1782378658.3520377}
+{"type": "exit", "point": "close", "ts": 1782378658.5115762}
+{"type": "exit", "point": "close", "ts": 1782378658.5118723}
+{"type": "exit", "point": "close", "ts": 1782378658.644784}
+{"type": "exit", "point": "close", "ts": 1782378658.6450365}
+{"type": "table_render", "rows": 0, "duration_ms": 0.1, "ts": 1782378658.771401}
+{"type": "exit", "point": "close", "ts": 1782378658.773557}
+{"type": "exit", "point": "close", "ts": 1782378658.7738345}
+{"type": "exit", "point": "close", "ts": 1782378658.8987}
+{"type": "exit", "point": "close", "ts": 1782378658.8989632}
+{"type": "exit", "point": "close", "ts": 1782378659.027778}
+{"type": "exit", "point": "close", "ts": 1782378659.0280669}
+{"type": "exit", "point": "close", "ts": 1782378659.1549995}
+{"type": "exit", "point": "close", "ts": 1782378659.155294}
+{"type": "exit", "point": "close", "ts": 1782378659.2778685}
+{"type": "exit", "point": "close", "ts": 1782378659.2782028}
+{"type": "exit", "point": "close", "ts": 1782378659.3868506}
+{"type": "exit", "point": "close", "ts": 1782378659.387133}
+{"type": "exit", "point": "close", "ts": 1782378659.4948955}
+{"type": "exit", "point": "close", "ts": 1782378659.4951754}
+{"type": "exit", "point": "close", "ts": 1782378659.6032565}
+{"type": "exit", "point": "close", "ts": 1782378659.603589}
+{"type": "exit", "point": "close", "ts": 1782378659.7087955}
+{"type": "exit", "point": "close", "ts": 1782378659.709095}
+{"type": "exit", "point": "close", "ts": 1782378659.8199234}
+{"type": "exit", "point": "close", "ts": 1782378659.8202217}
+{"type": "exit", "point": "close", "ts": 1782378659.930638}
+{"type": "exit", "point": "close", "ts": 1782378659.9310725}
+{"type": "exit", "point": "close", "ts": 1782378660.040726}
+{"type": "exit", "point": "close", "ts": 1782378660.0411716}
+{"type": "exit", "point": "close", "ts": 1782378660.154604}
+{"type": "exit", "point": "close", "ts": 1782378660.1550586}
+{"type": "exit", "point": "close", "ts": 1782378660.2753825}
+{"type": "exit", "point": "close", "ts": 1782378660.2758522}
+{"type": "exit", "point": "close", "ts": 1782378660.3901887}
+{"type": "exit", "point": "close", "ts": 1782378660.3906672}
+{"type": "exit", "point": "close", "ts": 1782378660.5023375}
+{"type": "exit", "point": "close", "ts": 1782378660.5028057}
+{"type": "exit", "point": "close", "ts": 1782378660.617367}
+{"type": "exit", "point": "close", "ts": 1782378660.6178555}
+{"type": "exit", "point": "close", "ts": 1782378660.7352793}
+{"type": "exit", "point": "close", "ts": 1782378660.735786}
+{"type": "exit", "point": "close", "ts": 1782378660.8450909}
+{"type": "exit", "point": "close", "ts": 1782378660.8454583}
+{"type": "exit", "point": "close", "ts": 1782378660.9547312}
+{"type": "exit", "point": "close", "ts": 1782378660.9550648}
+{"type": "exit", "point": "close", "ts": 1782378661.0648937}
+{"type": "exit", "point": "close", "ts": 1782378661.0652618}
+{"type": "exit", "point": "close", "ts": 1782378661.1757596}
+{"type": "exit", "point": "close", "ts": 1782378661.1760917}
+{"type": "exit", "point": "close", "ts": 1782378661.2973208}
+{"type": "exit", "point": "close", "ts": 1782378661.2976868}
+{"type": "exit", "point": "close", "ts": 1782378661.414206}
+{"type": "exit", "point": "close", "ts": 1782378661.4148543}
+{"type": "exit", "point": "close", "ts": 1782378661.414973}
+{"type": "exit", "point": "close", "ts": 1782378661.5224934}
+{"type": "exit", "point": "close", "ts": 1782378661.5228755}
+{"type": "exit", "point": "close", "ts": 1782378661.692827}
+{"type": "exit", "point": "close", "ts": 1782378661.693214}
+{"type": "exit", "point": "close", "ts": 1782378661.831949}
+{"type": "exit", "point": "close", "ts": 1782378661.946589}
+{"type": "exit", "point": "close", "ts": 1782378661.946945}
+{"type": "exit", "point": "close", "ts": 1782378662.0657723}
+{"type": "exit", "point": "close", "ts": 1782378662.0661826}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378662.195314}
+{"type": "exit", "point": "close", "ts": 1782378662.1973681}
+{"type": "exit", "point": "close", "ts": 1782378662.1977584}
+{"type": "table_render", "rows": 0, "duration_ms": 0.1, "ts": 1782378662.3140688}
+{"type": "exit", "point": "close", "ts": 1782378662.3161247}
+{"type": "exit", "point": "close", "ts": 1782378662.3165696}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378662.4487565}
+{"type": "exit", "point": "close", "ts": 1782378662.4509027}
+{"type": "exit", "point": "close", "ts": 1782378662.4513462}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378662.5689206}
+{"type": "exit", "point": "close", "ts": 1782378662.570959}
+{"type": "exit", "point": "close", "ts": 1782378662.5714123}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378662.6901793}
+{"type": "exit", "point": "close", "ts": 1782378662.6915386}
+{"type": "exit", "point": "close", "ts": 1782378662.6919458}
+{"type": "exit", "point": "close", "ts": 1782378662.8169851}
+{"type": "exit", "point": "close", "ts": 1782378662.817434}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378662.9374304}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378662.9491827}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378662.9522088}
+{"type": "exit", "point": "close", "ts": 1782378662.9584463}
+{"type": "exit", "point": "close", "ts": 1782378662.9588912}
+{"type": "exit", "point": "close", "ts": 1782378663.0788233}
+{"type": "exit", "point": "close", "ts": 1782378663.0793493}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378663.2323897}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378663.2427764}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378663.2511022}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378663.2576053}
+{"type": "exit", "point": "close", "ts": 1782378663.264528}
+{"type": "exit", "point": "close", "ts": 1782378663.2649865}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378663.3948743}
+{"type": "exit", "point": "close", "ts": 1782378663.4072056}
+{"type": "exit", "point": "close", "ts": 1782378663.4076836}
+{"type": "exit", "point": "close", "ts": 1782378663.5523431}
+{"type": "exit", "point": "close", "ts": 1782378663.552806}
+{"type": "exit", "point": "close", "ts": 1782378663.696591}
+{"type": "exit", "point": "close", "ts": 1782378663.697043}
+{"type": "exit", "point": "close", "ts": 1782378663.8011234}
+{"type": "exit", "point": "close", "ts": 1782378663.801592}
+{"type": "exit", "point": "close", "ts": 1782378663.9073339}
+{"type": "exit", "point": "close", "ts": 1782378663.9077694}
+{"type": "exit", "point": "close", "ts": 1782378664.013324}
+{"type": "exit", "point": "close", "ts": 1782378664.0141459}
+{"type": "exit", "point": "close", "ts": 1782378664.0142689}
+{"type": "exit", "point": "close", "ts": 1782378664.1164613}
+{"type": "exit", "point": "close", "ts": 1782378664.1169019}
+{"type": "exit", "point": "close", "ts": 1782378664.2222679}
+{"type": "exit", "point": "close", "ts": 1782378664.222767}
+{"type": "exit", "point": "close", "ts": 1782378770.9981384}
+{"type": "exit", "point": "close", "ts": 1782378770.9983258}
+{"type": "exit", "point": "close", "ts": 1782378771.101568}
+{"type": "exit", "point": "close", "ts": 1782378771.1017523}
+{"type": "exit", "point": "close", "ts": 1782378771.2206929}
+{"type": "exit", "point": "close", "ts": 1782378771.3299012}
+{"type": "exit", "point": "close", "ts": 1782378771.3301609}
+{"type": "exit", "point": "close", "ts": 1782378771.4377804}
+{"type": "exit", "point": "close", "ts": 1782378771.43804}
+{"type": "exit", "point": "close", "ts": 1782378771.5430264}
+{"type": "exit", "point": "close", "ts": 1782378771.5432374}
+{"type": "exit", "point": "close", "ts": 1782378771.6478882}
+{"type": "exit", "point": "close", "ts": 1782378771.648109}
+{"type": "exit", "point": "close", "ts": 1782378771.752454}
+{"type": "exit", "point": "close", "ts": 1782378771.7526617}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378771.871697}
+{"type": "exit", "point": "close", "ts": 1782378771.8737657}
+{"type": "exit", "point": "close", "ts": 1782378771.8740318}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378771.9882562}
+{"type": "exit", "point": "close", "ts": 1782378771.9903533}
+{"type": "exit", "point": "close", "ts": 1782378771.9906406}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378772.1061718}
+{"type": "exit", "point": "close", "ts": 1782378772.1080801}
+{"type": "exit", "point": "close", "ts": 1782378772.1083052}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378772.2217875}
+{"type": "exit", "point": "close", "ts": 1782378772.2237773}
+{"type": "exit", "point": "close", "ts": 1782378772.2240171}
+{"type": "exit", "point": "close", "ts": 1782378772.3879423}
+{"type": "exit", "point": "close", "ts": 1782378772.3881772}
+{"type": "exit", "point": "close", "ts": 1782378772.5236537}
+{"type": "exit", "point": "close", "ts": 1782378772.5239503}
+{"type": "exit", "point": "close", "ts": 1782378772.6427763}
+{"type": "exit", "point": "close", "ts": 1782378772.6430159}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378772.7597294}
+{"type": "exit", "point": "close", "ts": 1782378772.761856}
+{"type": "exit", "point": "close", "ts": 1782378772.7621589}
+{"type": "exit", "point": "close", "ts": 1782378772.880497}
+{"type": "exit", "point": "close", "ts": 1782378772.8807406}
+{"type": "exit", "point": "close", "ts": 1782378772.9961286}
+{"type": "exit", "point": "close", "ts": 1782378772.9965727}
+{"type": "exit", "point": "close", "ts": 1782378773.114737}
+{"type": "exit", "point": "close", "ts": 1782378773.1150053}
+{"type": "exit", "point": "close", "ts": 1782378773.229381}
+{"type": "exit", "point": "close", "ts": 1782378773.2296553}
+{"type": "exit", "point": "close", "ts": 1782378773.3785825}
+{"type": "exit", "point": "close", "ts": 1782378773.378939}
+{"type": "exit", "point": "close", "ts": 1782378773.488164}
+{"type": "exit", "point": "close", "ts": 1782378773.4884646}
+{"type": "exit", "point": "close", "ts": 1782378773.5987592}
+{"type": "exit", "point": "close", "ts": 1782378773.599064}
+{"type": "exit", "point": "close", "ts": 1782378773.7066772}
+{"type": "exit", "point": "close", "ts": 1782378773.7069883}
+{"type": "exit", "point": "close", "ts": 1782378773.8201556}
+{"type": "exit", "point": "close", "ts": 1782378773.8205032}
+{"type": "exit", "point": "close", "ts": 1782378773.932516}
+{"type": "exit", "point": "close", "ts": 1782378773.932953}
+{"type": "exit", "point": "close", "ts": 1782378774.0401754}
+{"type": "exit", "point": "close", "ts": 1782378774.0406563}
+{"type": "exit", "point": "close", "ts": 1782378774.1468966}
+{"type": "exit", "point": "close", "ts": 1782378774.147338}
+{"type": "exit", "point": "close", "ts": 1782378774.254072}
+{"type": "exit", "point": "close", "ts": 1782378774.254548}
+{"type": "exit", "point": "close", "ts": 1782378774.361883}
+{"type": "exit", "point": "close", "ts": 1782378774.3624115}
+{"type": "exit", "point": "close", "ts": 1782378774.4695299}
+{"type": "exit", "point": "close", "ts": 1782378774.470057}
+{"type": "exit", "point": "close", "ts": 1782378774.5805366}
+{"type": "exit", "point": "close", "ts": 1782378774.5810077}
+{"type": "exit", "point": "close", "ts": 1782378774.6948311}
+{"type": "exit", "point": "close", "ts": 1782378774.6952727}
+{"type": "exit", "point": "close", "ts": 1782378774.8035426}
+{"type": "exit", "point": "close", "ts": 1782378774.8038743}
+{"type": "exit", "point": "close", "ts": 1782378774.9117053}
+{"type": "exit", "point": "close", "ts": 1782378774.912045}
+{"type": "exit", "point": "close", "ts": 1782378775.0173793}
+{"type": "exit", "point": "close", "ts": 1782378775.0177152}
+{"type": "exit", "point": "close", "ts": 1782378775.1225896}
+{"type": "exit", "point": "close", "ts": 1782378775.1229177}
+{"type": "exit", "point": "close", "ts": 1782378775.2321544}
+{"type": "exit", "point": "close", "ts": 1782378775.2325318}
+{"type": "exit", "point": "close", "ts": 1782378775.3389947}
+{"type": "exit", "point": "close", "ts": 1782378775.3396335}
+{"type": "exit", "point": "close", "ts": 1782378775.3397622}
+{"type": "exit", "point": "close", "ts": 1782378775.4463234}
+{"type": "exit", "point": "close", "ts": 1782378775.4467025}
+{"type": "exit", "point": "close", "ts": 1782378775.6056795}
+{"type": "exit", "point": "close", "ts": 1782378775.606097}
+{"type": "exit", "point": "close", "ts": 1782378775.7228045}
+{"type": "exit", "point": "close", "ts": 1782378775.8288295}
+{"type": "exit", "point": "close", "ts": 1782378775.82917}
+{"type": "exit", "point": "close", "ts": 1782378775.9383585}
+{"type": "exit", "point": "close", "ts": 1782378775.938719}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378776.054614}
+{"type": "exit", "point": "close", "ts": 1782378776.0565677}
+{"type": "exit", "point": "close", "ts": 1782378776.0569649}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378776.169511}
+{"type": "exit", "point": "close", "ts": 1782378776.171621}
+{"type": "exit", "point": "close", "ts": 1782378776.1720533}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378776.2925348}
+{"type": "exit", "point": "close", "ts": 1782378776.2945015}
+{"type": "exit", "point": "close", "ts": 1782378776.2949295}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378776.4111183}
+{"type": "exit", "point": "close", "ts": 1782378776.4130962}
+{"type": "exit", "point": "close", "ts": 1782378776.4135323}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378776.529933}
+{"type": "exit", "point": "close", "ts": 1782378776.532008}
+{"type": "exit", "point": "close", "ts": 1782378776.5324507}
+{"type": "exit", "point": "close", "ts": 1782378776.6506352}
+{"type": "exit", "point": "close", "ts": 1782378776.6510458}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378776.7693892}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378776.7776246}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378776.785359}
+{"type": "exit", "point": "close", "ts": 1782378776.7906203}
+{"type": "exit", "point": "close", "ts": 1782378776.7910614}
+{"type": "exit", "point": "close", "ts": 1782378776.8984814}
+{"type": "exit", "point": "close", "ts": 1782378776.8989184}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378777.0144718}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378777.024863}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378777.0302176}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378777.0388017}
+{"type": "exit", "point": "close", "ts": 1782378777.045546}
+{"type": "exit", "point": "close", "ts": 1782378777.046033}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378777.1720462}
+{"type": "exit", "point": "close", "ts": 1782378777.1854296}
+{"type": "exit", "point": "close", "ts": 1782378777.185881}
+{"type": "exit", "point": "close", "ts": 1782378777.3358583}
+{"type": "exit", "point": "close", "ts": 1782378777.3363671}
+{"type": "exit", "point": "close", "ts": 1782378777.483283}
+{"type": "exit", "point": "close", "ts": 1782378777.4837787}
+{"type": "exit", "point": "close", "ts": 1782378777.5906847}
+{"type": "exit", "point": "close", "ts": 1782378777.5911157}
+{"type": "exit", "point": "close", "ts": 1782378777.6975834}
+{"type": "exit", "point": "close", "ts": 1782378777.6980813}
+{"type": "exit", "point": "close", "ts": 1782378777.8045883}
+{"type": "exit", "point": "close", "ts": 1782378777.805305}
+{"type": "exit", "point": "close", "ts": 1782378777.8054695}
+{"type": "exit", "point": "close", "ts": 1782378777.9110813}
+{"type": "exit", "point": "close", "ts": 1782378777.9115741}
+{"type": "exit", "point": "close", "ts": 1782378778.018666}
+{"type": "exit", "point": "close", "ts": 1782378778.0191395}
+{"type": "table_render", "rows": 2, "duration_ms": 0.2, "ts": 1782378793.024339}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378793.0271673}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378793.0297556}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0298033}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0298352}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0298634}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0298903}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0299172}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0299437}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378793.03002}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.030057}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0300877}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0301158}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0301433}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0301695}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378793.0302317}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0302675}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.030297}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0303237}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0303504}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0303764}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.030403}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.030429}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0304546}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0304806}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0305061}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0305324}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.030558}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0305836}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0306087}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0306337}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0306585}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.030684}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0307093}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0307422}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0307686}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0307937}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0308192}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0308442}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0308697}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.030895}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0309203}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.030945}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0309696}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0309944}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0310192}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0310447}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0310714}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0310974}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.031123}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0311499}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.031175}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378793.031238}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0312686}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0312958}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0313227}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.031349}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.031376}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0314023}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0314279}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0314534}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.031479}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0315042}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0315292}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0315552}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.03158}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0316055}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0316303}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0316553}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0316803}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0317273}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0317652}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0317922}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0318177}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0318427}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0318682}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0318937}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0319192}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0319455}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0319705}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0319955}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0320203}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0320451}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.03207}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0320945}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.032119}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0321438}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0321681}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0322285}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0322635}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.032292}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.032318}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0323443}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0323699}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0323956}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0324206}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0324457}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.032471}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.032496}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0325205}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0325453}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378793.0325704}
+{"type": "table_render", "rows": 2, "duration_ms": 0.2, "ts": 1782378793.898083}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378793.9008734}
+{"type": "exit", "point": "close", "ts": 1782378794.3826132}
+{"type": "exit", "point": "close", "ts": 1782378794.3833723}
+{"type": "exit", "point": "close", "ts": 1782378794.4911466}
+{"type": "exit", "point": "close", "ts": 1782378794.4913719}
+{"type": "exit", "point": "close", "ts": 1782378794.6109464}
+{"type": "exit", "point": "close", "ts": 1782378794.7385297}
+{"type": "exit", "point": "close", "ts": 1782378794.73891}
+{"type": "exit", "point": "close", "ts": 1782378794.8770585}
+{"type": "exit", "point": "close", "ts": 1782378794.8773832}
+{"type": "exit", "point": "close", "ts": 1782378794.9900234}
+{"type": "exit", "point": "close", "ts": 1782378794.990344}
+{"type": "exit", "point": "close", "ts": 1782378795.1063259}
+{"type": "exit", "point": "close", "ts": 1782378795.1066086}
+{"type": "exit", "point": "close", "ts": 1782378795.2265518}
+{"type": "exit", "point": "close", "ts": 1782378795.2268329}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378795.3517756}
+{"type": "exit", "point": "close", "ts": 1782378795.3542604}
+{"type": "exit", "point": "close", "ts": 1782378795.354621}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378795.4756005}
+{"type": "exit", "point": "close", "ts": 1782378795.477879}
+{"type": "exit", "point": "close", "ts": 1782378795.4782877}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378795.6014392}
+{"type": "exit", "point": "close", "ts": 1782378795.6038692}
+{"type": "exit", "point": "close", "ts": 1782378795.6042352}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378795.729655}
+{"type": "exit", "point": "close", "ts": 1782378795.7320948}
+{"type": "exit", "point": "close", "ts": 1782378795.7325072}
+{"type": "exit", "point": "close", "ts": 1782378795.8735435}
+{"type": "exit", "point": "close", "ts": 1782378795.8739052}
+{"type": "exit", "point": "close", "ts": 1782378796.0198169}
+{"type": "exit", "point": "close", "ts": 1782378796.0202043}
+{"type": "exit", "point": "close", "ts": 1782378796.1451032}
+{"type": "exit", "point": "close", "ts": 1782378796.1454751}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378796.269488}
+{"type": "exit", "point": "close", "ts": 1782378796.2719905}
+{"type": "exit", "point": "close", "ts": 1782378796.2724526}
+{"type": "exit", "point": "close", "ts": 1782378796.3976786}
+{"type": "exit", "point": "close", "ts": 1782378796.3980634}
+{"type": "exit", "point": "close", "ts": 1782378796.525835}
+{"type": "exit", "point": "close", "ts": 1782378796.52624}
+{"type": "exit", "point": "close", "ts": 1782378796.6474626}
+{"type": "exit", "point": "close", "ts": 1782378796.647791}
+{"type": "exit", "point": "close", "ts": 1782378796.7727933}
+{"type": "exit", "point": "close", "ts": 1782378796.773206}
+{"type": "exit", "point": "close", "ts": 1782378796.886175}
+{"type": "exit", "point": "close", "ts": 1782378796.8865213}
+{"type": "exit", "point": "close", "ts": 1782378796.996632}
+{"type": "exit", "point": "close", "ts": 1782378796.996999}
+{"type": "exit", "point": "close", "ts": 1782378797.1075292}
+{"type": "exit", "point": "close", "ts": 1782378797.1079264}
+{"type": "exit", "point": "close", "ts": 1782378797.224322}
+{"type": "exit", "point": "close", "ts": 1782378797.2247465}
+{"type": "exit", "point": "close", "ts": 1782378797.3435993}
+{"type": "exit", "point": "close", "ts": 1782378797.3440042}
+{"type": "exit", "point": "close", "ts": 1782378797.4642847}
+{"type": "exit", "point": "close", "ts": 1782378797.4648516}
+{"type": "exit", "point": "close", "ts": 1782378797.5904026}
+{"type": "exit", "point": "close", "ts": 1782378797.5909677}
+{"type": "exit", "point": "close", "ts": 1782378797.7091718}
+{"type": "exit", "point": "close", "ts": 1782378797.7097077}
+{"type": "exit", "point": "close", "ts": 1782378797.8272917}
+{"type": "exit", "point": "close", "ts": 1782378797.8278885}
+{"type": "exit", "point": "close", "ts": 1782378797.9421072}
+{"type": "exit", "point": "close", "ts": 1782378797.9426665}
+{"type": "exit", "point": "close", "ts": 1782378798.0552611}
+{"type": "exit", "point": "close", "ts": 1782378798.0557783}
+{"type": "exit", "point": "close", "ts": 1782378798.169586}
+{"type": "exit", "point": "close", "ts": 1782378798.1702397}
+{"type": "exit", "point": "close", "ts": 1782378798.285494}
+{"type": "exit", "point": "close", "ts": 1782378798.2861035}
+{"type": "exit", "point": "close", "ts": 1782378798.4073179}
+{"type": "exit", "point": "close", "ts": 1782378798.407712}
+{"type": "exit", "point": "close", "ts": 1782378798.5270295}
+{"type": "exit", "point": "close", "ts": 1782378798.527471}
+{"type": "exit", "point": "close", "ts": 1782378798.6455178}
+{"type": "exit", "point": "close", "ts": 1782378798.6459434}
+{"type": "exit", "point": "close", "ts": 1782378798.7598789}
+{"type": "exit", "point": "close", "ts": 1782378798.760322}
+{"type": "exit", "point": "close", "ts": 1782378798.8728383}
+{"type": "exit", "point": "close", "ts": 1782378798.8732588}
+{"type": "exit", "point": "close", "ts": 1782378798.9887743}
+{"type": "exit", "point": "close", "ts": 1782378798.9894886}
+{"type": "exit", "point": "close", "ts": 1782378798.9896178}
+{"type": "exit", "point": "close", "ts": 1782378799.1015465}
+{"type": "exit", "point": "close", "ts": 1782378799.1019437}
+{"type": "exit", "point": "close", "ts": 1782378799.226736}
+{"type": "exit", "point": "close", "ts": 1782378799.2271657}
+{"type": "exit", "point": "close", "ts": 1782378799.3661687}
+{"type": "exit", "point": "close", "ts": 1782378799.483855}
+{"type": "exit", "point": "close", "ts": 1782378799.484445}
+{"type": "exit", "point": "close", "ts": 1782378799.6029756}
+{"type": "exit", "point": "close", "ts": 1782378799.603464}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378799.7298226}
+{"type": "exit", "point": "close", "ts": 1782378799.7323198}
+{"type": "exit", "point": "close", "ts": 1782378799.7328048}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378799.8601153}
+{"type": "exit", "point": "close", "ts": 1782378799.862561}
+{"type": "exit", "point": "close", "ts": 1782378799.8630648}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378799.9868085}
+{"type": "exit", "point": "close", "ts": 1782378799.98903}
+{"type": "exit", "point": "close", "ts": 1782378799.9895706}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.1141176}
+{"type": "exit", "point": "close", "ts": 1782378800.1167283}
+{"type": "exit", "point": "close", "ts": 1782378800.1172566}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.251579}
+{"type": "exit", "point": "close", "ts": 1782378800.2543862}
+{"type": "exit", "point": "close", "ts": 1782378800.2549238}
+{"type": "exit", "point": "close", "ts": 1782378800.3888128}
+{"type": "exit", "point": "close", "ts": 1782378800.3893387}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.5256631}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.532622}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.5370715}
+{"type": "exit", "point": "close", "ts": 1782378800.5433614}
+{"type": "exit", "point": "close", "ts": 1782378800.5439627}
+{"type": "exit", "point": "close", "ts": 1782378800.6617606}
+{"type": "exit", "point": "close", "ts": 1782378800.662401}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.7956703}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.8064504}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.8144507}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.8247004}
+{"type": "exit", "point": "close", "ts": 1782378800.832813}
+{"type": "exit", "point": "close", "ts": 1782378800.8334296}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378800.9798136}
+{"type": "exit", "point": "close", "ts": 1782378800.9949026}
+{"type": "exit", "point": "close", "ts": 1782378800.9955077}
+{"type": "exit", "point": "close", "ts": 1782378801.152983}
+{"type": "exit", "point": "close", "ts": 1782378801.153602}
+{"type": "exit", "point": "close", "ts": 1782378801.3087523}
+{"type": "exit", "point": "close", "ts": 1782378801.3093646}
+{"type": "exit", "point": "close", "ts": 1782378801.4214172}
+{"type": "exit", "point": "close", "ts": 1782378801.4219253}
+{"type": "exit", "point": "close", "ts": 1782378801.533778}
+{"type": "exit", "point": "close", "ts": 1782378801.5343943}
+{"type": "exit", "point": "close", "ts": 1782378801.6457005}
+{"type": "exit", "point": "close", "ts": 1782378801.6466053}
+{"type": "exit", "point": "close", "ts": 1782378801.6467483}
+{"type": "exit", "point": "close", "ts": 1782378801.7568152}
+{"type": "exit", "point": "close", "ts": 1782378801.7574046}
+{"type": "exit", "point": "close", "ts": 1782378801.8672097}
+{"type": "exit", "point": "close", "ts": 1782378801.867738}
+{"type": "table_render", "rows": 2, "duration_ms": 0.3, "ts": 1782378819.4174082}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378819.4202447}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378819.4229007}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4229481}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378819.4230413}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4230816}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4231124}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4231422}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4231706}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4231985}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4232256}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4232535}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4232812}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4233081}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378819.423388}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4234276}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4234576}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378819.42352}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4235559}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4235845}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4236162}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.423643}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4236698}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.423696}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.423723}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4237497}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4237924}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4238384}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4238696}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4238982}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4239259}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4239528}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424022}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424054}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4240832}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4241111}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4241383}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4241655}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4241924}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4242187}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4242446}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4242709}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4242966}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4243226}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4243484}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424374}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4244}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378819.4244633}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4244995}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4245284}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424556}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4245832}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4246094}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424636}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4246614}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4246879}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424714}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4247413}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424768}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4247942}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4248202}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424846}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4248712}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4248965}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.424923}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4249504}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378819.4250138}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4250448}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4250727}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4251}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4251266}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425153}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4251792}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4252048}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4252303}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4252558}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4252822}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4253082}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425334}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4253592}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4253845}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4254096}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425442}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425468}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4254944}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4255204}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4255457}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4255714}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4255967}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425622}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425647}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4256725}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4256978}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425723}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4257486}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4257736}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425799}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4258249}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.42585}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.425875}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4259002}
+{"type": "table_render", "rows": 1, "duration_ms": 0.0, "ts": 1782378819.4259257}
+{"type": "table_render", "rows": 2, "duration_ms": 0.1, "ts": 1782378820.259942}
+{"type": "table_render", "rows": 1, "duration_ms": 0.1, "ts": 1782378820.2626958}
+{"type": "exit", "point": "close", "ts": 1782378820.721659}
+{"type": "exit", "point": "close", "ts": 1782378820.7224505}
+{"type": "exit", "point": "close", "ts": 1782378820.8305573}
+{"type": "exit", "point": "close", "ts": 1782378820.8307462}
+{"type": "exit", "point": "close", "ts": 1782378820.9462643}
+{"type": "exit", "point": "close", "ts": 1782378821.0517206}
+{"type": "exit", "point": "close", "ts": 1782378821.0519414}
+{"type": "exit", "point": "close", "ts": 1782378821.1562965}
+{"type": "exit", "point": "close", "ts": 1782378821.1565104}
+{"type": "exit", "point": "close", "ts": 1782378821.261517}
+{"type": "exit", "point": "close", "ts": 1782378821.2617261}
+{"type": "exit", "point": "close", "ts": 1782378821.3675027}
+{"type": "exit", "point": "close", "ts": 1782378821.3677197}
+{"type": "exit", "point": "close", "ts": 1782378821.4752223}
+{"type": "exit", "point": "close", "ts": 1782378821.4754362}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378821.5890605}
+{"type": "exit", "point": "close", "ts": 1782378821.591083}
+{"type": "exit", "point": "close", "ts": 1782378821.5913155}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378821.7051358}
+{"type": "exit", "point": "close", "ts": 1782378821.707159}
+{"type": "exit", "point": "close", "ts": 1782378821.7074184}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378821.821904}
+{"type": "exit", "point": "close", "ts": 1782378821.8238842}
+{"type": "exit", "point": "close", "ts": 1782378821.824167}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378821.9378638}
+{"type": "exit", "point": "close", "ts": 1782378821.9397042}
+{"type": "exit", "point": "close", "ts": 1782378821.9400272}
+{"type": "exit", "point": "close", "ts": 1782378822.0661662}
+{"type": "exit", "point": "close", "ts": 1782378822.06644}
+{"type": "exit", "point": "close", "ts": 1782378822.1946707}
+{"type": "exit", "point": "close", "ts": 1782378822.19493}
+{"type": "exit", "point": "close", "ts": 1782378822.312979}
+{"type": "exit", "point": "close", "ts": 1782378822.3132367}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378822.4280732}
+{"type": "exit", "point": "close", "ts": 1782378822.4302747}
+{"type": "exit", "point": "close", "ts": 1782378822.430544}
+{"type": "exit", "point": "close", "ts": 1782378822.5465958}
+{"type": "exit", "point": "close", "ts": 1782378822.5468438}
+{"type": "exit", "point": "close", "ts": 1782378822.6624527}
+{"type": "exit", "point": "close", "ts": 1782378822.6627052}
+{"type": "exit", "point": "close", "ts": 1782378822.7763135}
+{"type": "exit", "point": "close", "ts": 1782378822.776592}
+{"type": "exit", "point": "close", "ts": 1782378822.890288}
+{"type": "exit", "point": "close", "ts": 1782378822.8905864}
+{"type": "exit", "point": "close", "ts": 1782378822.995042}
+{"type": "exit", "point": "close", "ts": 1782378822.995326}
+{"type": "exit", "point": "close", "ts": 1782378823.0990489}
+{"type": "exit", "point": "close", "ts": 1782378823.0993462}
+{"type": "exit", "point": "close", "ts": 1782378823.2037802}
+{"type": "exit", "point": "close", "ts": 1782378823.2041187}
+{"type": "exit", "point": "close", "ts": 1782378823.308826}
+{"type": "exit", "point": "close", "ts": 1782378823.309165}
+{"type": "exit", "point": "close", "ts": 1782378823.415318}
+{"type": "exit", "point": "close", "ts": 1782378823.4156296}
+{"type": "exit", "point": "close", "ts": 1782378823.523905}
+{"type": "exit", "point": "close", "ts": 1782378823.5243812}
+{"type": "exit", "point": "close", "ts": 1782378823.636226}
+{"type": "exit", "point": "close", "ts": 1782378823.636686}
+{"type": "exit", "point": "close", "ts": 1782378823.744129}
+{"type": "exit", "point": "close", "ts": 1782378823.7445834}
+{"type": "exit", "point": "close", "ts": 1782378823.8517075}
+{"type": "exit", "point": "close", "ts": 1782378823.8522112}
+{"type": "exit", "point": "close", "ts": 1782378823.9600322}
+{"type": "exit", "point": "close", "ts": 1782378823.9604926}
+{"type": "exit", "point": "close", "ts": 1782378824.0680606}
+{"type": "exit", "point": "close", "ts": 1782378824.0685115}
+{"type": "exit", "point": "close", "ts": 1782378824.1766021}
+{"type": "exit", "point": "close", "ts": 1782378824.1771207}
+{"type": "exit", "point": "close", "ts": 1782378824.284808}
+{"type": "exit", "point": "close", "ts": 1782378824.2852938}
+{"type": "exit", "point": "close", "ts": 1782378824.392436}
+{"type": "exit", "point": "close", "ts": 1782378824.3927457}
+{"type": "exit", "point": "close", "ts": 1782378824.4974155}
+{"type": "exit", "point": "close", "ts": 1782378824.4977534}
+{"type": "exit", "point": "close", "ts": 1782378824.601812}
+{"type": "exit", "point": "close", "ts": 1782378824.602216}
+{"type": "exit", "point": "close", "ts": 1782378824.7063837}
+{"type": "exit", "point": "close", "ts": 1782378824.7067115}
+{"type": "exit", "point": "close", "ts": 1782378824.8109872}
+{"type": "exit", "point": "close", "ts": 1782378824.8113298}
+{"type": "exit", "point": "close", "ts": 1782378824.9141395}
+{"type": "exit", "point": "close", "ts": 1782378824.914744}
+{"type": "exit", "point": "close", "ts": 1782378824.9148622}
+{"type": "exit", "point": "close", "ts": 1782378825.0179927}
+{"type": "exit", "point": "close", "ts": 1782378825.018353}
+{"type": "exit", "point": "close", "ts": 1782378825.1251268}
+{"type": "exit", "point": "close", "ts": 1782378825.1254547}
+{"type": "exit", "point": "close", "ts": 1782378825.2457054}
+{"type": "exit", "point": "close", "ts": 1782378825.3516805}
+{"type": "exit", "point": "close", "ts": 1782378825.3521044}
+{"type": "exit", "point": "close", "ts": 1782378825.4593258}
+{"type": "exit", "point": "close", "ts": 1782378825.4597437}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378825.5768158}
+{"type": "exit", "point": "close", "ts": 1782378825.5791636}
+{"type": "exit", "point": "close", "ts": 1782378825.5796175}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378825.6999798}
+{"type": "exit", "point": "close", "ts": 1782378825.7021391}
+{"type": "exit", "point": "close", "ts": 1782378825.702563}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378825.8176384}
+{"type": "exit", "point": "close", "ts": 1782378825.8197007}
+{"type": "exit", "point": "close", "ts": 1782378825.820146}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378825.9387705}
+{"type": "exit", "point": "close", "ts": 1782378825.9408896}
+{"type": "exit", "point": "close", "ts": 1782378825.9413514}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.0587032}
+{"type": "exit", "point": "close", "ts": 1782378826.060882}
+{"type": "exit", "point": "close", "ts": 1782378826.0613294}
+{"type": "exit", "point": "close", "ts": 1782378826.1820984}
+{"type": "exit", "point": "close", "ts": 1782378826.1825135}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.3027189}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.3086717}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.3141959}
+{"type": "exit", "point": "close", "ts": 1782378826.3192594}
+{"type": "exit", "point": "close", "ts": 1782378826.319713}
+{"type": "exit", "point": "close", "ts": 1782378826.4243453}
+{"type": "exit", "point": "close", "ts": 1782378826.4247622}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.5466785}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.5486465}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.5557053}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.5644994}
+{"type": "exit", "point": "close", "ts": 1782378826.5711596}
+{"type": "exit", "point": "close", "ts": 1782378826.5716147}
+{"type": "table_render", "rows": 0, "duration_ms": 0.0, "ts": 1782378826.7004223}
+{"type": "exit", "point": "close", "ts": 1782378826.7127004}
+{"type": "exit", "point": "close", "ts": 1782378826.71318}
+{"type": "exit", "point": "close", "ts": 1782378826.8572862}
+{"type": "exit", "point": "close", "ts": 1782378826.8577526}
+{"type": "exit", "point": "close", "ts": 1782378827.0028126}
+{"type": "exit", "point": "close", "ts": 1782378827.0032918}
+{"type": "exit", "point": "close", "ts": 1782378827.1084368}
+{"type": "exit", "point": "close", "ts": 1782378827.1088798}
+{"type": "exit", "point": "close", "ts": 1782378827.2175677}
+{"type": "exit", "point": "close", "ts": 1782378827.2180984}
+{"type": "exit", "point": "close", "ts": 1782378827.3260787}
+{"type": "exit", "point": "close", "ts": 1782378827.3268092}
+{"type": "exit", "point": "close", "ts": 1782378827.3269615}
+{"type": "exit", "point": "close", "ts": 1782378827.434665}
+{"type": "exit", "point": "close", "ts": 1782378827.4351828}
+{"type": "exit", "point": "close", "ts": 1782378827.5447915}
+{"type": "exit", "point": "close", "ts": 1782378827.5452962}

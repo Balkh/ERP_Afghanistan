@@ -225,7 +225,7 @@ class ProductViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
                 product=product,
                 remaining_quantity__gt=0,
                 is_active=True
-            ).select_related('warehouse')
+            )
             
             batch_serializer = BatchSerializer(batches, many=True)
             
@@ -261,7 +261,7 @@ class ProductViewSet(UnifiedEnterpriseViewSetMixin, viewsets.ModelViewSet):
                 product=product,
                 remaining_quantity__gt=0,
                 is_active=True
-            ).select_related('warehouse')
+            )
             
             batch_serializer = BatchSerializer(batches, many=True)
             
