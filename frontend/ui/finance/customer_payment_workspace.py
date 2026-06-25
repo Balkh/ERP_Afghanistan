@@ -59,8 +59,10 @@ class CustomerPaymentWorkspace(BaseScreen):
         )
 
         self.customer_combo = QComboBox()
-        self.customer_combo.setMinimumWidth(250)
-        self.customer_combo.setStyleSheet(combo_stylesheet())
+        self.customer_combo.setMinimumWidth(300)
+        # Use global style instead of local stylesheet
+        from theme.style_builder import UIStyleBuilder
+        self.customer_combo.setStyleSheet(UIStyleBuilder.get_global_style())
         self.customer_combo.currentIndexChanged.connect(self._on_customer_selected)
         header.add_action(QLabel("Customer:"))
         header.add_action(self.customer_combo)
@@ -167,7 +169,7 @@ class CustomerPaymentWorkspace(BaseScreen):
         self.btn_allocate.clicked.connect(self._on_allocate_fifo)
         header_layout.addWidget(self.btn_allocate)
 
-        layout.addWidget(header)
+        layout.addLayout(header_layout)
 
         columns = [
             TableColumn("payment_number", "Payment #", width=120),
@@ -184,16 +186,27 @@ class CustomerPaymentWorkspace(BaseScreen):
         return section
 
     def _create_allocation_summary(self):
-        """Create allocation summary section."""
-        section = QGroupBox("Allocation Summary")
-        section.setFont(QFont("Segoe UI", TEXT_LABEL))
-        section.setStyleSheet(
-            f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; "
-            f"margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}"
-        )
-        layout = QGridLayout(section)
-        layout.setSpacing(SPACING_MD)
-
+        """Create allocation summary section as a professional Card."""
+        from theme.style_builder import UIStyleBuilder
+        section = QFrame()
+        section.setObjectName("card")
+        section.setStyleSheet(UIStyleBuilder.get_card_style())
+        
+        layout = QVBoxLayout(section)
+        layout.setContentsMargins(SPACING_LG, SPACING_MD, SPACING_LG, SPACING_MD)
+        
+        header = QLabel("Allocation Summary")
+        header.setStyleSheet(UIStyleBuilder.get_label_style("section"))
+        layout.addWidget(header)
+        
+        divider = QFrame()
+        divider.setFixedHeight(1)
+        divider.setStyleSheet(UIStyleBuilder.get_divider_style())
+        layout.addWidget(divider)
+        
+        metrics_layout = QGridLayout()
+        metrics_layout.setSpacing(SPACING_MD)
+        
         self.lbl_total_invoices = QLabel("Total Invoices: 0")
         self.lbl_total_payments = QLabel("Total Payments: 0")
         self.lbl_fully_paid = QLabel("Fully Paid: 0")
@@ -207,9 +220,11 @@ class CustomerPaymentWorkspace(BaseScreen):
             self.lbl_total_allocated, self.lbl_available_credit,
         ]
         for i, lbl in enumerate(labels):
-            lbl.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_BODY}pt;")
+            lbl.setStyleSheet(UIStyleBuilder.get_label_style("body"))
             row, col = divmod(i, 3)
-            layout.addWidget(lbl, row, col)
+            metrics_layout.addWidget(lbl, row, col)
+        
+        layout.addLayout(metrics_layout)
 
         return section
 
@@ -271,27 +286,37 @@ class CustomerPaymentWorkspace(BaseScreen):
             self.load_workspace(customer_id)
 
     def load_workspace(self, customer_id):
-        """Load complete payment workspace for a customer."""
-        self._show_loading()
-        try:
-            endpoint = f"/api/v1/payment-operations/customers/{customer_id}/payment-workspace/"
-            if not hasattr(self, "_async_customer_workspace_response"):
-                self.run_api_request(
-                    f"customer_payments:workspace:{customer_id}", "GET", endpoint,
-                    on_success=lambda r: self._resume_api_request("_async_customer_workspace_response", lambda: self.load_workspace(customer_id), r),
-                    on_error=lambda m: self._resume_api_request("_async_customer_workspace_response", lambda: self.load_workspace(customer_id), {"success": False, "error": m}),
-                )
-                return
-            response = self._take_api_response("_async_customer_workspace_response")
-            if response and response.get("success"):
-                data = response.get("data", {})
-                self._update_workspace(data)
-            else:
-                self._show_error("Failed to load workspace")
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading workspace: {e}")
-            self._show_error(f"Error: {e}")
-        self._show_data()
+        """Load complete payment workspace for a customer asynchronously."""
+        self.show_loading()
+        
+        endpoint = f"/api/v1/payment-operations/customers/{customer_id}/payment-workspace/"
+
+        def on_success(response):
+            try:
+                if response and response.get("success"):
+                    data = response.get("data", {})
+                    self._update_workspace(data)
+                else:
+                    self._show_error("Failed to load workspace")
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Error processing workspace: {e}")
+                self._show_error(f"Error: {e}")
+            finally:
+                self._show_data()
+
+        def on_error(error_msg):
+            logging.getLogger(__name__).warning(f"Workspace request failed: {error_msg}")
+            self._show_error(f"Error: {error_msg}")
+            self._show_data()
+
+        self.run_api_request(
+            key=f"workspace_{customer_id}",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+            on_error=on_error
+        )
+
 
     def _update_workspace(self, data):
         """Update all workspace components with data."""

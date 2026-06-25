@@ -60,7 +60,16 @@ class ChartOfAccountsScreen(BaseScreen):
 
     def _create_toolbar(self):
         toolbar = QFrame()
-        toolbar.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_MD}px;")
+        toolbar.setStyleSheet(UIStyleBuilder.get_card_style())
+        # Add the accent border as a manual overlay since it's a specific "Toolbar" look
+        toolbar.setStyleSheet(f"""
+            QFrame {{
+                background-color: {COLOR_BG_ELEVATED};
+                border: 1px solid {COLOR_BORDER};
+                border-left: 4px solid {COLOR_PRIMARY};
+                border-radius: {BORDER_RADIUS_MD}px;
+            }}
+        """)
         toolbar_layout = QHBoxLayout(toolbar)
         toolbar_layout.setContentsMargins(SPACING_MD, MARGIN_TOOLBAR, SPACING_MD, MARGIN_TOOLBAR)
         toolbar_layout.setSpacing(SPACING_SM)
@@ -69,22 +78,7 @@ class ChartOfAccountsScreen(BaseScreen):
         self.type_filter.addItem("All Types", "")
         for acc_type in ["ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"]:
             self.type_filter.addItem(acc_type, acc_type)
-        self.type_filter.setStyleSheet(f"""
-            QComboBox {{
-                background-color: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_XS}px {SPACING_SM}px;
-            }}
-            QComboBox QAbstractItemView {{
-                background-color: {COLOR_BG_ELEVATED};
-                color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY};
-                selection-color: {COLOR_TEXT_ON_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-            }}
-        """)
+        self.type_filter.setStyleSheet(UIStyleBuilder.get_input_style())
         self.type_filter.setMaximumWidth(150)
         toolbar_layout.addWidget(QLabel("Type:"))
         toolbar_layout.addWidget(self.type_filter)
@@ -126,36 +120,7 @@ class ChartOfAccountsScreen(BaseScreen):
         tree.setSortingEnabled(True)
         tree.setAlternatingRowColors(True)
         tree.setIndentation(24)
-        tree.setStyleSheet(f"""
-            QTreeWidget {{
-                background-color: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}px;
-                font-size: {TEXT_BODY}pt;
-                padding: {SPACING_XS}px;
-            }}
-            QTreeWidget::item {{
-                padding: {SPACING_SM}px {SPACING_XS}px;
-                border-bottom: 1px solid {COLOR_BORDER};
-            }}
-            QTreeWidget::item:selected {{
-                background-color: {COLOR_PRIMARY};
-                color: {COLOR_TEXT_ON_PRIMARY};
-            }}
-            QTreeWidget::item:hover {{
-                background-color: {COLOR_BG_SURFACE};
-            }}
-            QHeaderView::section {{
-                background-color: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                padding: {SPACING_SM}px {SPACING_XS}px;
-                border: none;
-                border-bottom: 2px solid {COLOR_BORDER};
-                font-weight: 600;
-                font-size: {TEXT_BODY_SMALL}pt;
-            }}
-        """)
+        tree.setStyleSheet(UIStyleBuilder.get_table_style())
         tree.itemSelectionChanged.connect(self._on_selection_changed)
         tree.itemDoubleClicked.connect(self._on_double_click)
 

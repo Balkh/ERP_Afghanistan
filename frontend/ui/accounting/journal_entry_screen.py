@@ -182,18 +182,34 @@ class JournalEntryScreen(BaseScreen):
         self._show_loading()
         params = build_filter_params(self.type_filter, self.status_filter, self.search_input)
 
-        try:
-            endpoint = get_endpoint("journal_entries")
-            data = self.api_client.get(endpoint, params=params)
-            raw_entries = extract_list(data)
-            self.entries = [e for e in raw_entries if isinstance(e, dict)]
-            self._populate_table()
-        except Exception as e:
+        def on_success(response):
+            try:
+                raw_entries = extract_list(response)
+                self.entries = [e for e in raw_entries if isinstance(e, dict)]
+                self._populate_table()
+            except Exception as e:
+                self.entries = []
+                self._populate_table()
+                self.empty_label.setText(f"Error processing entries: {e}")
+                self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("error"))
+                self.empty_label.setVisible(True)
+
+        def on_error(error_msg):
             self.entries = []
             self._populate_table()
-            self.empty_label.setText(f"Error loading entries: {e}")
+            self.empty_label.setText(f"Error loading entries: {error_msg}")
             self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("error"))
             self.empty_label.setVisible(True)
+
+        self.run_api_request(
+            key="journal_entries_load",
+            method="GET",
+            endpoint=get_endpoint("journal_entries"),
+            params=params,
+            on_success=on_success,
+            on_error=on_error
+        )
+
 
     def _populate_table(self):
         if not self.entries:
@@ -268,12 +284,20 @@ class JournalEntryScreen(BaseScreen):
             self, "Confirm Post",
             f"Are you sure you want to post journal entry {entry.get('entry_number')}?"
         ):
-            try:
-                self.api_client.post(f"/api/accounting/journal-entries/{entry['id']}/post_entry/")
+            def on_success(response):
                 self.load_entries()
                 AlertDialog.info("Success", "Journal entry posted successfully.", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to post entry: {e}", self)
+
+            def on_error(error_msg):
+                AlertDialog.error("Error", f"Failed to post entry: {error_msg}", self)
+
+            self.run_api_request(
+                key=f"post_entry_{entry['id']}",
+                method="POST",
+                endpoint=f"/api/accounting/journal-entries/{entry['id']}/post_entry/",
+                on_success=on_success,
+                on_error=on_error
+            )
 
     def _on_unpost(self):
         entry = self._get_selected_entry()
@@ -284,12 +308,20 @@ class JournalEntryScreen(BaseScreen):
             self, "Confirm Unpost",
             f"Are you sure you want to unpost journal entry {entry.get('entry_number')}?"
         ):
-            try:
-                self.api_client.post(f"/api/accounting/journal-entries/{entry['id']}/unpost_entry/")
+            def on_success(response):
                 self.load_entries()
                 AlertDialog.info("Success", "Journal entry unposted successfully.", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to unpost entry: {e}", self)
+
+            def on_error(error_msg):
+                AlertDialog.error("Error", f"Failed to unpost entry: {error_msg}", self)
+
+            self.run_api_request(
+                key=f"unpost_entry_{entry['id']}",
+                method="POST",
+                endpoint=f"/api/accounting/journal-entries/{entry['id']}/unpost_entry/",
+                on_success=on_success,
+                on_error=on_error
+            )
 
     def _on_reverse(self):
         entry = self._get_selected_entry()
@@ -299,15 +331,21 @@ class JournalEntryScreen(BaseScreen):
         if DestructiveActionGuard.confirm_accounting_reversal(
             self, f"journal entry {entry.get('entry_number')}"
         ):
-            try:
-                self.api_client.post(
-                    f"/api/accounting/journal-entries/{entry['id']}/reverse_entry/",
-                    data={"reason": "Reversed from UI"}
-                )
+            def on_success(response):
                 self.load_entries()
                 AlertDialog.info("Success", "Journal entry reversed successfully.", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to reverse entry: {e}", self)
+
+            def on_error(error_msg):
+                AlertDialog.error("Error", f"Failed to reverse entry: {error_msg}", self)
+
+            self.run_api_request(
+                key=f"reverse_entry_{entry['id']}",
+                method="POST",
+                endpoint=f"/api/accounting/journal-entries/{entry['id']}/reverse_entry/",
+                params={"reason": "Reversed from UI"},
+                on_success=on_success,
+                on_error=on_error
+            )
 
     def _show_entry_detail(self, entry):
         from ui.accounting.components.journal_entry_detail import JournalEntryDetailDialog

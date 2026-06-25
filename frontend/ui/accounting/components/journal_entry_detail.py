@@ -50,28 +50,13 @@ class JournalEntryDetailDialog(EnterpriseDialog):
         widget = QWidget()
         self.setMinimumWidth(850)
         self.setMinimumHeight(600)
-        widget.setStyleSheet(f"""
-            QWidget {{ background-color: {COLOR_BG_MAIN}; }}
-            QGroupBox {{ 
-                font-weight: bold; 
-                border: 1px solid {COLOR_BORDER}; 
-                border-radius: {BORDER_RADIUS_LG}px; 
-                margin-top: {SPACING_LG}px;
-                padding-top: {SPACING_LG}px;
-                background-color: {COLOR_BG_SURFACE};
-            }}
-            QLabel {{ color: {COLOR_TEXT_PRIMARY}; }}
-        """)
 
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
         title = QLabel("Journal Entry Details")
-        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
-        title_font.setWeight(QFont.Weight.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        title.setStyleSheet(UIStyleBuilder.get_page_header_style())
         layout.addWidget(title)
 
         # Entry Information
@@ -95,15 +80,15 @@ class JournalEntryDetailDialog(EnterpriseDialog):
         info_section.add_field(self.reference, "Reference:")
 
         self.is_posted = QLabel("")
-        status_font = QFont("Segoe UI", TEXT_LABEL)
-        status_font.setWeight(QFont.Weight.Bold)
-        self.is_posted.setFont(status_font)
+        self.is_posted.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+        self.is_posted.setStyleSheet(f"font-weight: bold;")
         info_section.add_field(self.is_posted, "Status:")
 
         layout.addWidget(info_section)
 
         # Journal Lines
         lines_group = QGroupBox("Journal Lines (Articles)")
+        lines_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=False))
         lines_layout = QVBoxLayout(lines_group)
 
         columns = [
@@ -117,26 +102,22 @@ class JournalEntryDetailDialog(EnterpriseDialog):
 
         # Totals
         totals_frame = QFrame()
-        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; border-radius: {BORDER_RADIUS_SM}px; padding: {SPACING_XS}px;")
+        totals_frame.setStyleSheet(UIStyleBuilder.get_card_style())
         totals_layout = QHBoxLayout(totals_frame)
         totals_layout.addStretch()
         
         totals_layout.addWidget(QLabel("Total Debit:"))
         self.total_debit_label = QLabel("0.00")
-        debit_font = QFont("Segoe UI", TEXT_BODY)
-        debit_font.setWeight(QFont.Weight.Bold)
-        self.total_debit_label.setFont(debit_font)
-        self.total_debit_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
+        self.total_debit_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+        self.total_debit_label.setStyleSheet(f"font-weight: bold; color: {COLOR_SUCCESS};")
         totals_layout.addWidget(self.total_debit_label)
         
         totals_layout.addSpacing(20)
         
         totals_layout.addWidget(QLabel("Total Credit:"))
         self.total_credit_label = QLabel("0.00")
-        credit_font = QFont("Segoe UI", TEXT_BODY)
-        credit_font.setWeight(QFont.Weight.Bold)
-        self.total_credit_label.setFont(credit_font)
-        self.total_credit_label.setStyleSheet(f"color: {COLOR_DANGER};")
+        self.total_credit_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+        self.total_credit_label.setStyleSheet(f"font-weight: bold; color: {COLOR_DANGER};")
         totals_layout.addWidget(self.total_credit_label)
         
         lines_layout.addLayout(totals_layout)

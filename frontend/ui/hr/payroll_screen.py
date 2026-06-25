@@ -221,30 +221,21 @@ class PayrollScreen(BaseScreen):
 
     def _load_salary_structures(self):
         self.set_state(ScreenState.LOADING)
-        endpoint = get_endpoint("payroll_records") or get_endpoint("salaries") or "/api/payroll/records/"
-
-        # P-REC: async fetch off the UI thread. First call issues the request and
-        # returns immediately; the worker callback re-enters here to render data.
-        if not hasattr(self, "_async_salary_response"):
-            self.run_api_request(
-                "payroll:salary_structures", "GET", endpoint,
-                on_success=lambda r: self._resume_api_request("_async_salary_response", self._load_salary_structures, r),
-                on_error=lambda m: self._resume_api_request("_async_salary_response", self._load_salary_structures, {"success": False, "error": m}),
-            )
-            return
-        response = self._take_api_response("_async_salary_response")
-
+        
         try:
+            endpoint = get_endpoint("payroll_records") or get_endpoint("salaries") or "/api/payroll/records/"
+            response = self.api_client.get(endpoint)
+            
             if response and isinstance(response, dict) and response.get("success"):
                 data = response.get("data", [])
             elif isinstance(response, list):
                 data = response
             else:
                 data = []
-
+            
             if not data or not isinstance(data, list):
                 data = self._get_mock_salary_structures()
-
+            
             self.set_state(ScreenState.READY)
             self._update_state_indicators(True, True)
         except Exception as e:
@@ -252,7 +243,7 @@ class PayrollScreen(BaseScreen):
             data = self._get_mock_salary_structures()
             self.set_state(ScreenState.READY)
             self._update_state_indicators(True, True)
-
+        
         salary_data = []
         for item in data:
             salary_data.append({
@@ -429,14 +420,9 @@ class PayrollScreen(BaseScreen):
             AlertDialog.error("Error", f"Failed to approve payroll: {e}", self)
     
     def _on_screen_shown(self):
-        """Called when screen is shown (overrides BaseScreen).
-
-        P-REC: super()._on_screen_shown() already loads data ONCE (via the
-        _data_loaded_once guard in BaseScreen). The previous explicit
-        self.load_data() here re-fetched payroll on every navigation visit.
-        Use refresh_data() to force a reload.
-        """
+        """Called when screen is shown (overrides BaseScreen)."""
         super()._on_screen_shown()
+        self.load_data()
 
 
 class SalaryStructureDialog(EnterpriseDialog):

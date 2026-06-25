@@ -125,27 +125,38 @@ class EmployeeScreen(BaseScreen):
         layout.addWidget(self.table)
     
     def load_employees(self):
-        """Load employees from API."""
+        """Load employees from API asynchronously to prevent UI freeze."""
         self.set_state(ScreenState.LOADING)
-        try:
-            endpoint = get_endpoint("employees")
-            if not endpoint:
-                endpoint = "/api/hr/employees/"
-             
-            response = self.api_client.get(endpoint)
-            self.employees = extract_list(response)
-            
-            # Update state based on data
-            if len(self.employees) == 0:
-                self.set_state(ScreenState.EMPTY)
-            else:
-                self.set_state(ScreenState.READY)
-        except Exception as e:
-            self.error_label.setText(f"Error loading employees: {e}")
+        
+        endpoint = get_endpoint("employees") or "/api/hr/employees/"
+        
+        def on_success(response):
+            try:
+                self.employees = extract_list(response)
+                if len(self.employees) == 0:
+                    self.set_state(ScreenState.EMPTY)
+                else:
+                    self.set_state(ScreenState.READY)
+            except Exception as e:
+                logger.error(f"Error processing employees: {e}")
+                self.employees = []
+                self.set_state(ScreenState.ERROR)
+            self.update_table()
+
+        def on_error(error_msg):
+            self.error_label.setText(f"Error loading employees: {error_msg}")
             self.employees = []
             self.set_state(ScreenState.ERROR)
-        
-        self.update_table()
+            self.update_table()
+
+        self.run_api_request(
+            key="employee_load",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+            on_error=on_error
+        )
+
     
     def update_table(self):
         """Update table with employee data and show appropriate state indicators."""
@@ -228,12 +239,22 @@ class EmployeeScreen(BaseScreen):
             self
         )
         if reply:
-            try:
-                endpoint = get_endpoint("employees") or "/api/hr/employees/"
-                self.api_client.delete(f"{endpoint}{employee['id']}/")
+            endpoint = get_endpoint("employees") or "/api/hr/employees/"
+            
+            def on_success(response):
                 self.load_employees()
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to delete employee: {e}", self)
+                AlertDialog.info("Success", "Employee deleted successfully.", self)
+
+            def on_error(error_msg):
+                AlertDialog.error("Error", f"Failed to delete employee: {error_msg}", self)
+
+            self.run_api_request(
+                key=f"employee_delete_{employee['id']}",
+                method="DELETE",
+                endpoint=f"{endpoint}{employee['id']}/",
+                on_success=on_success,
+                on_error=on_error
+            )
 
 
 class EmployeeDialog(EnterpriseDialog):
@@ -310,29 +331,51 @@ class EmployeeDialog(EnterpriseDialog):
         
     def _load_departments(self):
         self.department.addItem("Select Department", None)
-        try:
-            res = self.api_client.get("/api/hr/departments/")
-            if res and res.get('success'):
-                data = res.get('data', {})
-                results = data.get('results', []) if isinstance(data, dict) else []
-                for d in results:
-                    if isinstance(d, dict):
-                        self.department.addItem(d.get('name', ''), d.get('id'))
-        except Exception:
+        def on_success(res):
+            try:
+                if res and res.get('success'):
+                    data = res.get('data', {})
+                    results = data.get('results', []) if isinstance(data, dict) else []
+                    for d in results:
+                        if isinstance(d, dict):
+                            self.department.addItem(d.get('name', ''), d.get('id'))
+            except Exception:
+                pass
+
+        def on_error(error_msg):
             pass
+
+        self.run_api_request(
+            key="dialog_load_depts",
+            method="GET",
+            endpoint="/api/hr/departments/",
+            on_success=on_success,
+            on_error=on_error
+        )
 
     def _load_positions(self):
         self.position.addItem("Select Position", None)
-        try:
-            res = self.api_client.get("/api/hr/positions/")
-            if res and res.get('success'):
-                data = res.get('data', {})
-                results = data.get('results', []) if isinstance(data, dict) else []
-                for p in results:
-                    if isinstance(p, dict):
-                        self.position.addItem(p.get('title', ''), p.get('id'))
-        except Exception:
+        def on_success(res):
+            try:
+                if res and res.get('success'):
+                    data = res.get('data', {})
+                    results = data.get('results', []) if isinstance(data, dict) else []
+                    for p in results:
+                        if isinstance(p, dict):
+                            self.position.addItem(p.get('title', ''), p.get('id'))
+            except Exception:
+                pass
+
+        def on_error(error_msg):
             pass
+
+        self.run_api_request(
+            key="dialog_load_positions",
+            method="GET",
+            endpoint="/api/hr/positions/",
+            on_success=on_success,
+            on_error=on_error
+        )
 
     def _load_employee_data(self):
         """Load existing employee data."""
@@ -373,17 +416,25 @@ class EmployeeDialog(EnterpriseDialog):
         }
         
         endpoint = "/api/hr/employees/"
-        try:
-            if self.employee:
-                response = self.api_client.put(f"{endpoint}{self.employee['id']}/", data)
-            else:
-                response = self.api_client.post(endpoint, data)
-                
+        method = "PUT" if self.employee else "POST"
+        url = f"{endpoint}{self.employee['id']}/" if self.employee else endpoint
+
+        def on_success(response):
             if response and (response.get("success") or response.get("id")):
                 AlertDialog.info("Success", "Employee saved successfully.", self)
                 self.accept()
             else:
                 msg = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed to save"
                 AlertDialog.error("Error", f"Failed to save: {msg}", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"API Error: {e}", self)
+
+        def on_error(error_msg):
+            AlertDialog.error("Error", f"API Error: {error_msg}", self)
+
+        self.run_api_request(
+            key="employee_save",
+            method=method,
+            endpoint=url,
+            params=data,
+            on_success=on_success,
+            on_error=on_error
+        )

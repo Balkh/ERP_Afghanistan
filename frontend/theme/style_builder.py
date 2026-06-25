@@ -278,10 +278,45 @@ class UIStyleBuilder:
         from ui.constants import (
             COLOR_BG_INPUT, COLOR_TEXT_PRIMARY, COLOR_BORDER, BORDER_RADIUS_MD,
             INPUT_HEIGHT_SM, TEXT_BODY, COLOR_PRIMARY, COLOR_BG_ELEVATED,
-            COLOR_TEXT_ON_PRIMARY, COLOR_BG_HOVER, COLOR_BG_SURFACE
+            COLOR_TEXT_ON_PRIMARY, COLOR_BG_HOVER, COLOR_BG_SURFACE,
+            COLOR_BG_MAIN, COLOR_TEXT_SECONDARY, COLOR_BORDER_LIGHT,
+            BORDER_RADIUS_LG, SPACING_SM
         )
         
         return f"""
+            QMainWindow {{
+                background-color: {COLOR_BG_MAIN};
+            }}
+            QWidget {{
+                background-color: {COLOR_BG_MAIN};
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QLabel {{
+                color: {COLOR_TEXT_PRIMARY};
+            }}
+            QGroupBox {{
+                color: {COLOR_TEXT_PRIMARY};
+                font-weight: bold;
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_LG}px;
+                margin-top: {SPACING_SM}px;
+                padding-top: {SPACING_SM}px;
+            }}
+            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
+                background-color: {COLOR_BG_SURFACE};
+                color: {COLOR_TEXT_PRIMARY};
+                border: 1px solid {COLOR_BORDER};
+                border-radius: {BORDER_RADIUS_MD}px;
+                padding: 8px 12px;
+                font-size: {TEXT_BODY}pt;
+            }}
+            QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
+                border: 2px solid {COLOR_PRIMARY};
+            }}
+            QScrollArea {{
+                background-color: transparent;
+                border: none;
+            }}
             QComboBox {{
                 background-color: {COLOR_BG_INPUT};
                 color: {COLOR_TEXT_PRIMARY};
@@ -300,6 +335,13 @@ class UIStyleBuilder:
             QComboBox::drop-down {{
                 border: none;
                 width: 30px;
+            }}
+            QComboBox::down-arrow {{
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid {COLOR_TEXT_SECONDARY};
+                margin-right: 10px;
             }}
             QComboBox QAbstractItemView {{
                 background-color: {COLOR_BG_ELEVATED};

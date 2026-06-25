@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout,
                                 QLineEdit, QLabel, QComboBox, QDoubleSpinBox,
                                 QDateEdit, QHeaderView, QAbstractItemView,
                                 QFrame, QMenu, QCheckBox, QTextEdit)
-from PySide6.QtCore import Qt, QDate, Signal, QTimer
+from PySide6.QtCore import Qt, QDate, Signal
 from PySide6.QtGui import QColor, QKeySequence, QShortcut
 from decimal import Decimal
 from utils.format import safe_float
@@ -48,8 +48,6 @@ class PurchaseInvoiceScreen(BaseScreen):
         self.suppliers = []
         self.products = []
         self._date_format = self._load_date_format()
-        self._signals_connected = False  # P-REC: guard against duplicate _wire_signals() calls
-        self._recalc_timer = None  # P-REC: debounce recalculate_totals (set up after widgets exist)
         super().__init__(parent)
         self._apply_date_format()
         self.setup_shortcuts()
@@ -77,18 +75,10 @@ class PurchaseInvoiceScreen(BaseScreen):
                 w.setDisplayFormat("yyyy-MM-dd")
 
     def _on_screen_shown(self):
-        # P-REC: load suppliers once on first reveal, non-blocking.
-        if not self._data_loaded_once:
-            self.load_data()
+        pass
 
     def load_data(self, params=None):
-        # P-REC: prevent duplicate concurrent loads. The async path returns
-        # immediately and populates the combo from the worker callback.
-        if getattr(self, '_suppliers_loading', False):
-            super().load_data(params)
-            return
-        self._suppliers_loading = True
-        self._load_suppliers_async()
+        self.load_suppliers()
         super().load_data(params)
 
     def _check_action(self, action: str) -> bool:
@@ -385,10 +375,6 @@ class PurchaseInvoiceScreen(BaseScreen):
         layout.addWidget(zone3)
 
     def _wire_signals(self):
-        # P-REC: idempotency guard — _wire_signals may be invoked multiple times.
-        if self._signals_connected:
-            return
-
         # Toolbar (search + add/remove)
         self.product_search.returnPressed.connect(self._on_product_search_submit)
         self.product_search.textChanged.connect(self._on_product_search_changed)
@@ -399,10 +385,10 @@ class PurchaseInvoiceScreen(BaseScreen):
         self.items_table.cell_value_changed.connect(self.on_item_changed)
 
         # Totals
-        self.discount_input.valueChanged.connect(self._schedule_recalc)
+        self.discount_input.valueChanged.connect(self.recalculate_totals)
         self.tax_enabled_cb.stateChanged.connect(self.on_tax_enabled_changed)
-        self.tax_input.valueChanged.connect(self._schedule_recalc)
-        self.paid_input.valueChanged.connect(self._schedule_recalc)
+        self.tax_input.valueChanged.connect(self.recalculate_totals)
+        self.paid_input.valueChanged.connect(self.recalculate_totals)
 
         # Primary actions
         self.save_btn.clicked.connect(self.save_draft)
@@ -414,8 +400,6 @@ class PurchaseInvoiceScreen(BaseScreen):
         self.approve_wf_btn.clicked.connect(lambda: self.perform_workflow_action('approve'))
         self.reject_wf_btn.clicked.connect(lambda: self.perform_workflow_action('reject'))
         self.post_wf_btn.clicked.connect(lambda: self.perform_workflow_action('post'))
-
-        self._signals_connected = True
 
     def setup_shortcuts(self):
         """Setup keyboard shortcuts."""
@@ -429,77 +413,8 @@ class PurchaseInvoiceScreen(BaseScreen):
         QShortcut(QKeySequence("F2"), self).activated.connect(self.show_product_selector)
         QShortcut(QKeySequence("Delete"), self).activated.connect(self.remove_selected_item)
 
-    def _load_suppliers_async(self):
-        """P-REC: fetch suppliers off the UI thread.
-
-        Falls back to defaults immediately so the combo is usable, then replaces
-        with API data when the worker returns. Uses the existing
-        AsyncRequestMixin.run_api_request infrastructure (no new framework).
-        """
-        # Populate defaults synchronously so the supplier combo is immediately usable
-        self.suppliers = [
-            {"id": "sup-1", "name": "Pharma Corp", "phone": "+93 70 333 3333", "address": "Kabul Industrial", "credit_limit": 500000, "balance": 125000},
-            {"id": "sup-2", "name": "MedSupply International", "phone": "+93 70 444 4444", "address": "Herat", "credit_limit": 1000000, "balance": 450000},
-            {"id": "sup-3", "name": "Local Distributor", "phone": "+93 70 555 5555", "address": "Mazar", "credit_limit": 200000, "balance": 80000},
-        ]
-        self._populate_supplier_combo()
-
-        if not self.api_client:
-            self._suppliers_loading = False
-            return
-
-        endpoint = get_endpoint("suppliers")
-
-        def _on_success(response):
-            try:
-                api_suppliers = []
-                if isinstance(response, list):
-                    api_suppliers = [s for s in response if isinstance(s, dict)]
-                elif isinstance(response, dict) and response.get('success'):
-                    data = response.get('data', [])
-                    if isinstance(data, list):
-                        api_suppliers = [s for s in data if isinstance(s, dict)]
-                    elif isinstance(data, dict):
-                        if 'results' in data:
-                            api_suppliers = [s for s in data.get('results', []) if isinstance(s, dict)]
-                        elif 'id' in data:
-                            api_suppliers = [data]
-                if api_suppliers:
-                    self.suppliers = api_suppliers
-                    self._populate_supplier_combo()
-            except Exception as e:
-                logging.getLogger(__name__).warning(f"Failed to process suppliers response: {e}")
-            finally:
-                self._suppliers_loading = False
-
-        def _on_error(_message):
-            self._suppliers_loading = False
-
-        # run_api_request deduplicates by key — safe to call repeatedly.
-        self.run_api_request(
-            "suppliers", "GET", endpoint,
-            on_success=_on_success, on_error=_on_error,
-        )
-
-    def _populate_supplier_combo(self):
-        """Populate the supplier combo from self.suppliers. Idempotent."""
-        self.supplier_combo.clear()
-        self.supplier_combo.addItem("Select Supplier...", None)
-        for supplier in self.suppliers:
-            if isinstance(supplier, dict):
-                self.supplier_combo.addItem(supplier.get("name", "Unknown"), supplier.get("id", ""))
-
-        # Guard: connect only once
-        if not getattr(self, '_supplier_combo_connected', False):
-            self.supplier_combo.currentIndexChanged.connect(self.on_supplier_selected)
-            self._supplier_combo_connected = True
-
     def load_suppliers(self):
-        """Load suppliers from API (synchronous — kept for tests / explicit refresh).
-
-        NOTE: the live screen uses _load_suppliers_async() to avoid blocking the UI
-        thread. This synchronous variant is retained for backwards compatibility.
-        """
+        """Load suppliers from API."""
         self.suppliers = [
             {"id": "sup-1", "name": "Pharma Corp", "phone": "+93 70 333 3333", "address": "Kabul Industrial", "credit_limit": 500000, "balance": 125000},
             {"id": "sup-2", "name": "MedSupply International", "phone": "+93 70 444 4444", "address": "Herat", "credit_limit": 1000000, "balance": 450000},
@@ -528,7 +443,16 @@ class PurchaseInvoiceScreen(BaseScreen):
             except Exception as e:
                 logging.getLogger(__name__).warning(f"Failed to load suppliers: {e}")
 
-        self._populate_supplier_combo()
+        self.supplier_combo.clear()
+        self.supplier_combo.addItem("Select Supplier...", None)
+        for supplier in self.suppliers:
+            if isinstance(supplier, dict):
+                self.supplier_combo.addItem(supplier.get("name", "Unknown"), supplier.get("id", ""))
+
+        # Guard: connect only once (load_suppliers is called from _on_screen_shown)
+        if not getattr(self, '_supplier_combo_connected', False):
+            self.supplier_combo.currentIndexChanged.connect(self.on_supplier_selected)
+            self._supplier_combo_connected = True
 
     def on_supplier_selected(self, index):
         """Handle supplier selection."""
@@ -659,7 +583,7 @@ class PurchaseInvoiceScreen(BaseScreen):
 
     def on_item_changed(self, row, col, value):
         """Handle item change in table."""
-        self._schedule_recalc()
+        self.recalculate_totals()
 
     def on_tax_enabled_changed(self, state):
         """Enable/disable tax rate input when tax toggle changes."""
@@ -667,19 +591,7 @@ class PurchaseInvoiceScreen(BaseScreen):
         self.tax_input.setEnabled(enabled)
         if not enabled:
             self.tax_input.setValue(0)
-        self._schedule_recalc()
-
-    # P-REC: debounce recalculation. The table and 3 spinboxes all fire on every
-    # edit; without coalescing, typing a multi-digit value triggers N full-table
-    # rescans. A 180ms timer collapses a burst of edits into one pass.
-    _RECALC_DEBOUNCE_MS = 180
-
-    def _schedule_recalc(self):
-        if self._recalc_timer is None:
-            self._recalc_timer = QTimer(self)
-            self._recalc_timer.setSingleShot(True)
-            self._recalc_timer.timeout.connect(self.recalculate_totals)
-        self._recalc_timer.start(self._RECALC_DEBOUNCE_MS)
+        self.recalculate_totals()
 
     def recalculate_totals(self):
         """Recalculate invoice totals."""

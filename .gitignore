@@ -1,3 +1,4 @@
+```
 # Database
 db.sqlite3
 
@@ -23,6 +24,7 @@ pip-delete-this-directory.txt
 nosetests.xml
 coverage.xml
 *.cover
+*.log
 *.pot
 *.mo
 *.orig
@@ -31,20 +33,4 @@ security_baseline.json
 *~
 .DS_Store
 Thumbs.db
-
-# Runtime
-ux_telemetry.jsonl
-frontend_server.log
-frontend_server_err.log
-phase5_9_run.log
-
-# IDE
-.cursor/
-.claude/
-
-# Build
-htmlcov/
-installer/
-
-# Graph
-graphify-out/
+```

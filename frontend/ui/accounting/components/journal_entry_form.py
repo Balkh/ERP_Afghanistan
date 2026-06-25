@@ -40,26 +40,25 @@ class JournalEntryFormDialog(EnterpriseDialog):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE, MARGIN_PAGE)
-        layout.setSpacing(SPACING_MD + SPACING_XS)
+        layout.setSpacing(SPACING_LG)
 
+        # Use semantic header style
+        from theme.style_builder import UIStyleBuilder
         title = QLabel("Create Journal Entry")
-        title_font = QFont("Segoe UI", TEXT_SECTION_TITLE)
-        title_font.setWeight(QFont.Weight.Bold)
-        title.setFont(title_font)
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        title.setStyleSheet(UIStyleBuilder.get_page_header_style())
         layout.addWidget(title)
 
         # Header Information
         header_section = FormSection("General Information", primary=True)
 
         self.entry_type = QComboBox()
-        self.entry_type.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.entry_type.setMinimumHeight(INPUT_HEIGHT_LG)
         for t in ["SALE", "PURCHASE", "PAYMENT", "RECEIPT", "ADJUSTMENT", "TRANSFER", "OPENING", "CLOSING"]:
             self.entry_type.addItem(t, t)
         header_section.add_field(self.entry_type, "Entry Type:")
 
         self.entry_date = QDateEdit()
-        self.entry_date.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.entry_date.setMinimumHeight(INPUT_HEIGHT_LG)
         self.entry_date.setCalendarPopup(True)
         self.entry_date.setDisplayFormat("yyyy-MM-dd")
         from datetime import date
@@ -67,42 +66,26 @@ class JournalEntryFormDialog(EnterpriseDialog):
         header_section.add_field(self.entry_date, "Entry Date:")
 
         self.description = QTextEdit()
-        self.description.setMaximumHeight(80)
-        self.description.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.description.setMaximumHeight(100)
+        self.description.setMinimumHeight(INPUT_HEIGHT_LG)
         self.description.setPlaceholderText("Enter overall entry description...")
         header_section.add_field(self.description, "Description:")
 
         self.reference = QLineEdit()
-        self.reference.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.reference.setMinimumHeight(INPUT_HEIGHT_LG)
         self.reference.setPlaceholderText("Reference number (optional)")
         header_section.add_field(self.reference, "Reference:")
 
         self.auto_post = QCheckBox("Auto-post after creation")
-        self.auto_post.setStyleSheet(f"margin-left: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY};")
+        self.auto_post.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+        self.auto_post.setStyleSheet(f"margin-left: {SPACING_SM}px; font-weight: 500;")
         header_section.add_field(self.auto_post, "")
 
         layout.addWidget(header_section)
 
-        # Journal Lines
+        # Journal Lines - Professional Grouping
         lines_group = QGroupBox("Journal Lines (Articles)")
-        lines_group.setStyleSheet(f"""
-            QGroupBox {{
-                font-weight: 700;
-                font-size: {TEXT_LABEL}pt;
-                color: {COLOR_FORM_SECTION_TITLE};
-                border: 1px solid {COLOR_FORM_SECTION_DIVIDER};
-                border-radius: {BORDER_RADIUS_LG}px;
-                margin-top: {SECTION_TITLE_SPACING}px;
-                padding-top: {SECTION_TITLE_SPACING + 6}px;
-                background-color: {COLOR_BG_SURFACE};
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 {SPACING_MD}px;
-                color: {COLOR_FORM_SECTION_TITLE};
-            }}
-        """)
+        lines_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         lines_layout = QVBoxLayout(lines_group)
         lines_layout.setContentsMargins(SPACING_MD, SPACING_LG, SPACING_MD, SPACING_MD)
 
@@ -116,8 +99,8 @@ class JournalEntryFormDialog(EnterpriseDialog):
         lines_layout.addWidget(self.lines_table)
 
         line_buttons = QHBoxLayout()
-        self.btn_add_line = EnterpriseButton("+ Add Line", variant=ButtonVariant.PRIMARY, size=ButtonSize.SMALL)
-        self.btn_remove_line = EnterpriseButton("- Remove Selected", variant=ButtonVariant.GHOST, size=ButtonSize.SMALL)
+        self.btn_add_line = EnterpriseButton("+ Add Line", variant=ButtonVariant.PRIMARY, size=ButtonSize.MEDIUM)
+        self.btn_remove_line = EnterpriseButton("- Remove Selected", variant=ButtonVariant.GHOST, size=ButtonSize.MEDIUM)
         line_buttons.addWidget(self.btn_add_line)
         line_buttons.addWidget(self.btn_remove_line)
         line_buttons.addStretch()
@@ -125,38 +108,45 @@ class JournalEntryFormDialog(EnterpriseDialog):
 
         layout.addWidget(lines_group)
 
-        # Totals and Balance
+        # Totals and Balance - Summary Card Style
         bottom_layout = QHBoxLayout()
 
         totals_frame = QFrame()
-        totals_frame.setStyleSheet(f"background-color: {COLOR_BG_SURFACE}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px;")
+        totals_frame.setObjectName("card")
+        totals_frame.setStyleSheet(UIStyleBuilder.get_card_style())
         totals_layout = QHBoxLayout(totals_frame)
+        totals_layout.setContentsMargins(SPACING_LG, SPACING_MD, SPACING_LG, SPACING_MD)
+        totals_layout.setSpacing(SPACING_XL)
 
-        totals_layout.addWidget(QLabel("Total Debit:"))
+        # Debit Total
+        debit_container = QVBoxLayout()
+        debit_lbl = QLabel("Total Debit")
+        debit_lbl.setStyleSheet(UIStyleBuilder.get_label_style("label_small"))
         self.total_debit_label = QLabel("0.00")
-        debit_font = QFont("Segoe UI", TEXT_CARD_TITLE)
-        debit_font.setWeight(QFont.Weight.Bold)
-        self.total_debit_label.setFont(debit_font)
-        self.total_debit_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
-        totals_layout.addWidget(self.total_debit_label)
+        self.total_debit_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+        self.total_debit_label.setStyleSheet(f"font-weight: 700; color: {COLOR_SUCCESS};")
+        debit_container.addWidget(debit_lbl)
+        debit_container.addWidget(self.total_debit_label)
+        totals_layout.addLayout(debit_container)
 
-        totals_layout.addSpacing(SPACING_XL)
-
-        totals_layout.addWidget(QLabel("Total Credit:"))
+        # Credit Total
+        credit_container = QVBoxLayout()
+        credit_lbl = QLabel("Total Credit")
+        credit_lbl.setStyleSheet(UIStyleBuilder.get_label_style("label_small"))
         self.total_credit_label = QLabel("0.00")
-        credit_font = QFont("Segoe UI", TEXT_CARD_TITLE)
-        credit_font.setWeight(QFont.Weight.Bold)
-        self.total_credit_label.setFont(credit_font)
-        self.total_credit_label.setStyleSheet(f"color: {COLOR_DANGER};")
-        totals_layout.addWidget(self.total_credit_label)
+        self.total_credit_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+        self.total_credit_label.setStyleSheet(f"font-weight: 700; color: {COLOR_DANGER};")
+        credit_container.addWidget(credit_lbl)
+        credit_container.addWidget(self.total_credit_label)
+        totals_layout.addLayout(credit_container)
 
-        totals_layout.addSpacing(30)
+        totals_layout.addStretch()
 
+        # Balance Badge
         self.balance_label = QLabel("BALANCED")
-        balance_font = QFont("Segoe UI", TEXT_CARD_TITLE)
-        balance_font.setWeight(QFont.Weight.Bold)
-        self.balance_label.setFont(balance_font)
-        self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; background-color: {COLOR_SUCCESS_BG};")
+        self.balance_label.setAlignment(Qt.AlignCenter)
+        self.balance_label.setMinimumWidth(150)
+        self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px; background-color: {COLOR_SUCCESS_BG}; font-weight: 700; font-size: {TEXT_CARD_TITLE}pt;")
         totals_layout.addWidget(self.balance_label)
 
         bottom_layout.addWidget(totals_frame)
@@ -190,19 +180,46 @@ class JournalEntryFormDialog(EnterpriseDialog):
         return None
 
     def load_accounts(self):
-        try:
-            self.accounts = self._api_client.get("/api/accounting/accounts/leaf_accounts/")
-            for row in range(self.lines_table.rowCount()):
-                combo = self.lines_table.cell_widget(row, 0)
-                if isinstance(combo, QComboBox):
-                    current_idx = combo.currentIndex()
-                    combo.clear()
-                    combo.addItem("Select Account...", None)
-                    for acc in sorted(self.accounts, key=lambda x: x.get("code", "")):
-                        combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get('id'))
-                    combo.setCurrentIndex(current_idx)
-        except Exception:
+        """Load accounts from the API asynchronously to prevent dialog freeze."""
+        def on_success(response):
+            try:
+                # Handle standardized response format
+                accounts_list = []
+                if isinstance(response, list):
+                    accounts_list = response
+                elif isinstance(response, dict):
+                    if response.get('success'):
+                        data = response.get('data', [])
+                        if isinstance(data, list):
+                            accounts_list = data
+                        elif isinstance(data, dict) and 'results' in data:
+                            accounts_list = data.get('results', [])
+
+                self.accounts = accounts_list
+                for row in range(self.lines_table.rowCount()):
+                    combo = self.lines_table.cell_widget(row, 0)
+                    if isinstance(combo, QComboBox):
+                        current_idx = combo.currentIndex()
+                        combo.clear()
+                        combo.addItem("Select Account...", None)
+                        for acc in sorted(self.accounts, key=lambda x: x.get("code", "")):
+                            combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get('id'))
+                        combo.setCurrentIndex(current_idx)
+            except Exception as e:
+                logging.getLogger(__name__).error(f"Error processing accounts: {e}")
+
+        def on_error(error_msg):
+            logging.getLogger(__name__).error(f"Error loading accounts: {error_msg}")
             self.accounts = []
+
+        self.run_api_request(
+            key="accounts_load",
+            method="GET",
+            endpoint="/api/accounting/accounts/leaf_accounts/",
+            on_success=on_success,
+            on_error=on_error
+        )
+
 
     def _add_line(self):
         self.lines_table.add_row()

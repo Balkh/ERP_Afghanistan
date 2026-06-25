@@ -71,84 +71,6 @@ class UserDialog(EnterpriseDialog):
 
     def _build_content(self):
         widget = QWidget()
-        widget.setStyleSheet(f"""
-            QWidget {{ 
-                background-color: {COLOR_BG_MAIN}; 
-            }}
-            QGroupBox {{ 
-                font-weight: bold; 
-                font-size: {TEXT_CARD_TITLE}px;
-                border: 1px solid {COLOR_BG_ELEVATED}; 
-                border-radius: {BORDER_RADIUS_LG}; 
-                margin-top: {SPACING_MD}; 
-                padding-top: {SPACING_MD}; 
-                padding-bottom: {SPACING_MD};
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QLabel {{
-                color: {COLOR_TEXT_PRIMARY};
-                font-size: {TEXT_BODY}px;
-                padding: {SPACING_SM} 4px;
-            }}
-            QLineEdit {{
-                background-color: {COLOR_BG_MAIN};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM};
-                font-size: {TEXT_BODY}px;
-            }}
-            QLineEdit:focus {{
-                border-color: {COLOR_PRIMARY};
-                background-color: {COLOR_BG_MAIN};
-            }}
-            QLineEdit::placeholder {{
-                color: {COLOR_TEXT_MUTED};
-            }}
-            QComboBox {{
-                background-color: {COLOR_BG_MAIN};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD};
-                padding: {SPACING_SM};
-                font-size: {TEXT_BODY}px;
-            }}
-            QComboBox:focus {{
-                border-color: {COLOR_PRIMARY};
-            }}
-            QComboBox::drop-down {{
-                border: none;
-                width: 30px;
-            }}
-            QComboBox::down-arrow {{
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 6px solid {COLOR_TEXT_MUTED};
-                margin-right: {SPACING_SM};
-            }}
-            QCheckBox {{
-                color: {COLOR_TEXT_PRIMARY};
-                font-size: {TEXT_BODY}px;
-                spacing: {SPACING_SM};
-                padding: {SPACING_SM} 0;
-            }}
-            QCheckBox::indicator {{
-                width: 20px;
-                height: 20px;
-                border-radius: {BORDER_RADIUS_SM};
-                border: 2px solid {COLOR_BORDER};
-                background-color: {COLOR_BG_MAIN};
-            }}
-            QCheckBox::indicator:checked {{
-                background-color: {COLOR_SUCCESS};
-                border-color: {COLOR_SUCCESS};
-            }}
-            QCheckBox::indicator:hover {{
-                border-color: {COLOR_PRIMARY};
-            }}
-        """)
         layout = QVBoxLayout(widget)
         layout.setContentsMargins(SPACING_XL + SPACING_SM, SPACING_XL + SPACING_SM,
                                   SPACING_XL + SPACING_SM, SPACING_XL + SPACING_SM)
@@ -159,7 +81,7 @@ class UserDialog(EnterpriseDialog):
         title_font = QFont(FONT_NAME_PRIMARY, TEXT_CARD_TITLE)
         title_font.setWeight(QFont.Weight.Bold)
         title.setFont(title_font)
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; margin-bottom: {SPACING_MD};")
+        title.setStyleSheet(UIStyleBuilder.get_label_style("title"))
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
@@ -173,13 +95,14 @@ class UserDialog(EnterpriseDialog):
 
         self.role_combo = QComboBox()
         self.role_combo.setMinimumHeight(40)
-        self.role_combo.setStyleSheet(f"QComboBox {{ padding: {SPACING_MD}px; }}")
+        self.role_combo.setStyleSheet(UIStyleBuilder.get_input_style())
         from ui.role_manager import UserRole
         for role in UserRole:
             self.role_combo.addItem(role.name.replace('_', ' ').title(), role.value)
 
         self.is_active = QCheckBox("User is Active")
         self.is_active.setChecked(True)
+        self.is_active.setStyleSheet(UIStyleBuilder.get_label_style("body"))
         self.is_active.setStyleSheet(f"margin-top: {SPACING_MD}px;")
 
         section.add_field(self.username, "Username:")

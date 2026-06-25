@@ -281,11 +281,6 @@ class TaxScreen(BaseScreen):
             logging.getLogger(__name__).warning(f"Error loading tax transactions: {e}")
     
     def _on_screen_shown(self):
-        """Called when screen is shown (overrides BaseScreen).
-
-        P-REC: super()._on_screen_shown() already loads data ONCE (via the
-        _data_loaded_once guard in BaseScreen). The previous explicit
-        self.load_data() here re-fetched tax data on every navigation visit.
-        Use refresh_data() to force a reload.
-        """
+        """Called when screen is shown (overrides BaseScreen)."""
         super()._on_screen_shown()
+        self.load_data()

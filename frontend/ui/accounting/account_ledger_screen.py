@@ -44,7 +44,7 @@ class AccountLedgerScreen(BaseScreen):
         layout.addWidget(header)
 
         filter_group = QGroupBox("Filters")
-        filter_group.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        filter_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         filter_layout = QHBoxLayout(filter_group)
         filter_layout.setSpacing(SPACING_SM)
 
@@ -85,7 +85,7 @@ class AccountLedgerScreen(BaseScreen):
         layout.addWidget(filter_group)
 
         info_group = QGroupBox("Account Information")
-        info_group.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {SPACING_SM}px; padding-top: {SPACING_SM}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        info_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=False))
         info_layout = QHBoxLayout(info_group)
 
         self.info_code = QLabel("")
@@ -95,7 +95,8 @@ class AccountLedgerScreen(BaseScreen):
         self.info_closing = QLabel("Closing: 0.00")
 
         for label in [self.info_code, self.info_name, self.info_type]:
-            label.setStyleSheet(f"font-size: {TEXT_BODY}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY};")
+            label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+            label.setStyleSheet(f"font-weight: 700; color: {COLOR_TEXT_PRIMARY};")
             info_layout.addWidget(label)
         info_layout.addStretch()
         info_layout.addWidget(self.info_opening)
@@ -159,21 +160,33 @@ class AccountLedgerScreen(BaseScreen):
         return table
 
     def load_accounts(self):
-        try:
-            endpoint = get_endpoint("leaf_accounts")
-            response = self.api_client.get(endpoint)
-            self.accounts = extract_list(response)
-            self.account_combo.clear()
-            self.account_combo.addItem("Select an account...", None)
-            for acc in sorted(self.accounts, key=lambda x: x.get("code") or ""):
-                code = acc.get("code") or ""
-                name = acc.get("name") or "Unknown"
-                acc_id = acc.get("id")
-                if acc_id:
-                    self.account_combo.addItem(f"{code} - {name}", acc_id)
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading accounts: {e}")
+        """Load accounts asynchronously to prevent UI freeze."""
+        def on_success(response):
+            try:
+                self.accounts = extract_list(response)
+                self.account_combo.clear()
+                self.account_combo.addItem("Select an account...", None)
+                for acc in sorted(self.accounts, key=lambda x: x.get("code") or ""):
+                    code = acc.get("code") or ""
+                    name = acc.get("name") or "Unknown"
+                    acc_id = acc.get("id")
+                    if acc_id:
+                        self.account_combo.addItem(f"{code} - {name}", acc_id)
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Error processing accounts: {e}")
+                self.accounts = []
+
+        def on_error(error_msg):
+            logging.getLogger(__name__).warning(f"Error loading accounts: {error_msg}")
             self.accounts = []
+
+        self.run_api_request(
+            key="ledger_accounts_load",
+            method="GET",
+            endpoint=get_endpoint("leaf_accounts"),
+            on_success=on_success,
+            on_error=on_error
+        )
 
     def load_ledger(self):
         account_id = self.account_combo.currentData()
@@ -191,17 +204,28 @@ class AccountLedgerScreen(BaseScreen):
         if from_date != QDate():
             params["start_date"] = from_date.toString("yyyy-MM-dd")
         if to_date != QDate():
-            params["end_date"] = to_date.toString("yyyy-MM-dd")
+            params["end_date"] = to_//S-DATE_to.toString("yyyy-MM-dd")
 
-        try:
-            endpoint = get_endpoint("ledger")
-            data = self.api_client.get(endpoint, params=params)
-            if data and isinstance(data, dict):
-                self._populate_table(data)
-            else:
-                self._show_empty("Failed to load ledger data")
-        except Exception as e:
-            self._show_empty(f"Error loading ledger: {e}")
+        def on_success(data):
+            try:
+                if data and isinstance(data, dict):
+                    self._populate_table(data)
+                else:
+                    self._show_empty("Failed to load ledger data")
+            except Exception as e:
+                self._show_empty(f"Error processing ledger: {e}")
+
+        def on_error(error_msg):
+            self._show_empty(f"Error loading ledger: {error_msg}")
+
+        self.run_api_request(
+            key="ledger_data_load",
+            method="GET",
+            endpoint=get_endpoint("ledger"),
+            params=params,
+            on_success=on_success,
+            on_error=on_error
+        )
 
     def _populate_table(self, data):
         self.ledger_data = data # Store for export
@@ -258,26 +282,43 @@ class AccountLedgerScreen(BaseScreen):
         file_path, _ = QFileDialog.getSaveFileName(
             self, "Save CSV", f"Ledger_{self.ledger_data.get('account_code', 'Report')}.csv", "CSV Files (*.csv)"
         )
-        if file_path:
-            try:
-                # Use same params as load_ledger but with format=csv
-                account_id = self.account_combo.currentData()
-                params = {"account_id": account_id, "format": "csv"}
-                
-                from PySide6.QtCore import QDate
-                if self.date_from.date() != QDate():
-                    params["start_date"] = self.date_from.date().toString("yyyy-MM-dd")
-                if self.date_to.date() != QDate():
-                    params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
+        if not file_path:
+            return
 
-                endpoint = get_endpoint("ledger")
-                csv_data = self.api_client.get(endpoint, params=params)
-                
-                with open(file_path, "w", encoding="utf-8") as f:
-                    f.write(csv_data if isinstance(csv_data, str) else str(csv_data))
-                AlertDialog.info("Success", f"Ledger exported to {file_path}", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to export: {e}", self)
+        try:
+            # Use same params as load_ledger but with format=csv
+            account_id = self.account_combo.currentData()
+            params = {"account_id": account_id, "format": "csv"}
+            
+            from PySide6.QtCore import QDate
+            if self.date_from.date() != QDate():
+                params["start_date"] = self.date_from.date().toString("yyyy-MM-dd")
+            if self.date_to.date() != QDate():
+                params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
+
+            endpoint = get_endpoint("ledger")
+
+            def on_success(csv_data):
+                try:
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        f.write(csv_data if isinstance(csv_data, str) else str(csv_data))
+                    AlertDialog.info("Success", f"Ledger exported to {file_path}", self)
+                except Exception as e:
+                    AlertDialog.error("Error", f"Failed to write file: {e}", self)
+
+            def on_error(error_msg):
+                AlertDialog.error("Error", f"Failed to export: {error_msg}", self)
+
+            self.run_api_request(
+                key="ledger_export_csv",
+                method="GET",
+                endpoint=endpoint,
+                params=params,
+                on_success=on_success,
+                on_error=on_error
+            )
+        except Exception as e:
+            AlertDialog.error("Error", f"Unexpected error: {e}", self)
 
     def print_preview(self):
         if not hasattr(self, 'ledger_data') or not self.ledger_data:
@@ -296,19 +337,34 @@ class AccountLedgerScreen(BaseScreen):
                 params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
 
             endpoint = get_endpoint("ledger")
-            text_data = self.api_client.get(endpoint, params=params)
 
-            from ui.accounting.components.report_preview_dialog import ReportPreviewDialog
-            from datetime import datetime
-            config = get_cached_config()
-            company_name = config.name if config else "Pharmacy ERP"
-            report_meta = {
-                "report_name": f"Ledger - {self.ledger_data.get('account_name', 'N/A')}",
-                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "company": company_name,
-                "period": f"{self.date_from.date().toString('yyyy-MM-dd')} to {self.date_to.date().toString('yyyy-MM-dd')}" if self.date_from.date() != QDate() else "All time",
-            }
-            dialog = ReportPreviewDialog(self, f"Ledger - {self.ledger_data.get('account_name')}", text_data, report_meta)
-            dialog.exec()
+            def on_success(text_data):
+                try:
+                    from ui.accounting.components.report_preview_dialog import ReportPreviewDialog
+                    from datetime import datetime
+                    config = get_cached_config()
+                    company_name = config.name if config else "Pharmacy ERP"
+                    report_meta = {
+                        "report_name": f"Ledger - {self.ledger_data.get('account_name', 'N/A')}",
+                        "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                        "company": company_name,
+                        "period": f"{self.date_from.date().toString('yyyy-MM-dd')} to {self.date_to.date().toString('yyyy-MM-dd')}" if self.date_from.date() != QDate() else "All time",
+                    }
+                    dialog = ReportPreviewDialog(self, f"Ledger - {self.ledger_data.get('account_name')}", text_data, report_meta)
+                    dialog.exec()
+                except Exception as e:
+                    AlertDialog.error("Error", f"Failed to show preview: {e}", self)
+
+            def on_error(error_msg):
+                AlertDialog.error("Error", f"Failed to generate preview: {error_msg}", self)
+
+            self.run_api_request(
+                key="ledger_print_preview",
+                method="GET",
+                endpoint=endpoint,
+                params=params,
+                on_success=on_success,
+                on_error=on_error
+            )
         except Exception as e:
-            AlertDialog.error("Error", f"Failed to generate preview: {e}", self)
+            AlertDialog.error("Error", f"Unexpected error: {e}", self)

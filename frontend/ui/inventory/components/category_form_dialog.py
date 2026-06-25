@@ -30,32 +30,8 @@ class CategoryFormDialog(EnterpriseDialog):
 
     def _build_content(self):
         content = QWidget()
-        content.setStyleSheet(f"""
-            QLineEdit, QComboBox {{
-                background-color: {COLOR_BG_DIALOG};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_INPUT};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px {SPACING_SM}px;
-            }}
-            QLineEdit:focus, QComboBox:focus {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-            QLineEdit:hover, QComboBox:hover {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-            QTextEdit {{
-                background-color: {COLOR_FORM_DESCRIPTION_BG};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_INPUT};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px {SPACING_SM}px;
-            }}
-            QTextEdit:focus {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-        """)
-
+        # Removed hardcoded CSS to rely on UIStyleBuilder and Global Styles
+        
         layout = QVBoxLayout(content)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING_MD)
@@ -72,8 +48,9 @@ class CategoryFormDialog(EnterpriseDialog):
         self.active_check.setCurrentIndex(1)
         self.description_input = QTextEdit()
         self.description_input.setPlaceholderText("Enter category description (optional)")
-        self.description_input.setMaximumHeight(100)
-        self.description_input.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.description_input.setMaximumHeight(120)
+        self.description_input.setMinimumHeight(INPUT_HEIGHT_LG)
+        
         sec.add_field_pair("Name*", self.name_input, "Is Active", self.active_check, required1=True)
         sec.add_full_width("Description", self.description_input,
                            helper="e.g., Antibiotics, Pain Relief, Vitamins — used for product classification")

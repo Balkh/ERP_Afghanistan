@@ -333,15 +333,6 @@ class IntelligenceHubScreen(BaseScreen):
         self._loaded_tab_index = index
 
     def _on_screen_shown(self):
-        # P-REC: the overview dashboard aggregation (generate_operational_dashboard_data)
-        # is expensive; running it on every navigation visit froze the UI. Load once,
-        # then use refresh_overview_dashboard() for explicit refreshes.
-        if not self._data_loaded_once:
-            self._data_loaded_once = True
-            self._refresh_overview_dashboard()
-
-    def refresh_overview_dashboard(self):
-        """Force-refresh the overview dashboard (bypasses the once-guard)."""
         self._refresh_overview_dashboard()
 
     def _on_screen_hidden(self):

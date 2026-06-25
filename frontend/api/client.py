@@ -186,8 +186,10 @@ class APIClient(QObject):
             self._loading_count -= 1
             if self._loading_count <= 0:
                 self._loading_count = 0
-                # Hide loading overlay safely
-                self._hide_loading_overlay()
+                # Hide loading overlay safely — skip for background/worker-thread
+                # requests since Qt widgets must only be touched from the GUI thread.
+                if not background:
+                    self._hide_loading_overlay()
 
     def _hide_loading_overlay(self):
         """Safely hide the loading overlay."""

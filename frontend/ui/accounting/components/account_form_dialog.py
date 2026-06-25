@@ -37,38 +37,14 @@ class AccountFormDialog(EnterpriseDialog):
 
     def _build_content(self):
         content = QWidget()
-        content.setStyleSheet(f"""
-            QLineEdit, QComboBox {{
-                background-color: {COLOR_BG_DIALOG};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_INPUT};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px {SPACING_SM}px;
-            }}
-            QLineEdit:focus, QComboBox:focus {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-            QLineEdit:hover, QComboBox:hover {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-            QTextEdit {{
-                background-color: {COLOR_FORM_DESCRIPTION_BG};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_INPUT};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px {SPACING_SM}px;
-            }}
-            QTextEdit:focus {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-        """)
-
+        # Removed hardcoded CSS to rely on UIStyleBuilder and Global Styles
+        
         layout = QVBoxLayout(content)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING_MD)
 
         subtitle = QLabel("Configure account properties")
-        subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; border: none; background: transparent; margin-bottom: {SPACING_SM}px;")
+        subtitle.setStyleSheet(UIStyleBuilder.get_subtitle_style())
         layout.addWidget(subtitle)
 
         # ── Section 1: Account Identity (primary) ──
@@ -99,6 +75,7 @@ class AccountFormDialog(EnterpriseDialog):
             self.category_combo.addItem(label, val)
         self.parent_combo = QComboBox()
         self.parent_combo.addItem("None (Top Level)", None)
+        
         sec1.add_field_pair("Code*", self.code_input, "Name*", self.name_input, required1=True, required2=True,
                            helper1="Numeric code, e.g., 1010 for Cash, 4010 for Revenue")
         sec1.add_field_pair("Type*", self.type_combo, "Category", self.category_combo,
@@ -110,17 +87,22 @@ class AccountFormDialog(EnterpriseDialog):
         # ── Section 2: Additional Info (secondary) ──
         sec2 = FormSection("Additional Info", columns=2, primary=False)
         self.description_input = QTextEdit()
-        self.description_input.setMaximumHeight(INPUT_HEIGHT_MD + SPACING_XL)
+        self.description_input.setMaximumHeight(120)
+        self.description_input.setMinimumHeight(INPUT_HEIGHT_LG)
         self.active_checkbox = QCheckBox("Active")
         self.active_checkbox.setChecked(True)
-        self.active_checkbox.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none; background: transparent;")
+        self.active_checkbox.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+        self.active_checkbox.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none; background: transparent; font-weight: 500;")
+        
         sec2.add_full_width("Description", self.description_input)
-        half_widget = QWidget()
-        half_layout = QHBoxLayout(half_widget)
-        half_layout.setContentsMargins(0, 0, 0, 0)
-        half_layout.addWidget(self.active_checkbox)
-        half_layout.addStretch()
-        sec2.add_full_width("Status", half_widget)
+        
+        status_widget = QWidget()
+        status_layout = QHBoxLayout(status_widget)
+        status_layout.setContentsMargins(0, 0, 0, 0)
+        status_layout.addWidget(self.active_checkbox)
+        status_layout.addStretch()
+        
+        sec2.add_full_width("Status", status_widget)
         layout.addWidget(sec2)
 
         return content
@@ -140,46 +122,74 @@ class AccountFormDialog(EnterpriseDialog):
         layout.addWidget(cancel_btn)
         layout.addWidget(save_btn)
 
-        button_area.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLOR_BG_DIALOG};
-                border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};
-            }}
-        """)
+        button_area.setStyleSheet(f"background-color: {COLOR_BG_DIALOG}; border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};")
         return button_area
 
     def load_parent_accounts(self):
-        try:
-            self.parent_accounts = extract_list(self.api_client.get("/api/accounting/accounts/"))
-            self.parent_combo.clear()
-            self.parent_combo.addItem("None (Top Level)", None)
-            for acc in sorted(self.parent_accounts, key=lambda x: x.get("code", "")):
-                self.parent_combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get("id"))
-        except Exception:
-            pass
+        """Load parent accounts asynchronously."""
+        def on_success(response):
+            try:
+                parents = extract_list(response)
+                self.parent_accounts = parents
+                self.parent_combo.clear()
+                self.parent_combo.addItem("None (Top Level)", None)
+                for acc in sorted(self.parent_accounts, key=lambda x: x.get("code", "")):
+                    self.parent_combo.addItem(f"{acc.get('code', '')} - {acc.get('name', '')}", acc.get("id"))
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Error processing parent accounts: {e}")
+
+        def on_error(error_msg):
+            logging.getLogger(__name__).warning(f"Error loading parent accounts: {error_msg}")
+
+        self.run_api_request(
+            key="parent_accounts_load",
+            method="GET",
+            endpoint="/api/accounting/accounts/",
+            on_success=on_success,
+            on_error=on_error
+        )
 
     def load_account(self):
-        try:
-            account = self.api_client.get(f"/api/accounting/accounts/{self.account_id}/")
-            self.code_input.setText(account.get("code", ""))
-            self.name_input.setText(account.get("name", ""))
-            self.description_input.setPlainText(account.get("description", ""))
-            self.active_checkbox.setChecked(account.get("is_active", True))
-            acc_type = account.get("account_type", "")
-            idx = self.type_combo.findData(acc_type)
-            if idx >= 0:
-                self.type_combo.setCurrentIndex(idx)
-            category = account.get("account_category", "") or ""
-            idx = self.category_combo.findData(category)
-            if idx >= 0:
-                self.category_combo.setCurrentIndex(idx)
-            parent_id = account.get("parent")
-            if parent_id:
-                idx = self.parent_combo.findData(parent_id)
-                if idx >= 0:
-                    self.parent_combo.setCurrentIndex(idx)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to load account: {e}", self)
+        """Load account data asynchronously."""
+        def on_success(response):
+            try:
+                account = {}
+                if response.get('success'):
+                    account = response.get('data', {})
+                else:
+                    account = response
+                
+                if account:
+                    self.name_input.setText(account.get("name", ""))
+                    self.code_input.setText(account.get("code", ""))
+                    self.description_input.setPlainText(account.get("description", ""))
+                    self.active_checkbox.setChecked(account.get("is_active", True))
+                    acc_type = account.get("account_type", "")
+                    idx = self.type_combo.findData(acc_type)
+                    if idx >= 0:
+                        self.type_combo.setCurrentIndex(idx)
+                    category = account.get("account_category", "") or ""
+                    idx = self.category_combo.findData(category)
+                    if idx >= 0:
+                        self.category_combo.setCurrentIndex(idx)
+                    parent_id = account.get("parent")
+                    if parent_id:
+                        idx = self.parent_combo.findData(parent_id)
+                        if idx >= 0:
+                            self.parent_combo.setCurrentIndex(idx)
+            except Exception as e:
+                AlertDialog.error("Error", f"Error processing account data: {e}")
+
+        def on_error(error_msg):
+            AlertDialog.error("Error", f"Failed to load account: {error_msg}")
+
+        self.run_api_request(
+            key="account_detail_load",
+            method="GET",
+            endpoint=f"/api/accounting/accounts/{self.account_id}/",
+            on_success=on_success,
+            on_error=on_error
+        )
 
     def get_form_data(self):
         parent_data = self.parent_combo.currentData()

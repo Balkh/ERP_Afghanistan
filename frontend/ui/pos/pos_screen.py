@@ -476,11 +476,14 @@ class POSScreen(BaseScreen):
         QShortcut(QKeySequence(Qt.Key_Delete), self, self._remove_selected_item)
 
     def load_customers(self):
-        try:
-            endpoint = get_endpoint("customers")
-            response = self.api_client.get(endpoint)
-            if response and isinstance(response, dict):
-                data = response.get("results", response.get("data", []))
+        """Load customers from API asynchronously to prevent UI freeze."""
+        def on_success(response):
+            try:
+                if isinstance(response, dict):
+                    data = response.get("results", response.get("data", []))
+                else:
+                    data = response
+                
                 if isinstance(data, list):
                     self.customers = data
                     self.customer_combo.clear()
@@ -488,9 +491,20 @@ class POSScreen(BaseScreen):
                     for c in data:
                         name = c.get("name", c.get("full_name", "Unknown"))
                         self.customer_combo.addItem(name, c.get("id"))
-        except Exception as e:
-            # Phase Recovery: surface the error instead of silently failing
-            AlertDialog.error("Connection Error", f"Could not load customers: {e}", self)
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Error processing customers: {e}")
+
+        def on_error(error_msg):
+            AlertDialog.error("Connection Error", f"Could not load customers: {error_msg}", self)
+
+        self.run_api_request(
+            key="pos_customers_load",
+            method="GET",
+            endpoint=get_endpoint("customers") or "/api/sales/customers/",
+            params={"page_size": 100},
+            on_success=on_success,
+            on_error=on_error
+        )
 
     def _on_barcode_scanned(self, barcode):
         self.scan_status.setText(f"Scanning: {barcode}")
@@ -738,25 +752,42 @@ class POSScreen(BaseScreen):
                     "unit_price": str(item["price"]),
                 })
 
-            response = self.api_client.post(endpoint, invoice_data)
-            if response and response.get("success"):
-                invoice = response.get("data", response)
-                self.status_label.setText("COMPLETED")
-                self.status_label.setStyleSheet(
-                    f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
-                    f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
-                    f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
-                )
-                self._show_invoice_preview(invoice)
-                self.new_sale()
-            else:
-                error = response.get("error", "Unknown error") if response else "No response"
-                self.status_label.setText("FAILED")
+            def on_success(response):
+                if response and response.get("success"):
+                    invoice = response.get("data", response)
+                    self.status_label.setText("COMPLETED")
+                    self.status_label.setStyleSheet(
+                        f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_SUCCESS}; "
+                        f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+                        f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
+                    )
+                    self._show_invoice_preview(invoice)
+                    self.new_sale()
+                else:
+                    error = response.get("error", "Unknown error") if response else "No response"
+                    self.status_label.setText("FAILED")
+                    self.status_label.setStyleSheet(
+                        f"background-color: {COLOR_DANGER}; color: {COLOR_TEXT_ON_PRIMARY}; "
+                        f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
+                        f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
+                    )
+
+            def on_error(error_msg):
+                self.status_label.setText("ERROR")
                 self.status_label.setStyleSheet(
                     f"background-color: {COLOR_DANGER}; color: {COLOR_TEXT_ON_PRIMARY}; "
                     f"padding: {SPACING_XS}px {SPACING_MD}px; border-radius: {BORDER_RADIUS_SM}px; "
                     f"font-weight: {FONT_WEIGHT_BOLD}; font-size: {TEXT_TABLE}pt;"
                 )
+
+            self.run_api_request(
+                key="pos_process_payment",
+                method="POST",
+                endpoint=endpoint,
+                params=invoice_data,
+                on_success=on_success,
+                on_error=on_error
+            )
         except Exception as e:
             self.status_label.setText("ERROR")
             self.status_label.setStyleSheet(

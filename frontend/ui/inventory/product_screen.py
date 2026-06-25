@@ -54,44 +54,61 @@ class ProductScreen(BaseInventoryScreen):
     
     @Slot()
     def load_products(self):
-        """Load products from the API."""
-        try:
-            endpoint = get_endpoint("products")
-            params = {}
-            filter_value = self.filter_combo.currentData()
-            if filter_value == "active":
-                params["is_active"] = "true"
-            elif filter_value == "inactive":
-                params["is_active"] = "false"
-            elif filter_value == "prescription":
-                params["requires_prescription"] = "true"
-            elif filter_value == "controlled":
-                params["is_controlled_substance"] = "true"
-            
-            search_text = self.search_input.text().strip()
-            if search_text:
-                params["search"] = search_text
-            
-            response = self.api_client.get(endpoint, params=params)
+        """Load products from the API asynchronously to prevent UI freezing."""
+        self.show_loading("Loading products...")
+        
+        endpoint = get_endpoint("products")
+        params = {}
+        filter_value = self.filter_combo.currentData()
+        if filter_value == "active":
+            params["is_active"] = "true"
+        elif filter_value == "inactive":
+            params["is_active"] = "false"
+        elif filter_value == "prescription":
+            params["requires_prescription"] = "true"
+        elif filter_value == "controlled":
+            params["is_controlled_substance"] = "true"
+        
+        search_text = self.search_input.text().strip()
+        if search_text:
+            params["search"] = search_text
+
+        def on_success(response):
+            try:
+                self.products = []
+                if isinstance(response, list):
+                    self.products = [p for p in response if isinstance(p, dict)]
+                elif isinstance(response, dict):
+                    if response.get('success'):
+                        data = response.get('data', [])
+                        if isinstance(data, list):
+                            self.products = [p for p in data if isinstance(p, dict)]
+                        elif isinstance(data, dict):
+                            if 'results' in data:
+                                self.products = [p for p in data.get('results', []) if isinstance(p, dict)]
+                            elif 'id' in data:
+                                self.products = [data]
+                self.update_table()
+                self.set_state("ready")
+            except Exception as e:
+                logger.error(f"Error processing products: {e}")
+                self.show_error(f"Error processing data: {e}")
+
+        def on_error(error_msg):
+            logger.error(f"Error loading products: {error_msg}")
             self.products = []
-            if isinstance(response, list):
-                self.products = [p for p in response if isinstance(p, dict)]
-            elif isinstance(response, dict):
-                if response.get('success'):
-                    data = response.get('data', [])
-                    if isinstance(data, list):
-                        self.products = [p for p in data if isinstance(p, dict)]
-                    elif isinstance(data, dict):
-                        if 'results' in data:
-                            self.products = [p for p in data.get('results', []) if isinstance(p, dict)]
-                        elif 'id' in data:
-                            self.products = [data]
-            
             self.update_table()
-        except Exception as e:
-            logger.error(f"Error loading products: {e}")
-            self.products = []
-            self.update_table()
+            self.show_error(error_msg)
+
+        self.run_api_request(
+            key="products_load",
+            method="GET",
+            endpoint=endpoint,
+            params=params,
+            on_success=on_success,
+            on_error=on_error
+        )
+
     
     def update_table(self):
         """Update the table with current products."""

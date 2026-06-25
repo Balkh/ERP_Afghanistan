@@ -342,40 +342,8 @@ class MainWindow(QMainWindow):
 
         content_frame = QFrame()
         content_frame.setFrameStyle(QFrame.NoFrame)
-        content_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLOR_BG_MAIN};
-            }}
-            QLabel {{
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QGroupBox {{
-                color: {COLOR_TEXT_PRIMARY};
-                font-weight: bold;
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_LG}px;
-                margin-top: {SPACING_SM}px;
-                padding-top: {SPACING_SM}px;
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 {SPACING_XS}px;
-            }}
-            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
-                background-color: {COLOR_BG_SURFACE};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px;
-            }}
-            QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
-                border: 2px solid {COLOR_BORDER_FOCUS};
-            }}
-            QScrollArea {{
-                background-color: transparent;
-            }}
-        """)
+        # Removed hardcoded content_frame.setStyleSheet block to prevent style overrides and startup lag.
+        # Base styles are now handled by UIStyleBuilder.get_global_style() in main.py.
         content_layout = QVBoxLayout(content_frame)
         content_layout.setContentsMargins(MARGIN_PAGE, SPACING_SM, MARGIN_PAGE, SPACING_MD)
         content_layout.setSpacing(SPACING_MD + SPACING_XS)
@@ -734,47 +702,11 @@ class MainWindow(QMainWindow):
         """Inner implementation of stylesheet refresh with safe boundary."""
         if not hasattr(self, 'pages'):
             return
-        C = _constants
-        content_frame = self.sidebar.parent() if hasattr(self, 'sidebar') else None
-        for child in self.findChildren(QFrame):
-            if child.parent() is self.centralWidget():
-                content_frame = child
-                break
-        if content_frame:
-            content_frame.setStyleSheet(f"""
-                QFrame {{
-                    background-color: {C.COLOR_BG_MAIN};
-                }}
-                QLabel {{
-                    color: {C.COLOR_TEXT_PRIMARY};
-                }}
-                QGroupBox {{
-                    color: {C.COLOR_TEXT_PRIMARY};
-                    font-weight: bold;
-                    border: 1px solid {C.COLOR_BORDER};
-                    border-radius: {C.BORDER_RADIUS_LG}px;
-                    margin-top: {SPACING_SM}px;
-                    padding-top: {SPACING_SM}px;
-                }}
-                QGroupBox::title {{
-                    subcontrol-origin: margin;
-                    subcontrol-position: top left;
-                    padding: 0 {SPACING_XS}px;
-                }}
-                QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
-                    background-color: {C.COLOR_BG_SURFACE};
-                    color: {C.COLOR_TEXT_PRIMARY};
-                    border: 1px solid {C.COLOR_BORDER};
-                    border-radius: {C.BORDER_RADIUS_MD}px;
-                    padding: {C.SPACING_SM}px;
-                }}
-                QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
-                    border: 2px solid {C.COLOR_BORDER_FOCUS};
-                }}
-                QScrollArea {{
-                    background-color: transparent;
-                }}
-            """)
+        
+        # Removed content_frame.setStyleSheet block to prevent style overrides
+        # that defeat the Design System and UIStyleBuilder.
+        # Background and basic colors are handled by the global stylesheet.
+
         self._refresh_status_bar()
 
     def _refresh_status_bar(self):

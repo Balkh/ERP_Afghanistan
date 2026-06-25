@@ -43,10 +43,7 @@ class DriftReconciliationScreen(BaseScreen):
         # ── Header ──
         header_layout = QHBoxLayout()
         title = QLabel("Stock Drift Reconciliation")
-        title.setStyleSheet(
-            f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; "
-            f"font-weight: 700; border: none; background: transparent;"
-        )
+        title.setStyleSheet(UIStyleBuilder.get_page_header_style())
         header_layout.addWidget(title)
         header_layout.addStretch()
 
@@ -60,9 +57,7 @@ class DriftReconciliationScreen(BaseScreen):
 
         # Error banner (hidden by default)
         self._error_label = QLabel("")
-        self._error_label.setStyleSheet(
-            f"color: #DC3545; font-size: {TEXT_BODY}pt; font-weight: 600;"
-        )
+        self._error_label.setStyleSheet(UIStyleBuilder.get_label_style("error"))
         self._error_label.setWordWrap(True)
         self._error_label.setVisible(False)
         layout.addWidget(self._error_label)
@@ -70,19 +65,14 @@ class DriftReconciliationScreen(BaseScreen):
         # ── Health summary bar ──
         self._summary_frame = QFrame()
         self._summary_frame.setFrameStyle(QFrame.StyledPanel)
-        self._summary_frame.setStyleSheet(
-            f"QFrame {{ background-color: {COLOR_BG_DIALOG}; "
-            f"border: 1px solid {COLOR_BORDER_INPUT}; "
-            f"border-radius: {BORDER_RADIUS_MD}px; }}"
-        )
+        self._summary_frame.setStyleSheet(UIStyleBuilder.get_card_style())
         summary_layout = QHBoxLayout(self._summary_frame)
         summary_layout.setContentsMargins(SPACING_MD, SPACING_SM, SPACING_MD, SPACING_SM)
         summary_layout.setSpacing(SPACING_MD * 2)
 
         self._health_label = QLabel("Health: —")
-        self._health_label.setStyleSheet(
-            f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt; font-weight: 600;"
-        )
+        self._health_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
+        self._health_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt; font-weight: 600;")
         self._health_bar = QProgressBar()
         self._health_bar.setFixedHeight(20)
         self._health_bar.setRange(0, 100)
@@ -91,15 +81,14 @@ class DriftReconciliationScreen(BaseScreen):
         self._health_bar.setFormat("%p%")
 
         self._checked_label = QLabel("Checked: 0")
-        self._checked_label.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_BODY}pt;")
+        self._checked_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
         self._clean_label = QLabel("Clean: 0")
+        self._clean_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
         self._clean_label.setStyleSheet(f"color: {COLOR_PRIMARY}; font-size: {TEXT_BODY}pt; font-weight: 600;")
         self._drift_label = QLabel("Drifts: 0")
-        self._drift_label.setStyleSheet(f"color: #DC3545; font-size: {TEXT_BODY}pt; font-weight: 600;")
+        self._drift_label.setStyleSheet(UIStyleBuilder.get_label_style("error"))
         self._total_drift_label = QLabel("Total Drift: 0")
-        self._total_drift_label.setStyleSheet(
-            f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_HELPER}pt;"
-        )
+        self._total_drift_label.setStyleSheet(UIStyleBuilder.get_label_style("muted"))
 
         summary_layout.addWidget(self._health_label)
         summary_layout.addWidget(self._health_bar)
@@ -143,9 +132,7 @@ class DriftReconciliationScreen(BaseScreen):
 
         # ── Truncated notice ──
         self._truncated_label = QLabel("")
-        self._truncated_label.setStyleSheet(
-            f"color: #FFC107; font-size: {TEXT_HELPER}pt; font-weight: 600;"
-        )
+        self._truncated_label.setStyleSheet(UIStyleBuilder.get_label_style("warning"))
         self._truncated_label.setVisible(False)
         layout.addWidget(self._truncated_label)
 

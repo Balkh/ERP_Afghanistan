@@ -62,11 +62,11 @@ class ActivationScreen(QWidget):
         
         # Device Information Group
         device_group = QGroupBox("Device Information")
-        device_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
+        device_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=False))
         device_layout = QVBoxLayout()
 
         device_id_label = QLabel(f"Device ID: {self.device_id}")
-        device_id_label.setStyleSheet(f"font-family: Consolas; font-size: {TEXT_BODY}pt; color: {COLOR_TEXT_PRIMARY};")
+        device_id_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
         device_id_label.setStyleSheet(f"background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY}; padding: {SPACING_SM}px; border-radius: {BORDER_RADIUS_SM}px;")
         device_layout.addWidget(device_id_label)
         
@@ -77,7 +77,7 @@ class ActivationScreen(QWidget):
         
         # License File Group
         license_group = QGroupBox("License File")
-        license_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
+        license_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=False))
         license_layout = QVBoxLayout()
 
         # Instructions
@@ -114,7 +114,7 @@ class ActivationScreen(QWidget):
         
         # Status Group
         status_group = QGroupBox("Activation Status")
-        status_group.setStyleSheet(f"QGroupBox {{ font-size: {TEXT_CARD_TITLE}pt; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; }} QGroupBox::title {{ subcontrol-origin: margin; subcontrol-position: top left; padding: 0 5px; }}")
+        status_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=False))
         status_layout = QVBoxLayout()
 
         self.status_label = QLabel("Ready to activate")

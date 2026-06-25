@@ -31,32 +31,8 @@ class ProductFormDialog(EnterpriseDialog):
 
     def _build_content(self):
         content = QWidget()
-        content.setStyleSheet(f"""
-            QLineEdit, QComboBox {{
-                background-color: {COLOR_BG_DIALOG};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_INPUT};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px {SPACING_SM}px;
-            }}
-            QLineEdit:focus, QComboBox:focus {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-            QLineEdit:hover, QComboBox:hover {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-            QTextEdit {{
-                background-color: {COLOR_FORM_DESCRIPTION_BG};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_INPUT};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px {SPACING_SM}px;
-            }}
-            QTextEdit:focus {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-        """)
-
+        # Removed hardcoded CSS to rely on UIStyleBuilder and Global Styles
+        
         layout = QVBoxLayout(content)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING_MD)
@@ -73,6 +49,7 @@ class ProductFormDialog(EnterpriseDialog):
         self.generic_name_input.setPlaceholderText("e.g., Paracetamol")
         self.brand_name_input = QLineEdit()
         self.brand_name_input.setPlaceholderText("e.g., Panadol")
+        
         sec1.add_field_pair("Name*", self.name_input, "Generic Name", self.generic_name_input, required1=True)
         sec1.add_full_width("Brand Name", self.brand_name_input)
         layout.addWidget(sec1)
@@ -89,6 +66,7 @@ class ProductFormDialog(EnterpriseDialog):
         self.barcode_input.setPlaceholderText("e.g., 123456789012")
         self.sku_input = QLineEdit()
         self.sku_input.setPlaceholderText("e.g., PRD-001")
+        
         sec2.add_field_pair("Category*", self.category_combo, "Unit*", self.unit_combo, required1=True, required2=True)
         sec2.add_field_pair("Barcode", self.barcode_input, "SKU", self.sku_input,
                             helper1="Standard formats: UPC (12-digit) or EAN-13", helper2="e.g., PRD-001, MED-042")
@@ -103,19 +81,19 @@ class ProductFormDialog(EnterpriseDialog):
         self.active_check = QComboBox()
         self.active_check.addItems(["No", "Yes"])
         self.active_check.setCurrentIndex(1)
+        
         sec3.add_field_pair("Requires Prescription", self.prescription_check, "Controlled Substance", self.controlled_check)
         sec3.add_full_width("Is Active", self.active_check)
         layout.addWidget(sec3)
 
-        # ── Description (visually separated, full width) ──
-        desc_header = QLabel("Description")
-        desc_header.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; font-weight: 600; border: none; background: transparent; margin-top: {SPACING_MD}px; margin-bottom: {SPACING_XS}px;")
-        layout.addWidget(desc_header)
+        # ── Description (organized as a section for consistency) ──
+        sec_desc = FormSection("Additional Information", columns=1, primary=False)
         self.description_input = QTextEdit()
         self.description_input.setPlaceholderText("Enter product description (optional)")
-        self.description_input.setMaximumHeight(100)
-        self.description_input.setMinimumHeight(INPUT_HEIGHT_MD)
-        layout.addWidget(self.description_input)
+        self.description_input.setMaximumHeight(120)
+        self.description_input.setMinimumHeight(INPUT_HEIGHT_LG)
+        sec_desc.add_field(self.description_input, "Product Description")
+        layout.addWidget(sec_desc)
 
         return content
 

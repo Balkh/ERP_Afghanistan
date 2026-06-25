@@ -152,7 +152,7 @@ class ReturnsScreen(BaseScreen):
     def _create_filter_bar(self):
         bar = QGroupBox("Filters")
         bar.setFont(QFont("Segoe UI", TEXT_LABEL, QFont.Weight.Bold))
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -160,13 +160,7 @@ class ReturnsScreen(BaseScreen):
         type_layout = QVBoxLayout()
         type_layout.addWidget(QLabel("Type:"))
         self.return_type_filter = QComboBox()
-        self.return_type_filter.setStyleSheet(f"""
-            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
-            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY}; selection-color: {COLOR_TEXT_ON_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; }}
-        """)
+        self.return_type_filter.setStyleSheet(UIStyleBuilder.get_input_style())
         self.return_type_filter.addItems(["All Types", "Sale Return", "Purchase Return"])
         self.return_type_filter.setMinimumWidth(150)
         self.return_type_filter.currentTextChanged.connect(self._load_returns)
@@ -177,13 +171,7 @@ class ReturnsScreen(BaseScreen):
         status_layout = QVBoxLayout()
         status_layout.addWidget(QLabel("Status:"))
         self.status_filter = QComboBox()
-        self.status_filter.setStyleSheet(f"""
-            QComboBox {{ background-color: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; padding: {SPACING_XS}px {SPACING_SM}px; }}
-            QComboBox QAbstractItemView {{ background-color: {COLOR_BG_ELEVATED}; color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_PRIMARY}; selection-color: {COLOR_TEXT_ON_PRIMARY};
-                border: 1px solid {COLOR_BORDER}; }}
-        """)
+        self.status_filter.setStyleSheet(UIStyleBuilder.get_input_style())
         self.status_filter.addItems(["All Status", "Pending", "Approved", "Rejected", "Completed"])
         self.status_filter.setMinimumWidth(150)
         self.status_filter.currentTextChanged.connect(self._load_returns)
@@ -197,6 +185,7 @@ class ReturnsScreen(BaseScreen):
         self.search_input.setPlaceholderText("Search by return number...")
         self.search_input.setMinimumWidth(250)
         self.search_input.setMinimumHeight(30)
+        self.search_input.setStyleSheet(UIStyleBuilder.get_input_style())
         self.search_input.textChanged.connect(self._on_search)
         search_layout.addWidget(self.search_input)
         layout.addLayout(search_layout)

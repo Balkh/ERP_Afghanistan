@@ -48,40 +48,57 @@ class WarehouseScreen(BaseInventoryScreen):
 
     @Slot()
     def load_warehouses(self):
-        """Load warehouses from the API."""
-        try:
-            endpoint = get_endpoint("warehouses")
-            params = {}
-            filter_value = self.filter_combo.currentData()
-            if filter_value == "active":
-                params["is_active"] = "true"
-            elif filter_value == "inactive":
-                params["is_active"] = "false"
+        """Load warehouses from the API asynchronously."""
+        self.show_loading("Loading warehouses...")
+        
+        endpoint = get_endpoint("warehouses")
+        params = {}
+        filter_value = self.filter_combo.currentData()
+        if filter_value == "active":
+            params["is_active"] = "true"
+        elif filter_value == "inactive":
+            params["is_active"] = "false"
 
-            search_text = self.search_input.text().strip()
-            if search_text:
-                params["search"] = search_text
+        search_text = self.search_input.text().strip()
+        if search_text:
+            params["search"] = search_text
 
-            response = self.api_client.get(endpoint, params=params)
+        def on_success(response):
+            try:
+                self.warehouses = []
+                if isinstance(response, list):
+                    self.warehouses = [w for w in response if isinstance(w, dict)]
+                elif isinstance(response, dict):
+                    if response.get('success'):
+                        data = response.get('data', [])
+                        if isinstance(data, list):
+                            self.warehouses = [w for w in data if isinstance(w, dict)]
+                        elif isinstance(data, dict):
+                            if 'results' in data:
+                                self.warehouses = [w for w in data.get('results', []) if isinstance(w, dict)]
+                            elif 'id' in data:
+                                self.warehouses = [data]
+                self.update_table()
+                self.set_state("ready")
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Error processing warehouses: {e}")
+                self.show_error(f"Data error: {e}")
+
+        def on_error(error_msg):
+            logging.getLogger(__name__).warning(f"Error loading warehouses: {error_msg}")
             self.warehouses = []
-            if isinstance(response, list):
-                self.warehouses = [w for w in response if isinstance(w, dict)]
-            elif isinstance(response, dict):
-                if response.get('success'):
-                    data = response.get('data', [])
-                    if isinstance(data, list):
-                        self.warehouses = [w for w in data if isinstance(w, dict)]
-                    elif isinstance(data, dict):
-                        if 'results' in data:
-                            self.warehouses = [w for w in data.get('results', []) if isinstance(w, dict)]
-                        elif 'id' in data:
-                            self.warehouses = [data]
+            self.update_table()
+            self.show_error(error_msg)
 
-            self.update_table()
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading warehouses: {e}")
-            self.warehouses = []
-            self.update_table()
+        self.run_api_request(
+            key="warehouses_load",
+            method="GET",
+            endpoint=endpoint,
+            params=params,
+            on_success=on_success,
+            on_error=on_error
+        )
+
 
     def update_table(self):
         """Update the table with current warehouses."""

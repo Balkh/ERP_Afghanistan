@@ -20,59 +20,11 @@ from ui.constants import (
 
 
 def refresh_content_frame(main_window):
-    """Re-apply the content-frame stylesheet after a theme switch.
-
-    Finds the content frame (child of central widget) and applies the
-    canonical stylesheet using current theme constants.
+    """DEPRECATED: This function applied a generic stylesheet to the content frame
+    which overrode the Design System and UIStyleBuilder.
+    The background and baseline styles are now handled by the global stylesheet.
     """
-    if not hasattr(main_window, 'pages'):
-        return
-
-    C = _constants
-    content_frame = None
-    if hasattr(main_window, 'sidebar'):
-        content_frame = main_window.sidebar.parent()
-
-    for child in main_window.findChildren(QFrame):
-        if child.parent() is main_window.centralWidget():
-            content_frame = child
-            break
-
-    if content_frame:
-        content_frame.setStyleSheet(f"""
-            QFrame {{
-                background-color: {C.COLOR_BG_MAIN};
-            }}
-            QLabel {{
-                color: {C.COLOR_TEXT_PRIMARY};
-            }}
-            QGroupBox {{
-                color: {C.COLOR_TEXT_PRIMARY};
-                font-weight: bold;
-                border: 1px solid {C.COLOR_BORDER};
-                border-radius: {C.BORDER_RADIUS_LG}px;
-                margin-top: {SPACING_SM}px;
-                padding-top: {SPACING_SM}px;
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                subcontrol-position: top left;
-                padding: 0 {SPACING_XS}px;
-            }}
-            QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{
-                background-color: {C.COLOR_BG_SURFACE};
-                color: {C.COLOR_TEXT_PRIMARY};
-                border: 1px solid {C.COLOR_BORDER};
-                border-radius: {C.BORDER_RADIUS_MD}px;
-                padding: {C.SPACING_SM}px;
-            }}
-            QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {{
-                border: 2px solid {C.COLOR_BORDER_FOCUS};
-            }}
-            QScrollArea {{
-                background-color: transparent;
-            }}
-        """)
+    pass
 
 
 def refresh_status_bar_labels(main_window):

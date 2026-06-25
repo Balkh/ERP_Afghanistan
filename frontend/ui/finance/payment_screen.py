@@ -65,7 +65,7 @@ class PaymentScreen(BaseScreen):
         bar_font = QFont("Segoe UI", TEXT_LABEL)
         bar_font.setWeight(QFont.Weight.Bold)
         bar.setFont(bar_font)
-        bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        bar.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         layout = QHBoxLayout(bar)
         layout.setSpacing(SPACING_MD + SPACING_XS)
 
@@ -79,6 +79,7 @@ class PaymentScreen(BaseScreen):
         self.type_combo.addItem("Transfer", "TRANSFER")
         self.type_combo.addItem("Refund", "REFUND")
         self.type_combo.setMinimumWidth(120)
+        self.type_combo.setStyleSheet(UIStyleBuilder.get_input_style())
         type_layout.addWidget(self.type_combo)
         layout.addLayout(type_layout)
 
@@ -91,6 +92,7 @@ class PaymentScreen(BaseScreen):
         self.status_combo.addItem("Pending", "PENDING")
         self.status_combo.addItem("Failed", "FAILED")
         self.status_combo.setMinimumWidth(120)
+        self.status_combo.setStyleSheet(UIStyleBuilder.get_input_style())
         status_layout.addWidget(self.status_combo)
         layout.addLayout(status_layout)
 
@@ -101,21 +103,7 @@ class PaymentScreen(BaseScreen):
         self.search_input.setPlaceholderText("Ref # or description...")
         self.search_input.setMinimumWidth(200)
         self.search_input.setMinimumHeight(30)
-        self.search_input.setStyleSheet(f"""
-            QLineEdit {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM}px;
-                padding: {SPACING_XS}px {SPACING_SM}px;
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QLineEdit::placeholder {{
-                color: {COLOR_TEXT_MUTED};
-            }}
-            QLineEdit:focus {{
-                border: 1px solid {COLOR_PRIMARY};
-            }}
-        """)
+        self.search_input.setStyleSheet(UIStyleBuilder.get_input_style())
         search_layout.addWidget(self.search_input)
         layout.addLayout(search_layout)
 
@@ -127,33 +115,6 @@ class PaymentScreen(BaseScreen):
         btn_layout.addStretch()
         btn_layout.addWidget(self.btn_apply)
         layout.addLayout(btn_layout)
-
-        # Apply dark theme to combo boxes
-        combo_style = f"""
-            QComboBox {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_SM}px;
-                padding: {SPACING_XS}px {SPACING_SM}px;
-                color: {COLOR_TEXT_PRIMARY};
-            }}
-            QComboBox::drop-down {{
-                border: none;
-            }}
-            QComboBox::down-arrow {{
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 5px solid {COLOR_TEXT_PRIMARY};
-            }}
-            QComboBox QAbstractItemView {{
-                background-color: {COLOR_TABLE_HEADER_BG_LIGHT};
-                color: {COLOR_TEXT_PRIMARY};
-                selection-background-color: {COLOR_BORDER};
-            }}
-        """
-        self.type_combo.setStyleSheet(combo_style)
-        self.status_combo.setStyleSheet(combo_style)
 
         return bar
 

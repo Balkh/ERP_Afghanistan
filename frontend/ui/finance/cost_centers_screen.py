@@ -51,7 +51,7 @@ class CostCentersScreen(BaseScreen):
         filter_font = QFont("Segoe UI", TEXT_LABEL)
         filter_font.setWeight(QFont.Weight.Bold)
         filter_bar.setFont(filter_font)
-        filter_bar.setStyleSheet(f"QGroupBox {{ border: 1px solid {COLOR_BORDER}; border-left: 4px solid {COLOR_PRIMARY}; border-radius: {BORDER_RADIUS_LG}px; margin-top: {PADDING_INPUT_H}px; padding-top: {PADDING_INPUT_H}px; color: {COLOR_TEXT_PRIMARY}; }}")
+        filter_bar.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
