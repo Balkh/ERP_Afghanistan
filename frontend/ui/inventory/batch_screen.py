@@ -51,23 +51,22 @@ class BatchScreen(BaseInventoryScreen):
 
     @Slot()
     def load_batches(self):
-        """Load batches from the API."""
-        try:
-            endpoint = get_endpoint("batches")
-            params = {}
-            filter_value = self.filter_combo.currentData()
-            if filter_value == "active":
-                params["is_active"] = "true"
-            elif filter_value == "expired":
-                params["is_expired"] = "true"
-            elif filter_value == "expiring_soon":
-                params["is_expiring_soon"] = "true"
+        """Load batches from the API asynchronously."""
+        endpoint = get_endpoint("batches")
+        params = {}
+        filter_value = self.filter_combo.currentData()
+        if filter_value == "active":
+            params["is_active"] = "true"
+        elif filter_value == "expired":
+            params["is_expired"] = "true"
+        elif filter_value == "expiring_soon":
+            params["is_expiring_soon"] = "true"
 
-            search_text = self.search_input.text().strip()
-            if search_text:
-                params["search"] = search_text
+        search_text = self.search_input.text().strip()
+        if search_text:
+            params["search"] = search_text
 
-            response = self.api_client.get(endpoint, params=params)
+        def on_success(response):
             self.batches = []
             if isinstance(response, list):
                 self.batches = [b for b in response if isinstance(b, dict)]
@@ -81,12 +80,21 @@ class BatchScreen(BaseInventoryScreen):
                             self.batches = [b for b in data.get('results', []) if isinstance(b, dict)]
                         elif 'id' in data:
                             self.batches = [data]
-
             self.update_table()
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading batches: {e}")
+
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error loading batches: {message}")
             self.batches = []
             self.update_table()
+
+        self.run_api_request(
+            key="batches_load",
+            method="GET",
+            endpoint=endpoint,
+            params=params,
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def update_table(self):
         """Update the table with current batches."""
@@ -157,10 +165,12 @@ class BatchScreen(BaseInventoryScreen):
             self.load_batches()
 
     def delete_batch(self, batch_id):
-        """Delete a batch."""
-        try:
-            self.api_client.delete(f"/api/inventory/batches/{batch_id}/")
-            self.load_batches()
-        except Exception as e:
-            from ui.components.dialogs import AlertDialog
-            AlertDialog.error("Error", f"Failed to delete batch: {e}", self)
+        """Delete a batch asynchronously."""
+        from ui.components.dialogs import AlertDialog
+        self.run_api_request(
+            key=f"batch_delete_{batch_id}",
+            method="DELETE",
+            endpoint=f"/api/inventory/batches/{batch_id}/",
+            on_success=lambda _response: self.load_batches(),
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to delete batch: {message}", self),
+        )

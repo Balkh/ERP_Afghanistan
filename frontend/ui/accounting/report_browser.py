@@ -611,21 +611,31 @@ class ReportBrowser(BaseScreen):
             "CSV Files (*.csv)",
         )
         if file_path:
-            try:
-                if self._is_date_range:
-                    params = {"format": "csv"}
-                    if hasattr(self, 'date_from') and self.date_from.date() != QDate():
-                        params["start_date"] = self.date_from.date().toString("yyyy-MM-dd")
-                    if hasattr(self, 'date_to') and self.date_to.date() != QDate():
-                        params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
-                else:
-                    params = {"format": "csv"}
-                    if hasattr(self, 'date_input') and self.date_input.date() != QDate():
-                        params["as_of_date"] = self.date_input.date().toString("yyyy-MM-dd")
-                resp = self.api_client.get(config["api"], params=params)
-                with open(file_path, "w", encoding="utf-8") as f:
-                    content = resp if isinstance(resp, str) else str(resp)
-                    f.write(content)
-                AlertDialog.info("Success", f"Exported to {file_path}", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"Export failed: {e}", self)
+            if self._is_date_range:
+                params = {"format": "csv"}
+                if hasattr(self, 'date_from') and self.date_from.date() != QDate():
+                    params["start_date"] = self.date_from.date().toString("yyyy-MM-dd")
+                if hasattr(self, 'date_to') and self.date_to.date() != QDate():
+                    params["end_date"] = self.date_to.date().toString("yyyy-MM-dd")
+            else:
+                params = {"format": "csv"}
+                if hasattr(self, 'date_input') and self.date_input.date() != QDate():
+                    params["as_of_date"] = self.date_input.date().toString("yyyy-MM-dd")
+
+            def on_success(resp):
+                try:
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        content = resp if isinstance(resp, str) else str(resp)
+                        f.write(content)
+                    AlertDialog.info("Success", f"Exported to {file_path}", self)
+                except Exception as e:
+                    AlertDialog.error("Error", f"Export failed: {e}", self)
+
+            self.run_api_request(
+                key="report_export_csv",
+                method="GET",
+                endpoint=config["api"],
+                params=params,
+                on_success=on_success,
+                on_error=lambda message: AlertDialog.error("Error", f"Export failed: {message}", self),
+            )

@@ -146,16 +146,21 @@ class InvoiceTemplateManager(BaseScreen):
             self.logo_path.setText(file_path)
 
     def _load_active_template(self):
-        try:
-            response = self._api_client.get("/api/core/invoice-templates/active/")
+        def on_success(response):
             if response:
                 self.current_template_id = response.get("id")
                 self.template_name.setText(response.get("name", "Standard"))
                 config = response.get("config", {})
                 self.current_config.update(config)
                 self._update_ui_from_config()
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Failed to load template: {e}")
+
+        self.run_api_request(
+            key="invoice_template_active_load",
+            method="GET",
+            endpoint="/api/core/invoice-templates/active/",
+            on_success=on_success,
+            on_error=lambda message: logging.getLogger(__name__).warning(f"Failed to load template: {message}"),
+        )
 
     def _update_ui_from_config(self):
         c = self.current_config
@@ -195,14 +200,16 @@ class InvoiceTemplateManager(BaseScreen):
             "config": self.current_config
         }
         
-        try:
-            if self.current_template_id:
-                res = self._api_client.put(f"/api/core/invoice-templates/{self.current_template_id}/", data)
-            else:
-                res = self._api_client.post("/api/core/invoice-templates/", data)
-            
+        def on_success(res):
             if res:
                 AlertDialog.info("Success", "Invoice template saved successfully!", self)
                 self.current_template_id = res.get("id")
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to save template: {e}", self)
+
+        self.run_api_request(
+            key="invoice_template_save",
+            method="PUT" if self.current_template_id else "POST",
+            endpoint=f"/api/core/invoice-templates/{self.current_template_id}/" if self.current_template_id else "/api/core/invoice-templates/",
+            data=data,
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to save template: {message}", self),
+        )

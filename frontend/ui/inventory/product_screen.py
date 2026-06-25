@@ -180,9 +180,11 @@ class ProductScreen(BaseInventoryScreen):
             self.load_products()
     
     def delete_product(self, product_id):
-        """Delete a product."""
-        try:
-            self.api_client.delete(f"/api/inventory/products/{product_id}/")
-            self.load_products()
-        except Exception as e:
-            logger.error(f"Error deleting product: {e}")
+        """Delete a product asynchronously."""
+        self.run_api_request(
+            key=f"product_delete_{product_id}",
+            method="DELETE",
+            endpoint=f"/api/inventory/products/{product_id}/",
+            on_success=lambda _response: self.load_products(),
+            on_error=lambda message: logger.error(f"Error deleting product: {message}"),
+        )

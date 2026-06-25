@@ -5,6 +5,7 @@ from PySide6.QtCore import QObject, Signal, Property, QTimer
 from typing import Any, Dict, Optional
 from enum import Enum, auto
 from runtime.timer_registry import register_timer, unregister_owner, record_load, record_skipped_refresh
+from ui.utils.async_api import AsyncRequestMixin
 
 
 class ViewState(Enum):
@@ -58,7 +59,7 @@ class BaseViewModel(QObject):
         self._state = ViewState.EMPTY
 
 
-class AsyncDataLoader(QObject):
+class AsyncDataLoader(AsyncRequestMixin, QObject):
     MIN_INTERVAL_MS = 10000
     _active_endpoints: Dict[str, list] = {}
 
@@ -142,12 +143,23 @@ class AsyncDataLoader(QObject):
         self._refresh_count += 1
         record_load()
         self.loading_started.emit()
-        try:
-            data = self._api_client.get(self._endpoint)
+        def on_success(data):
             self._is_loading = False
             self.data_loaded.emit(data if isinstance(data, dict) else {})
             self.loading_finished.emit()
-        except Exception as e:
+
+        def on_error(message):
             self._is_loading = False
-            self.load_error.emit(str(e))
+            self.load_error.emit(str(message))
+            self.loading_finished.emit()
+
+        started = self.run_api_request(
+            key=f"observability_load_{abs(hash(self._endpoint))}",
+            method="GET",
+            endpoint=self._endpoint,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
+            self._is_loading = False
             self.loading_finished.emit()

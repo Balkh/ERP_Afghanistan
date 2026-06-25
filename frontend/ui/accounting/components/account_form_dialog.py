@@ -1,3 +1,5 @@
+import logging
+
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QWidget, QFrame,
                                 QLineEdit, QComboBox, QTextEdit, QLabel, QCheckBox)
 from PySide6.QtGui import QKeySequence, QShortcut
@@ -8,11 +10,12 @@ from ui.utils.validation import FormValidator
 from ui.constants import (SPACING_SM, SPACING_MD, SPACING_XL, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_BODY_SMALL, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED, COLOR_BG_DIALOG, COLOR_BORDER_INPUT,
                            COLOR_BORDER_INPUT_HOVER, COLOR_FORM_DESCRIPTION_BG, COLOR_FORM_FOOTER_BORDER,
-                           INPUT_HEIGHT_MD, BORDER_RADIUS_MD, DIALOG_WIDTH_FORM_MIN,
+                           INPUT_HEIGHT_MD, INPUT_HEIGHT_LG, BORDER_RADIUS_MD, DIALOG_WIDTH_FORM_MIN,
                            DIALOG_WIDTH_FORM_PREFERRED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.forms import FormSection
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
+from theme.style_builder import UIStyleBuilder
 import re
 
 
@@ -92,7 +95,6 @@ class AccountFormDialog(EnterpriseDialog):
         self.active_checkbox = QCheckBox("Active")
         self.active_checkbox.setChecked(True)
         self.active_checkbox.setStyleSheet(UIStyleBuilder.get_label_style("body"))
-        self.active_checkbox.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; border: none; background: transparent; font-weight: 500;")
         
         sec2.add_full_width("Description", self.description_input)
         
@@ -219,14 +221,23 @@ class AccountFormDialog(EnterpriseDialog):
             AlertDialog.warning("Validation Error", f"Please fix the following errors:\n\n{error_messages}", self)
             self._submitting = False
             return
-        try:
-            if self.is_editing:
-                self.api_client.put(f"/api/accounting/accounts/{self.account_id}/", data=data)
-            else:
-                self.api_client.post("/api/accounting/accounts/", data=data)
+        def on_success(_response):
             AlertDialog.info("Success", "Account saved successfully.", self)
             self.accept()
             self._submitting = False
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to save account: {e}", self)
+
+        def on_error(message):
+            AlertDialog.error("Error", f"Failed to save account: {message}", self)
+            self._submitting = False
+
+        endpoint = f"/api/accounting/accounts/{self.account_id}/" if self.is_editing else "/api/accounting/accounts/"
+        started = self.run_api_request(
+            key="account_save",
+            method="PUT" if self.is_editing else "POST",
+            endpoint=endpoint,
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False

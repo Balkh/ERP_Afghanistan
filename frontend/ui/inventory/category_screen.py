@@ -160,10 +160,12 @@ class CategoryScreen(BaseInventoryScreen):
             self.load_categories()
 
     def delete_category(self, category_id):
-        """Delete a category."""
-        try:
-            self.api_client.delete(f"/api/inventory/categories/{category_id}/")
-            self.load_categories()
-        except Exception as e:
-            from ui.components.dialogs import AlertDialog
-            AlertDialog.error("Error", f"Failed to delete category: {e}", self)
+        """Delete a category asynchronously."""
+        from ui.components.dialogs import AlertDialog
+        self.run_api_request(
+            key=f"category_delete_{category_id}",
+            method="DELETE",
+            endpoint=f"/api/inventory/categories/{category_id}/",
+            on_success=lambda _response: self.load_categories(),
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to delete category: {message}", self),
+        )

@@ -210,26 +210,48 @@ class InvoiceFormMixin:
     # ------------------------------------------------------------------
 
     def load_warehouses(self):
-        """Load warehouses from API into self.warehouse_combo."""
-        if self.api_client:
+        """Load warehouses from API into self.warehouse_combo asynchronously."""
+        def populate_combo():
+            self.warehouse_combo.clear()
+            self.warehouse_combo.addItem("Select Warehouse...", None)
+            for warehouse in getattr(self, 'warehouses', []):
+                if isinstance(warehouse, dict):
+                    self.warehouse_combo.addItem(
+                        warehouse.get("name", "Unknown"), warehouse.get("id", "")
+                    )
+
+            # Wire entity selection after warehouse loads
             try:
-                endpoint = get_endpoint("warehouses")
-                response = self.api_client.get(endpoint)
-                self.warehouses = parse_api_list_response(response)
-            except Exception as e:
-                print(f"Failed to load warehouses: {e}")
-                self.warehouses = []
+                self._entity_combo.currentIndexChanged.disconnect(self._entity_selected_slot)
+            except (TypeError, RuntimeError):
+                pass
+            self._entity_combo.currentIndexChanged.connect(self._entity_selected_slot)
 
-        self.warehouse_combo.clear()
-        self.warehouse_combo.addItem("Select Warehouse...", None)
-        for warehouse in getattr(self, 'warehouses', []):
-            if isinstance(warehouse, dict):
-                self.warehouse_combo.addItem(
-                    warehouse.get("name", "Unknown"), warehouse.get("id", "")
-                )
+        if not self.api_client:
+            self.warehouses = []
+            populate_combo()
+            return
 
-        # Wire entity selection after warehouse loads
-        self._entity_combo.currentIndexChanged.connect(self._entity_selected_slot)
+        def on_success(response):
+            self.warehouses = parse_api_list_response(response)
+            populate_combo()
+
+        def on_error(message):
+            print(f"Failed to load warehouses: {message}")
+            self.warehouses = []
+            populate_combo()
+
+        if hasattr(self, "run_api_request"):
+            self.run_api_request(
+                key="invoice_warehouses_load",
+                method="GET",
+                endpoint=get_endpoint("warehouses"),
+                on_success=on_success,
+                on_error=on_error,
+            )
+        else:
+            self.warehouses = []
+            populate_combo()
 
     def on_tax_enabled_changed(self, state):
         """Enable/disable tax rate input when tax toggle changes."""

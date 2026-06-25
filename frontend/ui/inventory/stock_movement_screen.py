@@ -1,6 +1,6 @@
 """Stock Movement screen for ERP."""
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout,
-                                  QLabel, QComboBox, QWidget,
+                                  QLabel, QComboBox, QWidget, QLineEdit,
                                   QFrame, QMessageBox, QFileDialog)
 from PySide6.QtCore import Qt
 from api.client import APIClient
@@ -14,6 +14,7 @@ from ui.components.state_helper import StateHelper
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
 from api.client import APIClient
 from api.endpoints import get_endpoint
+from theme.style_builder import UIStyleBuilder
 
 
 class StockMovementScreen(BaseScreen):
@@ -35,7 +36,7 @@ class StockMovementScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Stock Movements")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header.setStyleSheet(UIStyleBuilder.get_page_header_style())
         header_layout.addWidget(header)
 
         header_layout.addStretch()
@@ -52,14 +53,8 @@ class StockMovementScreen(BaseScreen):
 
         # Filters
         filter_bar = QFrame()
-        filter_bar.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLOR_BG_ELEVATED};
-                border-radius: {BORDER_RADIUS_LG};
-                border: 1px solid {COLOR_BORDER};
-                padding: {SPACING_MD}px;
-            }}
-        """)
+        filter_bar.setObjectName("card")
+        filter_bar.setStyleSheet(UIStyleBuilder.get_card_style())
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD)
 
@@ -97,16 +92,19 @@ class StockMovementScreen(BaseScreen):
         layout.addWidget(self.table)
 
     def load_movements(self):
-        """Load stock movements from API."""
+        """Load stock movements from API asynchronously."""
         self.set_state(ScreenState.LOADING)
-        try:
-            endpoint = get_endpoint("stock_movements") or "/api/inventory/stock-movements/"
-            params = {}
-            type_filter = self.type_filter.currentText()
-            if type_filter != "All":
-                params["type"] = type_filter.lower()
+        endpoint = get_endpoint("stock_movements") or "/api/inventory/stock-movements/"
+        params = {}
+        type_filter = self.type_filter.currentText()
+        if type_filter != "All":
+            params["type"] = type_filter.lower()
 
-            response = self.api_client.get(endpoint, params=params)
+        search_text = self.product_search.text().strip()
+        if search_text:
+            params["search"] = search_text
+
+        def on_success(response):
             movements = []
             if isinstance(response, list):
                 movements = [m for m in response if isinstance(m, dict)]
@@ -114,14 +112,24 @@ class StockMovementScreen(BaseScreen):
                 data = response.get('data', [])
                 if isinstance(data, list):
                     movements = [m for m in data if isinstance(m, dict)]
-
+                elif isinstance(data, dict) and 'results' in data:
+                    movements = [m for m in data.get('results', []) if isinstance(m, dict)]
             self.movements = movements
             self.update_table()
-        except Exception as e:
-            print(f"Error loading stock movements: {e}")
-            self.set_state(ScreenState.ERROR)
-        finally:
             self.set_state(ScreenState.READY)
+
+        def on_error(message):
+            print(f"Error loading stock movements: {message}")
+            self.set_state(ScreenState.ERROR)
+
+        self.run_api_request(
+            key="stock_movements_load",
+            method="GET",
+            endpoint=endpoint,
+            params=params,
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def update_table(self):
         """Update table with movement data."""

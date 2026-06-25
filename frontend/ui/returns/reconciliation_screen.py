@@ -159,20 +159,18 @@ class ReconciliationScreen(BaseScreen):
         self.table.setVisible(False)
 
         if self._api_client:
-            try:
-                endpoint = get_endpoint("reconciliation")
-                params = {}
+            endpoint = get_endpoint("reconciliation")
+            params = {}
 
-                status_filter = self.status_filter.currentText()
-                if status_filter != "All Status":
-                    params["status"] = status_filter
+            status_filter = self.status_filter.currentText()
+            if status_filter != "All Status":
+                params["status"] = status_filter
 
-                type_filter = self.type_filter.currentText()
-                if type_filter != "All Types":
-                    params["transaction_type"] = type_filter
+            type_filter = self.type_filter.currentText()
+            if type_filter != "All Types":
+                params["transaction_type"] = type_filter
 
-                response = self._api_client.get(endpoint, params=params)
-
+            def on_success(response):
                 if response and isinstance(response, dict) and response.get("success"):
                     self.entries_data = response.get("data", [])
                 elif isinstance(response, list):
@@ -190,9 +188,19 @@ class ReconciliationScreen(BaseScreen):
                     self.state_helper.hide()
                     self._populate_table()
                     self._load_summary()
-            except Exception as e:
-                logging.getLogger(__name__).warning(f"Error loading reconciliation: {e}")
-                self.state_helper.show_error(f"Error loading data: {e}", on_retry=self._load_entries)
+
+            def on_error(message):
+                logging.getLogger(__name__).warning(f"Error loading reconciliation: {message}")
+                self.state_helper.show_error(f"Error loading data: {message}", on_retry=self._load_entries)
+
+            self.run_api_request(
+                key="returns_reconciliation_load",
+                method="GET",
+                endpoint=endpoint,
+                params=params,
+                on_success=on_success,
+                on_error=on_error,
+            )
         else:
             self.state_helper.show_empty("No reconciliation entries found")
 
@@ -303,21 +311,24 @@ class ReconciliationScreen(BaseScreen):
             return
 
         if self._api_client:
-            try:
-                endpoint = f"/api/returns/reconciliation/{entry['id']}/fix/"
-                response = self._api_client.post(endpoint, {
-                    "employee_id": employee_id.strip(),
-                    "notes": notes.strip()
-                })
+            endpoint = f"/api/returns/reconciliation/{entry['id']}/fix/"
 
+            def on_success(response):
                 if response and (response.get("success") or response.get("id")):
                     AlertDialog.info("Success", "Reconciliation entry marked as FIXED.", self)
                     self._load_entries()
                 else:
                     err = response.get("error", "Unknown error") if response else "No response"
                     AlertDialog.error("Error", f"Failed to fix: {err}", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"API Error: {e}", self)
+
+            self.run_api_request(
+                key=f"returns_reconciliation_fix_{entry['id']}",
+                method="POST",
+                endpoint=endpoint,
+                data={"employee_id": employee_id.strip(), "notes": notes.strip()},
+                on_success=on_success,
+                on_error=lambda message: AlertDialog.error("Error", f"API Error: {message}", self),
+            )
 
     def _export_csv(self):
         """Export reconciliation entries to CSV."""
@@ -331,24 +342,34 @@ class ReconciliationScreen(BaseScreen):
         if not file_path:
             return
         
-        try:
-            params = {}
-            status_filter = self.status_filter.currentText()
-            if status_filter != "All Status":
-                params["status"] = status_filter
-            type_filter = self.type_filter.currentText()
-            if type_filter != "All Types":
-                params["transaction_type"] = type_filter
-            
-            response = self._api_client.get("/api/returns/reconciliation/export_csv/", params=params, raw_response=True)
-            if response:
-                with open(file_path, 'wb') as f:
-                    f.write(response)
-                AlertDialog.info("Success", f"Reconciliation exported to:\n{file_path}", self)
-            else:
-                AlertDialog.error("Error", "Failed to export reconciliation.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Export failed: {e}", self)
+        params = {}
+        status_filter = self.status_filter.currentText()
+        if status_filter != "All Status":
+            params["status"] = status_filter
+        type_filter = self.type_filter.currentText()
+        if type_filter != "All Types":
+            params["transaction_type"] = type_filter
+
+        def on_success(response):
+            try:
+                if response:
+                    with open(file_path, 'wb') as f:
+                        f.write(response)
+                    AlertDialog.info("Success", f"Reconciliation exported to:\n{file_path}", self)
+                else:
+                    AlertDialog.error("Error", "Failed to export reconciliation.", self)
+            except Exception as e:
+                AlertDialog.error("Error", f"Export failed: {e}", self)
+
+        self.run_api_request(
+            key="returns_reconciliation_export_csv",
+            method="GET",
+            endpoint="/api/returns/reconciliation/export_csv/",
+            params=params,
+            raw_response=True,
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Export failed: {message}", self),
+        )
 
     def on_show(self):
         """Called when screen is shown."""

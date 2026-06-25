@@ -72,17 +72,43 @@ class ProductSelectionDialog(EnterpriseDialog):
     def perform_search(self):
         if not self._api_client:
             return
-            
+
         query = self.search_input.text()
-        try:
-            # We use the search endpoint
-            result = self._api_client.get("/api/inventory/products/", params={'search': query})
+        if getattr(self, "_product_selection_search_active", False):
+            self._pending_product_selection_query = query
+            return
+        self._product_selection_search_active = True
+        self._pending_product_selection_query = None
+
+        def finish_search():
+            self._product_selection_search_active = False
+            pending = getattr(self, "_pending_product_selection_query", None)
+            if pending is not None and pending != query:
+                self._pending_product_selection_query = None
+                QTimer.singleShot(0, self.perform_search)
+
+        def on_success(result):
             if result and result.get('success'):
                 data = result.get('data', {})
                 products = data.get('results', []) if isinstance(data, dict) else data if isinstance(data, list) else []
                 self._populate_table(products)
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Product search error: {e}")
+            finish_search()
+
+        def on_error(message):
+            finish_search()
+            logging.getLogger(__name__).warning(f"Product search error: {message}")
+
+        started = self.run_api_request(
+            key="product_selection_search",
+            method="GET",
+            endpoint="/api/inventory/products/",
+            params={'search': query},
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
+            self._pending_product_selection_query = query
+            finish_search()
 
     def _populate_table(self, products):
         rows = []

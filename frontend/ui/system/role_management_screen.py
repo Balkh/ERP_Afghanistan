@@ -139,19 +139,24 @@ class RoleManagementScreen(BaseScreen):
     def load_data(self):
         if not self._api_client:
             return
-        try:
-            result = self._api_client.get_roles()
-            if result.get("success"):
-                self._roles = result.get("data", [])
-                self._populate_role_table()
-        except Exception as e:
-            logger.error(f"Error loading roles: {e}")
-        try:
-            result = self._api_client.get_permissions()
-            if result.get("success"):
-                self._permissions = result.get("data", [])
-        except Exception as e:
-            logger.error(f"Error loading permissions: {e}")
+
+        self.run_api_request(
+            key="roles_load",
+            method="GET",
+            endpoint="/api/auth/roles/",
+            on_success=lambda result: (
+                setattr(self, "_roles", result.get("data", [])),
+                self._populate_role_table(),
+            ) if result.get("success") else None,
+            on_error=lambda message: logger.error(f"Error loading roles: {message}"),
+        )
+        self.run_api_request(
+            key="permissions_load",
+            method="GET",
+            endpoint="/api/auth/permissions/",
+            on_success=lambda result: setattr(self, "_permissions", result.get("data", [])) if result.get("success") else None,
+            on_error=lambda message: logger.error(f"Error loading permissions: {message}"),
+        )
 
     def _populate_role_table(self):
         rows = []
@@ -194,16 +199,7 @@ class RoleManagementScreen(BaseScreen):
         if not self._selected_role:
             return
 
-        role_id = self._selected_role.get("id")
-        try:
-            result = self._api_client.get_role(role_id)
-            if result.get("success"):
-                role_data = result.get("data", {})
-                assigned_perms = set(role_data.get("permissions", []))
-            else:
-                assigned_perms = set()
-        except Exception:
-            assigned_perms = set()
+        assigned_perms = set(self._selected_role.get("permissions", []))
 
         modules = {}
         for perm in self._permissions:
@@ -266,8 +262,7 @@ class RoleManagementScreen(BaseScreen):
             f"Are you sure you want to delete role '{name}'?",
         )
         if reply:
-            try:
-                result = self._api_client.delete_role(self._selected_role["id"])
+            def on_success(result):
                 if result.get("success"):
                     AlertDialog.info("Deleted", f"Role '{name}' deleted.", self)
                     self.load_data()
@@ -276,8 +271,14 @@ class RoleManagementScreen(BaseScreen):
                     self.btn_save_perms.setEnabled(False)
                 else:
                     AlertDialog.warning("Error", result.get("error", {}).get("message", "Failed to delete"), self)
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to delete role: {e}", self)
+
+            self.run_api_request(
+                key=f"role_delete_{self._selected_role['id']}",
+                method="DELETE",
+                endpoint=f"/api/auth/roles/{self._selected_role['id']}/",
+                on_success=on_success,
+                on_error=lambda message: AlertDialog.error("Error", f"Failed to delete role: {message}", self),
+            )
 
     def save_permissions(self):
         if not self._selected_role:

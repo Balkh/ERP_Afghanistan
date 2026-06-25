@@ -10,6 +10,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog, ConfirmDialog
+from theme.style_builder import UIStyleBuilder
 
 
 class DepartmentsScreen(BaseScreen):
@@ -30,7 +31,7 @@ class DepartmentsScreen(BaseScreen):
 
         header = QHBoxLayout()
         title = QLabel("Departments & Positions")
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        title.setStyleSheet(UIStyleBuilder.get_page_header_style())
         header.addWidget(title)
         header.addStretch()
         self.refresh_btn = EnterpriseButton(text="Refresh", variant=ButtonVariant.SECONDARY, size=ButtonSize.MEDIUM)
@@ -39,12 +40,7 @@ class DepartmentsScreen(BaseScreen):
         layout.addLayout(header)
 
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ border: 1px solid {COLOR_BORDER}; border-radius: {BORDER_RADIUS_MD}px; background: {COLOR_BG_SURFACE}; }}
-            QTabBar::tab {{ background: {COLOR_TEXT_PRIMARY}; color: {COLOR_TEXT_MUTED}; padding: {SPACING_MD}px {SPACING_LG}px;
-                border-top-left-radius: {BORDER_RADIUS_MD}px; border-top-right-radius: {BORDER_RADIUS_MD}px; }}
-            QTabBar::tab:selected {{ background: {COLOR_BG_SURFACE}; color: {COLOR_TEXT_PRIMARY}; font-weight: bold; }}
-        """)
+        self.tabs.setStyleSheet(UIStyleBuilder.get_tab_style())
 
         self.dept_tab = QWidget()
         self._setup_dept_tab()
@@ -100,36 +96,58 @@ class DepartmentsScreen(BaseScreen):
         self._load_positions()
 
     def _load_departments(self):
-        try:
-            response = self.api_client.get("/api/hr/departments/")
+        def update_table():
+            data = [{"code": d.get("code", ""), "name": d.get("name", ""),
+                     "parent": d.get("parent_name", ""), "manager": d.get("manager_name", ""),
+                     "status": "Active" if d.get("is_active") else "Inactive"} for d in self.departments]
+            self.dept_table.set_data(data)
+
+        def on_success(response):
             if response and isinstance(response, dict) and response.get("success"):
                 raw = response.get("data", [])
                 self.departments = raw.get("results", []) if isinstance(raw, dict) else raw
             else:
                 self.departments = []
-        except Exception:
-            self.departments = []
+            update_table()
 
-        data = [{"code": d.get("code", ""), "name": d.get("name", ""),
-                 "parent": d.get("parent_name", ""), "manager": d.get("manager_name", ""),
-                 "status": "Active" if d.get("is_active") else "Inactive"} for d in self.departments]
-        self.dept_table.set_data(data)
+        def on_error(_message):
+            self.departments = []
+            update_table()
+
+        self.run_api_request(
+            key="departments_load",
+            method="GET",
+            endpoint="/api/hr/departments/",
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def _load_positions(self):
-        try:
-            response = self.api_client.get("/api/hr/positions/")
+        def update_table():
+            data = [{"code": p.get("code", ""), "title": p.get("title", ""),
+                     "department": p.get("department_name", ""),
+                     "status": "Active" if p.get("is_active") else "Inactive"} for p in self.positions]
+            self.pos_table.set_data(data)
+
+        def on_success(response):
             if response and isinstance(response, dict) and response.get("success"):
                 raw = response.get("data", [])
                 self.positions = raw.get("results", []) if isinstance(raw, dict) else raw
             else:
                 self.positions = []
-        except Exception:
-            self.positions = []
+            update_table()
 
-        data = [{"code": p.get("code", ""), "title": p.get("title", ""),
-                 "department": p.get("department_name", ""),
-                 "status": "Active" if p.get("is_active") else "Inactive"} for p in self.positions]
-        self.pos_table.set_data(data)
+        def on_error(_message):
+            self.positions = []
+            update_table()
+
+        self.run_api_request(
+            key="positions_load",
+            method="GET",
+            endpoint="/api/hr/positions/",
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def _add_department(self):
         dialog = DepartmentDialog(api_client=self.api_client, parent=self)
@@ -191,19 +209,28 @@ class DepartmentDialog(EnterpriseDialog):
             self._submitting = False
             return
         data = {"code": code, "name": name}
-        try:
-            if self._dept:
-                resp = self._api_client.put(f"/api/hr/departments/{self._dept['id']}/", data)
-            else:
-                resp = self._api_client.post("/api/hr/departments/", data)
+
+        def on_success(resp):
+            self._submitting = False
             if resp and isinstance(resp, dict) and (resp.get("success") or resp.get("id")):
                 self.accept()
             else:
                 err = resp.get("error", "Save failed") if isinstance(resp, dict) else "Save failed"
                 AlertDialog.error("Error", str(err), self)
-        except Exception as e:
-            AlertDialog.error("Error", str(e), self)
-        finally:
+
+        def on_error(message):
+            self._submitting = False
+            AlertDialog.error("Error", str(message), self)
+
+        started = self.run_api_request(
+            key="department_save",
+            method="PUT" if self._dept else "POST",
+            endpoint=f"/api/hr/departments/{self._dept['id']}/" if self._dept else "/api/hr/departments/",
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False
 
 
@@ -258,14 +285,26 @@ class PositionDialog(EnterpriseDialog):
             self._submitting = False
             return
         data = {"code": code, "title": title, "department": dept_id}
-        try:
-            resp = self._api_client.post("/api/hr/positions/", data)
+
+        def on_success(resp):
+            self._submitting = False
             if resp and isinstance(resp, dict) and (resp.get("success") or resp.get("id")):
                 self.accept()
             else:
                 err = resp.get("error", "Save failed") if isinstance(resp, dict) else "Save failed"
                 AlertDialog.error("Error", str(err), self)
-        except Exception as e:
-            AlertDialog.error("Error", str(e), self)
-        finally:
+
+        def on_error(message):
+            self._submitting = False
+            AlertDialog.error("Error", str(message), self)
+
+        started = self.run_api_request(
+            key="position_save",
+            method="POST",
+            endpoint="/api/hr/positions/",
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False

@@ -13,6 +13,7 @@ from ui.components.operator_safety import DestructiveActionGuard
 from ui.components.page_header import PageHeader
 from ui.components.state_helper import StateHelper
 from ui.screens.base_screen import BaseScreen
+from theme.style_builder import UIStyleBuilder
 
 
 class ChartOfAccountsScreen(BaseScreen):
@@ -60,16 +61,8 @@ class ChartOfAccountsScreen(BaseScreen):
 
     def _create_toolbar(self):
         toolbar = QFrame()
+        toolbar.setObjectName("card")
         toolbar.setStyleSheet(UIStyleBuilder.get_card_style())
-        # Add the accent border as a manual overlay since it's a specific "Toolbar" look
-        toolbar.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER};
-                border-left: 4px solid {COLOR_PRIMARY};
-                border-radius: {BORDER_RADIUS_MD}px;
-            }}
-        """)
         toolbar_layout = QHBoxLayout(toolbar)
         toolbar_layout.setContentsMargins(SPACING_MD, MARGIN_TOOLBAR, SPACING_MD, MARGIN_TOOLBAR)
         toolbar_layout.setSpacing(SPACING_SM)
@@ -137,9 +130,8 @@ class ChartOfAccountsScreen(BaseScreen):
     def load_accounts(self):
         self.state_helper.show_loading("Loading accounts...")
         self.tree.setVisible(False)
-        try:
-            endpoint = get_endpoint("accounts")
-            response = self.api_client.get(endpoint, params={"include_inactive": "true"})
+
+        def on_success(response):
             self.accounts = extract_list(response)
             if self.accounts:
                 self.state_helper.hide()
@@ -147,8 +139,18 @@ class ChartOfAccountsScreen(BaseScreen):
                 self.tree.setVisible(True)
             else:
                 self.state_helper.show_empty("No accounts found. Add an account to get started.")
-        except Exception as e:
-            self.state_helper.show_error(f"Failed to load accounts: {e}", on_retry=self.load_accounts)
+
+        def on_error(message):
+            self.state_helper.show_error(f"Failed to load accounts: {message}", on_retry=self.load_accounts)
+
+        self.run_api_request(
+            key="chart_accounts_load",
+            method="GET",
+            endpoint=get_endpoint("accounts"),
+            params={"include_inactive": "true"},
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def _populate_tree(self):
         self.tree.clear()
@@ -268,8 +270,10 @@ class ChartOfAccountsScreen(BaseScreen):
             return
 
         if DestructiveActionGuard.confirm_delete(self, "this account"):
-            try:
-                self.api_client.delete(f"/api/accounting/accounts/{acc_id}/")
-                self.load_accounts()
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to delete account: {e}", self)
+            self.run_api_request(
+                key=f"chart_account_delete_{acc_id}",
+                method="DELETE",
+                endpoint=f"/api/accounting/accounts/{acc_id}/",
+                on_success=lambda _response: self.load_accounts(),
+                on_error=lambda message: AlertDialog.error("Error", f"Failed to delete account: {message}", self),
+            )

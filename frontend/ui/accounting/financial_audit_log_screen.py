@@ -17,6 +17,7 @@ from ui.constants import (SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, TEXT_
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
+from theme.style_builder import UIStyleBuilder
 
 
 FINANCIAL_ACTIONS = [
@@ -59,8 +60,7 @@ class FinancialAuditLogScreen(BaseScreen):
         # Header
         header_layout = QHBoxLayout()
         title = QLabel("Financial Audit Log")
-        title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        title.setStyleSheet(UIStyleBuilder.get_page_header_style())
         header_layout.addWidget(title)
 
         # Filters
@@ -94,7 +94,7 @@ class FinancialAuditLogScreen(BaseScreen):
 
         # Summary bar
         self.summary_bar = QLabel("Loading audit logs...")
-        self.summary_bar.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt;")
+        self.summary_bar.setStyleSheet(UIStyleBuilder.get_label_style("muted"))
         layout.addWidget(self.summary_bar)
 
         # Scroll area
@@ -108,18 +108,7 @@ class FinancialAuditLogScreen(BaseScreen):
 
         # Audit log table
         log_group = QGroupBox("Audit Entries")
-        log_group.setStyleSheet(f"""
-            QGroupBox {{
-                font-size: {TEXT_SECTION_TITLE}pt;
-                font-weight: bold;
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}px;
-                margin-top: {SPACING_MD};
-                padding-top: {SPACING_MD};
-            }}
-            QGroupBox::title {{ subcontrol-origin: margin; left: {SPACING_MD}; padding: 0 {SPACING_SM}; }}
-        """)
+        log_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         log_layout = QVBoxLayout(log_group)
 
         self.audit_table = EnterpriseTable(columns=[
@@ -139,29 +128,40 @@ class FinancialAuditLogScreen(BaseScreen):
         layout.addWidget(scroll)
 
     def load_logs(self):
-        """Load financial audit logs from the backend."""
-        try:
-            params = {}
-            action = self.action_filter.currentData()
-            if action:
-                params['action'] = action
+        """Load financial audit logs from the backend asynchronously."""
+        params = {}
+        action = self.action_filter.currentData()
+        if action:
+            params['action'] = action
 
-            from_date = self.date_filter.date().toPython()
-            params['from_date'] = from_date.isoformat()
+        from_date = self.date_filter.date().toPython()
+        params['from_date'] = from_date.isoformat()
+        self.summary_bar.setText("Loading audit logs...")
 
-            response = self.api_client.get("/api/audit/logs/", params=params)
+        def on_success(response):
             if response and response.get("success", True):
                 data = response.get("data", response)
                 results = data.get("results", []) if isinstance(data, dict) else data
                 self._update_table(results)
+                total_count = data.get('count', len(results)) if isinstance(data, dict) else len(results)
                 self.summary_bar.setText(
                     f"Showing {len(results)} financial audit entries "
-                    f"(filtered from {data.get('count', len(results))} total)"
+                    f"(filtered from {total_count} total)"
                 )
             else:
                 self.summary_bar.setText(f"Failed to load logs: {response}")
-        except Exception as e:
-            self.summary_bar.setText(f"Error loading logs: {e}")
+
+        def on_error(message):
+            self.summary_bar.setText(f"Error loading logs: {message}")
+
+        self.run_api_request(
+            key="financial_audit_logs_load",
+            method="GET",
+            endpoint="/api/audit/logs/",
+            params=params,
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def _update_table(self, logs):
         """Update the audit table with log entries."""

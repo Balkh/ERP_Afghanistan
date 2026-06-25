@@ -222,65 +222,74 @@ class ReturnsScreen(BaseScreen):
         self.table.setVisible(True)
 
     def _load_returns(self):
-        """Load returns from API with server-side filtering."""
+        """Load returns from API with server-side filtering asynchronously."""
         self._show_loading()
-        
-        if self._api_client:
-            try:
-                endpoint = get_endpoint("return-orders")
-                params = {}
-                
-                # Server-side type filter
-                type_filter = self.return_type_filter.currentText()
-                if type_filter == "Sale Return":
-                    params["return_type"] = "SALE_RETURN"
-                elif type_filter == "Purchase Return":
-                    params["return_type"] = "PURCHASE_RETURN"
-                
-                # Server-side status filter
-                status_filter = self.status_filter.currentText()
-                if status_filter != "All Status":
-                    params["status"] = status_filter.upper()
-                
-                # Server-side search
-                search_text = self.search_input.text().strip()
-                if search_text:
-                    params["search"] = search_text
-                
-                response = self._api_client.get(endpoint, params=params)
-                
-                if response and isinstance(response, dict) and response.get("success"):
-                    data = response.get("data", [])
-                    if isinstance(data, dict):
-                        self.returns_data = data.get("results", [])
-                    elif isinstance(data, list):
-                        self.returns_data = data
-                    else:
-                        self.returns_data = []
-                elif isinstance(response, list):
-                    self.returns_data = response
+
+        if not self._api_client:
+            self.returns_data = self._get_mock_returns()
+            self._populate_table()
+            return
+
+        endpoint = get_endpoint("return-orders")
+        params = {}
+
+        # Server-side type filter
+        type_filter = self.return_type_filter.currentText()
+        if type_filter == "Sale Return":
+            params["return_type"] = "SALE_RETURN"
+        elif type_filter == "Purchase Return":
+            params["return_type"] = "PURCHASE_RETURN"
+
+        # Server-side status filter
+        status_filter = self.status_filter.currentText()
+        if status_filter != "All Status":
+            params["status"] = status_filter.upper()
+
+        # Server-side search
+        search_text = self.search_input.text().strip()
+        if search_text:
+            params["search"] = search_text
+
+        def on_success(response):
+            if response and isinstance(response, dict) and response.get("success"):
+                data = response.get("data", [])
+                if isinstance(data, dict):
+                    self.returns_data = data.get("results", [])
+                elif isinstance(data, list):
+                    self.returns_data = data
                 else:
                     self.returns_data = []
-                
-                if not self.returns_data:
-                    self._show_empty("No return orders match your filters")
-                else:
-                    self._populate_table()
-                    self._load_summary()
-            except Exception as e:
-                logging.getLogger(__name__).warning(f"Error loading returns: {e}")
-                self.returns_data = self._get_mock_returns()
+            elif isinstance(response, list):
+                self.returns_data = response
+            else:
+                self.returns_data = []
+
+            if not self.returns_data:
+                self._show_empty("No return orders match your filters")
+            else:
                 self._populate_table()
-        else:
+                self._load_summary()
+
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error loading returns: {message}")
             self.returns_data = self._get_mock_returns()
             self._populate_table()
 
+        self.run_api_request(
+            key="returns_load",
+            method="GET",
+            endpoint=endpoint,
+            params=params,
+            on_success=on_success,
+            on_error=on_error,
+        )
+
     def _load_summary(self):
-        """Load and display summary statistics from /summary/ endpoint."""
+        """Load and display summary statistics from /summary/ endpoint asynchronously."""
         if not self._api_client:
             return
-        try:
-            response = self._api_client.get("/api/returns/return-orders/summary/")
+
+        def on_success(response):
             if response and isinstance(response, dict):
                 data = response.get("data", response)
                 if isinstance(data, dict):
@@ -293,8 +302,13 @@ class ReturnsScreen(BaseScreen):
                     )
                     self.summary_label.setText(summary_text)
                     self.summary_label.setVisible(True)
-        except Exception:
-            pass
+
+        self.run_api_request(
+            key="returns_summary_load",
+            method="GET",
+            endpoint="/api/returns/return-orders/summary/",
+            on_success=on_success,
+        )
 
     def _populate_table(self):
         """Populate table with returns data (already filtered server-side)."""
@@ -384,26 +398,32 @@ class ReturnsScreen(BaseScreen):
             return
 
         if self._api_client:
-            try:
-                employee_id, ok = QInputDialog.getText(
-                    self, "Employee ID",
-                    "Enter your employee ID for approval audit:",
-                    text=""
-                )
-                if not ok or not employee_id.strip():
-                    return
-                
-                endpoint = f"/api/returns/return-orders/{return_id}/approve/"
-                response = self._api_client.post(endpoint, {"employee_id": employee_id.strip()})
-                
+            employee_id, ok = QInputDialog.getText(
+                self, "Employee ID",
+                "Enter your employee ID for approval audit:",
+                text=""
+            )
+            if not ok or not employee_id.strip():
+                return
+
+            endpoint = f"/api/returns/return-orders/{return_id}/approve/"
+
+            def on_success(response):
                 if response and isinstance(response, dict) and (response.get("success") or response.get("id")):
                     AlertDialog.info("Success", f"Return {return_number} approved successfully.", self)
                     self._load_returns()
                 else:
                     error_msg = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed to approve"
                     AlertDialog.error("Error", f"Failed to approve return: {error_msg}", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"API Error: {e}", self)
+
+            self.run_api_request(
+                key=f"return_approve_{return_id}",
+                method="POST",
+                endpoint=endpoint,
+                data={"employee_id": employee_id.strip()},
+                on_success=on_success,
+                on_error=lambda message: AlertDialog.error("Error", f"API Error: {message}", self),
+            )
         else:
             AlertDialog.info("Success", f"Return {return_number} approved (offline mode).", self)
             self._load_returns()
@@ -431,18 +451,24 @@ class ReturnsScreen(BaseScreen):
         
         if ok and text.strip():
             if self._api_client:
-                try:
-                    endpoint = f"/api/returns/return-orders/{return_id}/reject/"
-                    response = self._api_client.post(endpoint, {"notes": text.strip()})
-                    
+                endpoint = f"/api/returns/return-orders/{return_id}/reject/"
+
+                def on_success(response):
                     if response and isinstance(response, dict) and (response.get("success") or response.get("id")):
                         AlertDialog.info("Success", f"Return {return_number} rejected.", self)
                         self._load_returns()
                     else:
                         error_msg = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed to reject"
                         AlertDialog.error("Error", f"Failed to reject return: {error_msg}", self)
-                except Exception as e:
-                    AlertDialog.error("Error", f"API Error: {e}", self)
+
+                self.run_api_request(
+                    key=f"return_reject_{return_id}",
+                    method="POST",
+                    endpoint=endpoint,
+                    data={"notes": text.strip()},
+                    on_success=on_success,
+                    on_error=lambda message: AlertDialog.error("Error", f"API Error: {message}", self),
+                )
             else:
                 AlertDialog.info("Success", f"Return {return_number} rejected (offline mode).", self)
                 self._load_returns()
@@ -485,21 +511,24 @@ class ReturnsScreen(BaseScreen):
             return
 
         if self._api_client:
-            try:
-                endpoint = f"/api/returns/return-orders/{return_id}/void/"
-                response = self._api_client.post(endpoint, {
-                    "employee_id": employee_id.strip(),
-                    "reason": reason.strip()
-                })
+            endpoint = f"/api/returns/return-orders/{return_id}/void/"
 
+            def on_success(response):
                 if response and (response.get("success") or response.get("id")):
                     AlertDialog.info("Success", f"Return {return_number} voided successfully.", self)
                     self._load_returns()
                 else:
                     err = response.get("error", "Unknown error") if response else "No response"
                     AlertDialog.error("Error", f"Failed to void: {err}", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"API Error: {e}", self)
+
+            self.run_api_request(
+                key=f"return_void_{return_id}",
+                method="POST",
+                endpoint=endpoint,
+                data={"employee_id": employee_id.strip(), "reason": reason.strip()},
+                on_success=on_success,
+                on_error=lambda message: AlertDialog.error("Error", f"API Error: {message}", self),
+            )
         elif ok:
             AlertDialog.warning("Validation Error", "Rejection reason is required.", self)
     
@@ -517,16 +546,25 @@ class ReturnsScreen(BaseScreen):
         if not file_path:
             return
         
-        try:
-            response = self._api_client.get("/api/returns/return-orders/export_csv/", raw_response=True)
-            if response:
-                with open(file_path, 'wb') as f:
-                    f.write(response)
-                AlertDialog.info("Success", f"Returns exported to:\n{file_path}", self)
-            else:
-                AlertDialog.error("Error", "Failed to export returns.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Export failed: {e}", self)
+        def on_success(response):
+            try:
+                if response:
+                    with open(file_path, 'wb') as f:
+                        f.write(response)
+                    AlertDialog.info("Success", f"Returns exported to:\n{file_path}", self)
+                else:
+                    AlertDialog.error("Error", "Failed to export returns.", self)
+            except Exception as e:
+                AlertDialog.error("Error", f"Export failed: {e}", self)
+
+        self.run_api_request(
+            key="returns_export_csv",
+            method="GET",
+            endpoint="/api/returns/return-orders/export_csv/",
+            raw_response=True,
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Export failed: {message}", self),
+        )
     
     def _print_receipt(self):
         """Print/download PDF receipt for selected return."""
@@ -551,16 +589,25 @@ class ReturnsScreen(BaseScreen):
             return
         
         if self._api_client:
-            try:
-                response = self._api_client.get(f"/api/returns/return-orders/{return_id}/receipt_pdf/", raw_response=True)
-                if response:
-                    with open(file_path, 'wb') as f:
-                        f.write(response)
-                    AlertDialog.info("Success", f"Receipt saved to:\n{file_path}", self)
-                else:
-                    AlertDialog.error("Error", "Failed to generate receipt.", self)
-            except Exception as e:
-                AlertDialog.error("Error", f"API Error: {e}", self)
+            def on_success(response):
+                try:
+                    if response:
+                        with open(file_path, 'wb') as f:
+                            f.write(response)
+                        AlertDialog.info("Success", f"Receipt saved to:\n{file_path}", self)
+                    else:
+                        AlertDialog.error("Error", "Failed to generate receipt.", self)
+                except Exception as e:
+                    AlertDialog.error("Error", f"API Error: {e}", self)
+
+            self.run_api_request(
+                key=f"return_receipt_pdf_{return_id}",
+                method="GET",
+                endpoint=f"/api/returns/return-orders/{return_id}/receipt_pdf/",
+                raw_response=True,
+                on_success=on_success,
+                on_error=lambda message: AlertDialog.error("Error", f"API Error: {message}", self),
+            )
     
     def on_show(self):
         """Called when screen is shown."""
@@ -588,20 +635,25 @@ class ReturnOrderDialog(EnterpriseDialog):
         self.return_type_cb.setCurrentIndex(idx)
 
     def prefill_from_invoice(self, invoice_id):
-        """Load invoice data and pre-fill return items."""
+        """Load invoice data and pre-fill return items asynchronously."""
         if not self.api_client:
             return
-        try:
-            is_sale = self.return_type_cb.currentText() == "Sale Return"
-            endpoint = f"/api/sales/invoices/{invoice_id}/" if is_sale else f"/api/purchases/invoices/{invoice_id}/"
-            resp = self.api_client.get(endpoint)
+        is_sale = self.return_type_cb.currentText() == "Sale Return"
+        endpoint = f"/api/sales/invoices/{invoice_id}/" if is_sale else f"/api/purchases/invoices/{invoice_id}/"
+
+        def on_success(resp):
             if resp and isinstance(resp, dict):
                 data = resp.get("data", resp)
                 self._invoice_data = data
                 self._items = data.get("items", [])
                 self._populate_items()
-        except Exception:
-            pass
+
+        self.run_api_request(
+            key=f"return_prefill_invoice_{invoice_id}",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+        )
 
     def _build_content(self):
         widget = QWidget()
@@ -704,10 +756,10 @@ class ReturnOrderDialog(EnterpriseDialog):
         query = self.invoice_search.text().strip()
         if not query or not self.api_client:
             return
-        try:
-            is_sale = self.return_type_cb.currentIndex() == 0
-            endpoint = "/api/sales/invoices/" if is_sale else "/api/purchases/invoices/"
-            response = self.api_client.get(endpoint, params={"search": query})
+        is_sale = self.return_type_cb.currentIndex() == 0
+        endpoint = "/api/sales/invoices/" if is_sale else "/api/purchases/invoices/"
+
+        def on_success(response):
             if response and isinstance(response, dict):
                 invoices = response.get("results", [])
                 if not invoices:
@@ -717,8 +769,14 @@ class ReturnOrderDialog(EnterpriseDialog):
                     self._populate_items()
                 else:
                     AlertDialog.warning("Not Found", f"No invoice found matching '{query}'", self)
-        except Exception:
-            pass
+
+        self.run_api_request(
+            key="return_invoice_lookup",
+            method="GET",
+            endpoint=endpoint,
+            params={"search": query},
+            on_success=on_success,
+        )
 
     def _populate_items(self):
         inv = self._invoice_data
@@ -835,19 +893,24 @@ class ReturnOrderDialog(EnterpriseDialog):
 
         data["total_amount"] = round(total_amount, 2)
 
-        try:
-            if self.api_client:
-                response = self.api_client.post("/api/returns/return-orders/", data)
-            else:
-                import uuid
-                response = {
-                    "success": True,
-                    "data": {
-                        "return_number": f"RET-{uuid.uuid4().hex[:8].upper()}",
-                        "items_count": len(data["items"]),
-                    }
+        if not self.api_client:
+            import uuid
+            response = {
+                "success": True,
+                "data": {
+                    "return_number": f"RET-{uuid.uuid4().hex[:8].upper()}",
+                    "items_count": len(data["items"]),
                 }
+            }
+            AlertDialog.info("Success",
+                f"Return created with {len(data['items'])} item(s)\n"
+                f"Total: {data['total_amount']:.2f} AFN",
+                self
+            )
+            self.accept()
+            return
 
+        def on_success(response):
             if response and (response.get("success") or "id" in response):
                 AlertDialog.info("Success",
                     f"Return created with {len(data['items'])} item(s)\n"
@@ -858,5 +921,12 @@ class ReturnOrderDialog(EnterpriseDialog):
             else:
                 err = response.get("error", "Unknown error") if response else "No response"
                 AlertDialog.error("Error", f"Failed to create return: {err}", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to create return: {e}", self)
+
+        self.run_api_request(
+            key="return_order_save",
+            method="POST",
+            endpoint="/api/returns/return-orders/",
+            data=data,
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to create return: {message}", self),
+        )

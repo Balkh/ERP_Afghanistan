@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.screens.base_screen import BaseScreen, ScreenState
-from ui.constants import (SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TABLE_ROW_HEIGHT_MD, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
+from ui.constants import (SPACING_SM, SPACING_MD, MARGIN_PAGE, TEXT_PAGE_TITLE, TABLE_ROW_HEIGHT_MD, INPUT_HEIGHT_LG, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED,
                            COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
@@ -28,7 +28,7 @@ class LeaveScreen(BaseScreen):
         layout.setSpacing(SPACING_MD)
          
         header = QLabel("Leave Management")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header.setStyleSheet(UIStyleBuilder.get_page_header_style())
         header.setContentsMargins(0, 0, 0, SPACING_SM)
         layout.addWidget(header)
          
@@ -41,7 +41,7 @@ class LeaveScreen(BaseScreen):
          
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search...")
-        self.search_input.setMinimumHeight(35)
+        self.search_input.setMinimumHeight(INPUT_HEIGHT_LG)
         self.search_input.textChanged.connect(self.filter_leave)
         toolbar.addWidget(self.search_input)
          
@@ -50,21 +50,21 @@ class LeaveScreen(BaseScreen):
         # Loading indicator
         self.loading_label = QLabel("Loading leave records...")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_MD}px;")
+        self.loading_label.setStyleSheet(UIStyleBuilder.get_state_label_style("loading"))
         self.loading_label.setVisible(False)
         layout.addWidget(self.loading_label)
         
         # Error indicator
         self.error_label = QLabel()
         self.error_label.setAlignment(Qt.AlignCenter)
-        self.error_label.setStyleSheet(f"color: {COLOR_DANGER}; padding: {SPACING_MD}px;")
+        self.error_label.setStyleSheet(UIStyleBuilder.get_state_label_style("error"))
         self.error_label.setVisible(False)
         layout.addWidget(self.error_label)
         
         # Empty state indicator
         self.empty_label = QLabel("No leave records found")
         self.empty_label.setAlignment(Qt.AlignCenter)
-        self.empty_label.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-style: italic; padding: {SPACING_MD}px;")
+        self.empty_label.setStyleSheet(UIStyleBuilder.get_state_label_style("empty"))
         self.empty_label.setVisible(False)
         layout.addWidget(self.empty_label)
          
@@ -83,27 +83,28 @@ class LeaveScreen(BaseScreen):
         layout.addWidget(self.table)
     
     def load_leave(self):
-        """Load leave from API."""
+        """Load leave from API asynchronously."""
         self.set_state(ScreenState.LOADING)
-        try:
-            endpoint = get_endpoint("leave")
-            if not endpoint:
-                endpoint = "/api/hr/reports/leave-summary/"
-             
-            response = self.api_client.get(endpoint)
+        endpoint = get_endpoint("leave") or "/api/hr/reports/leave-summary/"
+
+        def on_success(response):
             self.leave_records = extract_list(response)
-            
-            # Update state based on data
-            if len(self.leave_records) == 0:
-                self.set_state(ScreenState.EMPTY)
-            else:
-                self.set_state(ScreenState.READY)
-        except Exception as e:
-            self.error_label.setText(f"Error loading leave: {e}")
+            self.set_state(ScreenState.EMPTY if len(self.leave_records) == 0 else ScreenState.READY)
+            self.update_table()
+
+        def on_error(message):
+            self.error_label.setText(f"Error loading leave: {message}")
             self.leave_records = []
             self.set_state(ScreenState.ERROR)
-        
-        self.update_table()
+            self.update_table()
+
+        self.run_api_request(
+            key="leave_load",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+            on_error=on_error,
+        )
     
     def update_table(self):
         """Update table with leave data and show appropriate state indicators."""

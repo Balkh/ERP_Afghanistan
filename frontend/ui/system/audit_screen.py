@@ -130,13 +130,11 @@ class AuditScreen(BaseScreen):
         if username:
             params['search'] = username
             
-        try:
-            response = self._api_client.get('/api/audit/logs/', params=params)
-            
+        def on_success(response):
             if response and 'data' in response:
                 data = response.get('data', {})
                 logs = data.get('results', data) if isinstance(data, dict) else data
-                
+
                 log_data = []
                 for log in logs:
                     ts = log.get('created_at', '')[:19].replace('T', ' ')
@@ -157,14 +155,19 @@ class AuditScreen(BaseScreen):
                         action_cell = self.table.item(row, 3)
                         if action_cell:
                             from PySide6.QtGui import QColor; action_cell.setForeground(QColor(COLOR_DANGER))
-                
+
                 self.status_label.setText(f"Loaded {len(logs)} logs")
             else:
                 self.status_label.setText("Error loading data")
-                
-        except Exception as e:
-            self.status_label.setText(f"Error: {str(e)}")
-            logging.getLogger(__name__).warning(f"Audit log load error: {e}")
+
+        self.run_api_request(
+            key="system_audit_logs_load",
+            method="GET",
+            endpoint='/api/audit/logs/',
+            params=params,
+            on_success=on_success,
+            on_error=lambda message: (self.status_label.setText(f"Error: {message}"), logging.getLogger(__name__).warning(f"Audit log load error: {message}")),
+        )
 
     def _show_details(self, item):
         row = item.row()

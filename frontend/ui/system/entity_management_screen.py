@@ -71,13 +71,18 @@ class EntityManagementScreen(BaseScreen):
         self.delete_btn.setEnabled(has_selection)
 
     def load_entities(self):
-        try:
-            response = self._api_client.get("/api/entities/entities/")
+        def on_success(response):
             if response and response.get('success'):
                 self.entities_data = response.get('data', {}).get('results', [])
                 self._populate_table()
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Failed to load entities: {e}")
+
+        self.run_api_request(
+            key="entities_load",
+            method="GET",
+            endpoint="/api/entities/entities/",
+            on_success=on_success,
+            on_error=lambda message: logging.getLogger(__name__).warning(f"Failed to load entities: {message}"),
+        )
 
     def _populate_table(self):
         data = []
@@ -119,16 +124,21 @@ class EntityManagementScreen(BaseScreen):
             return
         from ui.components.dialogs import ConfirmDialog
         if ConfirmDialog.confirm("Delete Entity", f"Are you sure you want to delete '{entity.get('name')}'?", self):
-            try:
-                response = self._api_client.delete(f"/api/entities/entities/{entity['id']}/")
+            def on_success(response):
                 if response and isinstance(response, dict) and response.get("success"):
                     AlertDialog.info("Success", "Entity deleted successfully.", self)
                     self.load_entities()
                 else:
                     error = response.get("error", "Delete failed") if isinstance(response, dict) else "Delete failed"
                     AlertDialog.error("Error", str(error), self)
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to delete entity: {e}", self)
+
+            self.run_api_request(
+                key=f"entity_delete_{entity['id']}",
+                method="DELETE",
+                endpoint=f"/api/entities/entities/{entity['id']}/",
+                on_success=on_success,
+                on_error=lambda message: AlertDialog.error("Error", f"Failed to delete entity: {message}", self),
+            )
 
 
 class EntityDialog(EnterpriseDialog):
@@ -222,18 +232,25 @@ class EntityDialog(EnterpriseDialog):
             "email": self.email_input.text().strip(),
         }
         
-        try:
-            if self._entity:
-                response = self._api_client.put(f"/api/entities/entities/{self._entity['id']}/", data)
-            else:
-                response = self._api_client.post("/api/entities/entities/", data)
-            
+        def on_success(response):
+            self._submitting = False
             if response and isinstance(response, dict) and (response.get("success") or response.get("id")):
                 self.accept()
             else:
                 error = response.get("error", "Save failed") if isinstance(response, dict) else "Save failed"
                 AlertDialog.error("Error", str(error), self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to save entity: {e}", self)
-        finally:
+
+        def on_error(message):
+            self._submitting = False
+            AlertDialog.error("Error", f"Failed to save entity: {message}", self)
+
+        started = self.run_api_request(
+            key="entity_save",
+            method="PUT" if self._entity else "POST",
+            endpoint=f"/api/entities/entities/{self._entity['id']}/" if self._entity else "/api/entities/entities/",
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False

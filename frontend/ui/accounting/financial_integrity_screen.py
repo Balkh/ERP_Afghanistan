@@ -19,6 +19,7 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.screens.base_screen import BaseScreen
+from theme.style_builder import UIStyleBuilder
 
 
 class FinancialIntegrityScreen(BaseScreen):
@@ -56,8 +57,7 @@ class FinancialIntegrityScreen(BaseScreen):
         # Header
         header_layout = QHBoxLayout()
         title = QLabel("Financial Integrity Validation")
-        title.setFont(QFont("Segoe UI", 18, QFont.Weight.Bold))
-        title.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY};")
+        title.setStyleSheet(UIStyleBuilder.get_page_header_style())
         header_layout.addWidget(title)
 
         self.validate_btn = EnterpriseButton(
@@ -81,7 +81,7 @@ class FinancialIntegrityScreen(BaseScreen):
 
         # Status bar
         self.status_bar = QLabel("Click 'Run Validation' to check financial integrity.")
-        self.status_bar.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt;")
+        self.status_bar.setStyleSheet(UIStyleBuilder.get_label_style("muted"))
         layout.addWidget(self.status_bar)
 
         # Scroll area
@@ -99,18 +99,7 @@ class FinancialIntegrityScreen(BaseScreen):
 
         # Issues table
         issues_group = QGroupBox("Issues Found")
-        issues_group.setStyleSheet(f"""
-            QGroupBox {{
-                font-size: {TEXT_SECTION_TITLE}pt;
-                font-weight: bold;
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}px;
-                margin-top: {SPACING_MD};
-                padding-top: {SPACING_MD};
-            }}
-            QGroupBox::title {{ subcontrol-origin: margin; left: {SPACING_MD}; padding: 0 {SPACING_SM}; }}
-        """)
+        issues_group.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         issues_layout = QVBoxLayout(issues_group)
 
         self.issues_table = EnterpriseTable(columns=[
@@ -148,36 +137,30 @@ class FinancialIntegrityScreen(BaseScreen):
 
     def _create_card(self, title, value, color):
         card = QFrame()
-        card.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLOR_BG_ELEVATED};
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_MD};
-            }}
-        """)
+        card.setObjectName("card")
+        card.setStyleSheet(UIStyleBuilder.get_card_style())
         layout = QVBoxLayout(card)
         layout.setSpacing(SPACING_XS)
 
         title_label = QLabel(title)
-        title_label.setStyleSheet(f"color: {COLOR_TEXT_SECONDARY}; font-size: {TEXT_LABEL}pt;")
+        title_label.setStyleSheet(UIStyleBuilder.get_label_style("label_small"))
         layout.addWidget(title_label)
 
         value_label = QLabel(str(value))
         value_label.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
-        value_label.setStyleSheet(f"color: {color};")
+        value_label.setStyleSheet(UIStyleBuilder.get_colored_label_style(color, size_pt=20, weight=700))
         layout.addWidget(value_label)
 
         self.card_labels[title.replace(" ", "_").lower()] = value_label
         return card
 
     def run_validation(self):
-        """Run financial integrity validation."""
+        """Run financial integrity validation asynchronously."""
         self.status_bar.setText("Running validation...")
         self.validate_btn.setEnabled(False)
 
-        try:
-            response = self.api_client.get("/api/ops/financial-integrity/")
+        def on_success(response):
+            self.validate_btn.setEnabled(True)
             if response and response.get("success", True):
                 data = response.get("data", response)
                 self._update_ui(data)
@@ -187,18 +170,28 @@ class FinancialIntegrityScreen(BaseScreen):
                 )
             else:
                 self.status_bar.setText(f"Validation failed: {response}")
-        except Exception as e:
-            self.status_bar.setText(f"Error: {e}")
-        finally:
+
+        def on_error(message):
+            self.validate_btn.setEnabled(True)
+            self.status_bar.setText(f"Error: {message}")
+
+        started = self.run_api_request(
+            key="financial_integrity_validate",
+            method="GET",
+            endpoint="/api/ops/financial-integrity/",
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self.validate_btn.setEnabled(True)
 
     def auto_fix_balances(self):
-        """Run auto-fix for balance mismatches."""
+        """Run auto-fix for balance mismatches asynchronously."""
         self.status_bar.setText("Running auto-fix...")
         self.fix_btn.setEnabled(False)
 
-        try:
-            response = self.api_client.post("/api/ops/financial-integrity/", {"auto_fix": True})
+        def on_success(response):
+            self.fix_btn.setEnabled(True)
             if response and response.get("success", True):
                 data = response.get("data", response)
                 customers_fixed = data.get("customers", {}).get("fixed", 0)
@@ -209,9 +202,20 @@ class FinancialIntegrityScreen(BaseScreen):
                 self.run_validation()
             else:
                 self.status_bar.setText(f"Auto-fix failed: {response}")
-        except Exception as e:
-            self.status_bar.setText(f"Error: {e}")
-        finally:
+
+        def on_error(message):
+            self.fix_btn.setEnabled(True)
+            self.status_bar.setText(f"Error: {message}")
+
+        started = self.run_api_request(
+            key="financial_integrity_auto_fix",
+            method="POST",
+            endpoint="/api/ops/financial-integrity/",
+            data={"auto_fix": True},
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self.fix_btn.setEnabled(True)
 
     def _update_ui(self, data):

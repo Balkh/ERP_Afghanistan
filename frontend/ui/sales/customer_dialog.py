@@ -266,8 +266,10 @@ class CustomerDialog(EnterpriseDialog):
 
         endpoint = get_endpoint("customers")
         if self.api_client:
-            try:
-                response = self.api_client.post(endpoint, data)
+            def on_success(response):
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Customer")
                 if response and isinstance(response, dict):
                     if response.get("success") or response.get("id"):
                         AlertDialog.info("Success", "Customer saved successfully.", self)
@@ -277,8 +279,25 @@ class CustomerDialog(EnterpriseDialog):
                     AlertDialog.warning("Error", error_msg, self)
                 else:
                     AlertDialog.warning("Error", "Failed to save customer", self)
-            except Exception as e:
-                AlertDialog.warning("Error", f"Failed to save: {e}", self)
+
+            def on_error(message):
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Customer")
+                AlertDialog.warning("Error", f"Failed to save: {message}", self)
+
+            started = self.run_api_request(
+                key="sales_customer_dialog_save",
+                method="POST",
+                endpoint=endpoint,
+                data=data,
+                on_success=on_success,
+                on_error=on_error,
+            )
+            if not started:
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Customer")
         else:
             AlertDialog.info("Success", "Customer saved successfully (offline mode).", self)
             self.accept()

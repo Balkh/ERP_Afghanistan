@@ -63,43 +63,53 @@ class SettingsScreen(BaseScreen):
                 self._settings[key] = val
 
     def _load_from_api(self):
-        """Load settings from SystemConfig API as primary SSOT. Returns True on success."""
+        """Load settings from SystemConfig API as primary SSOT asynchronously."""
         if not self._api_client:
             return False
-        try:
-            resp = self._api_client.get("/api/system-config/by_keys/", params={"keys": THEME_KEYS})
+
+        def on_success(resp):
             if isinstance(resp, dict) and resp.get("success"):
                 data = resp.get("data", resp)
                 self._merge_api_data(data)
-
-            # Also load company default currency from Company API (SSOT)
             self._load_company_currency()
-            return True
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Failed to load settings from API: {e}")
+
+        self.run_api_request(
+            key="settings_config_load",
+            method="GET",
+            endpoint="/api/system-config/by_keys/",
+            params={"keys": THEME_KEYS},
+            on_success=on_success,
+            on_error=lambda message: logging.getLogger(__name__).warning(f"Failed to load settings from API: {message}"),
+        )
         return False
 
     def _load_company_currency(self):
-        """Load company default_currency from Company API."""
+        """Load company default_currency from Company API asynchronously."""
         if not self._api_client:
             return
-        try:
-            # Use /active/ endpoint which returns full company data including id
-            resp = self._api_client.get("/api/core/companies/active/")
+
+        def apply_currency(resp):
             if isinstance(resp, dict) and resp.get("success"):
                 data = resp.get("data", resp)
-                self._company_id = data.get("id")
-                currency = data.get("default_currency", "AFN")
-                self._settings["currency"] = currency
-            else:
-                # Fallback to config endpoint (id not returned, but has currency)
-                resp2 = self._api_client.get("/api/core/companies/config/")
-                if isinstance(resp2, dict) and resp2.get("success"):
-                    data = resp2.get("data", resp2)
-                    currency = data.get("default_currency", "AFN")
-                    self._settings["currency"] = currency
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Failed to load company currency: {e}")
+                self._company_id = data.get("id", self._company_id)
+                self._settings["currency"] = data.get("default_currency", "AFN")
+
+        def load_config_fallback():
+            self.run_api_request(
+                key="settings_company_config_load",
+                method="GET",
+                endpoint="/api/core/companies/config/",
+                on_success=apply_currency,
+                on_error=lambda message: logging.getLogger(__name__).warning(f"Failed to load company currency: {message}"),
+            )
+
+        self.run_api_request(
+            key="settings_company_active_load",
+            method="GET",
+            endpoint="/api/core/companies/active/",
+            on_success=lambda resp: apply_currency(resp) if isinstance(resp, dict) and resp.get("success") else load_config_fallback(),
+            on_error=lambda _message: load_config_fallback(),
+        )
 
     def _load_from_local_cache(self):
         """Load settings from local JSON cache file (fallback when API is unavailable)."""
@@ -148,19 +158,39 @@ class SettingsScreen(BaseScreen):
         """Load theme preference from backend SystemConfig. Called from on_show() to refresh."""
         self._load_from_api()
     
-    def _save_theme_to_api(self):
-        """Save settings to backend SystemConfig."""
+    def _save_theme_to_api(self, on_success=None, on_error=None):
+        """Save settings to backend SystemConfig asynchronously."""
         if not self._api_client:
             return False
-        try:
-            payload = {}
-            for key in THEME_KEYS:
-                payload[key] = self._settings.get(key, "")
-            resp = self._api_client.post("/api/system-config/bulk_update/", json=payload)
-            return isinstance(resp, dict) and resp.get("success")
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Failed to save settings to API: {e}")
-            return False
+        payload = {}
+        for key in THEME_KEYS:
+            payload[key] = self._settings.get(key, "")
+
+        def handle_success(resp):
+            if isinstance(resp, dict) and resp.get("success"):
+                if on_success:
+                    on_success(resp)
+            else:
+                message = resp.get("error", "Failed to save settings to API") if isinstance(resp, dict) else "Failed to save settings to API"
+                if on_error:
+                    on_error(str(message))
+                else:
+                    logging.getLogger(__name__).warning(str(message))
+
+        def handle_error(message):
+            if on_error:
+                on_error(message)
+            else:
+                logging.getLogger(__name__).warning(f"Failed to save settings to API: {message}")
+
+        return self.run_api_request(
+            key="settings_config_save",
+            method="POST",
+            endpoint="/api/system-config/bulk_update/",
+            data=payload,
+            on_success=handle_success,
+            on_error=handle_error,
+        )
     
     def _apply_theme(self):
         """Apply the current theme from settings."""
@@ -274,35 +304,38 @@ class SettingsScreen(BaseScreen):
         self._settings["expiry_alerts"] = self.expiry_alerts.isChecked()
         
         local_ok = self._save_settings()
-        api_ok = self._save_theme_to_api()
-        __currency_ok = self._save_company_currency()
-        
         self._apply_theme()
-        
-        if local_ok or api_ok:
+
+        if self._api_client:
+            started = self._save_theme_to_api(
+                on_success=lambda _resp: AlertDialog.info("Settings", "Settings saved successfully!", self),
+                on_error=lambda message: AlertDialog.warning("Settings", f"Failed to save settings: {message}", self),
+            )
+            self._save_company_currency()
+            if not started:
+                AlertDialog.warning("Settings", "Failed to save settings. Please try again.", self)
+        elif local_ok:
             AlertDialog.info("Settings", "Settings saved successfully!", self)
         else:
             AlertDialog.warning("Settings", "Failed to save settings. Please check permissions.", self)
 
     def _save_company_currency(self):
-        """Save default_currency to Company API (SSOT)."""
+        """Save default_currency to Company API (SSOT) asynchronously."""
         if not self._api_client:
             return False
-        try:
-            # Use cached company_id or fetch it
-            company_id = self._company_id
-            if not company_id:
-                self._load_company_currency()
-                company_id = self._company_id
-            if company_id:
-                payload = {"default_currency": self.currency_combo.currentText()}
-                resp = self._api_client.put(f"/api/core/companies/{company_id}/", payload)
-                return isinstance(resp, dict) and resp.get("success")
+        company_id = self._company_id
+        if not company_id:
+            self._load_company_currency()
             return False
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Failed to save company currency: {e}")
-            return False
+        payload = {"default_currency": self.currency_combo.currentText()}
+        self.run_api_request(
+            key="settings_company_currency_save",
+            method="PUT",
+            endpoint=f"/api/core/companies/{company_id}/",
+            data=payload,
+            on_error=lambda message: logging.getLogger(__name__).warning(f"Failed to save company currency: {message}"),
+        )
+        return True
     
     def reset_settings(self):
         """Reset settings to defaults."""
@@ -338,18 +371,19 @@ class SettingsScreen(BaseScreen):
                 "date_format": "gregorian"
             }
             self._save_settings()
-            # Also reset company currency
+            # Also reset company currency asynchronously
             if self._api_client:
-                try:
-                    company_id = self._company_id
-                    if not company_id:
-                        self._load_company_currency()
-                        company_id = self._company_id
-                    if company_id:
-                        self._api_client.put(f"/api/core/companies/{company_id}/", {"default_currency": "AFN"})
-                except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).warning(f"Failed to reset company currency: {e}")
+                company_id = self._company_id
+                if not company_id:
+                    self._load_company_currency()
+                else:
+                    self.run_api_request(
+                        key="settings_company_currency_reset",
+                        method="PUT",
+                        endpoint=f"/api/core/companies/{company_id}/",
+                        data={"default_currency": "AFN"},
+                        on_error=lambda message: logging.getLogger(__name__).warning(f"Failed to reset company currency: {message}"),
+                    )
             self._apply_theme()
             AlertDialog.info("Settings", "Settings reset to defaults.", self)
     

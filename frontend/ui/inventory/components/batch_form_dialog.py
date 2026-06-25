@@ -10,6 +10,7 @@ from ui.constants import (SPACING_SM, SPACING_MD, SPACING_XL, SPACING_XXL, TEXT_
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.forms import FormSection
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
+from theme.style_builder import UIStyleBuilder
 
 
 class BatchFormDialog(EnterpriseDialog):
@@ -29,28 +30,13 @@ class BatchFormDialog(EnterpriseDialog):
 
     def _build_content(self):
         content = QWidget()
-        content.setStyleSheet(f"""
-            QLineEdit, QComboBox, QDateEdit, QSpinBox {{
-                background-color: {COLOR_BG_DIALOG};
-                color: {COLOR_TEXT_PRIMARY};
-                border: 1px solid {COLOR_BORDER_INPUT};
-                border-radius: {BORDER_RADIUS_MD}px;
-                padding: {SPACING_SM}px {SPACING_SM}px;
-            }}
-            QLineEdit:focus, QComboBox:focus, QDateEdit:focus, QSpinBox:focus {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-            QLineEdit:hover, QComboBox:hover, QDateEdit:hover, QSpinBox:hover {{
-                border-color: {COLOR_BORDER_INPUT_HOVER};
-            }}
-        """)
 
         layout = QVBoxLayout(content)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SPACING_MD)
 
         subtitle = QLabel("Configure batch properties")
-        subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; border: none; background: transparent; margin-bottom: {SPACING_SM}px;")
+        subtitle.setStyleSheet(UIStyleBuilder.get_subtitle_style())
         layout.addWidget(subtitle)
 
         sec = FormSection("Batch Details", columns=2, primary=True)
@@ -92,18 +78,14 @@ class BatchFormDialog(EnterpriseDialog):
         layout.addWidget(cancel_btn)
         layout.addWidget(save_btn)
 
-        button_area.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLOR_BG_DIALOG};
-                border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};
-            }}
-        """)
+        button_area.setObjectName("card")
+        button_area.setStyleSheet(UIStyleBuilder.get_card_style())
         return button_area
 
     def populate_products(self):
         self.product_combo.addItem("Select Product", None)
-        try:
-            response = self.api_client.get("/api/inventory/products/")
+
+        def on_success(response):
             products = []
             if isinstance(response, list):
                 products = response
@@ -112,13 +94,22 @@ class BatchFormDialog(EnterpriseDialog):
             for p in products:
                 if isinstance(p, dict):
                     self.product_combo.addItem(p.get('name'), p.get('id'))
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error fetching products: {e}")
+
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error fetching products: {message}")
+
+        self.run_api_request(
+            key="batch_form_products_load",
+            method="GET",
+            endpoint="/api/inventory/products/",
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def populate_warehouses(self):
         self.warehouse_combo.addItem("Select Warehouse", None)
-        try:
-            response = self.api_client.get("/api/inventory/warehouses/")
+
+        def on_success(response):
             warehouses = []
             if isinstance(response, list):
                 warehouses = response
@@ -127,12 +118,20 @@ class BatchFormDialog(EnterpriseDialog):
             for w in warehouses:
                 if isinstance(w, dict):
                     self.warehouse_combo.addItem(w.get('name'), w.get('id'))
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error fetching warehouses: {e}")
+
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error fetching warehouses: {message}")
+
+        self.run_api_request(
+            key="batch_form_warehouses_load",
+            method="GET",
+            endpoint="/api/inventory/warehouses/",
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def load_batch_data(self):
-        try:
-            response = self.api_client.get(f"/api/inventory/batches/{self.batch_id}/")
+        def on_success(response):
             if not response:
                 return
             batch = response.get('data') if isinstance(response, dict) and response.get('success') else response
@@ -150,8 +149,17 @@ class BatchFormDialog(EnterpriseDialog):
                 idx = self.warehouse_combo.findData(wh_id)
                 if idx >= 0:
                     self.warehouse_combo.setCurrentIndex(idx)
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading batch data: {e}")
+
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error loading batch data: {message}")
+
+        self.run_api_request(
+            key=f"batch_form_load_{self.batch_id}",
+            method="GET",
+            endpoint=f"/api/inventory/batches/{self.batch_id}/",
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def get_form_data(self):
         return {
@@ -173,14 +181,21 @@ class BatchFormDialog(EnterpriseDialog):
             AlertDialog.warning("Validation Error", "Please select a warehouse.", self)
             return
         data = self.get_form_data()
-        try:
-            if self.batch_id:
-                response = self.api_client.put(f"/api/inventory/batches/{self.batch_id}/", data=data)
-            else:
-                response = self.api_client.post("/api/inventory/batches/", data=data)
+
+        def on_success(response):
             if isinstance(response, dict) and (response.get('success') or 'id' in response):
-                super().accept()
+                super(BatchFormDialog, self).accept()
             else:
                 AlertDialog.error("Error", "Failed to save batch.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Server error: {e}", self)
+
+        def on_error(message):
+            AlertDialog.error("Error", f"Server error: {message}", self)
+
+        self.run_api_request(
+            key="batch_form_save",
+            method="PUT" if self.batch_id else "POST",
+            endpoint=f"/api/inventory/batches/{self.batch_id}/" if self.batch_id else "/api/inventory/batches/",
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )

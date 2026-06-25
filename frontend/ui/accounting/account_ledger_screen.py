@@ -95,8 +95,7 @@ class AccountLedgerScreen(BaseScreen):
         self.info_closing = QLabel("Closing: 0.00")
 
         for label in [self.info_code, self.info_name, self.info_type]:
-            label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
-            label.setStyleSheet(f"font-weight: 700; color: {COLOR_TEXT_PRIMARY};")
+            label.setStyleSheet(UIStyleBuilder.get_label_style("section"))
             info_layout.addWidget(label)
         info_layout.addStretch()
         info_layout.addWidget(self.info_opening)
@@ -204,7 +203,7 @@ class AccountLedgerScreen(BaseScreen):
         if from_date != QDate():
             params["start_date"] = from_date.toString("yyyy-MM-dd")
         if to_date != QDate():
-            params["end_date"] = to_//S-DATE_to.toString("yyyy-MM-dd")
+            params["end_date"] = to_date.toString("yyyy-MM-dd")
 
         def on_success(data):
             try:

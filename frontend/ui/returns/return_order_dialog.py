@@ -37,20 +37,25 @@ class ReturnOrderDialog(EnterpriseDialog):
         self.return_type_cb.setCurrentIndex(idx)
 
     def prefill_from_invoice(self, invoice_id):
-        """Load invoice data and pre-fill return items."""
+        """Load invoice data and pre-fill return items asynchronously."""
         if not self.api_client:
             return
-        try:
-            is_sale = self.return_type_cb.currentText() == "Sale Return"
-            endpoint = f"/api/sales/invoices/{invoice_id}/" if is_sale else f"/api/purchases/invoices/{invoice_id}/"
-            resp = self.api_client.get(endpoint)
+        is_sale = self.return_type_cb.currentText() == "Sale Return"
+        endpoint = f"/api/sales/invoices/{invoice_id}/" if is_sale else f"/api/purchases/invoices/{invoice_id}/"
+
+        def on_success(resp):
             if resp and isinstance(resp, dict):
                 data = resp.get("data", resp)
                 self._invoice_data = data
                 self._items = data.get("items", [])
                 self._populate_items()
-        except Exception:
-            pass
+
+        self.run_api_request(
+            key=f"return_dialog_prefill_invoice_{invoice_id}",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+        )
 
     def _build_content(self):
         widget = QWidget()
@@ -153,10 +158,10 @@ class ReturnOrderDialog(EnterpriseDialog):
         query = self.invoice_search.text().strip()
         if not query or not self.api_client:
             return
-        try:
-            is_sale = self.return_type_cb.currentIndex() == 0
-            endpoint = "/api/sales/invoices/" if is_sale else "/api/purchases/invoices/"
-            response = self.api_client.get(endpoint, params={"search": query})
+        is_sale = self.return_type_cb.currentIndex() == 0
+        endpoint = "/api/sales/invoices/" if is_sale else "/api/purchases/invoices/"
+
+        def on_success(response):
             if response and isinstance(response, dict):
                 invoices = response.get("results", [])
                 if not invoices:
@@ -166,8 +171,14 @@ class ReturnOrderDialog(EnterpriseDialog):
                     self._populate_items()
                 else:
                     AlertDialog.warning("Not Found", f"No invoice found matching '{query}'", self)
-        except Exception:
-            pass
+
+        self.run_api_request(
+            key="return_dialog_invoice_lookup",
+            method="GET",
+            endpoint=endpoint,
+            params={"search": query},
+            on_success=on_success,
+        )
 
     def _populate_items(self):
         inv = self._invoice_data
@@ -284,19 +295,24 @@ class ReturnOrderDialog(EnterpriseDialog):
 
         data["total_amount"] = round(total_amount, 2)
 
-        try:
-            if self.api_client:
-                response = self.api_client.post("/api/returns/return-orders/", data)
-            else:
-                import uuid
-                response = {
-                    "success": True,
-                    "data": {
-                        "return_number": f"RET-{uuid.uuid4().hex[:8].upper()}",
-                        "items_count": len(data["items"]),
-                    }
+        if not self.api_client:
+            import uuid
+            response = {
+                "success": True,
+                "data": {
+                    "return_number": f"RET-{uuid.uuid4().hex[:8].upper()}",
+                    "items_count": len(data["items"]),
                 }
+            }
+            AlertDialog.info("Success",
+                f"Return created with {len(data['items'])} item(s)\n"
+                f"Total: {data['total_amount']:.2f} AFN",
+                self
+            )
+            self.accept()
+            return
 
+        def on_success(response):
             if response and (response.get("success") or "id" in response):
                 AlertDialog.info("Success",
                     f"Return created with {len(data['items'])} item(s)\n"
@@ -307,5 +323,12 @@ class ReturnOrderDialog(EnterpriseDialog):
             else:
                 err = response.get("error", "Unknown error") if response else "No response"
                 AlertDialog.error("Error", f"Failed to create return: {err}", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to create return: {e}", self)
+
+        self.run_api_request(
+            key="return_dialog_order_save",
+            method="POST",
+            endpoint="/api/returns/return-orders/",
+            data=data,
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to create return: {message}", self),
+        )

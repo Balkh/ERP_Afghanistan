@@ -64,29 +64,7 @@ class PayrollScreen(BaseScreen):
         layout.addWidget(self.error_label)
         
         self.tabs = QTabWidget()
-        self.tabs.setStyleSheet(f"""
-            QTabWidget::pane {{ 
-                border: 1px solid {COLOR_BORDER}; 
-                border-radius: {BORDER_RADIUS_LG}px; 
-                background: {COLOR_BG_MAIN}; 
-            }}
-            QTabBar::tab {{ 
-                background: {COLOR_TEXT_SECONDARY}; 
-                color: {COLOR_TEXT_PRIMARY};
-                border: none; 
-                padding: {SPACING_MD}px {SPACING_XXL}px; 
-                border-top-left-radius: 6px; 
-                border-top-right-radius: 6px; 
-            }}
-            QTabBar::tab:selected {{ 
-                background: {COLOR_PRIMARY_HOVER}; 
-                color: {COLOR_TEXT_PRIMARY}; 
-                font-weight: 700; 
-            }}
-            QTabBar::tab:hover:!selected {{ 
-                background: {COLOR_BORDER}; 
-            }}
-        """)
+        self.tabs.setStyleSheet(UIStyleBuilder.get_tab_style())
         
         # Salary Structures Tab
         self.salary_structure_tab = QWidget()
@@ -221,38 +199,43 @@ class PayrollScreen(BaseScreen):
 
     def _load_salary_structures(self):
         self.set_state(ScreenState.LOADING)
-        
-        try:
-            endpoint = get_endpoint("payroll_records") or get_endpoint("salaries") or "/api/payroll/records/"
-            response = self.api_client.get(endpoint)
-            
+        endpoint = get_endpoint("payroll_records") or get_endpoint("salaries") or "/api/payroll/records/"
+
+        def populate(data):
+            salary_data = []
+            for item in data:
+                salary_data.append({
+                    "name": item.get("name", ""),
+                    "basic_salary": str(item.get("basic_salary", "0")),
+                    "is_active": "Yes" if item.get("is_active") else "No",
+                    "created_at": str(item.get("created_at", ""))[:10],
+                })
+            self.salary_table.set_data(salary_data)
+            self.set_state(ScreenState.READY)
+            self._update_state_indicators(True, True)
+
+        def on_success(response):
             if response and isinstance(response, dict) and response.get("success"):
                 data = response.get("data", [])
             elif isinstance(response, list):
                 data = response
             else:
                 data = []
-            
             if not data or not isinstance(data, list):
                 data = self._get_mock_salary_structures()
-            
-            self.set_state(ScreenState.READY)
-            self._update_state_indicators(True, True)
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading salary structures: {e}")
-            data = self._get_mock_salary_structures()
-            self.set_state(ScreenState.READY)
-            self._update_state_indicators(True, True)
-        
-        salary_data = []
-        for item in data:
-            salary_data.append({
-                "name": item.get("name", ""),
-                "basic_salary": str(item.get("basic_salary", "0")),
-                "is_active": "Yes" if item.get("is_active") else "No",
-                "created_at": str(item.get("created_at", ""))[:10],
-            })
-        self.salary_table.set_data(salary_data)
+            populate(data)
+
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error loading salary structures: {message}")
+            populate(self._get_mock_salary_structures())
+
+        self.run_api_request(
+            key="payroll_salary_structures_load",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+            on_error=on_error,
+        )
     
     def _get_mock_salary_structures(self):
         return [
@@ -263,37 +246,42 @@ class PayrollScreen(BaseScreen):
     
     def _load_payroll_cycles(self):
         self.cycle_table.setRowCount(0)
-        
-        try:
-            endpoint = get_endpoint("payroll_cycles")
-            response = self.api_client.get(endpoint)
-            
+        endpoint = get_endpoint("payroll_cycles")
+
+        def populate(data):
+            cycle_data = []
+            for item in data:
+                period = f"{item.get('period_month', '')}/{item.get('period_year', '')}"
+                cycle_data.append({
+                    "period": period,
+                    "status": item.get("status", ""),
+                    "employee_count": str(item.get("employee_count", 0)),
+                    "total_gross": str(item.get("total_gross", "0")),
+                    "total_net": str(item.get("total_net", "0")),
+                })
+            self.cycle_table.set_data(cycle_data)
+
+        def on_success(response):
             if response and isinstance(response, dict) and response.get("success"):
                 raw_data = response.get("data", [])
-                if isinstance(raw_data, dict):
-                    data = raw_data.get("results", [])
-                else:
-                    data = raw_data
+                data = raw_data.get("results", []) if isinstance(raw_data, dict) else raw_data
             else:
                 data = []
-            
             if not data:
                 data = self._get_mock_payroll_cycles()
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading payroll cycles: {e}")
-            data = self._get_mock_payroll_cycles()
-        
-        cycle_data = []
-        for item in data:
-            period = f"{item.get('period_month', '')}/{item.get('period_year', '')}"
-            cycle_data.append({
-                "period": period,
-                "status": item.get("status", ""),
-                "employee_count": str(item.get("employee_count", 0)),
-                "total_gross": str(item.get("total_gross", "0")),
-                "total_net": str(item.get("total_net", "0")),
-            })
-        self.cycle_table.set_data(cycle_data)
+            populate(data)
+
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error loading payroll cycles: {message}")
+            populate(self._get_mock_payroll_cycles())
+
+        self.run_api_request(
+            key="payroll_cycles_load",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+            on_error=on_error,
+        )
     
     def _get_mock_payroll_cycles(self):
         return [
@@ -304,37 +292,45 @@ class PayrollScreen(BaseScreen):
     
     def _load_payroll_records(self):
         self.records_table.setRowCount(0)
-        
-        try:
-            endpoint = get_endpoint("salaries")
-            response = self.api_client.get(endpoint)
-            
+        endpoint = get_endpoint("salaries")
+
+        def populate(data):
+            records_data = []
+            for item in data:
+                records_data.append({
+                    "employee_name": item.get("employee_name", ""),
+                    "period": item.get("period", ""),
+                    "basic_salary": str(item.get("basic_salary", "0")),
+                    "total_allowances": str(item.get("total_allowances", "0")),
+                    "total_deductions": str(item.get("total_deductions", "0")),
+                    "gross_salary": str(item.get("gross_salary", "0")),
+                    "net_salary": str(item.get("net_salary", "0")),
+                    "status": item.get("status", ""),
+                })
+            self.records_table.set_data(records_data)
+
+        def on_success(response):
             if response and isinstance(response, dict) and response.get("success"):
                 data = response.get("data", [])
             elif isinstance(response, list):
                 data = response
             else:
                 data = []
-            
             if not data or not isinstance(data, list):
                 data = self._get_mock_payroll_records()
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading payroll records: {e}")
-            data = self._get_mock_payroll_records()
-        
-        records_data = []
-        for item in data:
-            records_data.append({
-                "employee_name": item.get("employee_name", ""),
-                "period": item.get("period", ""),
-                "basic_salary": str(item.get("basic_salary", "0")),
-                "total_allowances": str(item.get("total_allowances", "0")),
-                "total_deductions": str(item.get("total_deductions", "0")),
-                "gross_salary": str(item.get("gross_salary", "0")),
-                "net_salary": str(item.get("net_salary", "0")),
-                "status": item.get("status", ""),
-            })
-        self.records_table.set_data(records_data)
+            populate(data)
+
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error loading payroll records: {message}")
+            populate(self._get_mock_payroll_records())
+
+        self.run_api_request(
+            key="payroll_records_load",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+            on_error=on_error,
+        )
     
     def _get_mock_payroll_records(self):
         return [
@@ -388,9 +384,9 @@ class PayrollScreen(BaseScreen):
         if not selected_rows:
             AlertDialog.warning("No Selection", "Please select a payroll cycle to generate.", self)
             return
-        try:
-            endpoint = get_endpoint("payroll_generate") or "/api/payroll/generate/"
-            response = self.api_client.post(endpoint, {})
+        endpoint = get_endpoint("payroll_generate") or "/api/payroll/generate/"
+
+        def on_success(response):
             if response and isinstance(response, dict) and response.get("success"):
                 AlertDialog.info("Success", "Payroll generated successfully.", self)
                 self._load_payroll_cycles()
@@ -398,8 +394,15 @@ class PayrollScreen(BaseScreen):
             else:
                 error = response.get("error", "Generation failed") if isinstance(response, dict) else "Generation failed"
                 AlertDialog.error("Error", str(error), self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to generate payroll: {e}", self)
+
+        self.run_api_request(
+            key="payroll_generate",
+            method="POST",
+            endpoint=endpoint,
+            data={},
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to generate payroll: {message}", self),
+        )
 
     def _approve_payroll(self):
         """Approve the selected payroll cycle."""
@@ -407,17 +410,24 @@ class PayrollScreen(BaseScreen):
         if not selected_rows:
             AlertDialog.warning("No Selection", "Please select a payroll cycle to approve.", self)
             return
-        try:
-            endpoint = get_endpoint("payroll_approve") or "/api/payroll/approve/"
-            response = self.api_client.post(endpoint, {})
+        endpoint = get_endpoint("payroll_approve") or "/api/payroll/approve/"
+
+        def on_success(response):
             if response and isinstance(response, dict) and response.get("success"):
                 AlertDialog.info("Success", "Payroll approved successfully.", self)
                 self._load_payroll_cycles()
             else:
                 error = response.get("error", "Approval failed") if isinstance(response, dict) else "Approval failed"
                 AlertDialog.error("Error", str(error), self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to approve payroll: {e}", self)
+
+        self.run_api_request(
+            key="payroll_approve",
+            method="POST",
+            endpoint=endpoint,
+            data={},
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to approve payroll: {message}", self),
+        )
     
     def _on_screen_shown(self):
         """Called when screen is shown (overrides BaseScreen)."""
@@ -491,18 +501,26 @@ class SalaryStructureDialog(EnterpriseDialog):
             "basic_salary": str(self.basic_salary.value()),
             "is_active": self.is_active.isChecked(),
         }
-        try:
-            if self._structure_id:
-                response = self.api_client.put(f"/api/payroll/records/{self._structure_id}/", data)
-            else:
-                response = self.api_client.post("/api/payroll/records/", data)
+        def on_success(response):
+            self._submitting = False
             if response and (response.get("success") or response.get("id")):
                 AlertDialog.info("Success", "Salary structure saved.", self)
                 self.accept()
             else:
                 errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
                 AlertDialog.error("Error", str(errors), self)
-        except Exception as e:
-            AlertDialog.error("Error", str(e), self)
-        finally:
+
+        def on_error(message):
+            self._submitting = False
+            AlertDialog.error("Error", str(message), self)
+
+        started = self.run_api_request(
+            key="payroll_salary_structure_save",
+            method="PUT" if self._structure_id else "POST",
+            endpoint=f"/api/payroll/records/{self._structure_id}/" if self._structure_id else "/api/payroll/records/",
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False

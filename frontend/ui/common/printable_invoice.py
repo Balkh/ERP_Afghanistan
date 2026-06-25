@@ -12,6 +12,7 @@ from api.client import APIClient
 from ui.constants import (COLOR_WHATSAPP, SPACING_MD, SPACING_SM, SPACING_LG, SPACING_XL,
     SPACING_XS, TEXT_BODY, TEXT_BODY_SMALL, TEXT_CARD_TITLE,
                            TEXT_SECTION_TITLE, TEXT_TABLE)
+from theme.style_builder import UIStyleBuilder
 
 
 class PrintableInvoiceDialog(EnterpriseDialog):
@@ -22,7 +23,7 @@ class PrintableInvoiceDialog(EnterpriseDialog):
         self.invoice_type = invoice_type
         self._api_client = api_client or APIClient()
         self.template_engine = InvoiceTemplateEngine()
-        self.company_info = self._load_company_info()
+        self.company_info = self._default_company_info()
         super().__init__("Print Invoice", DialogType.CUSTOM, parent)
         self.setModal(True)
         self.resize(900, 700)
@@ -33,23 +34,8 @@ class PrintableInvoiceDialog(EnterpriseDialog):
     def _create_button_area(self):
         return None
     
-    def _load_company_info(self):
-        """Load company info from backend API (SSOT)."""
-        try:
-            resp = self._api_client.get("/api/companies/config/")
-            if isinstance(resp, dict) and resp.get("success"):
-                data = resp.get("data", resp)
-                return {
-                    "name": data.get("company_name", "Pharmacy ERP"),
-                    "address": data.get("address", ""),
-                    "phone": data.get("phone", ""),
-                    "email": data.get("email", ""),
-                    "tax_number": data.get("tax_number", ""),
-                    "default_currency": data.get("default_currency", "AFN"),
-                    "invoice_footer": data.get("invoice_footer", ""),
-                }
-        except Exception:
-            pass
+    def _default_company_info(self):
+        """Return safe default company info without blocking the UI thread."""
         return {
             "name": "Pharmacy ERP",
             "address": "",
@@ -60,6 +46,35 @@ class PrintableInvoiceDialog(EnterpriseDialog):
             "invoice_footer": "",
         }
 
+    def _load_company_info_async(self, on_done=None):
+        """Load company info from backend API (SSOT) asynchronously."""
+        def on_success(resp):
+            if isinstance(resp, dict) and resp.get("success"):
+                data = resp.get("data", resp)
+                self.company_info = {
+                    "name": data.get("company_name", "Pharmacy ERP"),
+                    "address": data.get("address", ""),
+                    "phone": data.get("phone", ""),
+                    "email": data.get("email", ""),
+                    "tax_number": data.get("tax_number", ""),
+                    "default_currency": data.get("default_currency", "AFN"),
+                    "invoice_footer": data.get("invoice_footer", ""),
+                }
+            if on_done:
+                on_done()
+
+        def on_error(_message):
+            if on_done:
+                on_done()
+
+        self.run_api_request(
+            key="printable_invoice_company_config",
+            method="GET",
+            endpoint="/api/companies/config/",
+            on_success=on_success,
+            on_error=on_error,
+        )
+
     def _build_content(self):
         widget = QWidget()
         layout = QVBoxLayout(widget)
@@ -68,7 +83,7 @@ class PrintableInvoiceDialog(EnterpriseDialog):
         # Title
         title_layout = QHBoxLayout()
         title_label = QLabel("Invoice Preview")
-        title_label.setFont(QFont("Segoe UI", TEXT_CARD_TITLE, QFont.Weight.Bold))
+        title_label.setStyleSheet(UIStyleBuilder.get_page_header_style())
         title_layout.addWidget(title_label)
         title_layout.addStretch()
         layout.addLayout(title_layout)
@@ -109,30 +124,37 @@ class PrintableInvoiceDialog(EnterpriseDialog):
 
     def render_invoice(self):
         """Render invoice using dynamic engine if possible, else fallback."""
-        try:
-            # 1. Fetch active template config from API
-            response = self._api_client.get("/api/core/invoice-templates/active/")
-            if response and response.get("config"):
-                self.template_engine = InvoiceTemplateEngine(response["config"])
-                
-                # 2. Prepare company info
-                company_info = {
-                    "name": "Pharmacy ERP",
-                    "address": "Kabul, Afghanistan",
-                    "phone": "+93 70 123 4567",
-                    "logo": ""
-                }
-                
-                # 3. Render using engine
-                html = self.template_engine.render(self.invoice_data, company_info)
-                self.preview.setHtml(html)
-                return
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Dynamic template failed: {e}")
-            
-        # Fallback to static HTML
-        html = self.generate_invoice_html()
-        self.preview.setHtml(html)
+        def render_fallback():
+            html = self.generate_invoice_html()
+            self.preview.setHtml(html)
+
+        def fetch_template():
+            def on_success(response):
+                try:
+                    if response and response.get("config"):
+                        self.template_engine = InvoiceTemplateEngine(response["config"])
+                        company_info = {
+                            "name": self.company_info.get("name", "Pharmacy ERP"),
+                            "address": self.company_info.get("address", "Kabul, Afghanistan"),
+                            "phone": self.company_info.get("phone", "+93 70 123 4567"),
+                            "logo": "",
+                        }
+                        html = self.template_engine.render(self.invoice_data, company_info)
+                        self.preview.setHtml(html)
+                        return
+                except Exception as e:
+                    logging.getLogger(__name__).warning(f"Dynamic template failed: {e}")
+                render_fallback()
+
+            self.run_api_request(
+                key="printable_invoice_active_template",
+                method="GET",
+                endpoint="/api/core/invoice-templates/active/",
+                on_success=on_success,
+                on_error=lambda message: (logging.getLogger(__name__).warning(f"Dynamic template failed: {message}"), render_fallback()),
+            )
+
+        self._load_company_info_async(on_done=fetch_template)
 
     def generate_invoice_html(self):
         inv = self.invoice_data

@@ -1,3 +1,4 @@
+import logging
 from decimal import Decimal
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QFormLayout, QFrame,
                                QLineEdit, QComboBox, QTextEdit, QWidget,
@@ -13,12 +14,13 @@ from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACIN
     COLOR_BORDER, COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER,
     COLOR_SUCCESS_BG, COLOR_DANGER_BG, COLOR_FORM_SECTION_TITLE, COLOR_FORM_SECTION_DIVIDER,
     BORDER_RADIUS_SM, BORDER_RADIUS_MD, BORDER_RADIUS_LG, TEXT_SECTION_TITLE,
-    TEXT_CARD_TITLE, TEXT_LABEL, INPUT_HEIGHT_MD, DIALOG_WIDTH_WIDE,
+    TEXT_CARD_TITLE, TEXT_LABEL, INPUT_HEIGHT_MD, INPUT_HEIGHT_LG, DIALOG_WIDTH_WIDE,
     SECTION_TITLE_SPACING)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import DataEntryGrid
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.forms import FormSection
+from theme.style_builder import UIStyleBuilder
 
 
 class JournalEntryFormDialog(EnterpriseDialog):
@@ -43,7 +45,6 @@ class JournalEntryFormDialog(EnterpriseDialog):
         layout.setSpacing(SPACING_LG)
 
         # Use semantic header style
-        from theme.style_builder import UIStyleBuilder
         title = QLabel("Create Journal Entry")
         title.setStyleSheet(UIStyleBuilder.get_page_header_style())
         layout.addWidget(title)
@@ -347,17 +348,27 @@ class JournalEntryFormDialog(EnterpriseDialog):
             self._submitting = False
             return
 
-        try:
-            response = self._api_client.post("/api/accounting/journal-entries/", data=data)
-            if response.get("success") or "id" in response:
-                self._submitting = False
+        def on_success(response):
+            self._submitting = False
+            if isinstance(response, dict) and (response.get("success") or "id" in response):
                 self.accept()
-            else:
-                errors = response.get("errors", response.get("error", "Unknown error"))
-                if isinstance(errors, list):
-                    errors = "\n".join(errors)
-                AlertDialog.error("Error", f"Failed to save entry:\n{errors}", self)
-                self._submitting = False
-        except Exception as e:
-            AlertDialog.error("Error", f"Server communication error: {e}", self)
+                return
+            errors = response.get("errors", response.get("error", "Unknown error")) if isinstance(response, dict) else "Unknown error"
+            if isinstance(errors, list):
+                errors = "\n".join(errors)
+            AlertDialog.error("Error", f"Failed to save entry:\n{errors}", self)
+
+        def on_error(message):
+            self._submitting = False
+            AlertDialog.error("Error", f"Server communication error: {message}", self)
+
+        started = self.run_api_request(
+            key="journal_entry_save",
+            method="POST",
+            endpoint="/api/accounting/journal-entries/",
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False

@@ -136,8 +136,7 @@ class CompanyProfileScreen(BaseScreen):
             AlertDialog.warning("Company Profile", "API client not available.", self)
             return
 
-        try:
-            resp = self._api_client.get("/api/core/companies/default/")
+        def on_success(resp):
             if resp and resp.get("success"):
                 data = resp["data"]
                 self._company_id = data.get("id")
@@ -167,8 +166,14 @@ class CompanyProfileScreen(BaseScreen):
                 AlertDialog.info("Company Profile", "Profile loaded successfully.", self)
             else:
                 AlertDialog.warning("Company Profile", f"Failed to load profile: {resp}", self)
-        except Exception as e:
-            AlertDialog.error("Company Profile", f"Error loading profile: {e}", self)
+
+        self.run_api_request(
+            key="company_profile_load",
+            method="GET",
+            endpoint="/api/core/companies/default/",
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Company Profile", f"Error loading profile: {message}", self),
+        )
 
     def _save_profile(self):
         """Save company profile to API."""
@@ -195,20 +200,22 @@ class CompanyProfileScreen(BaseScreen):
             AlertDialog.warning("Company Profile", "Company code is required.", self)
             return
 
-        try:
-            if self._company_id:
-                resp = self._api_client.put(f"/api/core/companies/{self._company_id}/", payload)
-            else:
-                resp = self._api_client.post("/api/core/companies/", payload)
-
+        def on_success(resp):
             if resp and resp.get("success"):
                 data = resp["data"]
                 self._company_id = data.get("id")
                 AlertDialog.info("Company Profile", "Profile saved successfully.", self)
             else:
                 AlertDialog.warning("Company Profile", f"Failed to save: {resp}", self)
-        except Exception as e:
-            AlertDialog.error("Company Profile", f"Error saving profile: {e}", self)
+
+        self.run_api_request(
+            key="company_profile_save",
+            method="PUT" if self._company_id else "POST",
+            endpoint=f"/api/core/companies/{self._company_id}/" if self._company_id else "/api/core/companies/",
+            data=payload,
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Company Profile", f"Error saving profile: {message}", self),
+        )
 
     def _upload_logo(self):
         """Upload company logo."""

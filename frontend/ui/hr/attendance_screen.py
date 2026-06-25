@@ -7,7 +7,7 @@ from api.client import APIClient
 from api.endpoints import get_endpoint, extract_list
 from ui.screens.base_screen import BaseScreen, ScreenState
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, SPACING_XL, SPACING_XXL, MARGIN_PAGE, TEXT_PAGE_TITLE,
-                           TEXT_BODY, TEXT_LABEL, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
+                           TEXT_BODY, TEXT_LABEL, INPUT_HEIGHT_LG, BORDER_RADIUS_LG, COLOR_BG_MAIN, COLOR_BORDER, COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_DANGER)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from theme.style_builder import UIStyleBuilder
@@ -31,7 +31,7 @@ class AttendanceScreen(BaseScreen):
         # Header section
         header_layout = QHBoxLayout()
         header = QLabel("Attendance Log")
-        header.setStyleSheet(f"color: {COLOR_TEXT_PRIMARY}; font-size: {TEXT_PAGE_TITLE}pt; font-weight: 700;")
+        header.setStyleSheet(UIStyleBuilder.get_page_header_style())
         header_layout.addWidget(header)
         
         header_layout.addStretch()
@@ -43,25 +43,14 @@ class AttendanceScreen(BaseScreen):
 
         # Filters
         filter_bar = QGroupBox("Filter by Date")
-        filter_bar.setStyleSheet(f"""
-            QGroupBox {{
-                border: 1px solid {COLOR_BORDER};
-                border-radius: {BORDER_RADIUS_LG}px;
-                margin-top: {SPACING_SM}px;
-                padding-top: {SPACING_SM}px;
-                background-color: {COLOR_BG_MAIN};
-                color: {COLOR_TEXT_PRIMARY};
-                font-size: {TEXT_LABEL}pt;
-                font-weight: 700;
-            }}
-        """)
+        filter_bar.setStyleSheet(UIStyleBuilder.get_form_section_style(primary=True))
         filter_layout = QHBoxLayout(filter_bar)
         filter_layout.setSpacing(SPACING_MD + SPACING_XS)
         
         filter_layout.addWidget(QLabel("Date:"))
         self.date_edit = QDateEdit()
         self.date_edit.setDate(QDate.currentDate())
-        self.date_edit.setMinimumHeight(35)
+        self.date_edit.setMinimumHeight(INPUT_HEIGHT_LG)
         self.date_edit.setCalendarPopup(True)
         self.date_edit.dateChanged.connect(self.load_attendance)
         filter_layout.addWidget(self.date_edit)
@@ -99,27 +88,28 @@ class AttendanceScreen(BaseScreen):
         layout.addWidget(self.table)
     
     def load_attendance(self):
-        """Load attendance from API."""
+        """Load attendance from API asynchronously."""
         self.set_state(ScreenState.LOADING)
-        try:
-            endpoint = get_endpoint("attendance")
-            if not endpoint:
-                endpoint = "/api/hr/reports/attendance-summary/"
-             
-            response = self.api_client.get(endpoint)
+        endpoint = get_endpoint("attendance") or "/api/hr/reports/attendance-summary/"
+
+        def on_success(response):
             self.records = extract_list(response)
-            
-            # Update state based on data
-            if len(self.records) == 0:
-                self.set_state(ScreenState.EMPTY)
-            else:
-                self.set_state(ScreenState.READY)
-        except Exception as e:
-            self.error_label.setText(f"Error loading attendance: {e}")
+            self.set_state(ScreenState.EMPTY if len(self.records) == 0 else ScreenState.READY)
+            self.update_table()
+
+        def on_error(message):
+            self.error_label.setText(f"Error loading attendance: {message}")
             self.records = []
             self.set_state(ScreenState.ERROR)
-        
-        self.update_table()
+            self.update_table()
+
+        self.run_api_request(
+            key="attendance_load",
+            method="GET",
+            endpoint=endpoint,
+            on_success=on_success,
+            on_error=on_error,
+        )
     
     def update_table(self):
         """Update table with attendance data and show appropriate state indicators."""

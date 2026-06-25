@@ -121,8 +121,7 @@ class SupplierScreen(BaseScreen):
             ]
             self.set_state(ScreenState.READY)
         else:
-            try:
-                response = self.api_client.get(endpoint)
+            def on_success(response):
                 self.suppliers = []
                 if isinstance(response, dict):
                     if response.get('success'):
@@ -139,17 +138,24 @@ class SupplierScreen(BaseScreen):
                         self.set_state(ScreenState.ERROR)
                 elif isinstance(response, list):
                     self.suppliers = [s for s in response if isinstance(s, dict)]
-                
-                # Update state based on data
-                if len(self.suppliers) == 0:
-                    self.set_state(ScreenState.EMPTY)
-                else:
-                    self.set_state(ScreenState.READY)
-            except Exception as e:
+                self.set_state(ScreenState.EMPTY if len(self.suppliers) == 0 else ScreenState.READY)
+                self.update_table()
+
+            def on_error(message):
                 self.suppliers = []
-                self.error_label.setText(f"Failed to load suppliers: {e}")
+                self.error_label.setText(f"Failed to load suppliers: {message}")
                 self.set_state(ScreenState.ERROR)
-        
+                self.update_table()
+
+            self.run_api_request(
+                key="purchase_suppliers_load",
+                method="GET",
+                endpoint=endpoint,
+                on_success=on_success,
+                on_error=on_error,
+            )
+            return
+
         self.update_table()
 
     def update_table(self):
@@ -219,12 +225,14 @@ class SupplierScreen(BaseScreen):
             self
         )
         if reply:
-            try:
-                endpoint = get_endpoint("suppliers")
-                self.api_client.delete(f"{endpoint}{supplier['id']}/")
-                self.load_suppliers()
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to delete supplier: {e}", self)
+            endpoint = get_endpoint("suppliers")
+            self.run_api_request(
+                key=f"purchase_supplier_delete_{supplier['id']}",
+                method="DELETE",
+                endpoint=f"{endpoint}{supplier['id']}/",
+                on_success=lambda _response: self.load_suppliers(),
+                on_error=lambda message: AlertDialog.error("Error", f"Failed to delete supplier: {message}", self),
+            )
 
 
 class SupplierDialog(EnterpriseDialog):
@@ -546,8 +554,7 @@ class SupplierDialog(EnterpriseDialog):
         
         endpoint = get_endpoint("suppliers")
         if self.api_client:
-            try:
-                response = self.api_client.post(endpoint, data)
+            def on_success(response):
                 if response and isinstance(response, dict):
                     if response.get("success") or response.get("id"):
                         AlertDialog.info("Success", "Supplier saved successfully.", self)
@@ -557,8 +564,29 @@ class SupplierDialog(EnterpriseDialog):
                     AlertDialog.warning("Error", error_msg, self)
                 else:
                     AlertDialog.warning("Error", "Failed to save supplier", self)
-            except Exception as e:
-                AlertDialog.warning("Error", f"Failed to save: {e}", self)
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Supplier")
+
+            def on_error(message):
+                AlertDialog.warning("Error", f"Failed to save: {message}", self)
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Supplier")
+
+            started = self.run_api_request(
+                key="purchase_supplier_dialog_save",
+                method="POST",
+                endpoint=endpoint,
+                data=data,
+                on_success=on_success,
+                on_error=on_error,
+            )
+            if not started:
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Supplier")
+            return
         else:
             AlertDialog.info("Success", "Supplier saved successfully (offline mode).", self)
             self.accept()

@@ -20,9 +20,11 @@ from ui.constants import (
     SPACING_SM, SPACING_MD, MARGIN_PAGE,
     TEXT_PAGE_TITLE, TEXT_BODY, TEXT_HELPER,
     COLOR_TEXT_PRIMARY, COLOR_TEXT_MUTED, COLOR_PRIMARY,
+    COLOR_SUCCESS, COLOR_DANGER,
     COLOR_BG_DIALOG, COLOR_BORDER_INPUT,
     BORDER_RADIUS_MD,
 )
+from theme.style_builder import UIStyleBuilder
 
 
 class DriftReconciliationScreen(BaseScreen):
@@ -159,23 +161,34 @@ class DriftReconciliationScreen(BaseScreen):
         if not self._api_client:
             self._show_error("No API client configured")
             return
-        try:
-            query = {}
-            if self.tolerance_spin.value() > 0:
-                query["tolerance"] = str(self.tolerance_spin.value())
-            if self.positive_only_cb.isChecked():
-                query["only_positive_stock"] = "true"
-            else:
-                query["only_positive_stock"] = "false"
+        query = {}
+        if self.tolerance_spin.value() > 0:
+            query["tolerance"] = str(self.tolerance_spin.value())
+        if self.positive_only_cb.isChecked():
+            query["only_positive_stock"] = "true"
+        else:
+            query["only_positive_stock"] = "false"
 
-            result = self._api_client.get(
-                "/api/inventory/stock/drift-reconciliation/", params=query,
-            )
+        def on_success(result):
             self._result_data = result
             self._update_display(result)
-        except Exception as exc:
-            self._show_error(f"Reconciliation failed: {exc}")
-        finally:
+            self.run_btn.setEnabled(True)
+            self.run_btn.setText("Run Reconciliation")
+
+        def on_error(message):
+            self._show_error(f"Reconciliation failed: {message}")
+            self.run_btn.setEnabled(True)
+            self.run_btn.setText("Run Reconciliation")
+
+        started = self.run_api_request(
+            key="drift_reconciliation_load",
+            method="GET",
+            endpoint="/api/inventory/stock/drift-reconciliation/",
+            params=query,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self.run_btn.setEnabled(True)
             self.run_btn.setText("Run Reconciliation")
 
@@ -195,11 +208,11 @@ class DriftReconciliationScreen(BaseScreen):
         self._health_bar.setValue(int(score))
         if is_healthy:
             self._health_bar.setStyleSheet(
-                "QProgressBar::chunk { background-color: #28A745; }"
+                f"QProgressBar::chunk {{ background-color: {COLOR_SUCCESS}; }}"
             )
         else:
             self._health_bar.setStyleSheet(
-                "QProgressBar::chunk { background-color: #DC3545; }"
+                f"QProgressBar::chunk {{ background-color: {COLOR_DANGER}; }}"
             )
 
         self._checked_label.setText(f"Checked: {total}")

@@ -431,11 +431,9 @@ class SalesInvoiceScreen(BaseScreen):
             {"id": "cust-3", "name": "Walk-in Customer", "phone": "N/A", "address": "N/A", "credit_limit": 0, "balance": 0},
         ]
 
-        # Try to load from API
+        # Try to load from API asynchronously
         if self.api_client:
-            try:
-                endpoint = get_endpoint("customers")
-                response = self.api_client.get(endpoint)
+            def on_success(response):
                 api_customers = []
                 if isinstance(response, list):
                     api_customers = [c for c in response if isinstance(c, dict)]
@@ -450,8 +448,22 @@ class SalesInvoiceScreen(BaseScreen):
                             api_customers = [data]
                 if api_customers:
                     self.customers = api_customers
-            except Exception as e:
-                logging.getLogger(__name__).warning(f"Failed to load customers: {e}")
+                    self.customer_combo.clear()
+                    self.customer_combo.addItem("Select Customer...", None)
+                    for customer in self.customers:
+                        if isinstance(customer, dict):
+                            self.customer_combo.addItem(customer.get("name", "Unknown"), customer.get("id", ""))
+
+            def on_error(message):
+                logging.getLogger(__name__).warning(f"Failed to load customers: {message}")
+
+            self.run_api_request(
+                key="sales_invoice_customers_load",
+                method="GET",
+                endpoint=get_endpoint("customers"),
+                on_success=on_success,
+                on_error=on_error,
+            )
 
         self.customer_combo.clear()
         self.customer_combo.addItem("Select Customer...", None)
@@ -707,17 +719,24 @@ class SalesInvoiceScreen(BaseScreen):
             AlertDialog.warning("Validation Error", "Please add at least one product.", self)
             return
             
-        try:
-            endpoint = get_endpoint("sales_invoices")
-            res = self.api_client.post(endpoint, data)
+        endpoint = get_endpoint("sales_invoices")
+
+        def on_success(res):
             if res:
                 res_data = res.get('data', res) if isinstance(res, dict) else res
                 self.current_invoice_id = res_data.get('id')
                 self.invoice_number.setText(res_data.get("invoice_number", "DRAFT"))
                 self.update_button_states("DRAFT")
                 AlertDialog.info("Success", "Invoice saved as draft.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to save draft: {e}", self)
+
+        self.run_api_request(
+            key="sales_invoice_save_draft",
+            method="POST",
+            endpoint=endpoint,
+            data=data,
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to save draft: {message}", self),
+        )
 
     def confirm_invoice(self):
         """Confirm the invoice — persists to backend."""
@@ -735,9 +754,9 @@ class SalesInvoiceScreen(BaseScreen):
         ):
             return
 
-        try:
-            endpoint = f"/api/sales/invoices/{self.current_invoice_id}/confirm/"
-            res = self.api_client.post(endpoint, {})
+        endpoint = f"/api/sales/invoices/{self.current_invoice_id}/confirm/"
+
+        def on_success(res):
             if res:
                 self.status_label.setText("CONFIRMED")
                 self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
@@ -745,8 +764,15 @@ class SalesInvoiceScreen(BaseScreen):
                 AlertDialog.info("Success", "Invoice confirmed successfully.", self)
             else:
                 AlertDialog.error("Error", "Failed to confirm invoice on server.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to confirm: {e}", self)
+
+        self.run_api_request(
+            key="sales_invoice_confirm",
+            method="POST",
+            endpoint=endpoint,
+            data={},
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to confirm: {message}", self),
+        )
 
     def dispatch_invoice(self):
         """Dispatch invoice and deduct stock — persists to backend."""
@@ -766,9 +792,9 @@ class SalesInvoiceScreen(BaseScreen):
         ):
             return
 
-        try:
-            endpoint = f"/api/sales/invoices/{self.current_invoice_id}/dispatch_invoice/"
-            res = self.api_client.post(endpoint, {})
+        endpoint = f"/api/sales/invoices/{self.current_invoice_id}/dispatch_invoice/"
+
+        def on_success(res):
             if res:
                 self.status_label.setText("DISPATCHED")
                 self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
@@ -776,8 +802,15 @@ class SalesInvoiceScreen(BaseScreen):
                 AlertDialog.info("Success", "Invoice dispatched and stock deducted.", self)
             else:
                 AlertDialog.error("Error", "Failed to dispatch invoice on server.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to dispatch: {e}", self)
+
+        self.run_api_request(
+            key="sales_invoice_dispatch",
+            method="POST",
+            endpoint=endpoint,
+            data={},
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to dispatch: {message}", self),
+        )
 
     def print_invoice(self):
         """Print the invoice."""
@@ -840,17 +873,16 @@ class SalesInvoiceScreen(BaseScreen):
         if not invoice_id:
             return
         
-        try:
-            result = self.api_client.get_workflow_status('SALES_INVOICE', invoice_id)
+        def on_success(result):
             if result.get('success') and result.get('data'):
                 data = result['data']
                 if data.get('has_workflow') is False:
                     self.workflow_status_label.setText("")
                     return
-                
+
                 state = data.get('state', 'DRAFT')
                 state_display = data.get('state_display', state)
-                
+
                 # Update workflow status label
                 color_map = {
                     'DRAFT': COLOR_TEXT_MUTED,
@@ -863,14 +895,20 @@ class SalesInvoiceScreen(BaseScreen):
                 color = color_map.get(state, COLOR_TEXT_MUTED)
                 self.workflow_status_label.setText(f"Workflow: {state_display}")
                 self.workflow_status_label.setStyleSheet(f"color: {color}; font-weight: bold; padding: {SPACING_SM}px;")
-                
+
                 # Show/hide action buttons based on permissions
                 self.submit_wf_btn.setVisible(data.get('can_submit', False))
                 self.approve_wf_btn.setVisible(data.get('can_approve', False))
                 self.reject_wf_btn.setVisible(data.get('can_approve', False))
                 self.post_wf_btn.setVisible(data.get('can_post', False))
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading workflow status: {e}")
+
+        self.run_api_request(
+            key=f"sales_workflow_status_{invoice_id}",
+            method="GET",
+            endpoint=f"/api/workflows/status/SALES_INVOICE/{invoice_id}/",
+            on_success=on_success,
+            on_error=lambda message: logging.getLogger(__name__).warning(f"Error loading workflow status: {message}"),
+        )
     
     def perform_workflow_action(self, action: str):
         """Perform workflow action on current invoice."""
@@ -878,18 +916,16 @@ class SalesInvoiceScreen(BaseScreen):
             AlertDialog.warning("Error", "No invoice selected.", self)
             return
         
-        # Get workflow for this invoice
-        try:
-            status_result = self.api_client.get_workflow_status('SALES_INVOICE', self.current_invoice_id)
+        def perform_action_with_workflow(status_result):
             if not status_result.get('success') or not status_result.get('data', {}).get('has_workflow'):
                 AlertDialog.warning("Error", "No workflow found for this invoice.", self)
                 return
-            
+
             workflow_id = status_result['data'].get('id')
             if not workflow_id:
                 AlertDialog.warning("Error", "Could not find workflow ID.", self)
                 return
-            
+
             # Get comment if needed
             comment = ''
             if action in ['reject']:
@@ -897,19 +933,31 @@ class SalesInvoiceScreen(BaseScreen):
                 comment, ok = QInputDialog.getText(self, f"{action.title()} Reason", f"Enter reason for {action}:")
                 if not ok:
                     return
-            
-            # Perform action
-            result = self.api_client.workflow_action(workflow_id, action, comment)
-            
-            if result.get('success'):
-                AlertDialog.info("Success", f"Invoice {action}ed successfully.", self)
-                # Reload workflow status
-                self.load_workflow_status(self.current_invoice_id)
-            else:
-                error = result.get('error', {}).get('message', 'Unknown error')
-                AlertDialog.warning("Error", f"Failed to {action}: {error}", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Error performing workflow action: {str(e)}", self)
+
+            def on_action_success(result):
+                if result.get('success'):
+                    AlertDialog.info("Success", f"Invoice {action}ed successfully.", self)
+                    self.load_workflow_status(self.current_invoice_id)
+                else:
+                    error = result.get('error', {}).get('message', 'Unknown error')
+                    AlertDialog.warning("Error", f"Failed to {action}: {error}", self)
+
+            self.run_api_request(
+                key=f"sales_workflow_action_{workflow_id}_{action}",
+                method="POST",
+                endpoint=f"/api/workflows/action/{workflow_id}/",
+                data={'action': action, 'comment': comment},
+                on_success=on_action_success,
+                on_error=lambda message: AlertDialog.error("Error", f"Error performing workflow action: {message}", self),
+            )
+
+        self.run_api_request(
+            key=f"sales_workflow_status_for_action_{self.current_invoice_id}",
+            method="GET",
+            endpoint=f"/api/workflows/status/SALES_INVOICE/{self.current_invoice_id}/",
+            on_success=perform_action_with_workflow,
+            on_error=lambda message: AlertDialog.error("Error", f"Error performing workflow action: {message}", self),
+        )
 
 
 # Helper for QInputDialog (since we can't import it directly in some setups)

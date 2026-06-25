@@ -269,8 +269,7 @@ class SupplierDialog(EnterpriseDialog):
 
         endpoint = get_endpoint("suppliers")
         if self.api_client:
-            try:
-                response = self.api_client.post(endpoint, data)
+            def on_success(response):
                 if response and isinstance(response, dict):
                     if response.get("success") or response.get("id"):
                         AlertDialog.info("Success", "Supplier saved successfully.", self)
@@ -280,8 +279,29 @@ class SupplierDialog(EnterpriseDialog):
                     AlertDialog.warning("Error", error_msg, self)
                 else:
                     AlertDialog.warning("Error", "Failed to save supplier", self)
-            except Exception as e:
-                AlertDialog.warning("Error", f"Failed to save: {e}", self)
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Supplier")
+
+            def on_error(message):
+                AlertDialog.warning("Error", f"Failed to save: {message}", self)
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Supplier")
+
+            started = self.run_api_request(
+                key="purchase_supplier_dialog_save",
+                method="POST",
+                endpoint=endpoint,
+                data=data,
+                on_success=on_success,
+                on_error=on_error,
+            )
+            if not started:
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Supplier")
+            return
         else:
             AlertDialog.info("Success", "Supplier saved successfully (offline mode).", self)
             self.accept()

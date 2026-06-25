@@ -4,9 +4,10 @@ from PySide6.QtWidgets import (QLineEdit, QVBoxLayout, QFrame,
 from PySide6.QtCore import Qt, Signal, QTimer, QEvent
 from PySide6.QtGui import QFont
 from ui.constants import TEXT_BODY, TEXT_HELPER, SPACING_XS
+from ui.utils.async_api import AsyncRequestMixin
 
 
-class BarcodeSearchLineEdit(QLineEdit):
+class BarcodeSearchLineEdit(AsyncRequestMixin, QLineEdit):
     """LineEdit with barcode scanning support, USB HID timing detection, and debounce."""
 
     barcode_scanned = Signal(str)
@@ -83,51 +84,100 @@ class BarcodeSearchLineEdit(QLineEdit):
             self.scan_error.emit("No API client configured")
             return
 
-        try:
-            result = self._api_client.lookup_barcode(barcode)
-            if result.get('success') and result.get('data'):
-                data = result['data']
-                product = data.get('product', {})
-                product['batches'] = data.get('batches', [])
-                product['total_stock'] = data.get('total_stock', 0)
-                self.product_selected.emit(product)
-                return
+        def emit_product_from_standard(result):
+            data = result['data']
+            product = data.get('product', {})
+            product['batches'] = data.get('batches', [])
+            product['total_stock'] = data.get('total_stock', 0)
+            self.product_selected.emit(product)
 
-            batch_result = self._api_client.lookup_batch_barcode(barcode)
-            if batch_result.get('success') and batch_result.get('data'):
-                data = batch_result['data']
-                product = data.get('product', {})
-                product['batch'] = data.get('batch', {})
-                product['source'] = 'batch_barcode'
-                self.product_selected.emit(product)
-                return
+        def try_sku():
+            self.run_api_request(
+                key=f"barcode_sku_{barcode}",
+                method="GET",
+                endpoint="/api/inventory/products/by_sku/",
+                params={'sku': barcode},
+                on_success=lambda result: (
+                    emit_product_from_standard(result)
+                    if result.get('success') and result.get('data')
+                    else self.scan_error.emit(f"Product not found: {barcode}")
+                ),
+                on_error=lambda message: self.scan_error.emit(f"Lookup failed: {message}"),
+            )
 
-            sku_result = self._api_client.lookup_sku(barcode)
-            if sku_result.get('success') and sku_result.get('data'):
-                data = sku_result['data']
-                product = data.get('product', {})
-                product['batches'] = data.get('batches', [])
-                product['total_stock'] = data.get('total_stock', 0)
-                self.product_selected.emit(product)
-                return
+        def try_batch():
+            def on_batch_result(batch_result):
+                if batch_result.get('success') and batch_result.get('data'):
+                    data = batch_result['data']
+                    product = data.get('product', {})
+                    product['batch'] = data.get('batch', {})
+                    product['source'] = 'batch_barcode'
+                    self.product_selected.emit(product)
+                    return
+                try_sku()
 
-            self.scan_error.emit(f"Product not found: {barcode}")
-        except Exception as e:
-            self.scan_error.emit(f"Lookup failed: {e}")
+            self.run_api_request(
+                key=f"barcode_batch_{barcode}",
+                method="GET",
+                endpoint="/api/inventory/batches/by_batch_barcode/",
+                params={'barcode': barcode},
+                on_success=on_batch_result,
+                on_error=lambda _message: try_sku(),
+            )
+
+        self.run_api_request(
+            key=f"barcode_product_{barcode}",
+            method="GET",
+            endpoint="/api/inventory/products/by_barcode/",
+            params={'barcode': barcode},
+            on_success=lambda result: (
+                emit_product_from_standard(result)
+                if result.get('success') and result.get('data')
+                else try_batch()
+            ),
+            on_error=lambda _message: try_batch(),
+        )
 
     def _perform_search(self):
         text = self.text()
         if len(text) < 2 or not self._api_client:
             return
 
-        try:
-            result = self._api_client.search_products(text)
+        if getattr(self, "_barcode_search_active", False):
+            self._pending_barcode_search_text = text
+            return
+        self._barcode_search_active = True
+        self._pending_barcode_search_text = None
+
+        def finish_search():
+            self._barcode_search_active = False
+            pending = getattr(self, "_pending_barcode_search_text", None)
+            if pending and pending != text:
+                self._pending_barcode_search_text = None
+                QTimer.singleShot(0, self._perform_search)
+
+        def on_success(result):
             if result.get('success') and result.get('data'):
                 products = result['data'].get('results', [])
                 if products:
                     self.product_selected.emit(products[0])
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Product search error: {e}")
+            finish_search()
+
+        def on_error(message):
+            finish_search()
+            logging.getLogger(__name__).warning(f"Product search error: {message}")
+
+        started = self.run_api_request(
+            key="barcode_product_search",
+            method="GET",
+            endpoint="/api/inventory/products/",
+            params={'search': text},
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
+            self._pending_barcode_search_text = text
+            finish_search()
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):

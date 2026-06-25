@@ -31,6 +31,7 @@ from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.tables import EnterpriseTable, TableColumn
 from ui.components.dialogs import EnterpriseDialog, DialogType
 from ui.components.forms import FormSection
+from theme.style_builder import UIStyleBuilder
 
 class JournalEntryDetailDialog(EnterpriseDialog):
     """Dialog to view a journal entry detail with its lines."""
@@ -63,7 +64,7 @@ class JournalEntryDetailDialog(EnterpriseDialog):
         info_section = FormSection("General Information", primary=True)
 
         self.entry_number = QLabel("")
-        self.entry_number.setStyleSheet(f"font-weight: bold; color: {COLOR_PRIMARY};")
+        self.entry_number.setStyleSheet(UIStyleBuilder.get_label_style("section"))
         info_section.add_field(self.entry_number, "Entry #:")
 
         self.entry_date = QLabel("")
@@ -81,7 +82,6 @@ class JournalEntryDetailDialog(EnterpriseDialog):
 
         self.is_posted = QLabel("")
         self.is_posted.setStyleSheet(UIStyleBuilder.get_label_style("body"))
-        self.is_posted.setStyleSheet(f"font-weight: bold;")
         info_section.add_field(self.is_posted, "Status:")
 
         layout.addWidget(info_section)
@@ -102,25 +102,24 @@ class JournalEntryDetailDialog(EnterpriseDialog):
 
         # Totals
         totals_frame = QFrame()
+        totals_frame.setObjectName("card")
         totals_frame.setStyleSheet(UIStyleBuilder.get_card_style())
         totals_layout = QHBoxLayout(totals_frame)
         totals_layout.addStretch()
         
         totals_layout.addWidget(QLabel("Total Debit:"))
         self.total_debit_label = QLabel("0.00")
-        self.total_debit_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
-        self.total_debit_label.setStyleSheet(f"font-weight: bold; color: {COLOR_SUCCESS};")
+        self.total_debit_label.setStyleSheet(UIStyleBuilder.get_label_style("success"))
         totals_layout.addWidget(self.total_debit_label)
         
         totals_layout.addSpacing(20)
         
         totals_layout.addWidget(QLabel("Total Credit:"))
         self.total_credit_label = QLabel("0.00")
-        self.total_credit_label.setStyleSheet(UIStyleBuilder.get_label_style("body"))
-        self.total_credit_label.setStyleSheet(f"font-weight: bold; color: {COLOR_DANGER};")
+        self.total_credit_label.setStyleSheet(UIStyleBuilder.get_label_style("error"))
         totals_layout.addWidget(self.total_credit_label)
         
-        lines_layout.addLayout(totals_layout)
+        lines_layout.addWidget(totals_frame)
         layout.addWidget(lines_group)
 
         # Footer Actions
@@ -143,10 +142,9 @@ class JournalEntryDetailDialog(EnterpriseDialog):
 
         posted = self.entry_data.get("is_posted", False)
         self.is_posted.setText("Posted" if posted else "Draft")
-        if posted:
-            self.is_posted.setStyleSheet(f"color: {COLOR_SUCCESS};")
-        else:
-            self.is_posted.setStyleSheet(f"color: {COLOR_WARNING};")
+        self.is_posted.setStyleSheet(
+            UIStyleBuilder.get_label_style("success" if posted else "warning")
+        )
 
         self._load_lines()
 
@@ -155,31 +153,42 @@ class JournalEntryDetailDialog(EnterpriseDialog):
         if not entry_id or not self.api_client:
             return
 
-        try:
-            self.lines = self.api_client.get(f"/api/accounting/journal-entries/{entry_id}/")
-            lines_data = self.lines.get("lines", []) if isinstance(self.lines, dict) else []
+        def on_success(response):
+            try:
+                self.lines = response
+                lines_data = self.lines.get("lines", []) if isinstance(self.lines, dict) else []
 
-            total_debit = 0.0
-            total_credit = 0.0
-            rows = []
+                total_debit = 0.0
+                total_credit = 0.0
+                rows = []
 
-            for line in lines_data:
-                account = line.get("account", {})
-                account_str = f"{account.get('code', '')} - {account.get('name', '')}"
-                debit = float(line.get("debit", 0) or 0)
-                credit = float(line.get("credit", 0) or 0)
-                total_debit += debit
-                total_credit += credit
-                rows.append({
-                    "account": account_str,
-                    "description": line.get("description", ""),
-                    "debit": f"{debit:,.2f}",
-                    "credit": f"{credit:,.2f}",
-                })
+                for line in lines_data:
+                    account = line.get("account", {})
+                    account_str = f"{account.get('code', '')} - {account.get('name', '')}"
+                    debit = float(line.get("debit", 0) or 0)
+                    credit = float(line.get("credit", 0) or 0)
+                    total_debit += debit
+                    total_credit += credit
+                    rows.append({
+                        "account": account_str,
+                        "description": line.get("description", ""),
+                        "debit": f"{debit:,.2f}",
+                        "credit": f"{credit:,.2f}",
+                    })
 
-            self.lines_table.set_data(rows)
-            self.total_debit_label.setText(f"{total_debit:,.2f}")
-            self.total_credit_label.setText(f"{total_credit:,.2f}")
+                self.lines_table.set_data(rows)
+                self.total_debit_label.setText(f"{total_debit:,.2f}")
+                self.total_credit_label.setText(f"{total_credit:,.2f}")
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Error processing journal lines: {e}")
 
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading journal lines: {e}")
+        def on_error(message):
+            logging.getLogger(__name__).warning(f"Error loading journal lines: {message}")
+
+        self.run_api_request(
+            key=f"journal_entry_detail_{entry_id}",
+            method="GET",
+            endpoint=f"/api/accounting/journal-entries/{entry_id}/",
+            on_success=on_success,
+            on_error=on_error,
+        )

@@ -93,18 +93,27 @@ class CustomerScreen(BaseScreen):
         
         endpoint = get_endpoint("customers")
         
-        # Return mock data in development mode or if no API client
-        if dev_mode or not self.api_client:
-            # Mock data for development
-            return [
-                {"id": "1", "name": "Test Customer", "phone": "1234567890", "email": "test@example.com", "address": "Test Address"},
-                {"id": "2", "name": "John Smith", "phone": "9876543210", "email": "john@example.com", "address": "123 Main St"},
-                {"id": "3", "name": "Alice Johnson", "phone": "5551234567", "email": "alice@example.com", "address": "456 Oak Ave"},
-                {"id": "4", "name": "Bob Williams", "phone": "5559876543", "email": "bob@example.com", "address": "789 Pine Rd"},
-            ]
-        
-        try:
-            response = self.api_client.get(endpoint)
+        # Return mock data in development mode or if no API client.
+        # Network loading is handled asynchronously by load_customers().
+        return [
+            {"id": "1", "name": "Test Customer", "phone": "1234567890", "email": "test@example.com", "address": "Test Address"},
+            {"id": "2", "name": "John Smith", "phone": "9876543210", "email": "john@example.com", "address": "123 Main St"},
+            {"id": "3", "name": "Alice Johnson", "phone": "5551234567", "email": "alice@example.com", "address": "456 Oak Ave"},
+            {"id": "4", "name": "Bob Williams", "phone": "5559876543", "email": "bob@example.com", "address": "789 Pine Rd"},
+        ] if dev_mode or not self.api_client else []
+
+    def load_customers(self):
+        """Load customers from API asynchronously."""
+        self.set_state(ScreenState.LOADING)
+
+        fallback = self._fetch_customers()
+        if fallback:
+            self.customers = fallback
+            self.set_state(ScreenState.READY)
+            self.update_table()
+            return
+
+        def parse_customers(response):
             customers = []
             if isinstance(response, dict):
                 if response.get('success'):
@@ -119,23 +128,25 @@ class CustomerScreen(BaseScreen):
             elif isinstance(response, list):
                 customers = [c for c in response if isinstance(c, dict)]
             return customers
-        except Exception as e:
-            self.set_state(ScreenState.ERROR)
-            self.error_text = f"Failed to load customers: {e}"
-            return []
 
-    def load_customers(self):
-        """Load customers from API."""
-        self.set_state(ScreenState.LOADING)
-        self.customers = self._fetch_customers()
-        
-        # Update state based on data
-        if len(self.customers) == 0:
-            self.set_state(ScreenState.EMPTY)
-        else:
-            self.set_state(ScreenState.READY)
-        
-        self.update_table()
+        def on_success(response):
+            self.customers = parse_customers(response)
+            self.set_state(ScreenState.EMPTY if len(self.customers) == 0 else ScreenState.READY)
+            self.update_table()
+
+        def on_error(message):
+            self.set_state(ScreenState.ERROR)
+            self.error_text = f"Failed to load customers: {message}"
+            self.customers = []
+            self.update_table()
+
+        self.run_api_request(
+            key="sales_customers_load",
+            method="GET",
+            endpoint=get_endpoint("customers"),
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def update_table(self):
         """Update table with customer data and show appropriate state indicators."""
@@ -214,12 +225,14 @@ class CustomerScreen(BaseScreen):
             self
         )
         if reply:
-            try:
-                endpoint = get_endpoint("customers")
-                self.api_client.delete(f"{endpoint}{customer['id']}/")
-                self.load_customers()
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to delete customer: {e}", self)
+            endpoint = get_endpoint("customers")
+            self.run_api_request(
+                key=f"sales_customer_delete_{customer['id']}",
+                method="DELETE",
+                endpoint=f"{endpoint}{customer['id']}/",
+                on_success=lambda _response: self.load_customers(),
+                on_error=lambda message: AlertDialog.error("Error", f"Failed to delete customer: {message}", self),
+            )
 
 
 class CustomerDialog(EnterpriseDialog):
@@ -524,8 +537,10 @@ class CustomerDialog(EnterpriseDialog):
         
         endpoint = get_endpoint("customers")
         if self.api_client:
-            try:
-                response = self.api_client.post(endpoint, data)
+            def on_success(response):
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Customer")
                 if response and isinstance(response, dict):
                     if response.get("success") or response.get("id"):
                         AlertDialog.info("Success", "Customer saved successfully.", self)
@@ -535,8 +550,25 @@ class CustomerDialog(EnterpriseDialog):
                     AlertDialog.warning("Error", error_msg, self)
                 else:
                     AlertDialog.warning("Error", "Failed to save customer", self)
-            except Exception as e:
-                AlertDialog.warning("Error", f"Failed to save: {e}", self)
+
+            def on_error(message):
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Customer")
+                AlertDialog.warning("Error", f"Failed to save: {message}", self)
+
+            started = self.run_api_request(
+                key="sales_customer_dialog_save",
+                method="POST",
+                endpoint=endpoint,
+                data=data,
+                on_success=on_success,
+                on_error=on_error,
+            )
+            if not started:
+                self._is_submitting = False
+                self.btn_save.setEnabled(True)
+                self.btn_save.setText("Save Customer")
         else:
             AlertDialog.info("Success", "Customer saved successfully (offline mode).", self)
             self.accept()

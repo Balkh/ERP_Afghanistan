@@ -162,10 +162,12 @@ class WarehouseScreen(BaseInventoryScreen):
             self.load_warehouses()
 
     def delete_warehouse(self, warehouse_id):
-        """Delete a warehouse."""
-        try:
-            self.api_client.delete(f"/api/inventory/warehouses/{warehouse_id}/")
-            self.load_warehouses()
-        except Exception as e:
-            from ui.components.dialogs import AlertDialog
-            AlertDialog.error("Error", f"Failed to delete warehouse: {e}", self)
+        """Delete a warehouse asynchronously."""
+        from ui.components.dialogs import AlertDialog
+        self.run_api_request(
+            key=f"warehouse_delete_{warehouse_id}",
+            method="DELETE",
+            endpoint=f"/api/inventory/warehouses/{warehouse_id}/",
+            on_success=lambda _response: self.load_warehouses(),
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to delete warehouse: {message}", self),
+        )

@@ -193,31 +193,36 @@ class FixedAssetsScreen(BaseScreen):
     def _load_assets(self):
         self.assets_table.set_data([])
         
-        if self._api_client:
-            try:
-                endpoint = get_endpoint("assets")
-                response = self._api_client.get(endpoint)
-                if response and isinstance(response, dict) and response.get("success"):
-                    data = response.get("data", [])
-                else:
-                    data = []
-            except Exception:
-                data = []
-        else:
-            data = self._get_mock_assets()
-        rows = []
-        for item in data:
-            rows.append({
-                "asset_code": item.get("asset_code", ""),
-                "name": item.get("name", ""),
-                "category": item.get("category_name", ""),
-                "purchase_date": str(item.get("purchase_date", ""))[:10],
-                "cost": str(item.get("purchase_cost", "0")),
-                "depreciation": str(item.get("accumulated_depreciation", "0")),
-                "book_value": str(item.get("book_value", "0")),
-                "status": item.get("status", ""),
-            })
-        self.assets_table.set_data(rows)
+        def populate(data):
+            rows = []
+            for item in data:
+                rows.append({
+                    "asset_code": item.get("asset_code", ""),
+                    "name": item.get("name", ""),
+                    "category": item.get("category_name", ""),
+                    "purchase_date": str(item.get("purchase_date", ""))[:10],
+                    "cost": str(item.get("purchase_cost", "0")),
+                    "depreciation": str(item.get("accumulated_depreciation", "0")),
+                    "book_value": str(item.get("book_value", "0")),
+                    "status": item.get("status", ""),
+                })
+            self.assets_table.set_data(rows)
+
+        if not self._api_client:
+            populate(self._get_mock_assets())
+            return
+
+        def on_success(response):
+            data = response.get("data", []) if response and isinstance(response, dict) and response.get("success") else []
+            populate(data)
+
+        self.run_api_request(
+            key="fixed_assets_load",
+            method="GET",
+            endpoint=get_endpoint("assets"),
+            on_success=on_success,
+            on_error=lambda _message: populate([]),
+        )
     
     def _get_mock_assets(self):
         return [
@@ -338,18 +343,26 @@ class AssetDialog(EnterpriseDialog):
             "useful_life": str(int(self.useful_life.value())),
             "depreciation_method": self.depreciation_method.currentText(),
         }
-        try:
-            if self._asset_id:
-                response = self.api_client.put(f"/api/assets/assets/{self._asset_id}/", data)
-            else:
-                response = self.api_client.post("/api/assets/assets/", data)
+        def on_success(response):
+            self._submitting = False
             if response and (response.get("success") or response.get("id")):
                 AlertDialog.info("Success", "Asset saved.", self)
                 self.accept()
             else:
                 errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
                 AlertDialog.error("Error", str(errors), self)
-        except Exception as e:
-            AlertDialog.error("Error", str(e), self)
-        finally:
+
+        def on_error(message):
+            self._submitting = False
+            AlertDialog.error("Error", str(message), self)
+
+        started = self.run_api_request(
+            key="fixed_asset_save",
+            method="PUT" if self._asset_id else "POST",
+            endpoint=f"/api/assets/assets/{self._asset_id}/" if self._asset_id else "/api/assets/assets/",
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False

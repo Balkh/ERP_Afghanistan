@@ -46,8 +46,7 @@ class InvoiceWorkflowMixin:
         if not invoice_id:
             return
 
-        try:
-            result = self.api_client.get_workflow_status(self._invoice_type, invoice_id)
+        def on_success(result):
             if not (result.get('success') and result.get('data')):
                 return
 
@@ -69,8 +68,14 @@ class InvoiceWorkflowMixin:
             self.approve_wf_btn.setVisible(data.get('can_approve', False))
             self.reject_wf_btn.setVisible(data.get('can_approve', False))
             self.post_wf_btn.setVisible(data.get('can_post', False))
-        except Exception as e:
-            print(f"Error loading workflow status: {e}")
+
+        self.run_api_request(
+            key=f"invoice_workflow_status_{self._invoice_type}_{invoice_id}",
+            method="GET",
+            endpoint=f"/api/workflows/status/{self._invoice_type}/{invoice_id}/",
+            on_success=on_success,
+            on_error=lambda message: print(f"Error loading workflow status: {message}"),
+        )
 
     def perform_workflow_action(self, action: str):
         """Perform a workflow action on the current invoice."""
@@ -78,10 +83,7 @@ class InvoiceWorkflowMixin:
             AlertDialog.warning("Error", "No invoice selected.", self)
             return
 
-        try:
-            status_result = self.api_client.get_workflow_status(
-                self._invoice_type, self.current_invoice_id
-            )
+        def perform_action_with_workflow(status_result):
             if (
                 not status_result.get('success')
                 or not status_result.get('data', {}).get('has_workflow')
@@ -104,13 +106,27 @@ class InvoiceWorkflowMixin:
                 if not ok:
                     return
 
-            result = self.api_client.workflow_action(workflow_id, action, comment)
+            def on_action_success(result):
+                if result.get('success'):
+                    AlertDialog.info("Success", f"Invoice {action}ed successfully.", self)
+                    self.load_workflow_status(self.current_invoice_id)
+                else:
+                    error = result.get('error', {}).get('message', 'Unknown error')
+                    AlertDialog.warning("Error", f"Failed to {action}: {error}", self)
 
-            if result.get('success'):
-                AlertDialog.info("Success", f"Invoice {action}ed successfully.", self)
-                self.load_workflow_status(self.current_invoice_id)
-            else:
-                error = result.get('error', {}).get('message', 'Unknown error')
-                AlertDialog.warning("Error", f"Failed to {action}: {error}", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Error performing workflow action: {str(e)}", self)
+            self.run_api_request(
+                key=f"invoice_workflow_action_{workflow_id}_{action}",
+                method="POST",
+                endpoint=f"/api/workflows/action/{workflow_id}/",
+                data={'action': action, 'comment': comment},
+                on_success=on_action_success,
+                on_error=lambda message: AlertDialog.error("Error", f"Error performing workflow action: {message}", self),
+            )
+
+        self.run_api_request(
+            key=f"invoice_workflow_status_for_action_{self._invoice_type}_{self.current_invoice_id}",
+            method="GET",
+            endpoint=f"/api/workflows/status/{self._invoice_type}/{self.current_invoice_id}/",
+            on_success=perform_action_with_workflow,
+            on_error=lambda message: AlertDialog.error("Error", f"Error performing workflow action: {message}", self),
+        )

@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
 from api.endpoints import get_endpoint
-from ui.constants import (SPACING_SM, INPUT_HEIGHT_MD, COLOR_PRIMARY)
+from ui.constants import (SPACING_SM, INPUT_HEIGHT_LG, COLOR_PRIMARY)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from ui.components.forms import FormSection
@@ -43,13 +43,13 @@ class SalaryStructureDialog(EnterpriseDialog):
 
         self.name = QLineEdit()
         self.name.setPlaceholderText("Structure name")
-        self.name.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.name.setMinimumHeight(INPUT_HEIGHT_LG)
 
         self.basic_salary = QDoubleSpinBox()
         self.basic_salary.setRange(0, 999999999)
         self.basic_salary.setDecimals(2)
         self.basic_salary.setValue(15000)
-        self.basic_salary.setMinimumHeight(INPUT_HEIGHT_MD)
+        self.basic_salary.setMinimumHeight(INPUT_HEIGHT_LG)
 
         self.is_active = QCheckBox("Active")
         self.is_active.setChecked(True)
@@ -92,21 +92,30 @@ class SalaryStructureDialog(EnterpriseDialog):
             "basic_salary": str(self.basic_salary.value()),
             "is_active": self.is_active.isChecked(),
         }
-        try:
-            base_endpoint = get_endpoint("payroll_records")
-            if self._structure_id:
-                response = self.api_client.put(f"{base_endpoint}{self._structure_id}/", data)
-            else:
-                response = self.api_client.post(base_endpoint, data)
+        base_endpoint = get_endpoint("payroll_records")
+
+        def on_success(response):
+            self._submitting = False
             if response and (response.get("success") or response.get("id")):
                 AlertDialog.info("Success", "Salary structure saved.", self)
                 self.accept()
             else:
                 errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
                 AlertDialog.error("Error", str(errors), self)
-        except Exception as e:
-            AlertDialog.error("Error", str(e), self)
-        finally:
+
+        def on_error(message):
+            self._submitting = False
+            AlertDialog.error("Error", str(message), self)
+
+        started = self.run_api_request(
+            key="salary_structure_dialog_save",
+            method="PUT" if self._structure_id else "POST",
+            endpoint=f"{base_endpoint}{self._structure_id}/" if self._structure_id else base_endpoint,
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False
 
 

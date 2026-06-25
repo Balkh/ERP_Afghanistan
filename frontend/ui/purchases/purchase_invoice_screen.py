@@ -421,11 +421,9 @@ class PurchaseInvoiceScreen(BaseScreen):
             {"id": "sup-3", "name": "Local Distributor", "phone": "+93 70 555 5555", "address": "Mazar", "credit_limit": 200000, "balance": 80000},
         ]
 
-        # Try to load from API
+        # Try to load from API asynchronously
         if self.api_client:
-            try:
-                endpoint = get_endpoint("suppliers")
-                response = self.api_client.get(endpoint)
+            def on_success(response):
                 api_suppliers = []
                 if isinstance(response, list):
                     api_suppliers = [s for s in response if isinstance(s, dict)]
@@ -440,8 +438,19 @@ class PurchaseInvoiceScreen(BaseScreen):
                             api_suppliers = [data]
                 if api_suppliers:
                     self.suppliers = api_suppliers
-            except Exception as e:
-                logging.getLogger(__name__).warning(f"Failed to load suppliers: {e}")
+                    self.supplier_combo.clear()
+                    self.supplier_combo.addItem("Select Supplier...", None)
+                    for supplier in self.suppliers:
+                        if isinstance(supplier, dict):
+                            self.supplier_combo.addItem(supplier.get("name", "Unknown"), supplier.get("id", ""))
+
+            self.run_api_request(
+                key="purchase_invoice_suppliers_load",
+                method="GET",
+                endpoint=get_endpoint("suppliers"),
+                on_success=on_success,
+                on_error=lambda message: logging.getLogger(__name__).warning(f"Failed to load suppliers: {message}"),
+            )
 
         self.supplier_combo.clear()
         self.supplier_combo.addItem("Select Supplier...", None)
@@ -477,39 +486,41 @@ class PurchaseInvoiceScreen(BaseScreen):
                 self.balance_label.setStyleSheet(f"color: {COLOR_SUCCESS};")
 
     def show_product_selector(self):
-        """Show product selection dialog for purchase."""
-        products = self._fetch_products("")
+        """Show product selection dialog for purchase without blocking the UI."""
+        def open_selector(products):
+            if not products:
+                from ui.components.dialogs import AlertDialog
+                AlertDialog.info("No Products", "No products available. Add products first.", self)
+                return
+            product_name, ok = QInputDialog_getItem(
+                self, "Select Product", "Choose product:",
+                [p.get("name", "Unknown") for p in products]
+            )
+            if ok and product_name:
+                product = next((p for p in products if p.get("name") == product_name), None)
+                if product:
+                    self.add_item_to_table(product)
 
-        if not products:
-            from ui.components.dialogs import AlertDialog
-            AlertDialog.info("No Products", "No products available. Add products first.", self)
-            return
-
-        product_name, ok = QInputDialog_getItem(
-            self, "Select Product", "Choose product:",
-            [p.get("name", "Unknown") for p in products]
+        self.run_api_request(
+            key="purchase_product_selector_load",
+            method="GET",
+            endpoint="/api/inventory/products/",
+            on_success=lambda response: open_selector(self._parse_product_response(response)),
+            on_error=lambda _message: open_selector(self._fallback_products()),
         )
 
-        if ok and product_name:
-            product = next((p for p in products if p.get("name") == product_name), None)
-            if product:
-                self.add_item_to_table(product)
+    def _parse_product_response(self, response):
+        if isinstance(response, dict):
+            data = response.get("data", response)
+            if isinstance(data, dict):
+                return data.get("results", [])
+            if isinstance(data, list):
+                return data
+        elif isinstance(response, list):
+            return response
+        return []
 
-    def _fetch_products(self, query):
-        """Fetch products from backend; falls back to a small list on failure."""
-        try:
-            response = self.api_client.search_products(query) if query else self.api_client.get("/api/inventory/products/")
-            if isinstance(response, dict):
-                data = response.get("data", response)
-                if isinstance(data, dict):
-                    return data.get("results", [])
-                if isinstance(data, list):
-                    return data
-            elif isinstance(response, list):
-                return response
-        except Exception:
-            pass
-        # Fallback: small dev list (Phase Recovery — replaced by real fetch in production)
+    def _fallback_products(self):
         return [
             {"id": "prod-1", "name": "Paracetamol 500mg", "unit": "pcs"},
             {"id": "prod-2", "name": "Amoxicillin 250mg", "unit": "pcs"},
@@ -517,6 +528,10 @@ class PurchaseInvoiceScreen(BaseScreen):
             {"id": "prod-4", "name": "Metformin 500mg", "unit": "pcs"},
             {"id": "prod-5", "name": "Atorvastatin 10mg", "unit": "pcs"},
         ]
+
+    def _fetch_products(self, query):
+        """Return fallback products only; network product search is asynchronous."""
+        return self._fallback_products()
 
     def _on_product_search_changed(self, text):
         """Debounced live-search handler (Phase Recovery)."""
@@ -540,11 +555,20 @@ class PurchaseInvoiceScreen(BaseScreen):
         query = getattr(self, "_pending_query", "").strip()
         if not query:
             return
-        products = self._fetch_products(query)
-        if add_first_match and products:
-            self.add_item_to_table(products[0])
-        elif products:
-            self._show_search_results(products)
+        def handle_products(products):
+            if add_first_match and products:
+                self.add_item_to_table(products[0])
+            elif products:
+                self._show_search_results(products)
+
+        self.run_api_request(
+            key="purchase_product_search",
+            method="GET",
+            endpoint="/api/inventory/products/",
+            params={"search": query},
+            on_success=lambda response: handle_products(self._parse_product_response(response)),
+            on_error=lambda _message: handle_products(self._fallback_products()),
+        )
 
     def _show_search_results(self, products):
         """Display search results in a pick dialog (Phase Recovery)."""
@@ -681,17 +705,24 @@ class PurchaseInvoiceScreen(BaseScreen):
             AlertDialog.warning("Validation Error", "Please add at least one product.", self)
             return
             
-        try:
-            endpoint = get_endpoint("purchase_invoices")
-            res = self.api_client.post(endpoint, data)
+        endpoint = get_endpoint("purchase_invoices")
+
+        def on_success(res):
             if res:
                 res_data = res.get('data', res) if isinstance(res, dict) else res
                 self.current_invoice_id = res_data.get('id')
                 self.invoice_number.setText(res_data.get("invoice_number", "DRAFT"))
                 self.update_button_states("DRAFT")
                 AlertDialog.info("Success", "Purchase draft saved.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to save draft: {e}", self)
+
+        self.run_api_request(
+            key="purchase_invoice_save_draft",
+            method="POST",
+            endpoint=endpoint,
+            data=data,
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to save draft: {message}", self),
+        )
 
     def confirm_invoice(self):
         """Confirm the purchase invoice — persists to backend."""
@@ -709,9 +740,9 @@ class PurchaseInvoiceScreen(BaseScreen):
         ):
             return
 
-        try:
-            endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/confirm/"
-            res = self.api_client.post(endpoint, {})
+        endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/confirm/"
+
+        def on_success(res):
             if res:
                 self.status_label.setText("CONFIRMED")
                 self.status_label.setStyleSheet(f"background-color: {COLOR_PRIMARY}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
@@ -719,8 +750,15 @@ class PurchaseInvoiceScreen(BaseScreen):
                 AlertDialog.info("Success", "Purchase invoice confirmed successfully.", self)
             else:
                 AlertDialog.error("Error", "Failed to confirm on server.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to confirm: {e}", self)
+
+        self.run_api_request(
+            key="purchase_invoice_confirm",
+            method="POST",
+            endpoint=endpoint,
+            data={},
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to confirm: {message}", self),
+        )
 
     def receive_invoice(self):
         """Receive purchase and add stock — persists to backend."""
@@ -745,9 +783,9 @@ class PurchaseInvoiceScreen(BaseScreen):
         ):
             return
 
-        try:
-            endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/receive/"
-            res = self.api_client.post(endpoint, {})
+        endpoint = f"/api/purchases/invoices/{self.current_invoice_id}/receive/"
+
+        def on_success(res):
             if res:
                 self.status_label.setText("RECEIVED")
                 self.status_label.setStyleSheet(f"background-color: {COLOR_SUCCESS}; color: {COLOR_TEXT_ON_PRIMARY}; padding: {SPACING_SM}px {SPACING_LG}px; border-radius: {BORDER_RADIUS_SM}px;")
@@ -755,8 +793,15 @@ class PurchaseInvoiceScreen(BaseScreen):
                 AlertDialog.info("Success", "Purchase received and stock added to inventory.", self)
             else:
                 AlertDialog.error("Error", "Failed to receive on server.", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Failed to receive: {e}", self)
+
+        self.run_api_request(
+            key="purchase_invoice_receive",
+            method="POST",
+            endpoint=endpoint,
+            data={},
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.error("Error", f"Failed to receive: {message}", self),
+        )
 
     def print_invoice(self):
         """Print the invoice."""
@@ -845,17 +890,16 @@ class PurchaseInvoiceScreen(BaseScreen):
         if not invoice_id:
             return
         
-        try:
-            result = self.api_client.get_workflow_status('PURCHASE_INVOICE', invoice_id)
+        def on_success(result):
             if result.get('success') and result.get('data'):
                 data = result['data']
                 if data.get('has_workflow') is False:
                     self.workflow_status_label.setText("")
                     return
-                
+
                 state = data.get('state', 'DRAFT')
                 state_display = data.get('state_display', state)
-                
+
                 color_map = {
                     'DRAFT': COLOR_TEXT_MUTED,
                     'PENDING_APPROVAL': COLOR_WARNING,
@@ -867,13 +911,19 @@ class PurchaseInvoiceScreen(BaseScreen):
                 color = color_map.get(state, COLOR_TEXT_MUTED)
                 self.workflow_status_label.setText(f"Workflow: {state_display}")
                 self.workflow_status_label.setStyleSheet(f"color: {color}; font-weight: bold; padding: {SPACING_SM}px;")
-                
+
                 self.submit_wf_btn.setVisible(data.get('can_submit', False))
                 self.approve_wf_btn.setVisible(data.get('can_approve', False))
                 self.reject_wf_btn.setVisible(data.get('can_approve', False))
                 self.post_wf_btn.setVisible(data.get('can_post', False))
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error loading workflow status: {e}")
+
+        self.run_api_request(
+            key=f"purchase_workflow_status_{invoice_id}",
+            method="GET",
+            endpoint=f"/api/workflows/status/PURCHASE_INVOICE/{invoice_id}/",
+            on_success=on_success,
+            on_error=lambda message: logging.getLogger(__name__).warning(f"Error loading workflow status: {message}"),
+        )
     
     def perform_workflow_action(self, action: str):
         """Perform workflow action on current invoice."""
@@ -881,34 +931,47 @@ class PurchaseInvoiceScreen(BaseScreen):
             AlertDialog.warning("Error", "No invoice selected.", self)
             return
         
-        try:
-            status_result = self.api_client.get_workflow_status('PURCHASE_INVOICE', self.current_invoice_id)
+        def perform_action_with_workflow(status_result):
             if not status_result.get('success') or not status_result.get('data', {}).get('has_workflow'):
                 AlertDialog.warning("Error", "No workflow found for this invoice.", self)
                 return
-            
+
             workflow_id = status_result['data'].get('id')
             if not workflow_id:
                 AlertDialog.warning("Error", "Could not find workflow ID.", self)
                 return
-            
+
             comment = ''
             if action in ['reject']:
                 from PySide6.QtWidgets import QInputDialog
                 comment, ok = QInputDialog.getText(self, f"{action.title()} Reason", f"Enter reason for {action}:")
                 if not ok:
                     return
-            
-            result = self.api_client.workflow_action(workflow_id, action, comment)
-            
-            if result.get('success'):
-                AlertDialog.info("Success", f"Invoice {action}ed successfully.", self)
-                self.load_workflow_status(self.current_invoice_id)
-            else:
-                error = result.get('error', {}).get('message', 'Unknown error')
-                AlertDialog.warning("Error", f"Failed to {action}: {error}", self)
-        except Exception as e:
-            AlertDialog.error("Error", f"Error performing workflow action: {str(e)}", self)
+
+            def on_action_success(result):
+                if result.get('success'):
+                    AlertDialog.info("Success", f"Invoice {action}ed successfully.", self)
+                    self.load_workflow_status(self.current_invoice_id)
+                else:
+                    error = result.get('error', {}).get('message', 'Unknown error')
+                    AlertDialog.warning("Error", f"Failed to {action}: {error}", self)
+
+            self.run_api_request(
+                key=f"purchase_workflow_action_{workflow_id}_{action}",
+                method="POST",
+                endpoint=f"/api/workflows/action/{workflow_id}/",
+                data={'action': action, 'comment': comment},
+                on_success=on_action_success,
+                on_error=lambda message: AlertDialog.error("Error", f"Error performing workflow action: {message}", self),
+            )
+
+        self.run_api_request(
+            key=f"purchase_workflow_status_for_action_{self.current_invoice_id}",
+            method="GET",
+            endpoint=f"/api/workflows/status/PURCHASE_INVOICE/{self.current_invoice_id}/",
+            on_success=perform_action_with_workflow,
+            on_error=lambda message: AlertDialog.error("Error", f"Error performing workflow action: {message}", self),
+        )
 
 
 def QInputDialog_getItem(parent, title, label, items):

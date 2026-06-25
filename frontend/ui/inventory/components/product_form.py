@@ -5,11 +5,12 @@ from PySide6.QtCore import Qt
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_XL, SPACING_XXL, TEXT_PAGE_TITLE, TEXT_BODY_SMALL, COLOR_TEXT_PRIMARY,
                            COLOR_TEXT_MUTED, COLOR_BG_DIALOG, COLOR_FORM_DESCRIPTION_BG, COLOR_FORM_FOOTER_BORDER,
                            COLOR_BORDER_INPUT, COLOR_BORDER_INPUT_HOVER, BORDER_RADIUS_MD,
-                           INPUT_HEIGHT_MD, DIALOG_WIDTH_FORM_MIN, DIALOG_WIDTH_FORM_PREFERRED)
+                           INPUT_HEIGHT_MD, INPUT_HEIGHT_LG, DIALOG_WIDTH_FORM_MIN, DIALOG_WIDTH_FORM_PREFERRED)
 from ui.components.buttons import EnterpriseButton, ButtonVariant, ButtonSize
 from ui.components.forms import FormSection
 from ui.components.dialogs import EnterpriseDialog, DialogType, AlertDialog
 from api.endpoints import get_endpoint, extract_list
+from theme.style_builder import UIStyleBuilder
 
 
 class ProductFormDialog(EnterpriseDialog):
@@ -38,7 +39,7 @@ class ProductFormDialog(EnterpriseDialog):
         layout.setSpacing(SPACING_MD)
 
         subtitle = QLabel("Fill in the required product information")
-        subtitle.setStyleSheet(f"color: {COLOR_TEXT_MUTED}; font-size: {TEXT_BODY_SMALL}pt; border: none; background: transparent; margin-bottom: {SPACING_SM}px;")
+        subtitle.setStyleSheet(UIStyleBuilder.get_subtitle_style())
         layout.addWidget(subtitle)
 
         # ── Section 1: Identity (primary) ──
@@ -103,17 +104,25 @@ class ProductFormDialog(EnterpriseDialog):
         if not self.api_client:
             self.category_combo.addItem("General", 1)
             return
-        try:
-            endpoint = get_endpoint("categories")
-            response = self.api_client.get(endpoint)
+
+        def on_success(response):
             items = extract_list(response)
             if not items:
                 items = [{"id": 1, "name": "General"}]
             for cat in items:
                 name = cat.get("name", "")
                 self.category_combo.addItem(name, cat.get("id"))
-        except Exception:
+
+        def on_error(_message):
             self.category_combo.addItem("General", 1)
+
+        self.run_api_request(
+            key="product_form_categories_load",
+            method="GET",
+            endpoint=get_endpoint("categories"),
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def populate_units(self):
         if self.unit_combo.count() == 0:
@@ -121,24 +130,31 @@ class ProductFormDialog(EnterpriseDialog):
         if not self.api_client:
             self.unit_combo.addItem("Unit", 1)
             return
-        try:
-            endpoint = get_endpoint("units")
-            response = self.api_client.get(endpoint)
+
+        def on_success(response):
             items = extract_list(response)
             if not items:
                 items = [{"id": 1, "name": "Unit"}]
             for unit in items:
                 name = unit.get("name", "")
                 self.unit_combo.addItem(name, unit.get("id"))
-        except Exception:
+
+        def on_error(_message):
             self.unit_combo.addItem("Unit", 1)
+
+        self.run_api_request(
+            key="product_form_units_load",
+            method="GET",
+            endpoint=get_endpoint("units"),
+            on_success=on_success,
+            on_error=on_error,
+        )
 
     def load_product_data(self):
         if not self.api_client or not self.product_id:
             return
-        try:
-            endpoint = get_endpoint("products")
-            response = self.api_client.get(f"{endpoint}{self.product_id}/")
+
+        def on_success(response):
             if response and isinstance(response, dict):
                 data = response.get("data", response)
             else:
@@ -162,8 +178,13 @@ class ProductFormDialog(EnterpriseDialog):
             self.prescription_check.setCurrentIndex(1 if data.get("requires_prescription") else 0)
             self.controlled_check.setCurrentIndex(1 if data.get("is_controlled") else 0)
             self.active_check.setCurrentIndex(1 if data.get("is_active", True) else 0)
-        except Exception:
-            pass
+
+        self.run_api_request(
+            key=f"product_form_load_{self.product_id}",
+            method="GET",
+            endpoint=f"{get_endpoint('products')}{self.product_id}/",
+            on_success=on_success,
+        )
 
     def get_form_data(self):
         return {
@@ -202,21 +223,30 @@ class ProductFormDialog(EnterpriseDialog):
             "is_active": self.active_check.currentIndex() == 1,
             "description": self.description_input.toPlainText().strip(),
         }
-        try:
-            endpoint = get_endpoint("products")
-            if self.product_id:
-                response = self.api_client.put(f"{endpoint}{self.product_id}/", data)
-            else:
-                response = self.api_client.post(endpoint, data)
-            if response and (response.get("success") or response.get("id")):
+        endpoint = get_endpoint("products")
+
+        def on_success(response):
+            self._submitting = False
+            if response and isinstance(response, dict) and (response.get("success") or response.get("id")):
                 AlertDialog.info("Success", "Product saved.", self)
-                super().accept()
+                super(ProductFormDialog, self).accept()
             else:
                 errors = response.get("error", "Unknown error") if isinstance(response, dict) else "Failed"
                 AlertDialog.error("Error", str(errors), self)
-        except Exception as e:
-            AlertDialog.error("Error", str(e), self)
-        finally:
+
+        def on_error(message):
+            self._submitting = False
+            AlertDialog.error("Error", str(message), self)
+
+        started = self.run_api_request(
+            key="product_form_save",
+            method="PUT" if self.product_id else "POST",
+            endpoint=f"{endpoint}{self.product_id}/" if self.product_id else endpoint,
+            data=data,
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
             self._submitting = False
 
     def _create_button_area(self):
@@ -234,10 +264,6 @@ class ProductFormDialog(EnterpriseDialog):
         layout.addWidget(cancel_btn)
         layout.addWidget(save_btn)
 
-        button_area.setStyleSheet(f"""
-            QFrame {{
-                background-color: {COLOR_BG_DIALOG};
-                border-top: 1px solid {COLOR_FORM_FOOTER_BORDER};
-            }}
-        """)
+        button_area.setObjectName("card")
+        button_area.setStyleSheet(UIStyleBuilder.get_card_style())
         return button_area

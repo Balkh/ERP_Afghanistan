@@ -160,28 +160,40 @@ class UserManagementScreen(BaseScreen):
         self.permissions_table.set_data(rows)
     
     def load_roles(self):
-        """Load roles from API."""
+        """Load roles from API asynchronously."""
         if not self._api_client:
             return
-        try:
-            result = self._api_client.get_roles()
+
+        def on_success(result):
             if result.get('success'):
                 self._roles = result.get('data', [])
-        except Exception as e:
-            logger.error(f"Error loading roles: {e}")
+
+        self.run_api_request(
+            key="user_management_roles_load",
+            method="GET",
+            endpoint="/api/auth/roles/",
+            on_success=on_success,
+            on_error=lambda message: logger.error(f"Error loading roles: {message}"),
+        )
     
     def load_users(self):
-        """Load users from API."""
+        """Load users from API asynchronously."""
         if not self._api_client:
             return
-        
-        try:
-            result = self._api_client.get_users()
+
+        def on_success(result):
             if result.get('success'):
                 self._users = result.get('data', {}).get('results', [])
                 self.populate_table()
-        except Exception as e:
-            logger.error(f"Error loading users: {e}")
+
+        self.run_api_request(
+            key="user_management_users_load",
+            method="GET",
+            endpoint="/api/auth/users/",
+            params={'page': 1},
+            on_success=on_success,
+            on_error=lambda message: logger.error(f"Error loading users: {message}"),
+        )
     
     def populate_table(self):
         """Populate the users table."""
@@ -232,11 +244,13 @@ class UserManagementScreen(BaseScreen):
         )
         
         if reply:
-            try:
-                self._api_client.delete(f"/api/auth/users/{user_data['id']}/")
-                self.load_users()
-            except Exception as e:
-                AlertDialog.error("Error", f"Failed to delete user: {e}", self)
+            self.run_api_request(
+                key=f"user_delete_{user_data['id']}",
+                method="DELETE",
+                endpoint=f"/api/auth/users/{user_data['id']}/",
+                on_success=lambda _response: self.load_users(),
+                on_error=lambda message: AlertDialog.error("Error", f"Failed to delete user: {message}", self),
+            )
 
 
 class UserDialog(EnterpriseDialog):

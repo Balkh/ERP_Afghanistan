@@ -14,7 +14,7 @@ ARCHITECTURE LOCK — DO NOT MODIFY WITHOUT REVIEW:
 from PySide6.QtWidgets import (QVBoxLayout, QHBoxLayout, QGridLayout,
                                 QWidget, QLabel, QGroupBox, QFrame,
                                 QDialog, QTextEdit)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from api.client import APIClient
 from ui.constants import (SPACING_XS, SPACING_SM, SPACING_MD, SPACING_LG, MARGIN_PAGE, MARGIN_CARD,
                            TEXT_SECTION_TITLE, TEXT_CARD_TITLE, TEXT_BODY,
@@ -221,6 +221,7 @@ class BackupControlScreen(BaseScreen):
         self._backups = []
         self._email_history = []
         self._ssot_unavailable = False
+        self._refresh_pending = 0
         self._setup_ui()
         self._refresh()
 
@@ -376,20 +377,28 @@ class BackupControlScreen(BaseScreen):
     def _refresh(self):
         if self._is_busy:
             return
+        self._refresh_pending = 3
         self._set_busy(True)
-        try:
-            self._fetch_status()
-            self._fetch_backups()
-            self._fetch_email_history()
-            self._update_ui()
-        except Exception as e:
-            self._show_error(f"Refresh failed: {e}")
-        finally:
+        QTimer.singleShot(30000, self._clear_stale_refresh_busy)
+        self._fetch_status()
+        self._fetch_backups()
+        self._fetch_email_history()
+
+    def _finish_refresh_request(self):
+        if self._refresh_pending <= 0:
+            return
+        self._refresh_pending -= 1
+        if self._refresh_pending == 0:
             self._set_busy(False)
 
+    def _clear_stale_refresh_busy(self):
+        if self._refresh_pending > 0:
+            self._refresh_pending = 0
+            self._set_busy(False)
+            self._show_error("Refresh timed out. Please retry.")
+
     def _fetch_status(self):
-        try:
-            response = self.api_client.get("/api/backup/control-plane/status/")
+        def on_success(response):
             if isinstance(response, dict) and response.get('success'):
                 self._status_data = response.get('data', {})
             elif isinstance(response, dict):
@@ -397,13 +406,27 @@ class BackupControlScreen(BaseScreen):
             else:
                 self._status_data = {}
                 self._ssot_unavailable = True
-        except Exception:
+            self._update_ui()
+            self._finish_refresh_request()
+
+        def on_error(_message):
             self._status_data = {}
             self._ssot_unavailable = True
+            self._update_ui()
+            self._finish_refresh_request()
+
+        started = self.run_api_request(
+            key="backup_status_load",
+            method="GET",
+            endpoint="/api/backup/control-plane/status/",
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
+            self._finish_refresh_request()
 
     def _fetch_backups(self):
-        try:
-            response = self.api_client.get("/api/backup/restore-points/")
+        def on_success(response):
             if isinstance(response, dict) and response.get('success'):
                 data = response.get('data', [])
                 self._backups = data if isinstance(data, list) else data.get('results', [])
@@ -411,20 +434,49 @@ class BackupControlScreen(BaseScreen):
                 self._backups = response
             else:
                 self._backups = []
-        except Exception:
+            self._update_ui()
+            self._finish_refresh_request()
+
+        def on_error(_message):
             self._backups = []
+            self._update_ui()
+            self._finish_refresh_request()
+
+        started = self.run_api_request(
+            key="backup_restore_points_load",
+            method="GET",
+            endpoint="/api/backup/restore-points/",
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
+            self._finish_refresh_request()
 
     def _fetch_email_history(self):
-        try:
-            response = self.api_client.get("/api/backup/offsite-replication/retry-queue-status/")
+        def on_success(response):
             if isinstance(response, dict) and response.get('success'):
                 self._email_history = response.get('data', {}).get('history', [])
             elif isinstance(response, dict):
                 self._email_history = response.get('history', [])
             else:
                 self._email_history = []
-        except Exception:
+            self._update_email_table()
+            self._finish_refresh_request()
+
+        def on_error(_message):
             self._email_history = []
+            self._update_email_table()
+            self._finish_refresh_request()
+
+        started = self.run_api_request(
+            key="backup_email_history_load",
+            method="GET",
+            endpoint="/api/backup/offsite-replication/retry-queue-status/",
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
+            self._finish_refresh_request()
 
     def _update_ui(self):
         if self._ssot_unavailable:
@@ -632,10 +684,9 @@ class BackupControlScreen(BaseScreen):
             return
 
         self._set_busy(True)
-        try:
-            response = self.api_client.post("/api/backup/records/create_backup/", {
-                "description": "Manual backup from Control Center",
-            })
+
+        def on_success(response):
+            self._set_busy(False)
             if isinstance(response, dict) and response.get("success"):
                 AlertDialog.info("Backup", "Backup created successfully.", self)
                 self._refresh()
@@ -648,10 +699,15 @@ class BackupControlScreen(BaseScreen):
                     else:
                         err = str(err_info)
                 AlertDialog.warning("Backup Failed", f"Failed: {err}", self)
-        except Exception as e:
-            AlertDialog.warning("Backup Failed", f"Failed: {e}", self)
-        finally:
-            self._set_busy(False)
+
+        self.run_api_request(
+            key="backup_create",
+            method="POST",
+            endpoint="/api/backup/records/create_backup/",
+            data={"description": "Manual backup from Control Center"},
+            on_success=on_success,
+            on_error=lambda message: (self._set_busy(False), AlertDialog.warning("Backup Failed", f"Failed: {message}", self)),
+        )
 
     def _restore_selected(self):
         if self._is_busy:
@@ -682,34 +738,48 @@ class BackupControlScreen(BaseScreen):
         self._update_restore_state()
         self._set_busy(True)
 
-        try:
-            backup_id = backup.get('id')
-            response = self.api_client.post(f"/api/backup/restore-points/{backup_id}/validate/", {})
+        backup_id = backup.get('id')
+
+        def restore_after_validation(response):
             if not (isinstance(response, dict) and response.get('success')):
                 self._restore_state = 'FAILED'
                 self._update_restore_state()
+                self._set_busy(False)
                 AlertDialog.warning("Restore", f"Validation failed: {response}", self)
                 return
 
             self._restore_state = 'SNAPSHOT_CREATED'
             self._update_restore_state()
 
-            response = self.api_client.post(f"/api/backup/restore-points/{backup_id}/restore/", {})
-            if isinstance(response, dict) and response.get('success'):
-                self._restore_state = 'COMPLETED'
-                self._update_restore_state()
-                AlertDialog.info("Restore", "Restore completed successfully.", self)
-            else:
-                self._restore_state = 'FAILED'
-                self._update_restore_state()
-                err = response.get('error', 'Unknown error') if isinstance(response, dict) else str(response)
-                AlertDialog.warning("Restore Failed", f"Restore failed: {err}", self)
-        except Exception as e:
-            self._restore_state = 'FAILED'
-            self._update_restore_state()
-            AlertDialog.error("Restore Error", f"Restore error: {e}", self)
-        finally:
-            self._set_busy(False)
+            def on_restore_success(restore_response):
+                self._set_busy(False)
+                if isinstance(restore_response, dict) and restore_response.get('success'):
+                    self._restore_state = 'COMPLETED'
+                    self._update_restore_state()
+                    AlertDialog.info("Restore", "Restore completed successfully.", self)
+                else:
+                    self._restore_state = 'FAILED'
+                    self._update_restore_state()
+                    err = restore_response.get('error', 'Unknown error') if isinstance(restore_response, dict) else str(restore_response)
+                    AlertDialog.warning("Restore Failed", f"Restore failed: {err}", self)
+
+            self.run_api_request(
+                key=f"backup_restore_{backup_id}",
+                method="POST",
+                endpoint=f"/api/backup/restore-points/{backup_id}/restore/",
+                data={},
+                on_success=on_restore_success,
+                on_error=lambda message: (self._set_busy(False), setattr(self, "_restore_state", 'FAILED'), self._update_restore_state(), AlertDialog.error("Restore Error", f"Restore error: {message}", self)),
+            )
+
+        self.run_api_request(
+            key=f"backup_validate_{backup_id}",
+            method="POST",
+            endpoint=f"/api/backup/restore-points/{backup_id}/validate/",
+            data={},
+            on_success=restore_after_validation,
+            on_error=lambda message: (self._set_busy(False), setattr(self, "_restore_state", 'FAILED'), self._update_restore_state(), AlertDialog.error("Restore Error", f"Restore error: {message}", self)),
+        )
 
     def _verify_selected(self):
         row = self._backup_table.currentRow()
@@ -722,16 +792,23 @@ class BackupControlScreen(BaseScreen):
             return
 
         backup_id = backup.get('id')
-        try:
-            response = self.api_client.post(f"/api/backup/records/{backup_id}/verify/", {})
+
+        def on_success(response):
             if isinstance(response, dict) and response.get('success'):
                 AlertDialog.info("Verify", "Backup verified successfully.", self)
                 self._refresh()
             else:
                 msg = response.get('message', 'Verification failed') if isinstance(response, dict) else 'Verification failed'
                 AlertDialog.warning("Verify", msg, self)
-        except Exception as e:
-            AlertDialog.warning("Verify Failed", f"Failed: {e}", self)
+
+        self.run_api_request(
+            key=f"backup_verify_{backup_id}",
+            method="POST",
+            endpoint=f"/api/backup/records/{backup_id}/verify/",
+            data={},
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.warning("Verify Failed", f"Failed: {message}", self),
+        )
 
     def _delete_selected(self):
         row = self._backup_table.currentRow()
@@ -749,15 +826,21 @@ class BackupControlScreen(BaseScreen):
             return
 
         backup_id = backup.get('id')
-        try:
-            response = self.api_client.delete(f"/api/backup/records/{backup_id}/delete_backup/")
+
+        def on_success(response):
             if isinstance(response, dict) and response.get('success'):
                 AlertDialog.info("Delete", "Backup deleted.", self)
                 self._refresh()
             else:
                 AlertDialog.warning("Delete Failed", "Failed to delete backup.", self)
-        except Exception as e:
-            AlertDialog.warning("Delete Failed", f"Failed: {e}", self)
+
+        self.run_api_request(
+            key=f"backup_delete_{backup_id}",
+            method="DELETE",
+            endpoint=f"/api/backup/records/{backup_id}/delete_backup/",
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.warning("Delete Failed", f"Failed: {message}", self),
+        )
 
     def _send_latest_email(self):
         if not self._backups:
@@ -766,14 +849,11 @@ class BackupControlScreen(BaseScreen):
 
         latest = self._backups[0]
         backup_id = latest.get('id')
-        try:
-            response = self.api_client.post("/api/backup/offsite-replication/send-backup/", {
-                "backup_record_id": str(backup_id),
-            })
+
+        def on_success(response):
             if isinstance(response, dict) and response.get('success'):
                 AlertDialog.info("Email", "Backup sent via email successfully.", self)
                 self._fetch_email_history()
-                self._update_email_table()
             else:
                 err = response.get('error', 'Unknown error') if isinstance(response, dict) else str(response)
                 queued = isinstance(response, dict) and response.get('queued')
@@ -781,8 +861,15 @@ class BackupControlScreen(BaseScreen):
                     AlertDialog.info("Email Queued", f"Offline — queued for retry: {err}", self)
                 else:
                     AlertDialog.warning("Email Failed", f"Failed: {err}", self)
-        except Exception as e:
-            AlertDialog.warning("Email Failed", f"Failed: {e}", self)
+
+        self.run_api_request(
+            key=f"backup_email_send_{backup_id}",
+            method="POST",
+            endpoint="/api/backup/offsite-replication/send-backup/",
+            data={"backup_record_id": str(backup_id)},
+            on_success=on_success,
+            on_error=lambda message: AlertDialog.warning("Email Failed", f"Failed: {message}", self),
+        )
 
     def _open_email_config(self):
         from ui.system.email_config_dialog import EmailConfigDialog
@@ -792,21 +879,26 @@ class BackupControlScreen(BaseScreen):
 
     def _process_retry_queue(self):
         self._set_busy(True)
-        try:
-            response = self.api_client.post("/api/backup/offsite-replication/process-retry-queue/", {})
+
+        def on_success(response):
+            self._set_busy(False)
             if isinstance(response, dict) and response.get('success'):
                 processed = response.get('data', response).get('processed', 0)
                 failed = response.get('data', response).get('failed', 0)
                 AlertDialog.info("Retry Queue", f"Processed: {processed}, Failed: {failed}", self)
                 self._fetch_email_history()
-                self._update_email_table()
             else:
                 err = response.get('error', 'Unknown') if isinstance(response, dict) else str(response)
                 AlertDialog.warning("Retry Failed", f"Failed: {err}", self)
-        except Exception as e:
-            AlertDialog.warning("Retry Failed", f"Failed: {e}", self)
-        finally:
-            self._set_busy(False)
+
+        self.run_api_request(
+            key="backup_retry_queue_process",
+            method="POST",
+            endpoint="/api/backup/offsite-replication/process-retry-queue/",
+            data={},
+            on_success=on_success,
+            on_error=lambda message: (self._set_busy(False), AlertDialog.warning("Retry Failed", f"Failed: {message}", self)),
+        )
 
     def _retry_single_email(self):
         row = self._email_table.currentRow()
@@ -821,21 +913,24 @@ class BackupControlScreen(BaseScreen):
             return
 
         self._set_busy(True)
-        try:
-            response = self.api_client.post("/api/backup/offsite-replication/retry-single/", {
-                "queue_file": queue_file,
-            })
+
+        def on_success(response):
+            self._set_busy(False)
             if isinstance(response, dict) and response.get('success'):
                 AlertDialog.info("Retry", "Email sent successfully.", self)
                 self._fetch_email_history()
-                self._update_email_table()
             else:
                 err = response.get('error', 'Unknown') if isinstance(response, dict) else str(response)
                 AlertDialog.warning("Retry Failed", f"Failed: {err}", self)
-        except Exception as e:
-            AlertDialog.warning("Retry Failed", f"Failed: {e}", self)
-        finally:
-            self._set_busy(False)
+
+        self.run_api_request(
+            key=f"backup_retry_single_{row}",
+            method="POST",
+            endpoint="/api/backup/offsite-replication/retry-single/",
+            data={"queue_file": queue_file},
+            on_success=on_success,
+            on_error=lambda message: (self._set_busy(False), AlertDialog.warning("Retry Failed", f"Failed: {message}", self)),
+        )
 
     def _show_error(self, message: str):
         AlertDialog.error("Error", message, self)

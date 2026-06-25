@@ -579,11 +579,24 @@ class POSScreen(BaseScreen):
         query = self.search_input.text().strip()
         if not query or not self.api_client:
             return
+        if getattr(self, "_pos_search_active", False):
+            self._pending_pos_search_query = query
+            return
+        self._pos_search_active = True
+        self._pending_pos_search_query = None
 
-        try:
-            response = self.api_client.search_products(query)
+        def finish_search():
+            self._pos_search_active = False
+            pending = getattr(self, "_pending_pos_search_query", None)
+            if pending and pending != query:
+                self._pending_pos_search_query = None
+                QTimer.singleShot(0, self._search_products)
+
+        def on_success(response):
             if response and isinstance(response, dict):
                 data = response.get("results", response.get("data", []))
+                if isinstance(data, dict):
+                    data = data.get("results", [])
                 if isinstance(data, list):
                     self.products_cache = data
                     rows = []
@@ -600,9 +613,23 @@ class POSScreen(BaseScreen):
                             "_cache_index": i,
                         })
                     self.search_results.set_data(rows)
-        except Exception as e:
-            # Phase Recovery: surface the error instead of silently failing
-            AlertDialog.error("Search Failed", f"Product search failed: {e}", self)
+            finish_search()
+
+        def on_error(message):
+            finish_search()
+            AlertDialog.error("Search Failed", f"Product search failed: {message}", self)
+
+        started = self.run_api_request(
+            key="pos_product_search",
+            method="GET",
+            endpoint="/api/inventory/products/",
+            params={'search': query},
+            on_success=on_success,
+            on_error=on_error,
+        )
+        if not started:
+            self._pending_pos_search_query = query
+            finish_search()
 
     def _add_search_result_to_cart(self, row, data=None):
         if data is None:

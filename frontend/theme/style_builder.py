@@ -195,7 +195,7 @@ class UIStyleBuilder:
         )
         
         return f"""
-            QTableWidget {{
+            QTableWidget, QTreeWidget {{
                 background-color: {TABLE_BG_PRIMARY};
                 alternate-background-color: {TABLE_BG_SECONDARY};
                 color: {TABLE_TEXT_PRIMARY};
@@ -207,18 +207,18 @@ class UIStyleBuilder:
                 outline: none;
                 font-size: {TEXT_TABLE}pt;
             }}
-            QTableWidget::item {{
+            QTableWidget::item, QTreeWidget::item {{
                 padding: 12px 8px;
                 color: {TABLE_TEXT_PRIMARY};
                 border: none;
                 border-bottom: 1px solid {TABLE_GRID_COLOR};
             }}
-            QTableWidget::item:selected {{
+            QTableWidget::item:selected, QTreeWidget::item:selected {{
                 background-color: {TABLE_BG_SELECTED};
                 color: {TABLE_TEXT_SELECTED};
                 font-weight: 500;
             }}
-            QTableWidget::item:hover {{
+            QTableWidget::item:hover, QTreeWidget::item:hover {{
                 background-color: {TABLE_BG_HOVER};
             }}
             QHeaderView::section {{
@@ -266,7 +266,7 @@ class UIStyleBuilder:
             QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
                 width: 0;
             }}
-            QTableWidget:focus {{
+            QTableWidget:focus, QTreeWidget:focus {{
                 border: 2px solid {COLOR_BORDER_FOCUS};
             }}
         """
